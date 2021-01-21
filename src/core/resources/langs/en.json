@@ -1,0 +1,199 @@
+{
+	"empty": "empty",
+	"error_messages": {
+		"http": {
+			"404": "The route you are looking for does not exist",
+			"505": "We have found an error in the request"
+		},
+		"fail_request_message": "There was an error in the request",
+		"jwt": {
+			"unauthorized_header_message": "You are not authorized to enter",
+			"token_expired_message": "The session has expired",
+			"token_invalid_message": "The session has expired"
+		},
+		"database": {
+			"driver_invalid": "The database engine is not valid",
+			"driver_required": "The database engine is mandatory",
+			"orm": {
+				"failed_creation"   : "An error occurred while creating the record",
+				"failed_update"     : "An error occurred while updating the record",
+				"register_not_found": "We could not find what you are looking for",
+				"failed_query"      : "An error has occurred while performing the query",
+				"failed_removal"    : "There was an error in removing the record"
+			},
+			"seeder": {
+				"executed_previously": "The seeder has already been executed before"
+			}
+		},
+		"version_in_request_invalid": "The project version is not valid",
+		"middleware_not_found": "The middleware you are looking for has not been found",
+		"utility_not_found": "The utility you are looking for has not been found",
+		"upload_files": {
+			"file_upload_already_exist": "The file you are trying to load already exists",
+			"file_size_invalid": "File size can not exceed :file_size",
+			"file_mime_type_invalid": "The file type must be :file_mime_type",
+			"upload_file_failed": "The file could not be loaded"
+		},
+		"fields_in_request": {
+			"invalid_request_fields"   : "The fields in the request are not valid",
+			"field_required"           : "The field :field is required",
+			"field_value_invalid"      : "The value of the field :field can not be :value",
+			"field_value_only_accepted": "The value of the field :field can only be :values_accepted",
+			"field_value_type_invalid": {
+				"general": "The value of the field :field does not have the correct format",
+				"email"  : "The value of the field :field is not a valid email",
+				"number" : "The value of the field :field must be a number",
+				"array" : "The value of the field :field must be a array",
+				"string" : "The value of the field :field must be a string",
+				"boolean" : "The value of the field :field must be a boolean",
+				"file" : "The value of the field :field must be a file",
+				"object": "The value of the field :field must be a object"
+			}
+		},
+		"attached": {
+			"driver_required"      : "You must choose a file upload service before continuing",
+			"driver_invalid"       : "File upload method is not supported, please try another",
+			"configuration_invalid": "You must provide a valid file upload configuration for the selected driver",
+			"failed"               : "An error occurred while loading the file"
+		},
+		"mailer": {
+			"driver_required"         : "You must choose a service for sending emails before continuing",
+			"driver_invalid"          : "The method of sending email is not supported, please try another",
+			"configuration_invalid"   : "You must provide a valid email configuration for the selected driver",
+			"mailer_fail_request"     : "There was an error sending the message",
+			"mail_content_required"   : "The content of the message is mandatory",
+			"mail_content_invalid"    : "The content of the message is invalid",
+			"mail_to_required"        : "You must provide at least one recipient of the message",
+			"mail_to_invalid"         : "The recipient(s) of the message is not (are) valid",
+			"mail_cc_invalid"         : "The copied recipient(s) of the message is not (are) valid",
+			"mail_bcc_invalid"        : "The hidden copy recipient(s) of the message is not (are) valid",
+			"mail_subject_required"   : "The subject of the message is mandatory",
+			"mail_subject_invalid"    : "The subject of the message is invalid",
+			"mail_attachments_invalid": "Attachments to the message are invalid",
+			"mail_from_invalid"       : "The email address of the person sending the message is invalid"
+		},
+		"sms": {
+			"driver_required"         	 : "You must choose a service for sending sms before continuing",
+			"driver_invalid"          	 : "The method of sending sms is not supported, please try another",
+			"configuration_invalid"   	 : "You must provide a valid sms configuration for the selected driver",
+			"fail_request"            	 : "There was an error sending the message",
+			"sms_message_required"       : "The message is mandatory",
+			"sms_message_invalid_length" : "Message length should not exceed 255 characters",
+			"sms_number_required"        : "The phone number is mandatory",
+			"sms_number_invalid" 		 : "The phone number is invalid",
+			"sms_country_code_required"  : "The country code is mandatory",
+			"sms_country_code_invalid"   : "The country code is invalid"
+		},
+
+		"external_connection": {
+			"external_connection_method_not_found": "The method you are trying to find does not exist"
+		},
+		"re_doc": {
+			"file_build_error"       : "There was an error building the file :file",
+			"section_already_exists" : "The section you are trying to create already exists, if you want to overwrite you can use the parameter --force",
+			"template_not_found"     : "We did not find the template required to generate the section",
+			"section_title_invalid"  : "You have not provided the valid section title (Ex: --section_title users)",
+			"component_required"     : "You have not provided a component (Ex: --component parameters)",
+			"component_invalid"      : "You have not provided a valid component. Only one of these options is allowed :components_available",
+			"section_required"       : "You have not provided the section you want to add (Ex: --section info)",
+			"section_invalid"        : "You have not provided a valid section. Only one of these options is allowed :sections_available",
+			"documentation_not_found": "We have not found documentation"
+		},
+		"plugins": {
+			"failed_to_install_the_plugin"     : "There was a problem installing the plugin",
+			"plugin_has_already_been_installed": "The plugin has already been installed previously",
+			"controller_already_exist"         : "We have found that a controller already exists :controller_path therefore it is not possible to install",
+			"model_already_exist"              : "We have found that a model already exists :model_name therefore it is not possible to install",
+			"migrate_already_exist"            : "We have found that a migration already exists :migration_name therefore it is not possible to install"
+		},
+		"auth": {
+			"password_invalid"            : "Password does not match",
+			"user_not_found"              : "There are no users with these credentials",
+			"token_update_is_not_possible": "It is not possible to update the token",
+			"access_denied"               : "You do not have permission to enter"
+		},
+		"user": {
+			"user_create_already_exist": "The user you are trying to create already exists",
+			"user_create_failed"       : "An error occurred while creating the user",
+			"user_no_found"       	   : "User no found"
+		},
+		"roles": {
+			"name_label"               : "role identifier",
+			"display_name_label"       : "role name",
+			"role_create_already_exist": "The role you are trying to create already exists",
+			"role_create_failed"       : "An error occurred while creating the role"
+		},
+		"permissions": {
+			"name_label"                     : "role identifier",
+			"display_name_label"             : "role name",
+			"permission_create_already_exist": "The permission you are trying to create already exists",
+			"permission_create_failed"       : "An error occurred while creating the permission",
+			"parent_id_not_found"            : "We have not found the parent permission"
+		},
+		"role_permission": {
+			"primary_register_not_found"    : "We have not found the record you are looking for",
+			"role_permission_fail_query"    : "An unexpected error has occurred",
+			"role_permission_already_exists": "This relationship already exists"
+		},
+		"role_user": {
+			"primary_register_not_found": "We have not found the record you are looking for",
+			"role_user_fail_query"      : "An unexpected error has occurred",
+			"role_user_already_exists"  : "This relationship already exist"
+		},
+		"aws": {
+			"config_invalid": "Amazon configuration is invalid",
+			"s3": {
+				"config_invalid": "Amazon S3 bucket configuration is invalid"
+			},
+			"ses": {
+				"config_invalid": "Amazon SES configuration is invalid"
+			}
+		},
+		"ftp": {
+			"config_invalid": "FTP configuration is invalid"
+		},
+		"query": {
+			"invalid_connection_settings"   : "The connection configuration is not valid",
+			"connection_to_server_not_found": "We have not found an external connection"
+		},
+		"orm": {
+			"model_already_exists": "The model you are trying to create already exists",
+			"migration_already_exists": "The migration you are trying to create already exists",
+			"migrations_not_enabled": "Migrations are not enabled",
+			"failed_to_create_migration": "An error occurred while generating the migration"
+		},
+		"pdf": {
+			"html_pdf": {
+				"fail_to_generate": "An error occurred while generating the PDF",
+				"file_config_required": "The file configuration is not valid",
+				"file_not_found": "The file you are looking for does not exist",
+				"content_config_required": "The content configuration is not valid"
+			}
+		}
+	},
+	"success_messages": {
+		"framework_default_success"     : "Framework success",
+		"request_success_message" : "Success",
+		"file_upload_successfully": "The file has been successfully loaded",
+		"mailer"                  : {
+			"mail_send_successfully": "The email has been sent correctly"
+		},
+		"database": {
+			"seeder": {
+				"executed_successfully": "The seeder was executed successfully",
+				"executed_warning": "The seeder was executed but his response was FALSE"
+			}
+		}
+	},
+	"labels": {
+		"first_name_label": "Names",
+		"last_name_label" : "Surnames",
+		"email_label"     : "Email",
+        "password_label"  : "Password",
+        "time": {
+            "hours": "hours",
+            "minutes": "minutes",
+            "seconds": "seconds"
+        }
+	}
+}
