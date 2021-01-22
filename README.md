@@ -32,19 +32,20 @@
 
 ```
 {
-  "environment": "dev",
+  "environment": "dev|prod",
+  "server_port": integer,
   "database": {
-      "driver": "mysql",
+      "driver": "mysql|mongodb",
       "mongodb": {
         "host": "",
         "dbname": ""
       },
       "mysql": {
-        "database": "",
-        "host": "",
-        "username": "",
-        "password": ,
-        "dialect": ""
+        "database": "string",
+        "host": "string",
+        "username": "string",
+        "password": string|null,
+        "dialect": "mysql"
       }
   }
 }
