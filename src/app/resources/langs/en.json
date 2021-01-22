@@ -1,0 +1,24 @@
+{
+  "app_error_messages": {
+    "post": {
+      "category": {
+        "not_found": "La categoria del post no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una categoria con el nombre :name"
+        }
+      },
+      "location": {
+        "not_found": "La ubicación de post no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una ubicación con el nombre :name"
+        }
+      },
+      "type": {
+        "not_found": "El tipo de post no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un tipo de post con el nombre :name"
+        }
+      }
+    }
+  }
+}

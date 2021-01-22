@@ -12,6 +12,53 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "post": {
+        "category": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.post.category.not_found"),
+            "status_code": "post_category_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.post.category.insertOrUpdate.already_exists"),
+              "status_code": "post_category_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "location": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.post.location.not_found"),
+            "status_code": "post_location_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.post.location.insertOrUpdate.already_exists"),
+              "status_code": "post_location_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "type": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.post.type.not_found"),
+            "status_code": "post_type_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.post.type.insertOrUpdate.already_exists"),
+              "status_code": "post_type_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "post": {
+
+        }
+      }
     };
 
     return json;
