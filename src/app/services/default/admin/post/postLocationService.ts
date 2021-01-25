@@ -173,7 +173,7 @@ class PostLocationService {
         postLocations: [
           ...registers
         ],
-        total_register: (paging) ? await PostLocation.find(filters).count() : 0,
+        total_register: (paging) ? await PostLocation.find(where).count() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }

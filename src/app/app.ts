@@ -82,7 +82,7 @@ class App {
     // @end
 
     // @serving_static_files serving static files
-    // this.app.use(express.static('public'));
+    this.app.use(express.static('public'));
     // @end
 
     // @init_middlewares

@@ -12,6 +12,85 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "secure": {
+        "appModule": {
+          "permission": {
+            "not_found": {
+              "message": i18nUtility.__("app_error_messages.secure.appModule.permission.not_found"),
+              "status_code": "secure_appModule_permission_not_found",
+              "code": 400
+            },
+            "insertOrUpdate": {
+              "already_exists": {
+                "message": i18nUtility.__("app_error_messages.secure.appModule.permission.insertOrUpdate.already_exists"),
+                "status_code": "secure_appModule_permission_insertOrUpdate_already_exists",
+                "code": 400
+              }
+            }
+          },
+          "module": {
+            "not_found": {
+              "message": i18nUtility.__("app_error_messages.secure.appModule.module.not_found"),
+              "status_code": "secure_appModule_module_not_found",
+              "code": 400
+            },
+            "insertOrUpdate": {
+              "already_exists": {
+                "message": i18nUtility.__("app_error_messages.secure.appModule.module.insertOrUpdate.already_exists"),
+                "status_code": "secure_appModule_module_insertOrUpdate_already_exists",
+                "code": 400
+              }
+            }
+          }
+        },
+        "role": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.secure.role.not_found"),
+            "status_code": "secure_appModule_role_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.secure.role.insertOrUpdate.already_exists"),
+              "status_code": "secure_appModule_role_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        }
+      },
+      "user": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.user.not_found"),
+          "status_code": "user_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.user.insertOrUpdate.already_exists"),
+            "status_code": "user_insertOrUpdate_already_exists",
+            "code": 400
+          },
+          "password_required": {
+            "message": i18nUtility.__("app_error_messages.user.insertOrUpdate.password_required"),
+            "status_code": "user_insertOrUpdate_password_required",
+            "code": 400
+          }
+        }
+      },
+      "country": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.country.not_found"),
+          "status_code": "country_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.country.insertOrUpdate.already_exists"),
+            "status_code": "country_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
       "post": {
         "category": {
           "not_found": {
@@ -56,7 +135,21 @@ class ErrorResponse {
           }
         },
         "post": {
-
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.post.post.not_found"),
+            "status_code": "post_post_not_found",
+            "code": 400
+          },
+          "post_date_required": {
+            "message": i18nUtility.__("app_error_messages.post.post.post_date_required"),
+            "status_code": "post_post_post_date_required",
+            "code": 400
+          },
+          "event_date_required": {
+            "message": i18nUtility.__("app_error_messages.post.post.event_date_required"),
+            "status_code": "post_post_event_date_required",
+            "code": 400
+          }
         }
       }
     };

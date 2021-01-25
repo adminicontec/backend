@@ -1,0 +1,46 @@
+// @import types
+// @end
+
+// @add your types
+export interface IPost {
+  title: string // Titulo de la publicación
+  subtitle?: string // Descripción corta de la publicación
+  content?: string // Contenido de la publicación
+  coverUrl?: string // URL de la imagen de la publicación
+  postDate?: string // Fecha desde la cual la publicación estara disponible
+  eventDate?: string // Fecha desde la cual el evento estara disponible
+  lifeSpan?: string // ?
+  highlighted?: boolean // Identifica si la publicación es destacada
+  isActive: boolean // Identifica si la publicación esta activa
+  startDate?: string // ?
+  endDate?: string // ?
+  externUrl?: string // URL de la publicación externa
+  user?: string // Identificador de clase User
+  postType?: string // Identificador de clase PostType
+  tags?: Array<any> // Array con los tags de la publicación
+  cover?: any // Objeto tipo file que contiene la imagen a cargar
+  locations?: IPostLocations[] // Array con las ubicaciones de la publicación
+  location?: IPostLocations // Array con las ubicaciones de la publicación
+  id?: string // Identificador de la categoria
+}
+
+export interface IPostLocations {
+  postLocation: string // Identificador de PostLocation
+  viewCounter?: number // Cantidad de vistas
+}
+
+export interface IPostDelete {
+  id: string // Identificador de la categoria
+}
+
+export interface IPostQuery {
+  pageNumber?:string, // Numero de pagina
+  nPerPage?:string, // Cantidad de elementos por pagina
+  select?: string, // Campos de la coleccion a buscar
+  search?:string, // Busca sobre los campos de la coleccion
+  isActive?: boolean // Estado de la publicación
+  postType?: Array<string> // Tipo de publicación
+  postDate?: string // Fecha de busqueda
+  eventDate?: string // Fecha de busqueda
+}
+//@end

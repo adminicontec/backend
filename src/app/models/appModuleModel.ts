@@ -4,39 +4,39 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 // @end
 
-const PostInPostLocationSchema = new Schema({
+const AppModuleSchema = new Schema({
   // @add_schema Add schema here
-  post: {
-    type: Schema.Types.ObjectId,
-    ref: "Post"
+  name: {
+    type: Schema.Types.String,
+    unique: true,
+    index: true
   },
-  postLocation: {
-    type: Schema.Types.ObjectId,
-    ref: "PostLocation"
+  description: {
+    type: Schema.Types.String
   },
-  viewCounter: {
-    type: Schema.Types.Number,
-    default: 0
-  }
+  app_module_permissions: [{
+    type: Schema.Types.ObjectId,
+    ref: "AppModulePermission"
+  }]
   // @end
 }, {
-  collection: 'post_in_post_locations' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'app_modules' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-PostInPostLocationSchema.plugin(mongoose_delete,{
+AppModuleSchema.plugin(mongoose_delete,{
   deletedAt : true,
   overrideMethods: 'all',
   indexFields: 'all'
 });
 
 // INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
-// PostInPostLocationSchema.methods.invalid_fields = ["field1", "field2"];
+// AppModuleSchema.methods.invalid_fields = ["field1", "field2"];
 
 // INFO: Si desea implementar un metodo despues de guardar habilite el siguiente metodo
-// PostInPostLocationSchema.methods.postSave = (parameters) => {
+// AppModuleSchema.methods.postSave = (parameters) => {
 // }
 
 
-export const PostInPostLocationModel = mongoose.model('PostInPostLocation', PostInPostLocationSchema);
+export const AppModuleModel = mongoose.model('AppModule', AppModuleSchema);

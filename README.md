@@ -5,6 +5,7 @@
 
 - Clonar el repositorio en el entorno local
 - Instalación de las dependencias con el comando ``npm i``
+- Iniciar el proyecto ``npm run init``
 - Instalación del cliente ``https://github.com/Kodria/scnode-cli``
 - Agregar archivo de configuración ``env.json``
   ```
@@ -33,7 +34,14 @@
 ```
 {
   "environment": "dev|prod",
-  "server_port": integer,
+  "host": "string", // EJ: http://127.0.0.1:3015
+  "server_port": integer, // EJ: 3015
+  "attached": {
+    "driver": "server",
+    "server": {
+      "base_path": "string" // EJ: uploads
+    }
+  },
   "database": {
       "driver": "mysql|mongodb",
       "mongodb": {
@@ -49,3 +57,4 @@
       }
   }
 }
+```

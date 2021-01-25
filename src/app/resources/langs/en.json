@@ -1,5 +1,40 @@
 {
   "app_error_messages": {
+    "secure": {
+      "appModule": {
+        "permission": {
+          "not_found":"El permiso no ha sido encontrado",
+          "insertOrUpdate": {
+            "already_exists":"Ya existe un permiso con el nombre :name"
+          }
+        },
+        "module": {
+          "not_found":"El modulo no ha sido encontrado",
+          "insertOrUpdate": {
+            "already_exists":"Ya existe un modulo con el nombre :name"
+          }
+        }
+      },
+      "role": {
+        "not_found":"El rol no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists":"Ya existe un rol con el nombre :name"
+        }
+      }
+    },
+    "user": {
+      "not_found":"El usuario no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un usuario :data",
+        "password_required": "La contraseña es obligatoria"
+      }
+    },
+    "country": {
+      "not_found":"El pais no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un pais con el nombre :name"
+      }
+    },
     "post": {
       "category": {
         "not_found": "La categoria del post no ha sido encontrada",
@@ -18,6 +53,11 @@
         "insertOrUpdate": {
           "already_exists": "Ya existe un tipo de post con el nombre :name"
         }
+      },
+      "post": {
+        "not_found":"El post no ha sido encontrado",
+        "post_date_required": "Fecha de publicación requerida",
+        "event_date_required": "Fecha del evento requerida"
       }
     }
   }

@@ -10,6 +10,10 @@ import { orm } from "@scnode_core/config/globals";
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
+// @import types
+import {RunSeeder} from '@scnode_core/types/default/seeder/seederTypes'
+// @end
+
 class SeederService {
 
   /*===============================================
@@ -27,10 +31,10 @@ class SeederService {
    * @param [config] Configuraciones del seeder a ejecutar
    * @returns
    */
-  public main = async (seeder_class:string, config: Object = {}) => {
+  public main = async (seeder_class:string, config: RunSeeder = {}) => {
     let process_seeder = false;
 
-    if (config.hasOwnProperty('force') && typeof config['force'] === 'string') {
+    if (config.hasOwnProperty('force') && typeof config['force'] === 'boolean' && config.force === true) {
       process_seeder = true;
     } else {
       const parameters = {

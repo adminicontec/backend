@@ -172,7 +172,7 @@ class PostTypeService {
         postTypes: [
           ...registers
         ],
-        total_register: (paging) ? await PostType.find(filters).count() : 0,
+        total_register: (paging) ? await PostType.find(where).count() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }

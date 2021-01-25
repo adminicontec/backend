@@ -46,6 +46,7 @@ Thumbs.db
 ##/views
 /src/resources
 ##/public
+/public/uploads
 
 # skip CORE
 ##/core

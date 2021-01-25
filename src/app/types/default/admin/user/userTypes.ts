@@ -1,0 +1,45 @@
+// @import types
+// @end
+
+// @add your types
+export interface IUser {
+  userName?: string, // Nombre de usuario que es utilizado para iniciar sesión
+  normalizedUserName?: string,
+  email?: string, // Correo electronico del usuario
+  normalizedEmail?: string
+  emailConfirmed?: boolean // Establece si el email del usuario es valido
+  password?: string // Contraseña sin encriptar (Proporcionada por el usuario)
+  passwordHash?: string, // Contraseña encriptada (Generada por el sistema)
+  securityStamp?: string,
+  concurrencyStamp?: string,
+  phoneNumber?: string, // Numero de telefono del usuario
+  phoneNumberConfirmed?: boolean, // Establece si el numero de telefono del usuario es valido
+  twoFactorEnabled?: boolean, // Establece si el usuario tiene autenticación de dos factores
+  lockoutEnd?: string,
+  lockoutEnabled?: boolean,
+  accessFailedCount?: number,
+  profile?: {
+    name?: string, // Nombres del usuario
+    lastName?: string, // Apellidos del usuario
+    avatarImageUrl?: string, // Avatar del usuario
+    city?: string, // Ciudad del usuario
+    country?: string // Pais del usuario
+  },
+  roles?: Array<string>, // Roles asignados al usuario
+  createdBy?: string,
+  lastModifiedBy?: string
+  avatar?: string // Objeto de clase File que posee el archivo que sera cargado al servidor
+  id?: string // Identificador del permiso
+}
+
+export interface IUserDelete {
+  id: string // Identificador del usuario
+}
+
+export interface IUserQuery {
+  pageNumber?:string, // Numero de pagina
+  nPerPage?:string, // Cantidad de elementos por pagina
+  select?: string, // Campos de la coleccion a buscar
+  search?:string, // Busca sobre los campos de la coleccion
+}
+//@end

@@ -12,7 +12,7 @@ const UserSchema = new Schema({
   },
   normalizedUserName: {
     type:  Schema.Types.String,
-    required: true,
+    // required: true,
   },
   email: {
     type:  Schema.Types.String,
@@ -20,7 +20,7 @@ const UserSchema = new Schema({
   },
   normalizedEmail: {
     type:  Schema.Types.String,
-    required: true,
+    // required: true,
   },
   emailConfirmed: {
     type:  Schema.Types.Boolean,
@@ -75,15 +75,19 @@ const UserSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "Country"
     },
-    createdBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User"
-    },
-    lastModifiedBy: {
-      type: Schema.Types.ObjectId,
-      ref: "User"
-    },
-  }
+  },
+  roles: [{
+    type: Schema.Types.ObjectId,
+    ref: "Role"
+  }],
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  },
+  lastModifiedBy: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  },
   // @end
 }, {
   collection: 'users' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

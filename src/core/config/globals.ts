@@ -1,5 +1,5 @@
 // @import_dependencies_node Import libraries
-// import * as path from "path";
+// import path from "path";
 // import * as ejs from "ejs";
 // import { promisify } from "util";
 import mongoose from "mongoose";
@@ -19,9 +19,11 @@ import { sequelizeUtility } from "@scnode_core/utilities/sequelizeUtility";
 // @end
 
 // @export_globals_env
-export const environment                    = (env.hasOwnProperty('environment')) ? env['environment'] : 'prod';
-export const use_ssl                        = (env.hasOwnProperty('ssl')) ? env['ssl'] : false;
-export const default_language               = (env.hasOwnProperty('default_language')) ? env['default_language'] : "es";
+export const environment      = (env.hasOwnProperty('environment')) ? env['environment'] : 'prod';
+export const host             = (env.hasOwnProperty('host')) ? env['host'] : null;
+export const public_dir       = (env.hasOwnProperty('public_dir')) ? env['public_dir'] : 'public';
+export const use_ssl          = (env.hasOwnProperty('ssl')) ? env['ssl'] : false;
+export const default_language = (env.hasOwnProperty('default_language')) ? env['default_language'] : "es";
 // export const public_dir: string             = (env.hasOwnProperty('public_dir')) ? env['public_dir'] : '/';
 // export const uploads_dir: string            = (env.hasOwnProperty('uploads_dir')) ? env['uploads_dir'] : '/uploads';
 export const server_port                    = (env.hasOwnProperty('server_port')) ? env['server_port'] : 3000;
@@ -36,12 +38,12 @@ export const connection_data         = (driver && env['database'].hasOwnProperty
 // export const aws_config            = (env.hasOwnProperty('aws')) ? env['aws'] : {};
 // export const ftp_config            = (env.hasOwnProperty('ftp')) ? env['ftp'] : {};
 // export const mailer                = (env.hasOwnProperty('mailer')) ? env['mailer'] : {};
-// export const attached              = (env.hasOwnProperty('attached')) ? env['attached'] : {};
+export const attached              = (env.hasOwnProperty('attached')) ? env['attached'] : {};
 // export const external_api          = (env.hasOwnProperty('external_api')) ? env['external_api'] : {};
 // export const main_external_api     = (env.hasOwnProperty('main_external_api')) ? env['main_external_api'] : null;
 export const server_access_control = (env.hasOwnProperty('server_access_control')) ? env['server_access_control'] : {};
 // export const sms_config            = (env.hasOwnProperty('sms')) ? env['sms'] : {};
-// export const customs               = (env.hasOwnProperty('customs')) ? env['customs'] : {};
+export const customs               = (env.hasOwnProperty('customs')) ? env['customs'] : {};
 export const socket                = (env.hasOwnProperty('socket') && env['socket'] === true) ? {io: null, instance: null} : null;
 export const i18n_config           = (env.hasOwnProperty('i18n_config')) ? env['i18n_config'] : null;
 // export const i18n_global           = i18nUtility

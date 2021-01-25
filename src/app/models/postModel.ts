@@ -14,13 +14,14 @@ const PostSchema = new Schema({
     type: Schema.Types.String
   },
   content: {
-    type: Schema.Types.String
+    type: Schema.Types.String,
+    required: true,
   },
   coverUrl: {
     type: Schema.Types.String
   },
   postDate: {
-    type: Schema.Types.Date
+    type: Schema.Types.Date,
   },
   eventDate: {
     type: Schema.Types.Date
@@ -56,6 +57,18 @@ const PostSchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       ref: "PostCategory"
+    }
+  ],
+  locations: [
+    {
+      postLocation: {
+        type: Schema.Types.ObjectId,
+        ref: "PostLocation"
+      },
+      viewCounter: {
+        type: Schema.Types.Number,
+        default: 0
+      }
     }
   ]
   // @end

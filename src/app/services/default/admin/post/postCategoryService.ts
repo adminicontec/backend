@@ -172,7 +172,7 @@ class PostCategoryService {
         postCategories: [
           ...registers
         ],
-        total_register: (paging) ? await PostCategory.find(filters).count() : 0,
+        total_register: (paging) ? await PostCategory.find(where).count() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
