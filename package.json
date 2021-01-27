@@ -34,6 +34,7 @@
     "node-notifier": "^5.4.0",
     "path": "^0.12.7",
     "pluralize": "^8.0.0",
+    "request-promise": "^4.2.6",
     "sequelize": "^6.3.5",
     "sqlite3": "^5.0.1",
     "uuid": "^8.3.1"

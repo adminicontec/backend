@@ -1,4 +1,5 @@
 // @import_routes
+import { authRoute } from "@scnode_app/routes/default/data/secure/auth/authRoute";
 import { countryRoute } from "@scnode_app/routes/default/admin/country/countryRoute";
 import { userRoute } from "@scnode_app/routes/default/admin/user/userRoute";
 import { appModuleRoute } from "@scnode_app/routes/default/admin/secure/appModule/appModuleRoute";
@@ -13,6 +14,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    authRoute,
     countryRoute,
     userRoute,
     appModuleRoute,

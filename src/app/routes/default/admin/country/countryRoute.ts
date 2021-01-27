@@ -29,11 +29,11 @@ class CountryRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'country', method: 'create', dir: 'admin/country' }], [])
-		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], [])
-		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], [])
-    routerUtility.get(app, _route, '/', this.instanceController.list, [], [])
-    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], [])
+    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'country', method: 'create', dir: 'admin/country' }], ['auth'])
+		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
+		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
+    routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
+    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
     // @end
   }
 }

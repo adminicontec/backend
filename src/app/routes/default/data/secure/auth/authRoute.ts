@@ -2,16 +2,16 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminUserUserController as Controller } from "@scnode_app/controllers/default/admin/user/userController.ts";
+import { DefaultDataSecureAuthAuthController as Controller } from "@scnode_app/controllers/default/data/secure/auth/authController.ts";
 // @end
 
 // @import_utilities Import utilities
 import { routerUtility } from "@scnode_core/utilities/routerUtility";
 // @end
 
-class UserRoute {
+class AuthRoute {
 
-  private router_prefix: string = '/admin/user'; //Ej: /user
+  private router_prefix: string = '/auth'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -29,14 +29,10 @@ class UserRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'user', method: 'create', dir: 'admin/user' }], ['auth'])
-		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
-		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
-    routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
-    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
+    routerUtility.post(app,_route,'/login',this.instanceController.login,[{middleware: 'auth', method: 'login', dir: 'data/secure/auth'}],[]);
     // @end
   }
 }
 
-export const userRoute = new UserRoute();
-export { UserRoute as DefaultAdminUserUserRoute };
+export const authRoute = new AuthRoute();
+export { AuthRoute as DefaultDataSecureAuthAuthRoute };

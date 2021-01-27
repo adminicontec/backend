@@ -55,6 +55,15 @@
         "password": string|null,
         "dialect": "mysql"
       }
+  },
+  "external_api": { // Listado de endpoints que pueden ser conectados
+    "example": {
+      "url": "http://exampleapi.com"
+    },
+    "pokemon": {
+      "url": "https://pokeapi.co/api/v2"
+    }
   }
+  "main_external_api": "string" // Ej: pokemon
 }
 ```
