@@ -22,7 +22,11 @@ class FileUtility {
    * @returns
    */
   public readDirSync = (dir_path) => {
-    return fs.readdirSync(dir_path, {encoding: "utf-8"});
+    try {
+      return fs.readdirSync(dir_path, {encoding: "utf-8"});
+    } catch (e) {
+      return null
+    }
   }
 
   /**
@@ -31,7 +35,11 @@ class FileUtility {
    * @returns
    */
   public readFileSync = (file_path) => {
-    return fs.readFileSync(file_path, 'utf-8');
+    try {
+      return fs.readFileSync(file_path, 'utf-8');
+    } catch (e) {
+      return null
+    }
   }
 
   /**

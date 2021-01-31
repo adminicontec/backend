@@ -46,22 +46,24 @@ class I18nUtility {
         let resources = {}
 
         const dir_content = fileUtility.readDirSync(dir)
-        const langs_aux = await this.searchJsonFilesInDir(dir_content,dir);
+        if (dir_content) {
+          const langs_aux = await this.searchJsonFilesInDir(dir_content,dir);
 
-        for (const key in langs_aux) {
-            const element = langs_aux[key];
-            if (!resources[key]) resources[key] = {}
-            for (const i in element) {
-                if (element.hasOwnProperty(i)) {
-                    const item = element[i];
-                    try {
-                        const result = await fileUtility.readFileSync(item)
-                        resources[key] = {
-                            translation: JSON.parse(result)
-                        }
-                    } catch(err) {}
-                }
-            }
+          for (const key in langs_aux) {
+              const element = langs_aux[key];
+              if (!resources[key]) resources[key] = {}
+              for (const i in element) {
+                  if (element.hasOwnProperty(i)) {
+                      const item = element[i];
+                      try {
+                          const result = await fileUtility.readFileSync(item)
+                          resources[key] = {
+                              translation: JSON.parse(result)
+                          }
+                      } catch(err) {}
+                  }
+              }
+          }
         }
 
         try {
@@ -94,13 +96,17 @@ class I18nUtility {
 
         // @INFO: Asignando los valores de internacionalización desde el repositorio global
         const dir = fileUtility.readDirSync(full_dir_global);
-        langs_aux = await this.searchJsonFilesInDir(dir, full_dir_global);
-        await this.consolidateLangs(langs_aux);
+        if (dir) {
+          langs_aux = await this.searchJsonFilesInDir(dir, full_dir_global);
+          await this.consolidateLangs(langs_aux);
+        }
 
         // @INFO: Asignando los valores de internacionalización desde el repositorio local
         const dir_local = fileUtility.readDirSync(full_dir_local);
-        langs_aux = await this.searchJsonFilesInDir(dir_local,full_dir_local);
-        await this.consolidateLangs(langs_aux);
+        if (dir_local) {
+          langs_aux = await this.searchJsonFilesInDir(dir_local,full_dir_local);
+          await this.consolidateLangs(langs_aux);
+        }
 
         // @INFO: Uniendo los valores de internacionalización
         for (const key in this.langs) {

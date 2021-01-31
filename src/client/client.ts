@@ -1,4 +1,5 @@
-#!/usr/bin/env ts-node -r tsconfig-paths/register
+#!/usr/bin/env ts-node
+require('module-alias/register')
 const argv = require('minimist')(process.argv.slice(2));
 
 // @import config

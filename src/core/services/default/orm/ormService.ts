@@ -149,17 +149,19 @@ class OrmService {
     if (path_type) {
       if (path_type === fileUtility.TARGET_DIRECTORY) {
         const files = fileUtility.readDirSync(dir_path);
-        files.map((file) => {
-          const full_path = `${dir_path}/${file}`;
+        if (files && files.length > 0) {
+          files.map((file) => {
+            const full_path = `${dir_path}/${file}`;
 
-          const models_aux = this.getModelsReference(full_path);
+            const models_aux = this.getModelsReference(full_path);
 
-          models_aux.map((model) => {
-              const _model = { full_path: full_path };
-              Object.assign(_model,model);
-              models.push(_model);
+            models_aux.map((model) => {
+                const _model = { full_path: full_path };
+                Object.assign(_model,model);
+                models.push(_model);
+            })
           })
-        })
+        }
       } else if (path_type === fileUtility.TARGET_FILE) {
         const file = dir_path;
 
