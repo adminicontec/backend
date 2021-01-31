@@ -1,5 +1,26 @@
 # Scaffolding Nodejs
 
+## Dependencias
+
+Para la implementación de este framework se requiere tener instalado en la máquina local los siguientes paquetes de software:
+
+- **Git**: La documuentación oficial se puede encontrar acá https://git-scm.com/
+
+- **NodeJS**: Se recomienda trabajar con la versión 10.15.3 o superior https://nodejs.org/es/
+
+- **NPM**: Se recomienda trabajar con la versión 6.4.1 o superior
+
+- **TypeScript y TypeScript Node**:
+
+```
+$ npm install -g typescript ts-node
+```
+
+- **Types node**:
+
+```
+$ npm install -g @types/node
+```
 
 ## Instalación y configuración
 
@@ -11,7 +32,7 @@
   ```
   touch ./src/config/env.json
   ```
-- Inicializar el archivo de configuración ``env.json```
+- Inicializar el archivo de configuración ``env.json``
   ```
   {
     "environment": "dev"
