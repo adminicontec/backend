@@ -59,6 +59,32 @@
         "post_date_required": "Fecha de publicación requerida",
         "event_date_required": "Fecha del evento requerida"
       }
+    },
+    "forum": {
+      "category": {
+        "not_found": "La categoria del foro no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una categoria con el nombre :name"
+        }
+      },
+      "location": {
+        "not_found": "La ubicación de foro no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una ubicación con el nombre :name"
+        }
+      },
+      "forum": {
+        "not_found":"El foro no ha sido encontrado",
+        "post_date_required": "Fecha de publicación requerida"
+      },
+      "message": {
+        "invalid": "El mensaje no es valido, debes escribir un mensaje o un adjunto",
+        "not_found": "El mensaje no ha sido encontrado",
+        "delete": {
+          "only_my_messages": "Solo puedo eliminar mensajes que me pertenecen",
+          "fail_action": "Ha ocurrido un error al borrar el mensaje"
+        }
+      }
     }
   }
 }

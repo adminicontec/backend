@@ -2,7 +2,6 @@
 // @end
 
 // @import services
-import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
@@ -15,17 +14,17 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Post, PostCategory, PostLocation, PostType} from '@scnode_app/models'
+import {Forum, ForumCategory, ForumLocation} from '@scnode_app/models'
 // @end
 
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {IPost, IPostDelete, IPostQuery, IPostLocations} from '@scnode_app/types/default/admin/post/postTypes'
+import {IForum, IForumDelete, IForumQuery, IForumLocations} from '@scnode_app/types/default/admin/forum/forumTypes'
 // @end
 
-class PostService {
+class ForumService {
 
-  private default_cover_path = 'posts'
+  private default_cover_path = 'forums'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -49,12 +48,11 @@ class PostService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations'
+      let select = 'id title description coverUrl postDate isActive tags locations'
       if (params.query === QueryValues.ALL) {
-        const registers: any = await Post.find(where)
-        .populate({path: 'postType', select: 'id name'})
+        const registers: any = await Forum.find(where)
         .populate({path: 'tags', select: 'id name'})
-        .populate({path: 'locations.postLocation', select: 'id name'})
+        .populate({path: 'locations.forumLocation', select: 'id name'})
         .select(select)
         .lean()
 
@@ -65,12 +63,12 @@ class PostService {
         }
 
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-          posts: registers
+          forums: registers
         }})
       } else if (params.query === QueryValues.ONE) {
-        const register: any = await Post.findOne(where)
-        .populate({path: 'postType', select: 'id name'})
+        const register: any = await Forum.findOne(where)
         .populate({path: 'tags', select: 'id name'})
+        .populate({path: 'locations.forumLocation', select: 'id name'})
         .select(select)
         .lean()
 
@@ -78,9 +76,9 @@ class PostService {
           register.coverUrl = this.coverUrl(register)
         }
 
-        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.not_found'})
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'forum.forum.not_found'})
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-          post: register
+          forum: register
         }})
       }
 
@@ -95,11 +93,9 @@ class PostService {
    * @param params Elementos a registrar
    * @returns
    */
-  public insertOrUpdate = async (params: IPost) => {
+  public insertOrUpdate = async (params: IForum) => {
 
     try {
-
-      let postType = null
 
       // @INFO: Cargando imagen al servidor
       if (params.cover) {
@@ -110,28 +106,16 @@ class PostService {
       }
 
       if (params.id) {
-        const register: any = await Post.findOne({_id: params.id}).lean()
-        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.not_found'})
+        const register: any = await Forum.findOne({_id: params.id}).lean()
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'forum.forum.not_found'})
 
-        if (params.postType) {
-          const postTypeResponse: any = await postTypeService.findBy({query: QueryValues.ONE, where: [{field: "_id", value: params.postType}]})
-          if (postTypeResponse.status === 'error') return postTypeResponse
-          postType = postTypeResponse.postType
-
-          if (postType.name === 'news') {
-            if (!params.postDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.post_date_required'})
-          } else if (postType.name === 'event') {
-            if (!params.eventDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.event_date_required'})
-          }
-        }
-
-        // @INFO: Actualizando ubicaciones de la publicación
+        // @INFO: Actualizando ubicaciones del foro
         if (params.locations && params.locations.length > 0) {
-          let oldLocations: IPostLocations[] = register.locations
+          let oldLocations: IForumLocations[] = register.locations
           if (oldLocations && Array.isArray(oldLocations) && oldLocations.length > 0) {
             for await (const location of params.locations) {
               if (!location.viewCounter) {
-                let findIndex = oldLocations.findIndex((ol) => location.postLocation.toString() === ol.postLocation.toString())
+                let findIndex = oldLocations.findIndex((ol) => location.forumLocation.toString() === ol.forumLocation.toString())
                 if (findIndex !== -1) {
                   location.viewCounter = (oldLocations[findIndex].viewCounter) ? oldLocations[findIndex].viewCounter : 0
                 }
@@ -139,10 +123,10 @@ class PostService {
             }
           }
         } else if (params.location) {
-          // @INFO: Actualizando ubicación de la publicación
+          // @INFO: Actualizando ubicación del foro
           params.locations = [...register.locations]
           if (params.locations && Array.isArray(params.locations) && params.locations.length > 0) {
-            let findIndex = params.locations.findIndex((ol) => params.location.postLocation.toString() === ol.postLocation.toString())
+            let findIndex = params.locations.findIndex((ol) => params.location.forumLocation.toString() === ol.forumLocation.toString())
             if (findIndex !== -1) {
               if (params.location.viewCounter === 0) {
                 params.locations[findIndex].viewCounter = 0
@@ -153,18 +137,17 @@ class PostService {
           }
         }
 
-        const response: any = await Post.findByIdAndUpdate(params.id, params, {
+        const response: any = await Forum.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
           new: true,
           lean: true,
         })
-        await PostType.populate(response, {path: 'postType', select: 'id name'})
-        await PostCategory.populate(response, {path: 'tags', select: 'id name'})
-        await PostLocation.populate(response, {path: 'locations.postLocation', select: 'id name'})
+        await ForumCategory.populate(response, {path: 'tags', select: 'id name'})
+        await ForumLocation.populate(response, {path: 'locations.forumLocation', select: 'id name'})
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            post: {
+            forum: {
               ...response,
               coverUrl: this.coverUrl(response),
             }
@@ -172,26 +155,17 @@ class PostService {
         })
 
       } else {
-        const postTypeResponse: any = await postTypeService.findBy({query: QueryValues.ONE, where: [{field: "_id", value: params.postType}]})
-        if (postTypeResponse.status === 'error') return postTypeResponse
-        postType = postTypeResponse.postType
+        if (!params.postDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'forum.forum.post_date_required'})
 
-        if (postType.name === 'news') {
-          if (!params.postDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.post_date_required'})
-        } else if (postType.name === 'event') {
-          if (!params.eventDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.event_date_required'})
-        }
-
-        const {_id} = await Post.create(params)
-        const response: any = await Post.findOne({_id})
-        .populate({path: 'postType', select: 'id name'})
+        const {_id} = await Forum.create(params)
+        const response: any = await Forum.findOne({_id})
         .populate({path: 'tags', select: 'id name'})
-        .populate({path: 'locations.postLocation', select: 'id name'})
+        .populate({path: 'locations.forumLocation', select: 'id name'})
         .lean()
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            post: {
+            forum: {
               ...response,
               coverUrl: this.coverUrl(response),
             }
@@ -205,8 +179,8 @@ class PostService {
   }
 
   /**
-   * Metodo que convierte el valor del cover de una publicación a la URL donde se aloja el recurso
-   * @param {config} Objeto con data del AcademicComponent
+   * Metodo que convierte el valor del cover de un foro a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del Forum
    */
   public coverUrl = ({ coverUrl }) => {
     return coverUrl && coverUrl !== ''
@@ -219,10 +193,10 @@ class PostService {
    * @param params Filtros para eliminar
    * @returns
    */
-  public delete = async (params: IPostDelete) => {
+  public delete = async (params: IForumDelete) => {
     try {
-      const find: any = await Post.findOne({ _id: params.id })
-      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'post.post.not_found' })
+      const find: any = await Forum.findOne({ _id: params.id })
+      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'forum.forum.not_found' })
 
       await find.delete()
 
@@ -237,14 +211,14 @@ class PostService {
    * @param [filters] Estructura de filtros para la consulta
    * @returns
    */
-  public list = async (filters: IPostQuery = {}) => {
+  public list = async (filters: IForumQuery = {}) => {
 
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags'
+    let select = 'id title description coverUrl postDate isActive tags locations'
     if (filters.select) {
       select = filters.select
     }
@@ -266,29 +240,16 @@ class PostService {
       where['isActive'] = true
     }
 
-    if (filters.postType && Array.isArray(filters.postType) && filters.postType.length > 0) {
-      const categories = await PostType.find({name: {$in: filters.postType}}).select('id').lean()
-      if (categories && categories.length > 0) {
-        where['postType'] = {$in: categories.map((c) => c._id)}
-      }
-    }
-
     if (filters.postDate) {
       where['postDate'] = {$gte: new Date(filters.postDate)}
     }
 
-    if (filters.eventDate) {
-      where['eventDate'] = {$gte: new Date(filters.eventDate)}
-    }
-
-    // TODO: Consultar publicaciones por ubicación
-
     let registers = []
     try {
-      registers =  await Post.find(where)
+      registers =  await Forum.find(where)
       .select(select)
-      .populate({path: 'postType', select: 'id name'})
       .populate({path: 'tags', select: 'id name'})
+      .populate({path: 'locations.forumLocation', select: 'id name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
       .sort({created_at: -1})
@@ -303,10 +264,10 @@ class PostService {
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
-        posts: [
+        forums: [
           ...registers
         ],
-        total_register: (paging) ? await Post.find(where).count() : 0,
+        total_register: (paging) ? await Forum.find(where).count() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
@@ -315,5 +276,5 @@ class PostService {
 
 }
 
-export const postService = new PostService();
-export { PostService as DefaultAdminPostPostService };
+export const forumService = new ForumService();
+export { ForumService as DefaultAdminForumForumService };

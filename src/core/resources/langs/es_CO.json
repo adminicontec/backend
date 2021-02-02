@@ -1,0 +1,198 @@
+{
+	"empty": "vacio",
+	"error_messages": {
+		"http": {
+			"404": "La ruta que buscas no existe",
+			"505": "Hemos encontrado un error en la petición"
+		},
+		"fail_request_message": "Se ha presentado un error en la petición",
+		"jwt": {
+			"unauthorized_header_message": "No estás autorizado para ingresar",
+			"token_expired_message": "La sesión ha expirado",
+			"token_invalid_message": "La sesión ha expirado"
+		},
+		"database": {
+			"driver_invalid": "El motor de base de datos no es válido",
+			"driver_required": "El motor de base de datos es obligatorio",
+			"orm": {
+				"failed_creation"   : "Se ha presentado un error al crear el registro",
+				"failed_update"     : "Se ha presentado un error al actualizar el registro",
+				"register_not_found": "No hemos podido encontrar lo que buscas",
+				"failed_query"      : "Se ha presentado un error al realizar la consulta",
+				"failed_removal"    : "Se ha presentado un error al eliminar el registro"
+			},
+			"seeder": {
+				"executed_previously": "El seeder ya ha sido ejecutado anteriormente"
+			}
+		},
+		"version_in_request_invalid": "La versión del proyecto no es válida",
+		"middleware_not_found": "El middleware que buscas no ha sido encontrado",
+		"utility_not_found": "La utilidad que buscas no ha sido encontrado",
+		"upload_files": {
+			"file_upload_already_exist": "El archivo que intentas cargar ya existe",
+			"file_size_invalid": "El tamaño del archivo no puede superar :file_size",
+			"file_mime_type_invalid": "El tipo de archivo debe ser :file_mime_type",
+			"upload_file_failed": "No se ha podido cargar el archivo"
+		},
+		"fields_in_request": {
+			"invalid_request_fields"   : "Los campos de la solicitud no son válidos",
+			"field_required"           : "El campo :field es obligatorio",
+			"field_value_invalid"      : "El valor del campo :field no puede ser :value",
+			"field_value_only_accepted": "El valor del campo :field solo puede ser :values_accepted",
+			"field_value_type_invalid": {
+				"general": "El valor del campo :field no tiene el formato correcto",
+				"email"  : "El valor del campo :field no es un email válido",
+				"number" : "El valor del campo :field debe ser un numero",
+				"array" : "El valor del campo :field debe ser un array",
+				"string" : "El valor del campo :field debe ser una cadena de texto",
+				"boolean" : "El valor del campo :field debe ser un valor booleano",
+				"file" : "El valor del campo :field debe ser un archivo",
+				"object": "El valor del campo :field debe ser un objeto"
+			}
+		},
+		"attached": {
+			"driver_required"      : "Debes escoger un servicio para la carga de archivos antes de continuar",
+			"driver_invalid"       : "El metodo de carga de archivos no esta soportado, por favor intenta con otro",
+			"configuration_invalid": "Debes proveer una configuración de carga de archivos valida para el driver seleccionado",
+			"failed"               : "Se ha presentado un error al cargar el archivo"
+		},
+		"mailer": {
+			"driver_required"         : "Debes escoger un servicio para el envío de emails antes de continuar",
+			"driver_invalid"          : "El metodo de envio de email no esta soportado, por favor intenta con otro",
+			"configuration_invalid"   : "Debes proveer una configuración de email valida para el driver seleccionado",
+			"mailer_fail_request"     : "Se ha presentado un error al enviar el mensaje",
+			"mail_content_required"   : "El contenido del mensaje es obligatorio",
+			"mail_content_invalid"    : "El contenido del mensaje es inválido",
+			"mail_to_required"        : "Debes proporcionar al menos un receptor del mensaje",
+			"mail_to_invalid"         : "El (los) receptor(es) del mensaje no es(son) valido(s)",
+			"mail_cc_invalid"         : "El (los) receptor(es) copiado(s) del mensaje no es(son) valido(s)",
+			"mail_bcc_invalid"        : "El (los) receptor(es) copiado(s) oculto(s) del mensaje no es(son) valido(s)",
+			"mail_subject_required"   : "El asunto del mensaje es obligatorio",
+			"mail_subject_invalid"    : "El asunto del mensaje es inválido",
+			"mail_attachments_invalid": "Los adjuntos al mensaje son inválidos",
+			"mail_from_invalid"       : "La direccion de email de quien envia el mensaje es inválida"
+		},
+		"sms": {
+			"driver_required"            : "Debes escoger un servicio para el envío de sms antes de continuar",
+			"driver_invalid"             : "El metodo de envio de sms no esta soportado, por favor intenta con otro",
+			"configuration_invalid"      : "Debes proveer una configuración de sms valida para el driver seleccionado",
+			"fail_request"               : "Se ha presentado un error al enviar el mensaje",
+			"sms_message_required"       : "El mensaje es requerido",
+			"sms_message_invalid_length" : "La longitud del mensaje no debe superar los 255 caracteres",
+			"sms_number_required"        : "El número telefónico es requerido",
+			"sms_number_invalid" 		 : "El número telefónico es invalido",
+			"sms_country_code_required"  : "El indicativo del país es requerido",
+			"sms_country_code_invalid"   : "El indicativo del país es invalido"
+		},
+		"external_connection": {
+			"external_connection_method_not_found": "El método que intentas buscar no existe"
+		},
+		"re_doc": {
+			"file_build_error"      : "Se ha presentado un error al construir el archivo :file",
+			"section_already_exists": "La sección que intentas crear ya existe, si deseas sobrescribir puedes usar el parametro --force",
+			"template_not_found"    : "No hemos encontrado el template requerido para generar la sección",
+			"section_title_invalid" : "No has proporcionado el titulo de la sección valida (Ex: --section_title users)",
+			"component_required"    : "No has proporcionado un componente (Ex: --component parameters)",
+			"component_invalid"     : "No has proporcionado un componente valido. Solo una de estas opciones es permitida :components_available",
+			"section_required"       : "No has proporcionado la sección que quieres agregar (Ex: --section info)",
+			"section_invalid"        : "No has proporcionado una seccion valida. Solo una de estas opciones es permitida :sections_available",
+			"documentation_not_found": "No hemos encontrado documentación"
+		},
+		"plugins": {
+			"failed_to_install_the_plugin"     : "Ha ocurrido un problema al instalar el plugin",
+			"plugin_has_already_been_installed": "El plugin ya ha sido instalado previamente",
+			"controller_already_exist"         : "Hemos encontrado que ya existe un controlador :controller_path por lo tanto no es posible realizar la instalación",
+			"model_already_exist"              : "Hemos encontrado que ya existe un modelo :model_full_name por lo tanto no es posible realizar la instalación",
+			"migration_already_exist"          : "Hemos encontrado que ya existe una migración :migration_full_name por lo tanto no es posible realizar la instalación"
+		},
+		"auth": {
+			"password_invalid"            : "La contraseña no coincide",
+			"user_not_found"              : "No hay ningún usuario con estas credenciales",
+			"token_update_is_not_possible": "No es posible actualizar el token",
+			"access_denied"               : "No tienes permiso de ingresar"
+		},
+		"user": {
+			"user_create_already_exist": "El usuario que intentas crear ya existe",
+			"user_create_failed"       : "Ha ocurrido un error al crear el usuario",
+			"user_no_found"       	   : "Usuario no encontrado"
+		},
+		"roles": {
+			"name_label"               : "identificador del rol",
+			"display_name_label"       : "nombre del rol",
+			"role_create_already_exist": "El rol que intentas crear ya existe",
+			"role_create_failed"       : "Ha ocurrido un error al crear el rol"
+		},
+		"permissions": {
+			"name_label"                     : "identificador del permiso",
+			"display_name_label"             : "nombre del permiso",
+			"permission_create_already_exist": "El permiso que intentas crear ya existe",
+			"permission_create_failed"       : "Ha ocurrido un error al crear el permiso",
+			"parent_id_not_found"            : "No hemos encontrado el permiso padre"
+		},
+		"role_permission": {
+			"primary_register_not_found"    : "No hemos encontrado el registro que buscas",
+			"role_permission_fail_query"    : "Se ha presentado un error inesperado",
+			"role_permission_already_exists": "Esta relación ya existe"
+		},
+		"role_user": {
+			"primary_register_not_found": "No hemos encontrado el registro que buscas",
+			"role_user_fail_query"      : "Se ha presentado un error inesperado",
+			"role_user_already_exists"  : "Esta relación ya existe"
+		},
+		"aws": {
+			"config_invalid": "La configuración de Amazon es invalida",
+			"s3": {
+				"config_invalid": "La configuración del bucket de Amazon S3 es invalida"
+			},
+			"ses": {
+				"config_invalid": "La configuración de Amazon SES es invalida"
+			}
+		},
+		"ftp": {
+			"config_invalid": "La configuración de FTP es invalida"
+		},
+		"query": {
+			"invalid_connection_settings"   : "La configuración de conexión no es valida",
+			"connection_to_server_not_found": "No hemos encontrado una conexión externa"
+		},
+		"orm": {
+			"model_already_exists": "El modelo que intentas crear ya existe",
+			"migration_already_exists": "La migración que intentas crear ya existe",
+			"migrations_not_enabled": "Las migraciones no están habilitadas",
+			"failed_to_create_migration": "Ha ocurrido un error al generar la migración"
+		},
+		"pdf": {
+			"html_pdf": {
+				"fail_to_generate": "Se ha presentado un error al generar el PDF",
+				"file_config_required": "La configuración de archivo no es valida",
+				"file_not_found": "El archivo que buscas no existe",
+				"content_config_required": "La configuración del contenido no es valida"
+			}
+		}
+	},
+	"success_messages": {
+		"framework_default_success"     : "Framework success",
+		"request_success_message" : "Success",
+		"file_upload_successfully": "El archivo se ha cargado satisfactoriamente",
+		"mailer"                  : {
+			"mail_send_successfully": "El email se ha enviado correctamente"
+		},
+		"database": {
+			"seeder": {
+				"executed_successfully": "El seeder fue ejecutado satisfactoriamente",
+				"executed_warning": "El seeder se ejecutó pero su respuesta fue FALSE"
+			}
+		}
+	},
+	"labels": {
+		"first_name_label": "Nombres",
+		"last_name_label" : "Apellidos",
+		"email_label"     : "Email",
+        "password_label"  : "Contraseña",
+        "time": {
+            "hours": "horas",
+            "minutes": "minutos",
+            "seconds": "segundos"
+        }
+	}
+}

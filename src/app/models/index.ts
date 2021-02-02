@@ -1,4 +1,8 @@
 // @import_models
+import { ForumLocationModel } from "@scnode_app/models/forumLocationModel";
+import { ForumCategoryModel } from "@scnode_app/models/forumCategoryModel";
+import { ForumMessageModel } from "@scnode_app/models/forumMessageModel";
+import { ForumModel } from "@scnode_app/models/forumModel";
 import { AppModulePermissionModel } from "@scnode_app/models/appModulePermissionModel";
 import { AppModuleModel } from "@scnode_app/models/appModuleModel";
 import { RoleModel } from "@scnode_app/models/roleModel";
@@ -12,6 +16,10 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const ForumLocation = ForumLocationModel
+export const ForumCategory = ForumCategoryModel
+export const ForumMessage = ForumMessageModel
+export const Forum = ForumModel
 export const AppModulePermission = AppModulePermissionModel
 export const AppModule = AppModuleModel
 export const Role = RoleModel

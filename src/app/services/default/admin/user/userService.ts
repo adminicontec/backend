@@ -1,5 +1,7 @@
 // @import_dependencies_node Import libraries
 import bcrypt from "bcrypt-nodejs";
+import moment from 'moment';
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -20,7 +22,7 @@ import {Country, Role, User} from '@scnode_app/models'
 
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {IUser, IUserDelete, IUserQuery} from '@scnode_app/types/default/admin/user/userTypes'
+import {IUser, IUserDelete, IUserQuery, IUserDateTimezone} from '@scnode_app/types/default/admin/user/userTypes'
 // @end
 class UserService {
 
@@ -304,6 +306,44 @@ class UserService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+	 * Metodo que permite convertir una fecha segun el timezone del usuario
+	 * @param data Información a convertir
+	 * @returns
+	 */
+	public getDateByUserTimezone = async (params: IUserDateTimezone) => {
+    let user = null
+
+    const userIsObjectId = await ObjectID.isValid(params.user)
+    if (typeof params.user === 'string' || userIsObjectId) {
+      user = await User.findOne({_id: params.user})
+      .select('id profile.timezone profile.culture')
+      .lean()
+      // if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+    } else {
+      user = params.user
+    }
+
+    if (user && user.profile && user.profile.culture) {
+      moment.locale(user.profile.culture)
+    }
+
+    let timezone = 'GMT-5'
+    if (user && user.profile && user.profile.timezone) {
+      timezone = user.profile.timezone
+    }
+    timezone = timezone.replace('GMT','')
+
+    let momentDate = null
+    if (params.date) {
+      momentDate = moment.utc(params.date).utcOffset(parseInt(timezone))
+    } else {
+      momentDate = moment.utc().utcOffset(parseInt(timezone))
+    }
+
+    return moment.utc(momentDate.format('YYYY-MM-DD HH:mm:ss'))
   }
 
 }

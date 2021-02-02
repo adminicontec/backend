@@ -14,6 +14,8 @@ import {countryService} from '@scnode_app/services/default/admin/country/country
 
 import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
 import {postLocationService} from '@scnode_app/services/default/admin/post/postLocationService'
+
+import {forumLocationService} from '@scnode_app/services/default/admin/forum/forumLocationService'
 // @end
 
 // @import_utilitites Import utilities
@@ -52,6 +54,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // TODO: Agregar PostCategories
 
+    // @INFO: Agregando tipos de ubicaciones
+    let forum_location_ids = await this.addForumLocations()
 
     return false; // Always return true | false
   }
@@ -304,6 +308,33 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     }
     return post_location_ids
   }
+
+  /**
+   * Metodo que permite agregar ubicaciones de foros
+   * @returns
+   */
+  private addForumLocations = async () => {
+
+    let forum_location_ids = {}
+    const forum_locations = [
+      {name: 'student'},{name: 'teacher'},{name: 'guest'},
+    ]
+    for await (const forumLocation of forum_locations) {
+      const exists: any = await forumLocationService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: forumLocation.name}]
+      })
+      if (exists.status === 'success') forumLocation['id'] = exists.forumLocation._id
+
+      const response:any = await forumLocationService.insertOrUpdate(forumLocation)
+      if (response.status === 'success') {
+        forum_location_ids[forumLocation.name] = response.forumLocation._id
+      }
+    }
+    return forum_location_ids
+  }
+
+
   // @end
 }
 

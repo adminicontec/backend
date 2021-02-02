@@ -151,6 +151,72 @@ class ErrorResponse {
             "code": 400
           }
         }
+      },
+      "forum": {
+        "category": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.forum.category.not_found"),
+            "status_code": "forum_category_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.forum.category.insertOrUpdate.already_exists"),
+              "status_code": "forum_category_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "location": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.forum.location.not_found"),
+            "status_code": "forum_location_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.forum.location.insertOrUpdate.already_exists"),
+              "status_code": "forum_location_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "forum": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.forum.forum.not_found"),
+            "status_code": "forum_forum_not_found",
+            "code": 400
+          },
+          "post_date_required": {
+            "message": i18nUtility.__("app_error_messages.forum.forum.post_date_required"),
+            "status_code": "forum_forum_post_date_required",
+            "code": 400
+          }
+        },
+        "message": {
+          "invalid": {
+            "message": i18nUtility.__("app_error_messages.forum.message.invalid"),
+            "status_code": "forum_message_invalid",
+            "code": 400
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.forum.message.not_found"),
+            "status_code": "forum_message_not_found",
+            "code": 400
+          },
+          "delete": {
+            "only_my_messages": {
+              "message": i18nUtility.__("app_error_messages.forum.message.delete.only_my_messages"),
+              "status_code": "forum_message_delete_only_my_messages",
+              "code": 400
+            },
+            "fail_action": {
+              "message": i18nUtility.__("app_error_messages.forum.message.delete.fail_action"),
+              "status_code": "forum_message_delete_fail_action",
+              "code": 400
+            }
+          }
+        }
       }
     };
 

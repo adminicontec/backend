@@ -1,4 +1,9 @@
 // @import_routes
+import { forumDataRoute } from "@scnode_app/routes/default/data/forum/forumDataRoute";
+import { forumMessageRoute } from "@scnode_app/routes/default/events/forum/forumMessageRoute";
+import { forumRoute } from "@scnode_app/routes/default/admin/forum/forumRoute";
+import { forumLocationRoute } from "@scnode_app/routes/default/admin/forum/forumLocationRoute";
+import { forumCategoryRoute } from "@scnode_app/routes/default/admin/forum/forumCategoryRoute";
 import { authRoute } from "@scnode_app/routes/default/data/secure/auth/authRoute";
 import { countryRoute } from "@scnode_app/routes/default/admin/country/countryRoute";
 import { userRoute } from "@scnode_app/routes/default/admin/user/userRoute";
@@ -14,6 +19,11 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    forumDataRoute,
+    forumMessageRoute,
+    forumRoute,
+    forumLocationRoute,
+    forumCategoryRoute,
     authRoute,
     countryRoute,
     userRoute,

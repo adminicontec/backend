@@ -42,4 +42,9 @@ export interface IUserQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
 }
+
+export interface IUserDateTimezone {
+  date?: string // Fecha a convertir
+  user?: any | string // Objeto de clase User o Identificador de User
+}
 //@end
