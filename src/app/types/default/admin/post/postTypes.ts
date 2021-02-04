@@ -42,5 +42,6 @@ export interface IPostQuery {
   postType?: Array<string> // Tipo de publicación
   postDate?: string // Fecha de busqueda
   eventDate?: string // Fecha de busqueda
+  locations?: Array<string> // Lista de ubicaciones
 }
 //@end

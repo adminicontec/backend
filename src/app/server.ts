@@ -7,7 +7,7 @@ import 'module-alias/register';
 // @end
 
 // @import utilities
-// import {socketUtility} from "@scnode_core/utilities/socketUtility";
+import {socketUtility} from "@scnode_core/utilities/socketUtility";
 // @end
 
 // @import_config_files Import config files
@@ -67,6 +67,6 @@ if (server) {
     });
   })
 
-  // if (socket) socketUtility.connect(server); // Inicializando socket
+  if (socket) socketUtility.connect(server); // Inicializando socket
 }
 // @end

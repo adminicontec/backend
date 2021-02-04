@@ -281,7 +281,11 @@ class PostService {
       where['eventDate'] = {$gte: new Date(filters.eventDate)}
     }
 
-    // TODO: Consultar publicaciones por ubicación
+    if (filters.locations) {
+      let locations = await PostLocation.find({'name': {$in: filters.locations}}).select('id')
+      locations = locations.map((l) => l._id)
+      where['locations.postLocation'] = {$in: locations}
+    }
 
     let registers = []
     try {
@@ -289,6 +293,7 @@ class PostService {
       .select(select)
       .populate({path: 'postType', select: 'id name'})
       .populate({path: 'tags', select: 'id name'})
+      .populate({path: 'locations.postLocation', select: 'id name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
       .sort({created_at: -1})

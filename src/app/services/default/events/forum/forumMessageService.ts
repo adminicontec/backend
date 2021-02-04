@@ -14,6 +14,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import {socketUtility} from '@scnode_core/utilities/socketUtility'
 // @end
 
 // @import models
@@ -99,8 +100,7 @@ class ForumMessageService {
 
       // @INFO: Generando emision de socket
       if (params.socket_emit && response) {
-        // TODO: Implementar socket util
-        // socketUtility.emit('channel:new_message', messageProcess[0],`channel:${params.talk_channel}`)
+        socketUtility.emit('forum:new_message', messageProcess,`forum:${params.forum}`)
       }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {

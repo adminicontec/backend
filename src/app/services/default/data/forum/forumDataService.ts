@@ -13,7 +13,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Forum, ForumMessage } from '@scnode_app/models';
+import { Forum, ForumLocation, ForumMessage } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -71,7 +71,11 @@ class ForumDataService {
         where['postDate'] = {$gte: new Date(params.postDate)}
       }
 
-      // TODO: Buscar foros por localización
+      if (params.locations) {
+        let locations = await ForumLocation.find({'name': {$in: params.locations}}).select('id')
+        locations = locations.map((l) => l._id)
+        where['locations.forumLocation'] = {$in: locations}
+      }
 
       let registers = []
       try {

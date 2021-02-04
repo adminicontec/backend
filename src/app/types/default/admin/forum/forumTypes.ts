@@ -31,5 +31,6 @@ export interface IForumQuery {
   search?:string, // Busca sobre los campos de la coleccion
   isActive?: boolean // Estado del foro
   postDate?: string // Fecha de busqueda
+  locations?: Array<string> // Lista de ubicaciones
 }
 //@end

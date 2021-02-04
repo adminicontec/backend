@@ -244,6 +244,12 @@ class ForumService {
       where['postDate'] = {$gte: new Date(filters.postDate)}
     }
 
+    if (filters.locations) {
+      let locations = await ForumLocation.find({'name': {$in: filters.locations}}).select('id')
+      locations = locations.map((l) => l._id)
+      where['locations.forumLocation'] = {$in: locations}
+    }
+
     let registers = []
     try {
       registers =  await Forum.find(where)
