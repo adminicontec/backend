@@ -91,6 +91,27 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
+  curriculum_vitae: {
+    biography: { type: Schema.Types.String},
+    laboral_experience: [
+      {
+        company_position: { type: Schema.Types.String },
+        company: { type: Schema.Types.String },
+        start_date: { type: Schema.Types.Date },
+        end_date: { type: Schema.Types.Date },
+        currently: { type: Schema.Types.Boolean },
+      }
+    ],
+    academic_info: [
+      {
+        school: { type: Schema.Types.String },
+        degree: { type: Schema.Types.String },
+        start_date: { type: Schema.Types.Date },
+        end_date: { type: Schema.Types.Date },
+        currently: { type: Schema.Types.Boolean },
+      }
+    ]
+  }
   // @end
 }, {
   collection: 'users' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

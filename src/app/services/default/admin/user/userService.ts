@@ -150,6 +150,14 @@ class UserService {
             ...params.profile
           }
         }
+
+        if (params.curriculum_vitae) {
+          params.curriculum_vitae = {
+            ...register.curriculum_vitae,
+            ...params.curriculum_vitae
+          }
+        }
+
         const response: any = await User.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
           new: true,

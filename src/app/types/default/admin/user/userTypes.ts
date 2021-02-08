@@ -25,11 +25,32 @@ export interface IUser {
     city?: string, // Ciudad del usuario
     country?: string // Pais del usuario
   },
+  curriculum_vitae?: {
+    biography: string, // Biografia curriculo del usuario
+    laboral_experience?: ILaboralExperience[], // Array experiencia laboral del usuario
+    academic_info?: IAcademicInfo[] // Array grados academicos del usuario
+  },
   roles?: Array<string>, // Roles asignados al usuario
   createdBy?: string,
   lastModifiedBy?: string
   avatar?: string // Objeto de clase File que posee el archivo que sera cargado al servidor
   id?: string // Identificador del permiso
+}
+
+export interface ILaboralExperience {
+  company_position: string, // Nombre del cargo que ocupo en la empresa
+  company: string, // Empresa asociada al cargo
+  start_date: string, // Fecha de inicio del cargo
+  end_date: string, // Fecha de finalizacion del cargo
+  currently: boolean // INdicador booleano si se encuentra actualmente en ese cargo
+}
+
+export interface IAcademicInfo {
+  school: string, // Nombre del establecimiento educativo
+  degree: string, // Grado obtenido
+  start_date: string, // Fecha de inicio del cargo
+  end_date: string, // Fecha de finalizacion del cargo
+  currently: boolean // INdicador booleano si se encuentra actualmente en ese cargo
 }
 
 export interface IUserDelete {
