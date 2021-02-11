@@ -80,6 +80,17 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
         locations: [
           {postLocation: post_locations['guest'], viewCounter: 0}
         ]
+      },
+      {
+        title: "Investigación 1",
+        content: "Lorem ipsum, dolor sit amet consectetur adipisicing elit. Excepturi omnis tempora a labore suscipit cum amet recusandae tempore minima. Ab dolore quisquam necessitatibus labore eum perferendis cupiditate voluptate a ad!",
+        postType: post_types['research'],
+        postDate: "2021-02-11 10:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0}
+        ],
+        authors: ["Michael Schrage"]
       }
     ]
 

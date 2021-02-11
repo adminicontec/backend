@@ -59,6 +59,11 @@ const PostSchema = new Schema({
       ref: "PostCategory"
     }
   ],
+  authors: [
+    {
+      type: Schema.Types.String,
+    }
+  ],
   locations: [
     {
       postLocation: {

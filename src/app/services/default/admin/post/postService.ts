@@ -23,6 +23,8 @@ import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTyp
 import {IPost, IPostDelete, IPostQuery, IPostLocations} from '@scnode_app/types/default/admin/post/postTypes'
 // @end
 
+const POST_DATE = ['news', 'research']
+
 class PostService {
 
   private default_cover_path = 'posts'
@@ -118,7 +120,7 @@ class PostService {
           if (postTypeResponse.status === 'error') return postTypeResponse
           postType = postTypeResponse.postType
 
-          if (postType.name === 'news') {
+          if (POST_DATE.includes(postType.name)) {
             if (!params.postDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.post_date_required'})
           } else if (postType.name === 'event') {
             if (!params.eventDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.event_date_required'})
@@ -176,7 +178,7 @@ class PostService {
         if (postTypeResponse.status === 'error') return postTypeResponse
         postType = postTypeResponse.postType
 
-        if (postType.name === 'news') {
+        if (POST_DATE.includes(postType.name)) {
           if (!params.postDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.post_date_required'})
         } else if (postType.name === 'event') {
           if (!params.eventDate) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.event_date_required'})

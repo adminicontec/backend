@@ -21,6 +21,7 @@ export interface IPost {
   cover?: any // Objeto tipo file que contiene la imagen a cargar
   locations?: IPostLocations[] // Array con las ubicaciones de la publicación
   location?: IPostLocations // Array con las ubicaciones de la publicación
+  authors?: Array<string> // Array de los nombre de los autores
   id?: string // Identificador de la categoria
 }
 
