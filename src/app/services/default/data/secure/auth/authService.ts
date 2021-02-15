@@ -53,8 +53,8 @@ class AuthService {
 	private validateLogin = async ({ username, password }: LoginFields) => {
 		try {
 			const user_exist: any = await User.findOne({
-				userName: username
-			}).select('username email passwordHash profile.name profile.lastName profile.avatarImageUrl profile.culture profile.screen_mode roles')
+				username: username
+			}).select('username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles')
       .populate({
         path: 'roles',
         select: 'id name description'
@@ -98,7 +98,7 @@ class AuthService {
 			additional_parameters: {
 				user: {
 					id: user._id,
-					username: user.userName,
+					username: user.username,
 					profile: user.profile,
 					permissions: modules_permissions,
           avatar: userService.avatarUrl(user),

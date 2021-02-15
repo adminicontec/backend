@@ -9,7 +9,7 @@ export interface LoginFields {
 
 export interface UserFields {
   _id: string
-  userName: string
+  username: string
   profile: any,
   roles: Array<any>
 }

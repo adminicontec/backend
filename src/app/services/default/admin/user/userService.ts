@@ -99,7 +99,7 @@ class UserService {
     try {
 
       // TODO: Que va en los siguientes campos
-      // 1. normalizedUserName
+      // 1. normalizedusername
       // 2. normalizedEmail
       // 3. securityStamp
       // 4. concurrencyStamp
@@ -123,18 +123,18 @@ class UserService {
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
 
         // @INFO: Validando campos unicos
-        if (params.userName && params.email) {
+        if (params.username && params.email) {
           const exist = await User.findOne({
             $or: [
-              {userName: params.userName},
+              {username: params.username},
               {email: params.email},
             ],
             _id: {$ne: params.id}
            })
-           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.userName}|${params.email}`}} })
-        } else if (params.userName) {
-          const exist = await User.findOne({ userName: params.userName, _id: {$ne: params.id}})
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.userName}} })
+           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.username}|${params.email}`}} })
+        } else if (params.username) {
+          const exist = await User.findOne({ username: params.username, _id: {$ne: params.id}})
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.username}} })
         } else if (params.email) {
           const exist = await User.findOne({ email: params.email, _id: {$ne: params.id}})
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.email}} })
@@ -181,11 +181,11 @@ class UserService {
       } else {
         const exist = await User.findOne({
           $or: [
-            {userName: params.userName},
+            {username: params.username},
             {email: params.email},
           ]
          })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.userName}|${params.email}`}} })
+        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.username}|${params.email}`}} })
 
         if (!params.password) return responseUtility.buildResponseFailed("json", null, {error_key: "user.insertOrUpdate.password_required"});
 

@@ -3,7 +3,7 @@
 
 // @add your types
 export interface IUser {
-  userName?: string, // Nombre de usuario que es utilizado para iniciar sesión
+  username?: string, // Nombre de usuario que es utilizado para iniciar sesión
   normalizedUserName?: string,
   email?: string, // Correo electronico del usuario
   normalizedEmail?: string
@@ -19,8 +19,8 @@ export interface IUser {
   lockoutEnabled?: boolean,
   accessFailedCount?: number,
   profile?: {
-    name?: string, // Nombres del usuario
-    lastName?: string, // Apellidos del usuario
+    first_name?: string, // Nombres del usuario
+    last_name?: string, // Apellidos del usuario
     avatarImageUrl?: string, // Avatar del usuario
     city?: string, // Ciudad del usuario
     country?: string // Pais del usuario

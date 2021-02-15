@@ -476,12 +476,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let user_ids = {}
     const users = [
       {
-        userName: 'useradmin',
+        username: 'useradmin',
         password: '123456',
         email: 'useradmin@example.com',
         profile: {
-          name: 'User',
-          lastName: 'Admin'
+          first_name: 'User',
+          last_name: 'Admin'
         },
         roles: [
           role_ids['admin']

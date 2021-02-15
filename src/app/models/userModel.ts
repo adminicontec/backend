@@ -6,7 +6,7 @@ const { Schema } = mongoose;
 
 const UserSchema = new Schema({
   // @add_schema Add schema here
-  userName: {
+  username: {
     type:  Schema.Types.String,
     required: true,
   },
@@ -59,10 +59,10 @@ const UserSchema = new Schema({
     default: 0
   },
   profile: {
-    name: {
+    first_name: {
       type:  Schema.Types.String
     },
-    lastName: {
+    last_name: {
       type:  Schema.Types.String
     },
     avatarImageUrl: {
