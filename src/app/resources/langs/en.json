@@ -84,6 +84,12 @@
           "only_my_messages": "Solo puedo eliminar mensajes que me pertenecen",
           "fail_action": "Ha ocurrido un error al borrar el mensaje"
         }
+      },
+      "skylltype": {
+        "not_found":"The skill type has not been found",
+        "insertOrUpdate": {
+          "already_exists": "The skill type name :name is already taken"
+        }
       }
     }
   }

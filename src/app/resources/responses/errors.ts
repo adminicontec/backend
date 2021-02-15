@@ -217,6 +217,20 @@ class ErrorResponse {
             }
           }
         }
+      },
+      "skillType": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.skilltype.not_found"),
+          "status_code": "skill_type_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.skilltype.insertOrUpdate.already_exists"),
+            "status_code": "skill_type_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
       }
     };
 
