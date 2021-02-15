@@ -85,6 +85,12 @@
           "fail_action": "Ha ocurrido un error al borrar el mensaje"
         }
       }
+    },
+    "skylltype": {
+      "not_found":"El tipo de habilidad no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un tipo de habilidad con el nombre :name"
+      }
     }
   }
 }

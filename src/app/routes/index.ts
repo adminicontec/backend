@@ -1,4 +1,5 @@
 // @import_routes
+import { skillTypeRoute } from "@scnode_app/routes/default/admin/user/skillTypeRoute";
 import { postDataRoute } from "@scnode_app/routes/default/data/post/postDataRoute";
 import { forumDataRoute } from "@scnode_app/routes/default/data/forum/forumDataRoute";
 import { forumMessageRoute } from "@scnode_app/routes/default/events/forum/forumMessageRoute";
@@ -20,6 +21,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    skillTypeRoute,
     postDataRoute,
     forumDataRoute,
     forumMessageRoute,
