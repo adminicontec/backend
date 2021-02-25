@@ -28,8 +28,8 @@ class UserMiddleware {
     const {profile} = req.getParameters.all();
     if (profile && typeof profile === 'object') {
       const response = await requestUtility.validator(profile,req.files,[
-        {key: "name", label: "Nombre"},
-        {key: "lastName", label: "Apellidos"},
+        {key: "first_name", label: "Nombre"},
+        {key: "last_name", label: "Apellidos"},
       ]);
       if (response.hasError === true) {
         return responseUtility.buildResponseFailed('http',res,{
@@ -40,7 +40,7 @@ class UserMiddleware {
     }
 
 		const fields_config: ValidatorRequest[] = [
-      { key: 'userName', label: 'Nombre de usuario'},
+      { key: 'username', label: 'Nombre de usuario'},
       { key: 'password', label: 'Contraseña'},
       { key: 'email', label: 'Correo electronico'},
 		];
