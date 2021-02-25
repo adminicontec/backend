@@ -491,13 +491,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     for await (const user of users) {
       const exists: any = await userService.findBy({
         query: QueryValues.ONE,
-        where: [{field: 'userName', value: user.userName}]
+        where: [{field: 'username', value: user.username}]
       })
       if (exists.status === 'success') user['id'] = exists.user._id
 
       const user_response:any = await userService.insertOrUpdate(user)
       if (user_response.status === 'success') {
-        user_ids[user.userName] = user_response.user._id
+        user_ids[user.username] = user_response.user._id
       }
     }
     return user_ids
