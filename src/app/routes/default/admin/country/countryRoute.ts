@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminCountryCountryController as Controller } from "@scnode_app/controllers/default/admin/country/countryController.ts";
+import { DefaultAdminCountryCountryController as Controller } from "@scnode_app/controllers/default/admin/country/countryController";
 // @end
 
 // @import_utilities Import utilities

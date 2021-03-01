@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultDataSecureAuthAuthController as Controller } from "@scnode_app/controllers/default/data/secure/auth/authController.ts";
+import { DefaultDataSecureAuthAuthController as Controller } from "@scnode_app/controllers/default/data/secure/auth/authController";
 // @end
 
 // @import_utilities Import utilities

@@ -70,7 +70,8 @@ class SocketUtility {
 
       try {
         // @init_events_by_clasess
-        const _events = require('../../app/events/socketio');
+        const base_dir = __dirname.split('core');
+        const _events  = require(`${base_dir[0]}app/events/socketio/index`);
         for (const key in _events.events) {
           if (_events.events.hasOwnProperty(key)) {
             const element = _events.events[key];
@@ -157,4 +158,4 @@ class SocketUtility {
 }
 
 export const socketUtility = new SocketUtility();
-export { SocketUtility, ISocketioOptions }
+export { SocketUtility }

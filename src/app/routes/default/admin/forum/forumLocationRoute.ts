@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminForumForumLocationController as Controller } from "@scnode_app/controllers/default/admin/forum/forumLocationController.ts";
+import { DefaultAdminForumForumLocationController as Controller } from "@scnode_app/controllers/default/admin/forum/forumLocationController";
 // @end
 
 // @import_utilities Import utilities

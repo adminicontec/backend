@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminSecureRoleController as Controller } from "@scnode_app/controllers/default/admin/secure/roleController.ts";
+import { DefaultAdminSecureRoleController as Controller } from "@scnode_app/controllers/default/admin/secure/roleController";
 // @end
 
 // @import_utilities Import utilities

@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultDataForumForumDataController as Controller } from "@scnode_app/controllers/default/data/forum/forumDataController.ts";
+import { DefaultDataForumForumDataController as Controller } from "@scnode_app/controllers/default/data/forum/forumDataController";
 // @end
 
 // @import_utilities Import utilities

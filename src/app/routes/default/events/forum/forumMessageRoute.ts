@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultEventsForumForumMessageController as Controller } from "@scnode_app/controllers/default/events/forum/forumMessageController.ts";
+import { DefaultEventsForumForumMessageController as Controller } from "@scnode_app/controllers/default/events/forum/forumMessageController";
 // @end
 
 // @import_utilities Import utilities

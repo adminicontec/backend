@@ -4,7 +4,7 @@ import cors from "cors";
 import * as bodyParser from "body-parser";
 import fileUpload from "express-fileupload";
 import expressLayouts from "express-ejs-layouts";
-import * as logger from "morgan";
+import logger from "morgan";
 // @end
 
 // @import_routes Import routes
@@ -25,7 +25,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import_config_files Import config files
-// import { environment } from "@scnode_core/config/globals";
+import { environment } from "@scnode_core/config/globals";
 // @end
 
 class App {
@@ -70,11 +70,11 @@ class App {
     this.app.use(expressLayouts);
     // @end
 
-    // // // @set_logger
-    // // if (environment === 'dev') {
-    // //     this.app.use(logger('dev'));
-    // // }
-    // // // @end
+    // @set_logger
+    if (environment === 'dev') {
+        this.app.use(logger('dev'));
+    }
+    // @end
 
     // @support_application
     this.app.use(bodyParser.json()); // support application/json type post data

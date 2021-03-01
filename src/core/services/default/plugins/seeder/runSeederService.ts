@@ -47,7 +47,7 @@ class RunSeederService {
             const file_parts = file.split('_');
             if (file_parts[1]) {
               let file_name = file_parts[1];
-              file_name = file_name.replace('.ts','');
+              file_name = file_name.replace(/\.ts|\.js$/,'');
               if (!params.class || (params.class && params.class === file_name)) {
                 const seeder_class = file_name.charAt(0).toUpperCase() + file_name.slice(1);
                 const seeder = require(`${item_directory}/${file}`)[file_name];

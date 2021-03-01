@@ -33,28 +33,29 @@ export const jwt_exp                        = {
     unity : (env.hasOwnProperty('jwt_exp') && env["jwt_exp"].hasOwnProperty('unity')) ? env['jwt_exp']["unity"]  : "days",
 }
 export const driver                  = (env.hasOwnProperty('database') && env['database'].hasOwnProperty('driver')) ? env['database']['driver'] : null;
-// export const dist_dir                = (env.hasOwnProperty('dist_dir')) ? env['dist_dir'] : 'dist';
 export const connection_data         = (driver && env['database'].hasOwnProperty(driver)) ? env['database'][driver] : {};
-// export const aws_config            = (env.hasOwnProperty('aws')) ? env['aws'] : {};
-// export const ftp_config            = (env.hasOwnProperty('ftp')) ? env['ftp'] : {};
-// export const mailer                = (env.hasOwnProperty('mailer')) ? env['mailer'] : {};
+export const aws_config            = (env.hasOwnProperty('aws')) ? env['aws'] : {};
+export const ftp_config            = (env.hasOwnProperty('ftp')) ? env['ftp'] : {};
+export const mailer                = (env.hasOwnProperty('mailer')) ? env['mailer'] : {};
 export const attached              = (env.hasOwnProperty('attached')) ? env['attached'] : {};
 export const external_api          = (env.hasOwnProperty('external_api')) ? env['external_api'] : {};
 export const main_external_api     = (env.hasOwnProperty('main_external_api')) ? env['main_external_api'] : null;
 export const server_access_control = (env.hasOwnProperty('server_access_control')) ? env['server_access_control'] : {};
-// export const sms_config            = (env.hasOwnProperty('sms')) ? env['sms'] : {};
+export const sms_config            = (env.hasOwnProperty('sms')) ? env['sms'] : {};
 export const customs               = (env.hasOwnProperty('customs')) ? env['customs'] : {};
 export const socket                = (env.hasOwnProperty('socket') && env['socket'] === true) ? {io: null, instance: null} : null;
 export const i18n_config           = (env.hasOwnProperty('i18n_config')) ? env['i18n_config'] : null;
 // export const i18n_global           = i18nUtility
-// export const pdf_config    = (env.hasOwnProperty('pdf')) ? env['pdf'] : null;
+export const pdf_config    = (env.hasOwnProperty('pdf')) ? env['pdf'] : null;
+export const xlsx_config           = (env.hasOwnProperty('xlsx')) ? env['xlsx'] : null
 export const router_prefix = (env.hasOwnProperty('router_prefix')) ? env['router_prefix'] : 'api';
 // @end
 
 // @export_globals
-export const orm                          = ormService;
-export const mongoose_global: any           = mongoose;
-export const Sequelize                    = require('sequelize');
+export const dist_dir             = 'dist';
+export const orm                  = ormService;
+export const mongoose_global: any = mongoose;
+export const Sequelize            = require('sequelize');
 // export const public_dir_absolute: string    = path.resolve("./public");
 // export const uploads_dir_absolute: string   = path.resolve("./public/uploads");
 export const global_extension_files: string = (environment === 'prod') ? 'js' : 'ts';

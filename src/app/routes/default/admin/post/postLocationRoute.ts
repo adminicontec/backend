@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminPostPostLocationController as Controller } from "@scnode_app/controllers/default/admin/post/postLocationController.ts";
+import { DefaultAdminPostPostLocationController as Controller } from "@scnode_app/controllers/default/admin/post/postLocationController";
 // @end
 
 // @import_utilities Import utilities

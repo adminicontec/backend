@@ -43,10 +43,10 @@ testem.log
 Thumbs.db
 
 # skip auto-build
-##/views
 /src/resources
+/src/views
 ##/public
-/public/uploads
+/public/*
 
 # skip CORE
 ##/core
@@ -55,6 +55,9 @@ Thumbs.db
 /src/config/cert.pem
 /src/config/key.pem
 /src/config/env.json
+/src/config/env.prod.json
+/src/config/env.qa.json
+/coreconfig.json
 ##/package.json
 ##/package-lock.json
 ##/tsconfig.json

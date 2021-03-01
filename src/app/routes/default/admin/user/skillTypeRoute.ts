@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminUserSkillTypeController as Controller } from "@scnode_app/controllers/default/admin/user/skillTypeController.ts";
+import { DefaultAdminUserSkillTypeController as Controller } from "@scnode_app/controllers/default/admin/user/skillTypeController";
 // @end
 
 // @import_utilities Import utilities

@@ -46,7 +46,7 @@
     "paths": {
         "*": ["./*"],
         "@scnode_app/*"       : ["app/*"],
-        // "@scnode_client/*"    : ["client/*"],
+        "@scnode_client/*"    : ["client/*"],
         "@scnode_config/*"    : ["config/*"],
         "@scnode_core/*"   : ["core/*"],
         // "@scnode_migrations/*": ["migrations/*"],
@@ -90,8 +90,8 @@
       "nodemon.json",
     //   "client",
     //   "core/client",
-      "migrations",
-      "seeders",
+    //   "migrations",
+    //   "seeders",
       "config/env.json"
   ]
 }

@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminForumForumCategoryController as Controller } from "@scnode_app/controllers/default/admin/forum/forumCategoryController.ts";
+import { DefaultAdminForumForumCategoryController as Controller } from "@scnode_app/controllers/default/admin/forum/forumCategoryController";
 // @end
 
 // @import_utilities Import utilities

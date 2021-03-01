@@ -29,5 +29,16 @@ export enum AttachedDriver {
   S3 = 's3',
   FTP = 'ftp'
 }
+
+export interface AttachedFtpConfig {
+  connections?: any
+}
+
+export type AttachedS3Config = {
+  credentials? : string;  // Llave de configuración de Amazon S3
+}
+export interface AttachedServerConfig {
+  base_path?: string
+}
 //@end
 

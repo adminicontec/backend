@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminPostPostCategoryController as Controller } from "@scnode_app/controllers/default/admin/post/postCategoryController.ts";
+import { DefaultAdminPostPostCategoryController as Controller } from "@scnode_app/controllers/default/admin/post/postCategoryController";
 // @end
 
 // @import_utilities Import utilities

@@ -13,6 +13,7 @@ import {i18nUtility} from '@scnode_core/utilities/i18nUtility'
 
 // @import services
 import {runSeederService} from '@scnode_core/services/default/plugins/seeder/runSeederService'
+import {runTaskService} from '@scnode_core/services/default/plugins/tasks/runTaskService'
 // @end
 
 class Client {
@@ -25,6 +26,9 @@ class Client {
     switch (argv['program']) {
       case 'seeder':
         await runSeederService.init(argv)
+        break;
+      case 'task':
+        await runTaskService.init(argv)
         break;
       default:
         consoleUtility.showErrorConsole(`El programa no es valido`)

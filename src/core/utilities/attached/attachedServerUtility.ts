@@ -14,13 +14,8 @@ import { host, public_dir } from "@scnode_core/config/globals";
 // @end
 
 // @import types
-import {UploadConfig} from "@scnode_core/types/default/attached/attachedTypes"
+import {UploadConfig, AttachedServerConfig} from "@scnode_core/types/default/attached/attachedTypes"
 // @end
-
-type AttachedServerConfig = {
-  base_path?: string
-}
-
 class AttachedServerUtility {
 
   /*===============================================

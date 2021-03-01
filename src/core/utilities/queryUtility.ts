@@ -84,4 +84,4 @@ class QueryUtility {
 }
 
 export const queryUtility = new QueryUtility();
-export { QueryUtility, HttpCustomStructure }
+export { QueryUtility }

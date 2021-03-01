@@ -3,7 +3,6 @@ import * as https from 'https';
 import * as http from 'http';
 import * as fs from 'fs';
 import notifier from 'node-notifier';
-import 'module-alias/register';
 // @end
 
 // @import utilities

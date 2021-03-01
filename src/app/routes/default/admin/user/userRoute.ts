@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminUserUserController as Controller } from "@scnode_app/controllers/default/admin/user/userController.ts";
+import { DefaultAdminUserUserController as Controller } from "@scnode_app/controllers/default/admin/user/userController";
 // @end
 
 // @import_utilities Import utilities

@@ -13,32 +13,9 @@ import { fileUtility } from "@scnode_core/utilities/fileUtility";
 import { driver, connection_data, global_extension_files } from '@scnode_core/config/globals';
 // @end
 
-type OrmMigrationOptions = {
-    revert?    : boolean;
-    revert_all?: boolean;
-    revert_to? : null | string;
-    create?    : string;
-    update?    : string;
-    model?     : string;
-}
-
-type OrmBuildParams = {
-  id?       : string | number,                                                // Identificador unico en Base de datos
-  where?    : Object,                                                         // Objeto de filtros para la consulta
-  fields?   : Object,                                                         // Campos para actualizar o insertar en base de datos
-  select?   : Array<{key: string, function?: string, alias?: string}> | null, // Campos a seleccionar de una consulta
-  relations?: Array<Object>,                                                  // Objeto que representa las relaciones en Base de datos
-  options?  : Object,                                                         // Opciones de configuracion adicionales
-  get_query?: boolean,                                                        // Boleano que indica si se retorna la query o los datos
-  sort?     : Array<{field: string, direction: string}> | null,               // Objeto que representa el orden de consulta
-  max?      : string,                                                         // Nombre del campo que se desea obtener
-}
-
-type OrmParameters = {
-  model: any,
-  parameters: Object
-}
-
+// @import types
+import {OrmBuildParams, OrmParameters} from "@scnode_core/types/default/orm/ormTypes"
+// @end
 class OrmService {
 
   private orm = 'orm'; // ORM Name
@@ -104,35 +81,15 @@ class OrmService {
    * @returns
    */
   public getModelInfo =  ( model_names: Array<String> = [] ) => {
-      const request_orm = this.getOrm('get-model-info');
-      if (request_orm.status === 'error') return request_orm;
+    const request_orm = this.getOrm('get-model-info');
+    if (request_orm.status === 'error') return request_orm;
 
-      const utility_instance = request_orm['utility_instance'];
-      const method_formated  = request_orm['method_formated'];
+    const utility_instance = request_orm['utility_instance'];
+    const method_formated  = request_orm['method_formated'];
 
-      const response = utility_instance[method_formated](model_names);
+    const response = utility_instance[method_formated](model_names);
 
-      return response;
-  }
-
-  /**
-   * Metodo que permite generar la estructura del archivo principal de modelos
-   * @param dir_path Directorio sobre el cual se buscaran los modelos
-   * @returns
-   */
-  public buildModels = async (dir_path) => {
-
-      const models = await this.getModelsReference(dir_path);
-
-      const request_orm = this.getOrm('generate-model-index-file');
-      if (request_orm.status === 'error') return request_orm;
-
-      const utility_instance = request_orm['utility_instance'];
-      const method_formated  = request_orm['method_formated'];
-
-      const response = await utility_instance[method_formated](models);
-
-      return response;
+    return response;
   }
 
   /**
@@ -156,9 +113,9 @@ class OrmService {
             const models_aux = this.getModelsReference(full_path);
 
             models_aux.map((model) => {
-                const _model = { full_path: full_path };
-                Object.assign(_model,model);
-                models.push(_model);
+              const _model = { full_path: full_path };
+              Object.assign(_model,model);
+              models.push(_model);
             })
           })
         }
@@ -204,23 +161,6 @@ class OrmService {
   }
 
   /**
-   * Metodo que permite instalar el complemento para lanzamiento de seeders
-   * @returns
-   */
-  public installSeederPlugin = async () => {
-
-      const request_orm = this.getOrm('install-seeder-plugin');
-      if (request_orm.status === 'error') return request_orm;
-
-      const utility_instance = request_orm['utility_instance'];
-      const method_formated  = request_orm['method_formated'];
-
-      const response = await utility_instance[method_formated]();
-
-      return response;
-  }
-
-  /**
    * Metodo que permite obtener la utilidad de ORM segun la base de datos
    * @param method Nombre del metodo a ejecutar separado por el caracter (-)
    * @returns
@@ -253,7 +193,6 @@ class OrmService {
    * @returns  Objeto de tipo JSON
    */
   private launch = async (method, parameters: OrmParameters) => {
-
     const orm = this.getOrm(method);
     if (orm.status === 'error') return orm;
 
@@ -266,4 +205,4 @@ class OrmService {
 }
 
 export const ormService = new OrmService();
-export { OrmService as DefaultOrmService, OrmMigrationOptions, OrmBuildParams };
+export { OrmService as DefaultOrmService };

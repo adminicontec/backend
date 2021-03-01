@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminSecureAppModuleAppModulePermissionController as Controller } from "@scnode_app/controllers/default/admin/secure/appModule/appModulePermissionController.ts";
+import { DefaultAdminSecureAppModuleAppModulePermissionController as Controller } from "@scnode_app/controllers/default/admin/secure/appModule/appModulePermissionController";
 // @end
 
 // @import_utilities Import utilities

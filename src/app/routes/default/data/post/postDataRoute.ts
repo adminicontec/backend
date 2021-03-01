@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultDataPostPostDataController as Controller } from "@scnode_app/controllers/default/data/post/postDataController.ts";
+import { DefaultDataPostPostDataController as Controller } from "@scnode_app/controllers/default/data/post/postDataController";
 // @end
 
 // @import_utilities Import utilities
