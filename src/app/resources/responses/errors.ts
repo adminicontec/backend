@@ -56,6 +56,20 @@ class ErrorResponse {
               "code": 400
             }
           }
+        },
+        "environment": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.secure.environment.not_found"),
+            "status_code": "secure_appModule_environment_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.secure.environment.insertOrUpdate.already_exists"),
+              "status_code": "secure_appModule_environment_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
         }
       },
       "user": {
