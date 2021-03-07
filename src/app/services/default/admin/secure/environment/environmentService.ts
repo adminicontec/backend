@@ -175,6 +175,10 @@ class EnvironmentService {
       }
     }
 
+    if (filters.name) {
+      where['name'] = filters.name
+    }
+
     let registers = []
     try {
       registers =  await Enviroment.find(where)

@@ -18,5 +18,7 @@ export interface IEnvironmentQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+
+  name?: string // Nombre del entorno que se desea buscar
 }
 //@end
