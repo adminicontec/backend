@@ -28,6 +28,12 @@
         }
       }
     },
+    "home": {
+      "not_found":"El home no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists":"Ya existe un home con el nombre :name"
+      }
+    },
     "user": {
       "not_found":"El usuario no ha sido encontrado",
       "insertOrUpdate": {

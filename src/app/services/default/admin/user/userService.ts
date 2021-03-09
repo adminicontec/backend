@@ -281,10 +281,32 @@ class UserService {
       const search = filters.search
       where = {
         ...where,
-        $or:[
-          {name: { $regex: '.*' + search + '.*',$options: 'i' }},
-          {description: { $regex: '.*' + search + '.*',$options: 'i' }},
-        ]
+        $or: [
+          {
+            username: {
+              $regex: ".*" + search + ".*",
+              $options: "i",
+            },
+          },
+          {
+            "profile.first_name": {
+              $regex: ".*" + search + ".*",
+              $options: "i",
+            },
+          },
+          {
+            "profile.last_name": {
+              $regex: ".*" + search + ".*",
+              $options: "i",
+            },
+          },
+          {
+            email: {
+              $regex: ".*" + search + ".*",
+              $options: "i",
+            },
+          },
+        ],
       }
     }
 

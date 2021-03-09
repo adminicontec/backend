@@ -57,7 +57,10 @@ class AuthService {
 			}).select('username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles')
       .populate({
         path: 'roles',
-        select: 'id name description'
+        select: 'id name description homes',
+        populate: {
+          path: 'homes', select: 'id name description'
+        }
       })
 
 			if (!user_exist) return responseUtility.buildResponseFailed('json', null, {error_key: { key: 'auth.user_not_found' },})
@@ -94,6 +97,22 @@ class AuthService {
       i18n_configuration: []
 		})
 
+    // @INFO: Consultando los homes segun el tipo de usuario
+    let home = null
+    if (user.roles) {
+      await mapUtility.mapAsync(
+        user.roles.map(async (r) => {
+          if (r.homes && !home) {
+            await mapUtility.mapAsync(
+              r.homes.map((h) => {
+                home = h
+              })
+            )
+          }
+        })
+      )
+    }
+
 		return responseUtility.buildResponseSuccess('json', null, {
 			additional_parameters: {
 				user: {
@@ -102,7 +121,8 @@ class AuthService {
 					profile: user.profile,
 					permissions: modules_permissions,
           avatar: userService.avatarUrl(user),
-					screen_mode: user.profile.screen_mode
+					screen_mode: user.profile.screen_mode,
+          home,
 				},
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,

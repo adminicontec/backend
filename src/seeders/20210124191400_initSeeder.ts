@@ -10,6 +10,7 @@ import {appModulePermissionService} from '@scnode_app/services/default/admin/sec
 import {appModuleService} from '@scnode_app/services/default/admin/secure/appModule/appModuleService'
 import {roleService} from '@scnode_app/services/default/admin/secure/roleService'
 import {userService} from '@scnode_app/services/default/admin/user/userService'
+import {homeService} from '@scnode_app/services/default/admin/home/homeService'
 import {countryService} from '@scnode_app/services/default/admin/country/countryService'
 
 import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
@@ -37,11 +38,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // @INFO: Agregando ciudades
     let country_ids = await this.addCountries()
 
+    // @INFO: Agregando homes
+    let home_ids = await this.addHomes()
+
     // @INFO: Agregando modulos y permisos
     let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
 
     // @INFO: Agregando roles
-    let role_ids = await this.addRoles(module_permission_ids)
+    let role_ids = await this.addRoles(module_permission_ids, home_ids)
 
     // @INFO: Agregando usuarios
     let user_ids = await this.addUsers(role_ids)
@@ -53,6 +57,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let post_location_ids = await this.addPostLocations()
 
     // TODO: Agregar PostCategories
+
+    // TODO: Agregar entornos
 
     // @INFO: Agregando tipos de ubicaciones
     let forum_location_ids = await this.addForumLocations()
@@ -332,6 +338,35 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
   }
 
   /**
+   * Metodo que permite agregar homes para los usuarios
+   * @returns
+   */
+  private addHomes = async () => {
+
+    let home_ids = {}
+
+    const homes = [
+      {name: 'student', description: 'Home destinado para estudiantes'},
+      {name: 'admin', description: 'Home destinado para administradores'},
+    ]
+
+    for await (const home of homes) {
+      const exists: any = await homeService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: 'name', value: home.name }]
+      })
+      if (exists.status === 'success') home['id'] = exists.home._id
+
+      const register: any = await homeService.insertOrUpdate(home)
+      if (register.status === 'success') {
+          home_ids[register.home.name] = register.home._id
+      }
+    }
+
+    return home_ids
+  }
+
+  /**
    * Metodo que permite agregar modulos y permisos
    * @returns
    */
@@ -415,7 +450,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
    * @param module_permission_ids
    * @returns
    */
-  private addRoles = async (module_permission_ids) => {
+  private addRoles = async (module_permission_ids, home_ids) => {
 
     let roles_ids = {}
     const roles = [
@@ -443,6 +478,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:countries_update'],
           module_permission_ids['permission:countries_delete'],
           module_permission_ids['permission:countries_list'],
+        ],
+        homes: [
+          home_ids['admin']
         ]
       }
     ]

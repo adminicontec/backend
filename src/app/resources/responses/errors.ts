@@ -72,6 +72,20 @@ class ErrorResponse {
           }
         }
       },
+      "home": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.home.not_found"),
+          "status_code": "home_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.home.insertOrUpdate.already_exists"),
+            "status_code": "home_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
       "user": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.user.not_found"),
