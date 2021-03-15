@@ -1,4 +1,6 @@
 // @import_routes
+import { homeRoute } from "@scnode_app/routes/default/admin/home/homeRoute";
+import { environmentRoute } from "@scnode_app/routes/default/admin/secure/environment/environmentRoute";
 import { skillTypeRoute } from "@scnode_app/routes/default/admin/user/skillTypeRoute";
 import { postDataRoute } from "@scnode_app/routes/default/data/post/postDataRoute";
 import { forumDataRoute } from "@scnode_app/routes/default/data/forum/forumDataRoute";
@@ -21,6 +23,8 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    homeRoute,
+    environmentRoute,
     skillTypeRoute,
     postDataRoute,
     forumDataRoute,

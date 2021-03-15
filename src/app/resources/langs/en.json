@@ -20,6 +20,18 @@
         "insertOrUpdate": {
           "already_exists":"Ya existe un rol con el nombre :name"
         }
+      },
+      "environment": {
+        "not_found":"El entorno no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists":"Ya existe un entorno con el nombre :name"
+        }
+      }
+    },
+    "home": {
+      "not_found":"El home no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists":"Ya existe un home con el nombre :name"
       }
     },
     "user": {

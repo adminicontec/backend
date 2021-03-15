@@ -1,4 +1,6 @@
 // @import_models
+import { HomeModel } from "@scnode_app/models/homeModel";
+import { EnviromentModel } from "@scnode_app/models/enviromentModel";
 import { SkillTypeModel } from "@scnode_app/models/skillTypeModel";
 import { ForumLocationModel } from "@scnode_app/models/forumLocationModel";
 import { ForumCategoryModel } from "@scnode_app/models/forumCategoryModel";
@@ -17,6 +19,8 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const Home = HomeModel
+export const Enviroment = EnviromentModel
 export const SkillType = SkillTypeModel
 export const ForumLocation = ForumLocationModel
 export const ForumCategory = ForumCategoryModel
