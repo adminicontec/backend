@@ -116,12 +116,15 @@ const UserSchema = new Schema({
       {
         name: { type: Schema.Types.String},
         score: { type: Schema.Types.Number},
-        skill_type: {
-          type: Schema.Types.ObjectId,
-          ref: "SkillType"
-        },
+      }
+    ],
+    language: [
+      {
+        name: { type: Schema.Types.String},
+        score: { type: Schema.Types.Number},
       }
     ]
+
   }
   // @end
 }, {

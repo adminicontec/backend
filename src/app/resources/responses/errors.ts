@@ -259,7 +259,21 @@ class ErrorResponse {
             "code": 400
           }
         }
-      }
+      },
+      "course": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.course.not_found"),
+          "status_code": "course",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.course.insertOrUpdate.already_exists"),
+            "status_code": "course",
+            "code": 400
+          }
+        }
+      },
     };
 
     return json;
