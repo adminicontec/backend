@@ -29,6 +29,8 @@ export interface IUser {
     biography: string, // Biografia curriculo del usuario
     laboral_experience?: ILaboralExperience[], // Array experiencia laboral del usuario
     academic_info?: IAcademicInfo[] // Array grados academicos del usuario
+    skill?: ISkill[] // Array de habilidades
+    language?: ILanguage[] // Array de Idiomas
   },
   roles?: Array<string> | string, // Roles asignados al usuario
   createdBy?: string,
@@ -51,6 +53,16 @@ export interface IAcademicInfo {
   start_date: string, // Fecha de inicio del cargo
   end_date: string, // Fecha de finalizacion del cargo
   currently: boolean // INdicador booleano si se encuentra actualmente en ese cargo
+}
+
+export interface ISkill {
+  name: string, 	// Título de la habilidad
+  score: string,	// valoración
+}
+
+export interface ILanguage {
+  name: string, 	// Idioma
+  score: string,	// valoración
 }
 
 export interface IUserDelete {
