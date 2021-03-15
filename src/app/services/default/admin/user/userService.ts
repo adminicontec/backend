@@ -61,6 +61,7 @@ class UserService {
         for await (const register of registers) {
           if (register.profile) {
             register.profile.avatarImageUrl = this.avatarUrl(register)
+            register.profile.avatar = register.profile.avatarImageUrl
           }
         }
 
@@ -77,6 +78,7 @@ class UserService {
 
         if (register.profile) {
           register.profile.avatarImageUrl = this.avatarUrl(register)
+          register.profile.avatar = register.profile.avatarImageUrl
         }
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           user: register
@@ -98,13 +100,19 @@ class UserService {
 
     try {
 
+      console.log('params', params)
+
       // TODO: Que va en los siguientes campos
       // 1. normalizedusername
       // 2. normalizedEmail
       // 3. securityStamp
       // 4. concurrencyStamp
 
-      if (!params.profile) params.profile = {}
+      if (!params.profile) {
+        params.profile = {}
+      } else if (params.profile && typeof params.profile === "string") {
+        params.profile = JSON.parse(params.profile);
+      }
 
       // @INFO: Almacenando en servidor la imagen adjunta
       if (params.avatar) {
@@ -112,6 +120,12 @@ class UserService {
         const response_upload: any = await uploadService.uploadFile(params.avatar, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.profile.avatarImageUrl = response_upload.name
+      }
+
+      if (!params.roles) {
+        params.roles = []
+      } else if (typeof params.roles === "string") {
+        params.roles = params.roles.split(",");
       }
 
       // TODO: Guardar los siguientes campos, debo proporcionar un usuario
@@ -168,6 +182,7 @@ class UserService {
 
         if (response.profile) {
           response.profile.avatarImageUrl = this.avatarUrl(response)
+          response.profile.avatar = response.profile.avatarImageUrl
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -199,6 +214,7 @@ class UserService {
 
         if (response.profile) {
           response.profile.avatarImageUrl = this.avatarUrl(response)
+          response.profile.avatar = response.profile.avatarImageUrl
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -318,10 +334,12 @@ class UserService {
       .populate({path: 'profile.country', select: 'id name iso2 iso3'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
+      .lean()
 
       for await (const register of registers) {
         if (register.profile) {
           register.profile.avatarImageUrl = this.avatarUrl(register)
+          register.profile.avatar = register.profile.avatarImageUrl
         }
       }
     } catch (e) {}

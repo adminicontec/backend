@@ -30,7 +30,7 @@ export interface IUser {
     laboral_experience?: ILaboralExperience[], // Array experiencia laboral del usuario
     academic_info?: IAcademicInfo[] // Array grados academicos del usuario
   },
-  roles?: Array<string>, // Roles asignados al usuario
+  roles?: Array<string> | string, // Roles asignados al usuario
   createdBy?: string,
   lastModifiedBy?: string
   avatar?: string // Objeto de clase File que posee el archivo que sera cargado al servidor

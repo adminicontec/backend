@@ -39,8 +39,10 @@ class UserController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files['avatar']) {
+    if (files && files.hasOwnProperty('avatar')) {
       params['avatar'] = files['avatar']
+    } else {
+      params['avatar'] = null
     }
 
     const response = await userService.insertOrUpdate(params)
@@ -57,8 +59,10 @@ class UserController {
 		let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files['avatar']) {
+    if (files && files.hasOwnProperty('avatar')) {
       params['avatar'] = files['avatar']
+    } else {
+      params['avatar'] = null
     }
 
     const response = await userService.insertOrUpdate(params)
