@@ -2,7 +2,7 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminCourseCourseController as Controller } from "@scnode_app/controllers/default/admin/course/courseController.ts";
+import { DefaultAdminCourseCourseController as Controller } from "@scnode_app/controllers/default/admin/course/courseController";
 // @end
 
 // @import_utilities Import utilities
