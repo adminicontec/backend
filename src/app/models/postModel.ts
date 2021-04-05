@@ -14,7 +14,7 @@ const PostSchema = new Schema({
     type: Schema.Types.String
   },
   content: {
-    type: Schema.Types.String,
+    type: Schema.Types.Mixed,
     required: true,
   },
   coverUrl: {

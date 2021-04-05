@@ -17,9 +17,9 @@ export interface IPost {
   externUrl?: string // URL de la publicación externa
   user?: string // Identificador de clase User
   postType?: string // Identificador de clase PostType
-  tags?: Array<any> // Array con los tags de la publicación
-  cover?: any // Objeto tipo file que contiene la imagen a cargar
-  locations?: IPostLocations[] // Array con las ubicaciones de la publicación
+  tags?: Array<any> | string // Array con los tags de la publicación
+  coverFile?: any // Objeto tipo file que contiene la imagen a cargar
+  locations?: IPostLocations[] | string // Array con las ubicaciones de la publicación
   location?: IPostLocations // Array con las ubicaciones de la publicación
   authors?: Array<string> // Array de los nombre de los autores
   id?: string // Identificador de la categoria

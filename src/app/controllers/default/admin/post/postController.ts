@@ -39,8 +39,8 @@ class PostController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files['cover']) {
-      params['cover'] = files['cover']
+    if (files && files.hasOwnProperty('cover')) {
+      params['coverFile'] = files['cover']
     }
 
     const response = await postService.insertOrUpdate(params)
@@ -57,8 +57,8 @@ class PostController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files['cover']) {
-      params['cover'] = files['cover']
+    if (files && files.hasOwnProperty('cover')) {
+      params['coverFile'] = files['cover']
     }
 
 		const response = await postService.insertOrUpdate(params)

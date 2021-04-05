@@ -28,7 +28,7 @@ class PostMiddleware {
 		const fields_config: ValidatorRequest[] = [
       { key: 'title', label: 'Titulo de la publicación'},
       { key: 'content', label: 'Contenido de la publicación'},
-      { key: 'cover', label: 'Imagen de portada', type: 'file'},
+      // { key: 'cover', label: 'Imagen de portada', type: 'file'},
       { key: 'postType', label: 'Tipo de publicación'},
 		];
 

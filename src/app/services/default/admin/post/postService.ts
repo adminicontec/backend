@@ -1,8 +1,10 @@
 // @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
 import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
+import {postCategoryService} from '@scnode_app/services/default/admin/post/postCategoryService'
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
@@ -12,6 +14,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import {mapUtility} from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
@@ -73,6 +76,7 @@ class PostService {
         const register: any = await Post.findOne(where)
         .populate({path: 'postType', select: 'id name'})
         .populate({path: 'tags', select: 'id name'})
+        .populate({path: 'locations.postLocation', select: 'id name'})
         .select(select)
         .lean()
 
@@ -104,11 +108,56 @@ class PostService {
       let postType = null
 
       // @INFO: Cargando imagen al servidor
-      if (params.cover) {
+
+      if (params.coverFile) {
         const defaulPath = this.default_cover_path
-        const response_upload: any = await uploadService.uploadFile(params.cover, defaulPath)
+        const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+
+      if (params.tags && typeof params.tags === 'string') params.tags = params.tags.split(',')
+      if (params.tags && Array.isArray(params.tags)) {
+        let tags = []
+        await mapUtility.mapAsync(
+          params.tags.map(async (t) => {
+            const isObjectId = await ObjectID.isValid(t)
+            if (!isObjectId) {
+              const tagExists: any = await postCategoryService.findBy({query: QueryValues.ONE, where: [{field: 'name', value: t}]})
+              if (tagExists.status === 'success') {
+                tags.push(tagExists.postCategory._id)
+              } else {
+                const newTagResponse: any = await postCategoryService.insertOrUpdate({name: t})
+                if (newTagResponse.status === 'success') {
+                  tags.push(newTagResponse.postCategory._id)
+                }
+              }
+            } else {
+              tags.push(t)
+            }
+          })
+        )
+        params.tags = tags
+      }
+
+      if (params.tags && typeof params.tags === 'string') {
+        params.tags = params.tags.split(',')
+      }
+
+      if (params.locations && typeof params.locations === 'string') {
+        let splitLocations = params.locations.split(',')
+        let newLocations = []
+        splitLocations.map((sl) => {
+          newLocations.push({
+            postLocation: sl,
+            viewCounter: 0
+          })
+        })
+        params.locations = newLocations
+      }
+
+      if (params.content && typeof params.content === 'string') {
+        params.content = JSON.parse(params.content)
       }
 
       if (params.id) {
@@ -132,10 +181,12 @@ class PostService {
           let oldLocations: IPostLocations[] = register.locations
           if (oldLocations && Array.isArray(oldLocations) && oldLocations.length > 0) {
             for await (const location of params.locations) {
-              if (!location.viewCounter) {
-                let findIndex = oldLocations.findIndex((ol) => location.postLocation.toString() === ol.postLocation.toString())
-                if (findIndex !== -1) {
-                  location.viewCounter = (oldLocations[findIndex].viewCounter) ? oldLocations[findIndex].viewCounter : 0
+              if (typeof location !== 'string') {
+                if (!location.viewCounter) {
+                  let findIndex = oldLocations.findIndex((ol) => location.postLocation.toString() === ol.postLocation.toString())
+                  if (findIndex !== -1) {
+                    location.viewCounter = (oldLocations[findIndex].viewCounter) ? oldLocations[findIndex].viewCounter : 0
+                  }
                 }
               }
             }
