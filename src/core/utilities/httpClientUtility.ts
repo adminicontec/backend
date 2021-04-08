@@ -119,7 +119,7 @@ class HttpClientUtility {
   private validateHttpFields = async (http_structure: HttpStructure) => {
 
     const fields_config = [
-      {key: "api"},{key: "url"}
+      {key: "api"}
     ];
 
     const validation = await requestUtility.validator(http_structure,{},fields_config);

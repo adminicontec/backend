@@ -7,6 +7,7 @@
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility} from '@scnode_core/utilities/queryUtility';
+import { moodle_setup} from '@scnode_core/config/globals';
 // @end
 
 // @import models
@@ -16,6 +17,8 @@ import {Course} from '@scnode_app/models'
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
 import {ICourse, ICourseQuery, ICourseDelete} from '@scnode_app/types/default/admin/course/courseTypes'
+import { Console } from 'console';
+import { stringify } from 'querystring';
 // @end
 
 class CourseService {
@@ -42,7 +45,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id name description startDate endDate maxEnrollmentDate priceCOP priceUSD discount'
       if (params.query === QueryValues.ALL) {
         const registers = await Course.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -69,15 +72,15 @@ class CourseService {
    */
   public list = async (filters: ICourseQuery = {}) => {
 
-//    let queryMoodle = await queryUtility.query({ method:'get', url:'/pokemon', params: { offset: 300, limit: 100 } } );
-    let queryMoodle = await queryUtility.query({ method:'get', url:'/', params: { wstoken: '20f57ea1602d8f4733418d519e5fe74e', wsfunction: 'core_course_get_courses', moodlewsrestformat: 'json' } } );
+    let queryMoodle = await queryUtility.query({ method:'get', url:'', api: 'moodle', params: { wstoken: moodle_setup.wstoken , wsfunction: moodle_setup.services.courses.get, moodlewsrestformat: moodle_setup.restformat } } );
+    // Sincronizar búsquda en CV con datos en el Moodle.
 
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name description startDate endDate'
+    let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate priceCOP priceUSD discount quota lang'
     if (filters.select) {
       select = filters.select
     }
@@ -108,8 +111,6 @@ class CourseService {
         courses: [
           ...registers
         ],
-        moodle: queryMoodle,
-
         total_register: (paging) ? await Course.find(where).count() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
@@ -123,7 +124,6 @@ class CourseService {
    * @returns
    */
   public insertOrUpdate = async (params: ICourse) => {
-
     try {
       if (params.id) {
         const register = await Course.findOne({_id: params.id})
@@ -148,8 +148,14 @@ class CourseService {
         })
 
       } else {
+
+
         const exist = await Course.findOne({ name: params.name })
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'course.insertOrUpdate.already_exists', params: {name: params.name}} })
+
+        console.log("*****");
+        console.log("Data from Request: " + JSON.stringify(params));
+        console.log("*****");
 
         const response: any = await Course.create(params)
 
@@ -164,6 +170,7 @@ class CourseService {
       }
 
     } catch (e) {
+      console.log("error: " + e);
       return responseUtility.buildResponseFailed('json')
     }
   }

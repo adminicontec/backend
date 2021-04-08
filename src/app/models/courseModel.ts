@@ -10,15 +10,35 @@ const CourseSchema = new Schema({
     type: Schema.Types.String,
     required: true,
   },
+  fullname: {
+    type: Schema.Types.String,
+    required: true,
+  },
+  displayname: {
+    type: Schema.Types.String,
+    required: false,
+  },
   description: {
     type: Schema.Types.String,
     required: true,
+  },
+  courseType: {
+    type: Schema.Types.String,
+    required: false,
+  },
+  mode: {
+    type: Schema.Types.String,
+    required: false,
   },
   startDate: {
     type: Schema.Types.Date,
     required: true,
   },
   endDate: {
+    type: Schema.Types.Date,
+    required: true,
+  },
+  maxEnrollmentDate: {
     type: Schema.Types.Date,
     required: true,
   },
@@ -32,6 +52,14 @@ const CourseSchema = new Schema({
   },
   discount: {
     type: Schema.Types.Number,
+    required: false,
+  },
+  quota: {
+    type: Schema.Types.Number,
+    required: false,
+  },
+  lang: {
+    type: Schema.Types.String,
     required: false,
   },
   // @end

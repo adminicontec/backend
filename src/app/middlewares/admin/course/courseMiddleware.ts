@@ -27,6 +27,7 @@ class CourseMiddleware {
 
 		const fields_config: ValidatorRequest[] = [
       { key: 'name', label: 'Nombre del curso'}
+
 		];
 
 		await requestUtility.middlewareValidator(fields_config, req, res, next)

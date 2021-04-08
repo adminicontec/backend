@@ -11,7 +11,7 @@ import { routerUtility } from "@scnode_core/utilities/routerUtility";
 
 class CourseRoute {
 
-  private router_prefix: string = '/course'; //Ej: /user
+  private router_prefix: string = '/admin/course'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -27,11 +27,13 @@ class CourseRoute {
   public routes(app,prefix: string = '/'): void {
 
     const _route = `${prefix}${this.router_prefix}`;
+    const _routeGeneric = `${prefix}/course`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.get(app,_route,'/',this.instanceController.list,[], ['auth']);
+    routerUtility.get(app, _routeGeneric,'/', this.instanceController.list,[], ['auth']);
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
-    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'course', method: 'create', dir: 'admin/course' }], ['auth'])
+    routerUtility.post(app, _route, '/create', this.instanceController.create, [], ['auth'])
+    routerUtility.post(app, _route, '/update', this.instanceController.update, [], ['auth'])
     // @end
   }
 }

@@ -4,8 +4,8 @@
 // @add your types
 export interface ICountry {
   name: string, // Nombre del pais
-  iso2?: string // Identificador ISO
-  iso3?: string // Identificador ISO
+  iso2?: string, // Identificador ISO
+  iso3?: string, // Identificador ISO
   id?: string // Identificador del pais
 }
 
