@@ -1,4 +1,5 @@
 // @import_routes
+import { enrollmentRoute } from "@scnode_app/routes/default/admin/enrollment/enrollmentRoute";
 import { editorJsRoute } from "@scnode_app/routes/default/admin/editorJs/editorJsRoute";
 import { homeRoute } from "@scnode_app/routes/default/admin/home/homeRoute";
 import { environmentRoute } from "@scnode_app/routes/default/admin/secure/environment/environmentRoute";
@@ -25,6 +26,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    enrollmentRoute,
     editorJsRoute,
     homeRoute,
     environmentRoute,
