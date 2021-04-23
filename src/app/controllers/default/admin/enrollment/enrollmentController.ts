@@ -16,6 +16,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 
 // @import_types Import types
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
+import { userService } from 'app/services/default/admin/user/userService';
 // @end
 
 class EnrollmentController {

@@ -6,33 +6,33 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 type Characters = {
-    numbers?  : string,   // Cadena de texto que representa numeros separados entre si por un espacio " "
-    symbols?  : string,   // Cadena de texto que representa simbolos separados entre si por un espacio " "
-    uppercase?: string,   // Cadena de texto que representa letras mayusculas separados entre si por un espacio " "
-    lowercase?: string    // Cadena de texto que representa letras minusculas separados entre si por un espacio " "
+  numbers?: string,   // Cadena de texto que representa numeros separados entre si por un espacio " "
+  symbols?: string,   // Cadena de texto que representa simbolos separados entre si por un espacio " "
+  uppercase?: string,   // Cadena de texto que representa letras mayusculas separados entre si por un espacio " "
+  lowercase?: string    // Cadena de texto que representa letras minusculas separados entre si por un espacio " "
 };
 
 type ConfigCharacters = {
-    characters?: number,   // Cantidad numerica de caracteres de los cuales estara formada una cadena de texto
-    numbers?   : 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
-    symbols?   : 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
-    uppercase? : 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
-    lowercase? : 1 | 0     // Valor binario donde 1 significa TRUE y 0 FALSE
+  characters?: number,   // Cantidad numerica de caracteres de los cuales estara formada una cadena de texto
+  numbers?: 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
+  symbols?: 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
+  uppercase?: 1 | 0,    // Valor binario donde 1 significa TRUE y 0 FALSE
+  lowercase?: 1 | 0     // Valor binario donde 1 significa TRUE y 0 FALSE
 }
 
 class GeneralUtility {
 
   private config_characters_default: ConfigCharacters = {
     characters: 20,
-    numbers   : 1,
-    symbols   : 0,
-    uppercase : 1,
-    lowercase : 1,
+    numbers: 1,
+    symbols: 0,
+    uppercase: 1,
+    lowercase: 1,
   };
 
   private characters_default: Characters = {
-    numbers  : '0 1 2 3 4 5 6 7 8 9',
-    symbols  : '! @ # $ % & * ( ) _ - + = { [ ] } ; : < , > . ?',
+    numbers: '0 1 2 3 4 5 6 7 8 9',
+    symbols: '! @ # $ % & * ( ) _ - + = { [ ] } ; : < , > . ?',
     uppercase: 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z',
     lowercase: 'a b c d e f g h i j k l m n o p q r s t u v w x y z',
   };
@@ -44,7 +44,7 @@ class GeneralUtility {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   /**
    * Metodo que permite formatear segundos a horas, minutos, segundos
@@ -53,22 +53,22 @@ class GeneralUtility {
    */
   public convertSeconds = (seconds) => {
 
-      seconds = Number(seconds);
-      const h = Math.floor(seconds / 3600);
-      const m = Math.floor(seconds % 3600 / 60);
-      const s = Math.floor(seconds % 3600 % 60);
+    seconds = Number(seconds);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    const s = Math.floor(seconds % 3600 % 60);
 
-      let convert = {
-          hours: {value: 0, shortLabel: 'h', label: i18nUtility.i18nMessage('labels.time.hours')},
-          minutes: {value: 0, shortLabel: 'm', label: i18nUtility.i18nMessage('labels.time.minutes')},
-          seconds: {value: 0, shortLabel: 's', label: i18nUtility.i18nMessage('labels.time.seconds')}
-      }
+    let convert = {
+      hours: { value: 0, shortLabel: 'h', label: i18nUtility.i18nMessage('labels.time.hours') },
+      minutes: { value: 0, shortLabel: 'm', label: i18nUtility.i18nMessage('labels.time.minutes') },
+      seconds: { value: 0, shortLabel: 's', label: i18nUtility.i18nMessage('labels.time.seconds') }
+    }
 
-      if (h > 0) convert.hours.value = h
-      if (m > 0) convert.minutes.value = m
-      if (s > 0) convert.seconds.value = s
+    if (h > 0) convert.hours.value = h
+    if (m > 0) convert.minutes.value = m
+    if (s > 0) convert.seconds.value = s
 
-      return convert
+    return convert
   }
 
   /**
@@ -78,31 +78,31 @@ class GeneralUtility {
    */
   public buildRandomChain = (characters: ConfigCharacters = {}) => {
 
-      let characters_def = this.config_characters_default;
+    let characters_def = this.config_characters_default;
 
-      Object.assign(characters_def,characters);
+    Object.assign(characters_def, characters);
 
-      let charactersEnd    = '';
-      let charactersEndArr = [];
-      let chain            = '';
+    let charactersEnd = '';
+    let charactersEndArr = [];
+    let chain = '';
 
-      for (const prop in characters_def) {
-          if (characters_def.hasOwnProperty(prop)) {
-              const element = characters_def[prop];
-              if (prop !== 'characters' && element === 1) {
-                  charactersEnd += this.characters_default[prop] + ' ';
-              }
-          }
+    for (const prop in characters_def) {
+      if (characters_def.hasOwnProperty(prop)) {
+        const element = characters_def[prop];
+        if (prop !== 'characters' && element === 1) {
+          charactersEnd += this.characters_default[prop] + ' ';
+        }
       }
+    }
 
-      charactersEnd    = charactersEnd.trim();
-      charactersEndArr = charactersEnd.split(' ');
+    charactersEnd = charactersEnd.trim();
+    charactersEndArr = charactersEnd.split(' ');
 
-      for (let i = 0; i < characters_def.characters; i++) {
-          chain = chain + charactersEndArr[Math.floor(Math.random() * charactersEndArr.length)];
-      }
+    for (let i = 0; i < characters_def.characters; i++) {
+      chain = chain + charactersEndArr[Math.floor(Math.random() * charactersEndArr.length)];
+    }
 
-      return chain;
+    return chain;
   }
 
   /**
@@ -112,15 +112,15 @@ class GeneralUtility {
    * @return [string] Cadena de texto (string)
    */
   public byteCalculator = (bytes, decimals = 2) => {
-      if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return '0 Bytes';
 
-      const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 
   /**
@@ -133,21 +133,21 @@ class GeneralUtility {
    */
   public upperCaseString = (string: string, first_minuscule: boolean = false, conector: string = '-', join: string = '') => {
 
-      string = string.toLowerCase(); // Convertir a minuscula
+    string = string.toLowerCase(); // Convertir a minuscula
 
-      let string_arr = string.split(conector); // Separar segun conector
+    let string_arr = string.split(conector); // Separar segun conector
 
-      string_arr.forEach((item,i) => {
-          let char = item.charAt(0).toUpperCase() + item.slice(1);
-          if (first_minuscule === true) {
-              if (i == 0) {
-                  char = item.charAt(0).toLowerCase() + item.slice(1);
-              }
-          }
-          string_arr[i] = char;
-      });
+    string_arr.forEach((item, i) => {
+      let char = item.charAt(0).toUpperCase() + item.slice(1);
+      if (first_minuscule === true) {
+        if (i == 0) {
+          char = item.charAt(0).toLowerCase() + item.slice(1);
+        }
+      }
+      string_arr[i] = char;
+    });
 
-      return string_arr.join(join);
+    return string_arr.join(join);
   }
 
   /**
@@ -157,9 +157,9 @@ class GeneralUtility {
    * @param [join] Conector que unira la cadena
    */
   public changeStringConnector = (string: string, conector: string = '-', join: string = '') => {
-      const regex = new RegExp(conector, 'g');
-      const string_arr = string.replace(regex, join)
-      return string_arr
+    const regex = new RegExp(conector, 'g');
+    const string_arr = string.replace(regex, join)
+    return string_arr
   }
 
   /**
@@ -170,27 +170,27 @@ class GeneralUtility {
    */
   public mergeJson = (target, origin) => {
 
-      if (Array.isArray(origin)) {
-          origin.map((element,key) => {
-              if (target.indexOf(element) === -1) {
-                  target.push(element);
-              }
-          })
-      } else if (typeof origin === 'object') {
-          for (const key in origin) {
-              if (origin.hasOwnProperty(key)) {
-                  const element = origin[key];
-                  if (target.hasOwnProperty(key)) {
-                      target[key] = this.mergeJson(target[key],element)
-                  } else {
-                      target[key] = element;
-                  }
-              }
+    if (Array.isArray(origin)) {
+      origin.map((element, key) => {
+        if (target.indexOf(element) === -1) {
+          target.push(element);
+        }
+      })
+    } else if (typeof origin === 'object') {
+      for (const key in origin) {
+        if (origin.hasOwnProperty(key)) {
+          const element = origin[key];
+          if (target.hasOwnProperty(key)) {
+            target[key] = this.mergeJson(target[key], element)
+          } else {
+            target[key] = element;
           }
-      } else {
-          target = origin;
+        }
       }
-      return target;
+    } else {
+      target = origin;
+    }
+    return target;
   }
 
   /**
@@ -199,11 +199,11 @@ class GeneralUtility {
    * @returns  [boolean] Booleano
    */
   public validateEmailFormat = (email) => {
-      let isValid = false;
-      const reg = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
-      if (reg.test(email) == true) isValid = true;
+    let isValid = false;
+    const reg = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+    if (reg.test(email) == true) isValid = true;
 
-      return isValid;
+    return isValid;
   }
 
   /**
@@ -213,7 +213,7 @@ class GeneralUtility {
    * @returns
    */
   public rand = (min = 0, max = Number.MAX_SAFE_INTEGER) => {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   /**
@@ -221,23 +221,27 @@ class GeneralUtility {
    * @returns
    */
   public time = () => {
-      return Math.floor(new Date().getTime() / 1000)
+    return Math.floor(new Date().getTime() / 1000)
   }
+
+  // public timeUnix = (date: string) => {
+  //   return Math.floor(Date.parse(date) / 1000.0);
+  // }
 
   /**
    * Metodo que retorna un slug generado de forma aleatoria
    * @returns
    */
   public generateSlug = (_string: string, complement: string = '') => {
-      let str = _string + complement
-      return str .toString()
-      .normalize( 'NFD' )                   // split an accented letter in the base letter and the acent
-      .replace( /[\u0300-\u036f]/g, '' )   // remove all previously split accents
+    let str = _string + complement
+    return str.toString()
+      .normalize('NFD')                   // split an accented letter in the base letter and the acent
+      .replace(/[\u0300-\u036f]/g, '')   // remove all previously split accents
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '-')
       .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-'); ;
+      .replace(/\-\-+/g, '-');;
   }
 
   /**
@@ -249,41 +253,41 @@ class GeneralUtility {
 
     if (number <= 0.0) return null;
 
-    number = Math.round((number*100))/100;
+    number = Math.round((number * 100)) / 100;
 
     /*==================================================================================================================
     =            Cargando algunos valores por defecto de la función para evitar procesamientos innecesarios            =
     ==================================================================================================================*/
 
-    if ( number == 2.00){
+    if (number == 2.00) {
       return 1;
-    }else if(number == 2.01){
+    } else if (number == 2.01) {
       return 1.004269;
-    }else if(number == 2.02){
+    } else if (number == 2.02) {
       return 1.008621;
-    }else if(number == 2.03){
+    } else if (number == 2.03) {
       return 1.013056;
-    }else if(number == 2.04){
+    } else if (number == 2.04) {
       return 1.017575;
-    }else if(number == 2.05){
+    } else if (number == 2.05) {
       return 1.022179;
-    }else if(number == 2.06){
+    } else if (number == 2.06) {
       return 1.026868;
-    }else if(number == 2.07){
+    } else if (number == 2.07) {
       return 1.031642;
-    }else if(number == 3.00){
+    } else if (number == 3.00) {
       return 2;
-    }else if(number == 3.01){
+    } else if (number == 3.01) {
       return 2.018581;
-    }else if(number == 3.02){
+    } else if (number == 3.02) {
       return 2.037414;
-    }else if(number == 3.03){
+    } else if (number == 3.03) {
       return 2.056504;
-    }else if(number == 3.05){
+    } else if (number == 3.05) {
       return 2.075854;
-    }else if(number == 3.06){
+    } else if (number == 3.06) {
       return 2.115348;
-    }else if(number == 3.07){
+    } else if (number == 3.07) {
       return 2.135500;
     }
 
@@ -303,7 +307,7 @@ class GeneralUtility {
     const gamma = 0.577215664901532860606512090; // Euler's gamma constant
 
     if (number < 0.001) {
-        return 1.0/(number*(1.0 + gamma * number));
+      return 1.0 / (number * (1.0 + gamma * number));
     }
 
     // ###########################################################################
@@ -321,34 +325,34 @@ class GeneralUtility {
       // Will correct for this below
 
       if (arg_was_less_than_one) {
-          y += 1.0;
+        y += 1.0;
       } else {
-          n = Math.floor(y) - 1;  // will use n later
-          y -= n;
+        n = Math.floor(y) - 1;  // will use n later
+        y -= n;
       }
 
       // numerator coefficients for approximation over the interval (1,2)
       const p = [
-          -1.71618513886549492533811E+0,
-            2.47656508055759199108314E+1,
-          -3.79804256470945635097577E+2,
-            6.29331155312818442661052E+2,
-            8.66966202790413211295064E+2,
-          -3.14512729688483675254357E+4,
-          -3.61444134186911729807069E+4,
-            6.64561438202405440627855E+4
+        -1.71618513886549492533811E+0,
+        2.47656508055759199108314E+1,
+        -3.79804256470945635097577E+2,
+        6.29331155312818442661052E+2,
+        8.66966202790413211295064E+2,
+        -3.14512729688483675254357E+4,
+        -3.61444134186911729807069E+4,
+        6.64561438202405440627855E+4
       ]
 
       // denominator coefficients for approximation over the interval (1,2)
       const q = [
-          -3.08402300119738975254353E+1,
-            3.15350626979604161529144E+2,
-          -1.01515636749021914166146E+3,
-          -3.10777167157231109440444E+3,
-            2.25381184209801510330112E+4,
-            4.75584627752788110767815E+3,
-          -1.34659959864969306392456E+5,
-          -1.15132259675553483497211E+5
+        -3.08402300119738975254353E+1,
+        3.15350626979604161529144E+2,
+        -1.01515636749021914166146E+3,
+        -3.10777167157231109440444E+3,
+        2.25381184209801510330112E+4,
+        4.75584627752788110767815E+3,
+        -1.34659959864969306392456E+5,
+        -1.15132259675553483497211E+5
       ]
 
       let num = 0.0;
@@ -356,24 +360,24 @@ class GeneralUtility {
 
       let z = y - 1;
       for (let index = 0; index < 8; index++) {
-          num = (num + p[index])*z;
-          den = den*z + q[index];
+        num = (num + p[index]) * z;
+        den = den * z + q[index];
 
       }
 
-      let result = num/den + 1.0;
+      let result = num / den + 1.0;
 
       // Apply correction if argument was not initially in (1,2)
       if (arg_was_less_than_one) {
-          // Use identity gamma(z) = gamma(z+1)/z
-          // The variable "result" now holds gamma of the original y + 1
-          // Thus we use y-1 to get back the orginal y.
-          result /= (y-1.0);
+        // Use identity gamma(z) = gamma(z+1)/z
+        // The variable "result" now holds gamma of the original y + 1
+        // Thus we use y-1 to get back the orginal y.
+        result /= (y - 1.0);
       } else {
-          // Use the identity gamma(z+n) = z*(z+1)* ... *(z+n-1)*gamma(z)
-          for (let index = 0; index < n; index++) {
-              result *= y++;
-          }
+        // Use the identity gamma(z+n) = z*(z+1)* ... *(z+n-1)*gamma(z)
+        for (let index = 0; index < n; index++) {
+          result *= y++;
+        }
       }
 
       return result;
@@ -382,10 +386,9 @@ class GeneralUtility {
     // ###########################################################################
     // Third interval: [12, infinity)
 
-    if (number > 171.624)
-    {
-        // Correct answer too large to display.
-        return Number.POSITIVE_INFINITY;
+    if (number > 171.624) {
+      // Correct answer too large to display.
+      return Number.POSITIVE_INFINITY;
     }
 
     return Math.exp(this.logGamma(number))
@@ -401,7 +404,7 @@ class GeneralUtility {
     if (number <= 0.0) return null
 
     if (number < 12.0) {
-        return Math.log(Math.abs(this.gamma(number)))
+      return Math.log(Math.abs(this.gamma(number)))
     }
 
     // Abramowitz and Stegun 6.1.41
@@ -410,26 +413,26 @@ class GeneralUtility {
     // A Course in Modern Analysis (1927), page 252
 
     const c = [
-          1.0/12.0,
-        -1.0/360.0,
-          1.0/1260.0,
-        -1.0/1680.0,
-          1.0/1188.0,
-        -691.0/360360.0,
-          1.0/156.0,
-        -3617.0/122400.0
+      1.0 / 12.0,
+      -1.0 / 360.0,
+      1.0 / 1260.0,
+      -1.0 / 1680.0,
+      1.0 / 1188.0,
+      -691.0 / 360360.0,
+      1.0 / 156.0,
+      -3617.0 / 122400.0
     ]
 
-    const z = 1.0/(number*number);
+    const z = 1.0 / (number * number);
     let sum = c[7];
     for (let index = 6; index >= 0; index--) {
-        sum *= z;
-        sum += c[index];
+      sum *= z;
+      sum += c[index];
     }
-    const series = sum/number;
+    const series = sum / number;
 
     const halfLogTwoPi = 0.91893853320467274178032973640562;
-    const logGamma = (number - 0.5)*Math.log(number) - number + halfLogTwoPi + series;
+    const logGamma = (number - 0.5) * Math.log(number) - number + halfLogTwoPi + series;
     return logGamma;
   }
 }

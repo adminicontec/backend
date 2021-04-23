@@ -50,6 +50,7 @@ export const pdf_config    = (env.hasOwnProperty('pdf')) ? env['pdf'] : null;
 export const xlsx_config           = (env.hasOwnProperty('xlsx')) ? env['xlsx'] : null
 export const router_prefix = (env.hasOwnProperty('router_prefix')) ? env['router_prefix'] : 'api';
 export const moodle_setup:any         = (env.hasOwnProperty('moodle_setup')) ? env['moodle_setup'] : {};
+export const campus_setup:any         = (env.hasOwnProperty('campus_setup')) ? env['campus_setup'] : {};
 // @end
 
 // @export_globals
