@@ -1,4 +1,5 @@
 // @import_models
+import { CompletionstatusModel } from "@scnode_app/models/completionstatusModel";
 import { EnrollmentModel } from "@scnode_app/models/enrollmentModel";
 import { HomeModel } from "@scnode_app/models/homeModel";
 import { EnviromentModel } from "@scnode_app/models/enviromentModel";
@@ -21,6 +22,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const Completionstatus = CompletionstatusModel
 export const Enrollment = EnrollmentModel
 export const Home = HomeModel
 export const Enviroment = EnviromentModel

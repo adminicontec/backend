@@ -1,0 +1,31 @@
+// @import_dependencies_node Import libraries
+import mongoose_delete from "mongoose-delete";
+import mongoose from 'mongoose';
+const { Schema } = mongoose;
+// @end
+
+const CompletionstatusSchema = new Schema({
+  // @add_schema Add schema here
+  
+  // @end
+}, {
+  collection: 'completionStatuses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
+
+// INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
+// Example: UserModel.delete({_id: id})
+CompletionstatusSchema.plugin(mongoose_delete,{
+  deletedAt : true,
+  overrideMethods: 'all',
+  indexFields: 'all'
+});
+
+// INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
+// CompletionstatusSchema.methods.invalid_fields = ["field1", "field2"];
+
+// INFO: Si desea implementar un metodo despues de guardar habilite el siguiente metodo
+// CompletionstatusSchema.methods.postSave = (parameters) => {
+// }
+
+
+export const CompletionstatusModel = mongoose.model<any, any>('Completionstatus', CompletionstatusSchema);

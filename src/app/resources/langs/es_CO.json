@@ -91,6 +91,25 @@
 			"insertOrUpdate": {
 				"already_exists": "Ya existe un curso con el nombre :name"
 			}
-		}
+		},
+    "moodle_course": {
+      "not_found": "El curso :name en Moodle no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un curso con el nombre :name"
+      }
+    },
+    "enrollment": {
+      "not_found": "La matrícula del curso  no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename"
+      }
+    },
+    "moodle_enrollment": {
+      "not_found": "La matrícula en Moodle del curso no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una matricula en Moodle para el estudiante :username del curso :coursename"
+      },
+      "empty": "El curso :coursename en Moodle no tiene registros de matrícula."
+    }
   }
 }

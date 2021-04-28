@@ -3,46 +3,46 @@
     "secure": {
       "appModule": {
         "permission": {
-          "not_found":"El permiso no ha sido encontrado",
+          "not_found": "El permiso no ha sido encontrado",
           "insertOrUpdate": {
-            "already_exists":"Ya existe un permiso con el nombre :name"
+            "already_exists": "Ya existe un permiso con el nombre :name"
           }
         },
         "module": {
-          "not_found":"El modulo no ha sido encontrado",
+          "not_found": "El modulo no ha sido encontrado",
           "insertOrUpdate": {
-            "already_exists":"Ya existe un modulo con el nombre :name"
+            "already_exists": "Ya existe un modulo con el nombre :name"
           }
         }
       },
       "role": {
-        "not_found":"El rol no ha sido encontrado",
+        "not_found": "El rol no ha sido encontrado",
         "insertOrUpdate": {
-          "already_exists":"Ya existe un rol con el nombre :name"
+          "already_exists": "Ya existe un rol con el nombre :name"
         }
       },
       "environment": {
-        "not_found":"El entorno no ha sido encontrado",
+        "not_found": "El entorno no ha sido encontrado",
         "insertOrUpdate": {
-          "already_exists":"Ya existe un entorno con el nombre :name"
+          "already_exists": "Ya existe un entorno con el nombre :name"
         }
       }
     },
     "home": {
-      "not_found":"El home no ha sido encontrado",
+      "not_found": "El home no ha sido encontrado",
       "insertOrUpdate": {
-        "already_exists":"Ya existe un home con el nombre :name"
+        "already_exists": "Ya existe un home con el nombre :name"
       }
     },
     "user": {
-      "not_found":"El usuario no ha sido encontrado",
+      "not_found": "El usuario no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",
         "password_required": "La contraseña es obligatoria"
       }
     },
     "country": {
-      "not_found":"El pais no ha sido encontrado",
+      "not_found": "El pais no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un pais con el nombre :name"
       }
@@ -67,7 +67,7 @@
         }
       },
       "post": {
-        "not_found":"El post no ha sido encontrado",
+        "not_found": "El post no ha sido encontrado",
         "post_date_required": "Fecha de publicación requerida",
         "event_date_required": "Fecha del evento requerida"
       }
@@ -86,7 +86,7 @@
         }
       },
       "forum": {
-        "not_found":"El foro no ha sido encontrado",
+        "not_found": "El foro no ha sido encontrado",
         "post_date_required": "Fecha de publicación requerida"
       },
       "message": {
@@ -98,17 +98,36 @@
         }
       },
       "skylltype": {
-        "not_found":"El tipo de habilidad no ha sido encontrado",
+        "not_found": "El tipo de habilidad no ha sido encontrado",
         "insertOrUpdate": {
           "already_exists": "Ya existe un tipo de habilidad con el nombre :name"
         }
       }
     },
     "course": {
-			"not_found": "El curso no ha sido encontrado",
-			"insertOrUpdate": {
-				"already_exists": "Ya existe un curso con el nombre :name"
-			}
-		}
+      "not_found": "El curso no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un curso con el nombre :name"
+      }
+    },
+    "moodle_course": {
+      "not_found": "El curso :name en Moodle no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un curso con el nombre :name"
+      }
+    },
+    "enrollment": {
+      "not_found": "La matrícula del curso no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename"
+      }
+    },
+    "moodle_enrollment": {
+      "not_found": "La matrícula en Moodle del curso no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una matricula en Moodle para el estudiante :username del curso :coursename"
+      },
+      "empty": "El curso :coursename en Moodle no tiene registros de matrícula."
+    }
   }
 }

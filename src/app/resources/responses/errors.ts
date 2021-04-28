@@ -263,16 +263,63 @@ class ErrorResponse {
       "course": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course.not_found"),
-          "status_code": "course",
+          "status_code": "course_not_found",
           "code": 400
         },
         "insertOrUpdate": {
           "already_exists": {
             "message": i18nUtility.__("app_error_messages.course.insertOrUpdate.already_exists"),
-            "status_code": "course",
+            "status_code": "course_insertOrUpdate_already_exists",
             "code": 400
           }
         }
+      },
+      "moodle_course": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.moodle_course.not_found"),
+          "status_code": "moodle_course_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.moodle_course.insertOrUpdate.already_exists"),
+            "status_code": "moodle_course_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
+      "enrollment": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.enrollment.not_found"),
+          "status_code": "enrollment_course_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.enrollment.insertOrUpdate.already_exists"),
+            "status_code": "enrollment_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
+      "moodle_enrollment": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.moodle_enrollment.not_found"),
+          "status_code": "moodle_enrollment_course_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.moodle_enrollment.insertOrUpdate.already_exists"),
+            "status_code": "moodle_enrollment_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        },
+        "empty": {
+          "message": i18nUtility.__("app_error_messages.moodle_enrollment.empty"),
+          "status_code": "moodle_enrollment_empty",
+          "code": 400
+        },
       },
     };
 

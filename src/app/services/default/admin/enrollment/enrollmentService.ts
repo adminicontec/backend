@@ -153,6 +153,7 @@ class EnrollmentService {
         // @INFO: Validando matrícula única: email y courseID
         if (params.email && params.courseID) {
 
+          var paramFullname = params.firstname + " " + params.lastname;
           console.log("Inicio de Enrollment");
           var paramToEnrollment = {
             moodleRoleID: 0,
@@ -160,41 +161,35 @@ class EnrollmentService {
             moodleCourseID: 0
           };
 
-
-          // Consultar por ShorName de curso para enrolamiento
+          //#region  [ 1. Consultar por ShortName de curso para enrolamiento ]
           let moodleParamsInfoCourse = {
             wstoken: moodle_setup.wstoken,
             wsfunction: moodle_setup.services.courses.getByField,
             moodlewsrestformat: moodle_setup.restformat,
             'field': 'shortname',
             'value': params.course
-
-            // 'field': 'idnumber',
-            // 'value': params.courseID
           };
+
+          console.log("ParamsInfoCourse:");
+          console.log(moodleParamsInfoCourse);
           let respDataCourse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsInfoCourse });
-          if (respDataCourse.exception) {
+
+          console.log(">>>>>>>>> Resp DataCourse:");
+          console.log(respDataCourse);
+
+          if (respDataCourse.courses.length == 0) {
             // ERROR al consultar el curso en Moodle
             console.log("Moodle: ERROR." + JSON.stringify(respDataCourse));
-
-            return responseUtility.buildResponseSuccess('json', null, {
-              additional_parameters: {
-                error: {
-                  respDataCourse
-                }
-              }
-            })
-
+            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.course } } })
           }
           else {
+            // id de curso en Moodle
             paramToEnrollment.moodleCourseID = respDataCourse.courses[0].id;
             console.log("Moodle CourseID: " + respDataCourse.courses[0].id);
-
-            paramToEnrollment.moodleCourseID = respDataCourse.courses[0].id;
           }
+          //#endregion
 
-
-          // 1. Validación de Usuario en CampusVirtual si Existe
+          //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
           const respX: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] })
           if (respX.status == "error") {
             console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
@@ -228,7 +223,24 @@ class EnrollmentService {
             console.log("Campus: usuario ya existe");
             console.log(respX.user);
           }
+          //#endregion
 
+          //#region [ 3. Creación de la matrícula en CV (enrollment) ]
+          const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
+          if (exist) {
+            // Si existe la matrícula en CV, intentar matricular en Moodle
+            console.log("CV Enrollment, ya existe: ");
+            console.log(exist);
+            //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
+          }
+          // Creación exitosa de Enrollment en CV
+          const respEnrollmentCV: any = await Enrollment.create(params)
+          console.log("CV Enrollment: ");
+          console.log(respEnrollmentCV);
+          //#endregion 
+
+
+          console.log("------------- CV MOODLE begin -------------");
           // 2. Validación si Existe Usuario en Moodle
           let moodleParams = {
             wstoken: moodle_setup.wstoken,
@@ -284,17 +296,6 @@ class EnrollmentService {
 
             }
           }
-          // 3. Creación de la matrícula en CV (enrollment)
-
-          const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
-          if (exist) {
-            // Si existe la matrícula en CV, intentar matricular en Moodle
-
-            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { email: params.email, courseID: params.courseID } } })
-          }
-
-          // Creación exitosa de Enrollment en CV
-          const respEnrollmentCV: any = await Enrollment.create(params)
 
 
           console.log("MOODLE TO ENROLLMENT: ");
@@ -311,28 +312,29 @@ class EnrollmentService {
           };
 
           let respEnrollment = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParamsEnrollment });
-          if (respEnrollment.exception) {
-            console.log("[MOODLE]: ERROR en Enrolamiento");
-            console.log(respEnrollment)
-          } else {
 
-            // SI todo el proceso es Exitoso, arma la respuesta con la siguiente estructura
+          console.log("resp Enroll");
+          console.log(respEnrollment);
+
+          if (respEnrollment == null) {
+            console.log("Success: ")
             return responseUtility.buildResponseSuccess('json', null, {
               additional_parameters: {
                 enrollment: {
-                  _id: respEnrollmentCV._id,
                   email: respEnrollmentCV.email,
                   username: respEnrollmentCV.email,
                   password: passw,
                   courseID: respEnrollmentCV.courseID,
                   courseName: respEnrollmentCV.courseName,
                   campusURL: campus_setup.url + "/login",
-                  enrollmentDate: Date.now(),
-                  moodleCourseID: paramToEnrollment.moodleCourseID,
-                  moodleResp : respEnrollment
+                  enrollmentDate: Date.now()
                 }
               }
             })
+          }
+          else {
+            console.log("[MOODLE]: ERROR en Enrolamiento");
+            console.log(respEnrollment)
           }
 
 
