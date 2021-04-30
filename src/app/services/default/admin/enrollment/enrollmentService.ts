@@ -47,7 +47,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id email firstname lastname documentType documentID courseID course'
+    let select = 'id email firstname lastname documentType documentID courseID'
     if (filters.select) {
       select = filters.select
     }
@@ -166,32 +166,29 @@ class EnrollmentService {
             wstoken: moodle_setup.wstoken,
             wsfunction: moodle_setup.services.courses.getByField,
             moodlewsrestformat: moodle_setup.restformat,
-            'field': 'shortname',
-            'value': params.course
+            'field': 'id',
+            'value': params.courseID
           };
+          // Consulta a Moodle: [core_course_get_courses_by_field]
+          const respMoodleDataCourse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsInfoCourse });
 
-          console.log("ParamsInfoCourse:");
-          console.log(moodleParamsInfoCourse);
-          let respDataCourse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsInfoCourse });
-
-          console.log(">>>>>>>>> Resp DataCourse:");
-          console.log(respDataCourse);
-
-          if (respDataCourse.courses.length == 0) {
+          if (respMoodleDataCourse.courses.length == 0) {
             // ERROR al consultar el curso en Moodle
-            console.log("Moodle: ERROR." + JSON.stringify(respDataCourse));
-            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.course } } })
+            console.log("Moodle: ERROR." + JSON.stringify(respMoodleDataCourse));
+            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
           }
           else {
             // id de curso en Moodle
-            paramToEnrollment.moodleCourseID = respDataCourse.courses[0].id;
-            console.log("Moodle CourseID: " + respDataCourse.courses[0].id);
+            paramToEnrollment.moodleCourseID = respMoodleDataCourse.courses[0].id;
+            console.log("[    Moodle resp   ]");
+            console.log(">> Course: "+ respMoodleDataCourse.courses[0].shortname);
+            console.log(">> CourseID: " + respMoodleDataCourse.courses[0].id);
           }
           //#endregion
 
           //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
-          const respX: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] })
-          if (respX.status == "error") {
+          const respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] })
+          if (respCampusDataUser.status == "error") {
             console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
             // Contraseña aleatoria
             var condicionesPass = {
@@ -212,7 +209,7 @@ class EnrollmentService {
             }
             const respoUser = await userService.insertOrUpdate(userParams);
             if (respoUser.status == "success") {
-              console.log("Nuevo usuario creado con éxito: " + respoUser.user.username + " : " + passw);
+              console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
             }
             else {
               console.log(respoUser);
@@ -220,8 +217,8 @@ class EnrollmentService {
           }
           else {
             // Usuario ya existe en CV:
-            console.log("Campus: usuario ya existe");
-            console.log(respX.user);
+            console.log("[  Campus  ] Usuario ya existe: ");
+            console.log(respCampusDataUser.user.profile.first_name + " " +respCampusDataUser.user.profile.last_name);
           }
           //#endregion
 
@@ -229,18 +226,18 @@ class EnrollmentService {
           const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
           if (exist) {
             // Si existe la matrícula en CV, intentar matricular en Moodle
-            console.log("CV Enrollment, ya existe: ");
+            console.log("[  Campus  ] Matrícula ya existe: ");
             console.log(exist);
             //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
           }
           // Creación exitosa de Enrollment en CV
-          const respEnrollmentCV: any = await Enrollment.create(params)
-          console.log("CV Enrollment: ");
-          console.log(respEnrollmentCV);
+          const respCampusDataEnrollment: any = await Enrollment.create(params)
+          console.log("[  Campus  ] Enrollment: ");
+          console.log(respCampusDataEnrollment);
           //#endregion 
 
 
-          console.log("------------- CV MOODLE begin -------------");
+          console.log("------------- ENROLLMENT IN MOODLE -------------");
           // 2. Validación si Existe Usuario en Moodle
           let moodleParams = {
             wstoken: moodle_setup.wstoken,
@@ -321,11 +318,11 @@ class EnrollmentService {
             return responseUtility.buildResponseSuccess('json', null, {
               additional_parameters: {
                 enrollment: {
-                  email: respEnrollmentCV.email,
-                  username: respEnrollmentCV.email,
+                  email: respCampusDataEnrollment.email,
+                  username: respCampusDataEnrollment.email,
                   password: passw,
-                  courseID: respEnrollmentCV.courseID,
-                  courseName: respEnrollmentCV.courseName,
+                  courseID: respCampusDataEnrollment.courseID,
+                  courseName: respCampusDataEnrollment.courseName,
                   campusURL: campus_setup.url + "/login",
                   enrollmentDate: Date.now()
                 }
@@ -353,6 +350,7 @@ class EnrollmentService {
       }
 
     } catch (e) {
+      console.log("catch Exception ");
       return responseUtility.buildResponseFailed('json')
     }
   }
