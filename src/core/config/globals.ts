@@ -32,9 +32,10 @@ export const jwt_exp                        = {
     amount: (env.hasOwnProperty('jwt_exp') && env["jwt_exp"].hasOwnProperty('amount')) ? env['jwt_exp']["amount"]: 30,
     unity : (env.hasOwnProperty('jwt_exp') && env["jwt_exp"].hasOwnProperty('unity')) ? env['jwt_exp']["unity"]  : "days",
 }
-export const driver                  = (env.hasOwnProperty('database') && env['database'].hasOwnProperty('driver')) ? env['database']['driver'] : null;
-export const connection_data         = (driver && env['database'].hasOwnProperty(driver)) ? env['database'][driver] : {};
+export const driver                = (env.hasOwnProperty('database') && env['database'].hasOwnProperty('driver')) ? env['database']['driver'] : null;
+export const connection_data       = (driver && env['database'].hasOwnProperty(driver)) ? env['database'][driver] : {};
 export const aws_config            = (env.hasOwnProperty('aws')) ? env['aws'] : {};
+export const google_config         = (env.hasOwnProperty('google')) ? env['google'] : {};
 export const ftp_config            = (env.hasOwnProperty('ftp')) ? env['ftp'] : {};
 export const mailer                = (env.hasOwnProperty('mailer')) ? env['mailer'] : {};
 export const attached              = (env.hasOwnProperty('attached')) ? env['attached'] : {};
@@ -51,6 +52,7 @@ export const xlsx_config           = (env.hasOwnProperty('xlsx')) ? env['xlsx'] 
 export const router_prefix = (env.hasOwnProperty('router_prefix')) ? env['router_prefix'] : 'api';
 export const moodle_setup:any         = (env.hasOwnProperty('moodle_setup')) ? env['moodle_setup'] : {};
 export const campus_setup:any         = (env.hasOwnProperty('campus_setup')) ? env['campus_setup'] : {};
+export const google_services = (env.hasOwnProperty('google_services')) ? env['google_services'] : {};
 // @end
 
 // @export_globals
