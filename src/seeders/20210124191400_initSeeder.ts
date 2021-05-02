@@ -382,6 +382,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:posts_delete', description: 'Eliminar publicaciones'},
         {name: 'permission:posts_list', description: 'Ver publicaciones'},
       ]},
+      { name: 'module:forums', description: 'Módulo que permite administrar los foros', permissions: [
+        { name: 'permission:forums_create', description: 'Crear foros' },
+        { name: 'permission:forums_update', description: 'Editar foros' },
+        { name: 'permission:forums_delete', description: 'Eliminar foros' },
+        { name: 'permission:forums_list', description: 'Ver foros' },
+      ] },
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
         {name: 'permission:users_create', description: 'Crear usuarios'},
         {name: 'permission:users_update', description: 'Editar usuarios'},
@@ -462,6 +468,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:posts_update'],
           module_permission_ids['permission:posts_delete'],
           module_permission_ids['permission:posts_list'],
+          module_permission_ids['permission:forums_create'],
+          module_permission_ids['permission:forums_update'],
+          module_permission_ids['permission:forums_delete'],
+          module_permission_ids['permission:forums_list'],
           module_permission_ids['permission:users_create'],
           module_permission_ids['permission:users_update'],
           module_permission_ids['permission:users_delete'],

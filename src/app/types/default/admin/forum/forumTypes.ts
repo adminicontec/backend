@@ -8,9 +8,9 @@ export interface IForum {
   coverUrl?: string // URL de la imagen del foro
   postDate?: string // Fecha desde la cual el foro estara disponible
   isActive: boolean // Identifica si foro esta activo
-  tags?: Array<any> // Array con los tags del foro
+  tags?: Array<any> | string // Array con los tags del foro
   cover?: any // Objeto tipo file que contiene la imagen a cargar
-  locations?: IForumLocations[] // Array con las ubicaciones del foro
+  locations?: IForumLocations[] | string // Array con las ubicaciones del foro
   location?: IForumLocations // Array con las ubicaciones del foro
   id?: string // Identificador del foro
 }
