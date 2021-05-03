@@ -19,8 +19,12 @@ import { Enrollment } from '@scnode_app/models'
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IEnrollment, IEnrollmentQuery } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { userService } from '../user/userService';
+import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IdentityStore } from 'aws-sdk';
 import { generalUtility } from 'core/utilities/generalUtility';
+import { moodleUserService } from '../../moodle/user/moodleUserService';
+import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
+import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
 // @end
 
 class EnrollmentService {
@@ -156,201 +160,201 @@ class EnrollmentService {
           var paramFullname = params.firstname + " " + params.lastname;
           console.log("Inicio de Enrollment");
           var paramToEnrollment = {
-            moodleRoleID: 0,
+            moodleRoleID: 5,
+            user: {
+              moodleUserID: 0,
+              moodleFirstName: '',
+              moodleLastName: '',
+              moodleUserName: '',
+              moodleEmail: '',
+              moodlePassword: ''
+            },
+            course: {
+              moodleCourseID: 0,
+              moodleCourseName: ''
+            },
+
             moodleUserID: 0,
             moodleCourseID: 0
           };
 
-          //#region  [ 1. Consultar por ShortName de curso para enrolamiento ]
-          let moodleParamsInfoCourse = {
-            wstoken: moodle_setup.wstoken,
-            wsfunction: moodle_setup.services.courses.getByField,
-            moodlewsrestformat: moodle_setup.restformat,
-            'field': 'id',
-            'value': params.courseID
-          };
-          // Consulta a Moodle: [core_course_get_courses_by_field]
-          const respMoodleDataCourse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsInfoCourse });
+          //#region  [ 1. Consultar Id del curso para verificar ]
+          // Llamado a Servicio MoodleGetCourse
+          const respMoodle: any = await moodleCourseService.findBy(params);
+          console.log(respMoodle);
 
-          if (respMoodleDataCourse.courses.length == 0) {
-            // ERROR al consultar el curso en Moodle
-            console.log("Moodle: ERROR." + JSON.stringify(respMoodleDataCourse));
+          if (respMoodle.status == "error") {
+            // Curso en Moodle NO existe.
             return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
           }
           else {
-            // id de curso en Moodle
-            paramToEnrollment.moodleCourseID = respMoodleDataCourse.courses[0].id;
-            console.log("[    Moodle resp   ]");
-            console.log(">> Course: "+ respMoodleDataCourse.courses[0].shortname);
-            console.log(">> CourseID: " + respMoodleDataCourse.courses[0].id);
-          }
-          //#endregion
+            // Info del curso existe!
+            paramToEnrollment.course.moodleCourseID = respMoodle.course.id;
+            paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
 
-          //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
-          const respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] })
-          if (respCampusDataUser.status == "error") {
-            console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+            //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
             // Contraseña aleatoria
             var condicionesPass = {
               characters: 10,   // Cantidad numerica de caracteres de los cuales estara formada una cadena de texto
               symbols: 1,
             }
             var passw = generalUtility.buildRandomChain() + "$";
-            // 1.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
-            var userParams = {
-              username: params.email,
-              email: params.email,
-              password: passw,
-              roles: ["607e2e80c37a5d75273ade37"],
-              profile: {
-                first_name: params.firstname,
-                last_name: params.lastname
+
+            const respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] });
+
+            if (respCampusDataUser.status == "error") {
+              // USUARIO NO EXISTE EN CAMPUS VIRTUAL
+              console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+
+              // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
+              var cvUserParams = {
+                username: params.email,
+                email: params.email,
+                password: passw,
+                roles: ["607e2e80c37a5d75273ade37"], // Id de ROL sujeto a verificación en CV
+                profile: {
+                  first_name: params.firstname,
+                  last_name: params.lastname
+                }
+              }
+              paramToEnrollment.user.moodleFirstName = params.firstname;
+              paramToEnrollment.user.moodleLastName = params.lastname;
+              paramToEnrollment.user.moodleUserName = params.email;
+              paramToEnrollment.user.moodleEmail = params.email;
+              paramToEnrollment.user.moodlePassword = passw;
+
+              // Insertar nuevo Usuario si existe
+              const respoUser = await userService.insertOrUpdate(cvUserParams);
+              if (respoUser.status == "success") {
+                console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
+              }
+              else {
+                // Retornar ERROR: revisar con equipo
+                console.log(respoUser);
               }
             }
-            const respoUser = await userService.insertOrUpdate(userParams);
-            if (respoUser.status == "success") {
-              console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
+            else {
+              // Usuario ya existe en CV:
+              console.log("[  Campus  ] Usuario ya existe: ");
+              console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);
+
+              // Si existe Usuario en CV, debe existir en Moodle 
+              paramToEnrollment.user.moodleFirstName = params.firstname;
+              paramToEnrollment.user.moodleLastName = params.lastname;
+              paramToEnrollment.user.moodleUserName = params.email;
+              paramToEnrollment.user.moodleEmail = params.email;
+              paramToEnrollment.user.moodlePassword = passw;
+
+            }
+            //#endregion
+
+            //#region [ 3. Creación de la matrícula en CV (enrollment) ]
+            const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
+            if (exist) {
+              // Si existe la matrícula en CV, intentar matricular en Moodle
+              console.log("[  Campus  ] Matrícula ya existe: ");
+              console.log(exist);
+              //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
             }
             else {
-              console.log(respoUser);
+              // Creación exitosa de Enrollment en CV
+              // parámetros para Enrollment en CV, requiere nombre de Curso
+              var paramsCVEnrollment = params;
+              paramsCVEnrollment.shortName = paramToEnrollment.course.moodleCourseName;
+
+              const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
+              console.log("[  Campus  ] Enrollment: ");
+              console.log(respCampusDataEnrollment);
             }
-          }
-          else {
-            // Usuario ya existe en CV:
-            console.log("[  Campus  ] Usuario ya existe: ");
-            console.log(respCampusDataUser.user.profile.first_name + " " +respCampusDataUser.user.profile.last_name);
+            //#endregion 
+
+            //#region ENORLLMENT EN MOODLE
+            console.log("------------- ENROLLMENT IN MOODLE -------------");
+            // 2. Validación si Existe Usuario en Moodle
+            console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
+            var paramUserMoodle = {
+              email: params.email
+            }
+            let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+            console.log(respMoodle2);
+            if (respMoodle2.status == "success") {
+              if (respMoodle2.user == null) {
+                console.log("Moodle: user NO exists ");
+                // [revisión[]
+                var paramsMoodleUser = { //: IMoodleUser;
+                  firstname: paramToEnrollment.user.moodleFirstName,
+                  lastname: paramToEnrollment.user.moodleLastName,
+                  password: passw,
+                  email: paramToEnrollment.user.moodleEmail,
+                  username: paramToEnrollment.user.moodleEmail
+                }
+                // crear nuevo uusario en MOODLE
+                let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
+                console.log("Moodle: Usuario creado con Éxito.");
+                console.log(respMoodle2);
+                paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
+              }
+              else {
+                console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
+                paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
+              }
+
+              //paramToEnrollment.user.moodleUserID = respMoodle2.
+
+              // Creación de Enrollment en Moodle
+              //paramToEnrollment.
+              var enrollment = {
+                roleid: paramToEnrollment.moodleRoleID,
+                courseid: paramToEnrollment.course.moodleCourseID,
+                userid: paramToEnrollment.user.moodleUserID
+              }
+
+              let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+              console.log(respMoodle3);
+
+
+              const timeElapsed = Date.now();
+              const currentDate = new Date(timeElapsed);
+
+
+              return responseUtility.buildResponseSuccess('json', null, {
+                additional_parameters: {
+                  enrollment: {
+                    email: paramToEnrollment.user.moodleEmail,
+                    username: paramToEnrollment.user.moodleUserName,
+                    password: paramToEnrollment.user.moodlePassword,
+                    courseID: paramToEnrollment.course.moodleCourseID,
+                    courseName: paramToEnrollment.course.moodleCourseName,
+                    campusURL: campus_setup.url,
+                    enrollmentDate: currentDate.toISOString()
+                  }
+                }
+              });
+            }
+            else {
+              // Error al consultar el usuario
+              return responseUtility.buildResponseSuccess('json', null, {
+                additional_parameters: {
+                  enrollment: {
+                    ...respMoodle2
+                  }
+                }
+              });
+            }
+            //#endregion
+
           }
           //#endregion
 
-          //#region [ 3. Creación de la matrícula en CV (enrollment) ]
-          const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
-          if (exist) {
-            // Si existe la matrícula en CV, intentar matricular en Moodle
-            console.log("[  Campus  ] Matrícula ya existe: ");
-            console.log(exist);
-            //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
-          }
-          // Creación exitosa de Enrollment en CV
-          const respCampusDataEnrollment: any = await Enrollment.create(params)
-          console.log("[  Campus  ] Enrollment: ");
-          console.log(respCampusDataEnrollment);
-          //#endregion 
-
-
-          console.log("------------- ENROLLMENT IN MOODLE -------------");
-          // 2. Validación si Existe Usuario en Moodle
-          let moodleParams = {
-            wstoken: moodle_setup.wstoken,
-            wsfunction: moodle_setup.services.users.findByField,
-            moodlewsrestformat: moodle_setup.restformat,
-            field: 'email',
-            'values[0]': params.email
-          };
-
-          let userIfExistMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
-          if (userIfExistMoodle.exception) {
-            console.log("Moodle: ERROR." + JSON.stringify(userIfExistMoodle));
-          }
-          else {
-
-            console.log("Moodle data OK:" + JSON.stringify(userIfExistMoodle));
-            // 2.1 Si la respuesta no es vacía, EXISTE el usuario en Moodle .
-            if (JSON.stringify(userIfExistMoodle) != "[]") {
-              // Usuario en Moodle ya existe, datos en objeto >> userIfExistMoodle[0]
-              console.log("Moodle: Usuario existe");
-              console.log("Moodle: ID =>" + userIfExistMoodle[0].id);
-              console.log("Moodle: username =>" + userIfExistMoodle[0].username);
-              console.log("Moodle: Fullname =>" + userIfExistMoodle[0].fullname);
-            }
-            else {
-              console.log("Moodle: no hay usuario");
-              // 2.2 Creación de usuario en Moodle
-              let moodleParams = {
-                wstoken: moodle_setup.wstoken,
-                wsfunction: moodle_setup.services.users.create,
-                moodlewsrestformat: moodle_setup.restformat,
-                'users[0][email]': params.email,
-                'users[0][username]': params.email,
-                'users[0][password]': passw,
-                'users[0][firstname]': params.firstname,
-                'users[0][lastname]': params.lastname
-              };
-              userIfExistMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
-              if (userIfExistMoodle.exception) {
-                // ERROR al crear el usuario en Moodle
-                console.log("Moodle: ERROR." + JSON.stringify(userIfExistMoodle));
-                // return
-              }
-              else {
-                // Usuario en moodle CREADO con éxito
-                console.log("Moodle create USER OK: ");
-                console.log("Moodle UserID: " + userIfExistMoodle[0].id);
-                console.log("Moodle UserName: " + userIfExistMoodle[0].username);
-
-                paramToEnrollment.moodleRoleID = 5;
-                paramToEnrollment.moodleUserID = userIfExistMoodle[0].id;
-              }
-
-            }
-          }
-
-
-          console.log("MOODLE TO ENROLLMENT: ");
-          console.log(paramToEnrollment);
-
-          // 4. Creación de matrícula en Moodle (enrollment)
-          let moodleParamsEnrollment = {
-            wstoken: moodle_setup.wstoken,
-            wsfunction: moodle_setup.services.enrollment.create,
-            moodlewsrestformat: moodle_setup.restformat,
-            'enrolments[0][roleid]': paramToEnrollment.moodleRoleID,
-            'enrolments[0][courseid]': paramToEnrollment.moodleCourseID,
-            'enrolments[0][userid]': paramToEnrollment.moodleUserID
-          };
-
-          let respEnrollment = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParamsEnrollment });
-
-          console.log("resp Enroll");
-          console.log(respEnrollment);
-
-          if (respEnrollment == null) {
-            console.log("Success: ")
-            return responseUtility.buildResponseSuccess('json', null, {
-              additional_parameters: {
-                enrollment: {
-                  email: respCampusDataEnrollment.email,
-                  username: respCampusDataEnrollment.email,
-                  password: passw,
-                  courseID: respCampusDataEnrollment.courseID,
-                  courseName: respCampusDataEnrollment.courseName,
-                  campusURL: campus_setup.url + "/login",
-                  enrollmentDate: Date.now()
-                }
-              }
-            })
-          }
-          else {
-            console.log("[MOODLE]: ERROR en Enrolamiento");
-            console.log(respEnrollment)
-          }
-
-
-          // Si no Existe, crea el Usuario en C.V
-          //          const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID, _id: { $ne: params.id } })
-          //          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { email: params.email, courseID: params.courseID } } })
         }
         else {
           console.log("ERROR en Enrolamiento");
-
         }
-
-
-
-
       }
 
     } catch (e) {
       console.log("catch Exception ");
+      console.log(e);
       return responseUtility.buildResponseFailed('json')
     }
   }

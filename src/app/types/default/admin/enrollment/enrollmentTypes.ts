@@ -8,7 +8,8 @@ export interface IEnrollment{
   lastname: string,       // Apellido de estudiante
   documentType: string,   // Tipo de documento (CC, CE, PAS )
   documentID: string,     // Documento de identidad
-  courseID: string,       // ID de curso (listado de cursos en CV)
+  courseID?: string,       // ID de curso (listado de cursos en CV)
+  shortName?: string,       // ID de curso (listado de cursos en CV)
   id?: string             // Identificador del Enrollment
 }
 

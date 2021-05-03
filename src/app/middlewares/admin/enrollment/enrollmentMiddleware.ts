@@ -31,7 +31,7 @@ class EnrollmentMiddleware {
       { key: 'lastname', label: 'Apellido de estudiante' },
       { key: 'documentType', label: 'Tipo de documento' },
       { key: 'documentID', label: 'Documento de identidad' },
-      { key: 'courseID', label: 'ID de curso' }
+      //{ key: 'courseID', label: 'ID de curso' }
     ];
 
     await requestUtility.middlewareValidator(fields_config, req, res, next)

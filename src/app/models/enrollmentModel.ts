@@ -32,7 +32,7 @@ const EnrollmentSchema = new Schema({
   },
   course: {
     type: Schema.Types.String,
-    required: true,
+    required: false,
   },
   // @end
 }, {
