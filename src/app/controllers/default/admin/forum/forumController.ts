@@ -59,6 +59,8 @@ class ForumController {
 
     if (files && files['cover']) {
       params['cover'] = files['cover']
+    }else{
+    	params['cover'] = null;
     }
 
 		const response = await forumService.insertOrUpdate(params)

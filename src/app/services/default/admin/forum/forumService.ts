@@ -1,7 +1,9 @@
 // @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
+import {forumCategoryService} from '@scnode_app/services/default/admin/forum/forumCategoryService'
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
@@ -11,6 +13,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import {mapUtility} from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
@@ -99,10 +102,51 @@ class ForumService {
 
       // @INFO: Cargando imagen al servidor
       if (params.cover) {
+        console.log(params.cover)
         const defaulPath = this.default_cover_path
         const response_upload: any = await uploadService.uploadFile(params.cover, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+      
+      if (params.tags && typeof params.tags === 'string') params.tags = params.tags.split(',')
+      if (params.tags && Array.isArray(params.tags)) {
+        let tags = []
+        await mapUtility.mapAsync(
+          params.tags.map(async (t) => {
+            const isObjectId = await ObjectID.isValid(t)
+            if (!isObjectId) {
+              const tagExists: any = await forumCategoryService.findBy({query: QueryValues.ONE, where: [{field: 'name', value: t}]})
+              if (tagExists.status === 'success') {
+                tags.push(tagExists.forumCategory._id)
+              } else {
+                const newTagResponse: any = await forumCategoryService.insertOrUpdate({name: t})
+                if (newTagResponse.status === 'success') {
+                  tags.push(newTagResponse.forumCategory._id)
+                }
+              }
+            } else {
+              tags.push(t)
+            }
+          })
+        )
+        params.tags = tags
+      }
+      
+      if (params.tags && typeof params.tags === 'string') {
+        params.tags = params.tags.split(',')
+      }
+
+      if (params.locations && typeof params.locations === 'string') {
+        let splitLocations = params.locations.split(',')
+        let newLocations = []
+        splitLocations.map((sl) => {
+          newLocations.push({
+            forumLocation: sl,
+            viewCounter: 0
+          })
+        })
+        params.locations = newLocations
       }
 
       if (params.id) {
@@ -114,10 +158,12 @@ class ForumService {
           let oldLocations: IForumLocations[] = register.locations
           if (oldLocations && Array.isArray(oldLocations) && oldLocations.length > 0) {
             for await (const location of params.locations) {
-              if (!location.viewCounter) {
-                let findIndex = oldLocations.findIndex((ol) => location.forumLocation.toString() === ol.forumLocation.toString())
-                if (findIndex !== -1) {
-                  location.viewCounter = (oldLocations[findIndex].viewCounter) ? oldLocations[findIndex].viewCounter : 0
+              if (typeof location !== 'string') {
+                if (!location.viewCounter) {
+                  let findIndex = oldLocations.findIndex((ol) => location.forumLocation.toString() === ol.forumLocation.toString())
+                  if (findIndex !== -1) {
+                    location.viewCounter = (oldLocations[findIndex].viewCounter) ? oldLocations[findIndex].viewCounter : 0
+                  }
                 }
               }
             }
@@ -172,7 +218,6 @@ class ForumService {
           }
         })
       }
-
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -226,11 +271,12 @@ class ForumService {
     let where = {}
 
     if(filters.search){
+      console.log('entre search')
       const search = filters.search
       where = {
         ...where,
         $or:[
-          {name: { $regex: '.*' + search + '.*',$options: 'i' }},
+          {title: { $regex: '.*' + search + '.*',$options: 'i' }},
           {description: { $regex: '.*' + search + '.*',$options: 'i' }},
         ]
       }
