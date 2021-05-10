@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
@@ -71,17 +72,35 @@ class PostDataService {
       }
 
       if (params.postDate) {
-        where['postDate'] = {$gte: new Date(params.postDate)}
+        let direction = 'lte'
+        let date = moment.utc()
+        if (params.postDate.date !== 'today') {
+          date = moment.utc(params.postDate.date)
+        }
+        if (params.postDate.direction) direction = params.postDate.direction
+        where['postDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
       }
 
       if (params.eventDate) {
-        where['eventDate'] = {$gte: new Date(params.eventDate)}
+        let direction = 'lte'
+        let date = moment.utc()
+        if (params.eventDate.date !== 'today') {
+          date = moment.utc(params.eventDate.date)
+        }
+        if (params.eventDate.direction) direction = params.eventDate.direction
+        where['eventDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
       }
 
       if (params.locations) {
         let locations = await PostLocation.find({'name': {$in: params.locations}}).select('id')
         locations = locations.map((l) => l._id)
         where['locations.postLocation'] = {$in: locations}
+      }
+
+      let sort = null
+      if (params.sort) {
+        sort = {}
+        sort[params.sort.field] = params.sort.direction
       }
 
       let registers = []
@@ -93,7 +112,7 @@ class PostDataService {
         .populate({path: 'locations.postLocation', select: 'id name'})
         .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
         .limit(paging ? nPerPage : null)
-        .sort({created_at: -1})
+        .sort(sort)
         .lean()
 
         for await (const register of registers) {

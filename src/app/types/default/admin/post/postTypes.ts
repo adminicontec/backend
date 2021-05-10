@@ -5,7 +5,7 @@
 export interface IPost {
   title: string // Titulo de la publicación
   subtitle?: string // Descripción corta de la publicación
-  content?: string // Contenido de la publicación
+  content?: any  // Contenido de la publicación
   coverUrl?: string // URL de la imagen de la publicación
   postDate?: string // Fecha desde la cual la publicación estara disponible
   eventDate?: string // Fecha desde la cual el evento estara disponible

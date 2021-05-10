@@ -26,7 +26,7 @@ import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTyp
 import {IPost, IPostDelete, IPostQuery, IPostLocations} from '@scnode_app/types/default/admin/post/postTypes'
 // @end
 
-const POST_DATE = ['news', 'research']
+const POST_DATE = ['news', 'research', 'webinar', 'capsules', 'blog']
 
 class PostService {
 

@@ -382,6 +382,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:posts_delete', description: 'Eliminar publicaciones'},
         {name: 'permission:posts_list', description: 'Ver publicaciones'},
       ]},
+      {name: 'module:banners', description: 'Módulo que permite administrar los banners', permissions: [
+        {name: 'permission:banners_create', description: 'Crear banners'},
+        {name: 'permission:banners_update', description: 'Editar banners'},
+        {name: 'permission:banners_delete', description: 'Eliminar banners'},
+        {name: 'permission:banners_list', description: 'Ver banners'},
+      ]},
       { name: 'module:forums', description: 'Módulo que permite administrar los foros', permissions: [
         { name: 'permission:forums_create', description: 'Crear foros' },
         { name: 'permission:forums_update', description: 'Editar foros' },
@@ -468,6 +474,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:posts_update'],
           module_permission_ids['permission:posts_delete'],
           module_permission_ids['permission:posts_list'],
+          module_permission_ids['permission:banners_create'],
+          module_permission_ids['permission:banners_update'],
+          module_permission_ids['permission:banners_delete'],
+          module_permission_ids['permission:banners_list'],
           module_permission_ids['permission:forums_create'],
           module_permission_ids['permission:forums_update'],
           module_permission_ids['permission:forums_delete'],
@@ -559,7 +569,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     let post_type_ids = {}
     const post_types = [
-      {name: 'news'},{name: 'events'},{name: 'research'}
+      {name: 'news'},{name: 'events'},{name: 'research'}, {name: 'blog'}, {name: 'capsules'}, {name: 'webinar'}
     ]
     for await (const postType of post_types) {
       const exists: any = await postTypeService.findBy({

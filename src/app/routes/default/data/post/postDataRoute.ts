@@ -29,7 +29,7 @@ class PostDataRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.get(app,_route,'/fetch-posts',this.instanceController.fetchPosts,[],['auth']);
+    routerUtility.post(app,_route,'/fetch-posts',this.instanceController.fetchPosts,[],[]);
     // @end
   }
 }

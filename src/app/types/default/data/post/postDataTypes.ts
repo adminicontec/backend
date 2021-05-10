@@ -9,8 +9,18 @@ export interface IFetchPosts {
   search?:string, // Busca sobre los campos de la coleccion
   isActive?: boolean // Estado del foro
   postType?: Array<string> // Tipo de publicación
-  postDate?: string // Fecha de busqueda
-  eventDate?: string // Fecha de busqueda
+  postDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  } // Fecha de busqueda
+  eventDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  } // Fecha de busqueda
   locations?: Array<string> // Lista de ubicaciones
+  sort?: {
+    field: string,
+    direction: string
+  }
 }
 //@end
