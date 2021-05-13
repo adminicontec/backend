@@ -40,6 +40,19 @@ class PostDataController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * Metodo que permite consultar las publicaciones
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public fetchPost = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await postDataService.fetchPost(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
+
 }
 
 export const postDataController = new PostDataController();

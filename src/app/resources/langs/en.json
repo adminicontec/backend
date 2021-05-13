@@ -69,7 +69,8 @@
       "post": {
         "not_found":"El post no ha sido encontrado",
         "post_date_required": "Fecha de publicación requerida",
-        "event_date_required": "Fecha del evento requerida"
+        "event_date_required": "Fecha del evento requerida",
+        "filter_to_search_required": "Es necesario un identificador para buscar la publicación"
       }
     },
     "forum": {

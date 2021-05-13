@@ -23,4 +23,9 @@ export interface IFetchPosts {
     direction: string
   }
 }
+
+export interface IFetchPost {
+  id?: string,
+  slug?: string
+}
 //@end

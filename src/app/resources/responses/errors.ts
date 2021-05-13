@@ -177,6 +177,11 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.post.post.event_date_required"),
             "status_code": "post_post_event_date_required",
             "code": 400
+          },
+          "filter_to_search_required": {
+            "message": i18nUtility.__("app_error_messages.post.post.filter_to_search_required"),
+            "status_code": "post_post_filter_to_search_required",
+            "code": 400
           }
         }
       },

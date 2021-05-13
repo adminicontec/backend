@@ -16,7 +16,7 @@ import { Post, PostLocation, PostType } from '@scnode_app/models';
 
 // @import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {IFetchPosts} from '@scnode_app/types/default/data/post/postDataTypes'
+import {IFetchPosts, IFetchPost} from '@scnode_app/types/default/data/post/postDataTypes'
 // @end
 class PostDataService {
 
@@ -28,6 +28,52 @@ class PostDataService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  /**
+   * Metodo que permite consultar la información de un Post
+   * @param params
+   * @returns
+   */
+  public fetchPost = async (params: IFetchPost) => {
+
+    try {
+
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors'
+
+      let where = {}
+
+      if (params.id) {
+        where['_id'] = params.id
+      } else if (params.slug) {
+        where['title'] = params.slug
+      } else {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.filter_to_search_required'})
+      }
+
+      let register = null
+      try {
+        register =  await Post.findOne(where)
+        .select(select)
+        .populate({path: 'postType', select: 'id name'})
+        .populate({path: 'tags', select: 'id name'})
+        .populate({path: 'locations.postLocation', select: 'id name'})
+        .lean()
+
+        if (register && register.coverUrl) {
+          register.coverUrl = postService.coverUrl(register)
+        }
+      } catch (e) {}
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          post: register
+        }
+      })
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   /**
    * Metodo que permite consultar las publicaciones
@@ -118,6 +164,9 @@ class PostDataService {
         for await (const register of registers) {
           if (register.coverUrl) {
             register.coverUrl = postService.coverUrl(register)
+          }
+          if (register.title) {
+            register.slug = encodeURI(register.title)
           }
         }
       } catch (e) {}
