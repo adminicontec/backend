@@ -11,7 +11,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Post, PostLocation, PostType } from '@scnode_app/models';
+import { Post, PostCategory, PostLocation, PostType } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -28,6 +28,28 @@ class PostDataService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  /**
+   * Metodo que permite consultar la categorias de una publicación
+   * @param params
+   * @returns
+   */
+   public fetchCategories = async (params: IFetchPost) => {
+
+    try {
+
+      let categories = await PostCategory.find()
+      .select('id name')
+      .lean()
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        categories: categories
+      }})
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   /**
    * Metodo que permite consultar la información de un Post
@@ -141,6 +163,10 @@ class PostDataService {
         let locations = await PostLocation.find({'name': {$in: params.locations}}).select('id')
         locations = locations.map((l) => l._id)
         where['locations.postLocation'] = {$in: locations}
+      }
+
+      if (params.tags && Array.isArray(params.tags) && params.tags.length > 0) {
+        where['tags'] = {$in: params.tags}
       }
 
       let sort = null

@@ -29,6 +29,18 @@ class PostDataController {
   constructor () {}
 
   /**
+   * Metodo que permite consultar las categorias de publicaciones
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public fetchCategories = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await postDataService.fetchCategories(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
+  /**
    * Metodo que permite consultar las publicaciones
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express

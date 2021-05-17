@@ -18,6 +18,7 @@ export interface IFetchPosts {
     direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
   } // Fecha de busqueda
   locations?: Array<string> // Lista de ubicaciones
+  tags?: Array<string> // Lista de tags
   sort?: {
     field: string,
     direction: string

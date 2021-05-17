@@ -31,6 +31,7 @@ class PostDataRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/fetch-posts',this.instanceController.fetchPosts,[],[]);
     routerUtility.get(app,_route,'/fetch-post/:slug',this.instanceController.fetchPost,[],[]);
+    routerUtility.post(app,_route,'/fetch-categories',this.instanceController.fetchCategories,[],[]);
     // @end
   }
 }
