@@ -1,5 +1,7 @@
 // @import_dependencies_node Import libraries
 import * as nodemailer from "nodemailer";
+import { htmlToText } from "nodemailer-html-to-text";
+const hbs = require('nodemailer-express-handlebars')
 // @end
 
 // @import_utilities Import utilities
@@ -12,7 +14,7 @@ import { sesAwsService } from "@scnode_core/services/default/aws/sesAwsService";
 // @end
 
 // @import types
-import {MailerSESConfig} from '@scnode_core/types/default/mailer/mailerTypes'
+import {MailerSESConfig, MailerSESSendMail} from '@scnode_core/types/default/mailer/mailerTypes'
 // @end
 
 // @Errors info: https://docs.aws.amazon.com/es_es/ses/latest/DeveloperGuide/api-error-codes.html
@@ -83,6 +85,30 @@ class MailerSesUtility {
       return responseUtility.buildResponseSuccess('json',null,{additional_parameters: {transporter: transporter}});
     } else {
       return responseUtility.buildResponseFailed('json',null,{error_key: "mailer.configuration_invalid"});
+    }
+  }
+
+  /**
+   * Metodo que permite enviar el mensaje
+   * @param params
+   * @returns
+   */
+  public sendMail = async (params: MailerSESSendMail) => {
+    try {
+      const transporter = params.transporter;
+
+      if (params.mail_options.html !== "") {
+        transporter.use('compile', htmlToText());
+      } else if (params.mail_options.template !== "") {
+        transporter.use('compile',hbs(params.mail_options.hbsConfig))
+      }
+
+      await transporter.sendMail(params.mail_options);
+
+      return responseUtility.buildResponseSuccess('json');
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
     }
   }
 }

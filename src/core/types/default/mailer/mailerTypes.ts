@@ -50,4 +50,24 @@ export interface MailerSMTPConfig {
 export interface MailerSESConfig {
   credentials? : string;  // Llave de configuración de Amazon S3
 }
+
+export interface MailerSendPulseConfig {
+  cli_id?: string // Identificador del cliente
+  secret_id?: string // Identificador secreto
+}
+
+export interface MailerSESSendMail {
+  transporter: any,
+  mail_options: MailOptions
+}
+
+export interface MailerSMTPSendMail {
+  transporter: any,
+  mail_options: MailOptions
+}
+
+export interface MailerSendPulseSendMail {
+  token: any,
+  mail_options: MailOptions
+}
 //@end

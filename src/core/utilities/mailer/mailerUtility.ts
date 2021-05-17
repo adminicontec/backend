@@ -1,7 +1,5 @@
 // @import_dependencies_node Import libraries
-import { htmlToText } from "nodemailer-html-to-text";
 import moment from "moment";
-const hbs = require('nodemailer-express-handlebars')
 // @end
 
 // @import_utilities Import utilities
@@ -138,17 +136,14 @@ class MailerUtility {
     if (response_transporter.status === 'error') return response_transporter;
 
     try {
-      const transporter = response_transporter.transporter;
 
-      if (mail_options.html !== "") {
-        transporter.use('compile', htmlToText());
-      } else if (mail_options.template !== "") {
-        transporter.use('compile',hbs(mail_options.hbsConfig))
-      }
+      const sendMailResponse: any = await mailer_utility['sendMail']({
+        ...response_transporter,
+        mail_options
+      });
+      // if (sendMailResponse.status === "error") return sendMailResponse;
+      return sendMailResponse
 
-      await transporter.sendMail(mail_options);
-
-      return responseUtility.buildResponseSuccess('json');
     } catch (err) {
       return responseUtility.buildResponseFailed('json',null,{error_key: "mailer.mailer_fail_request", additional_parameters: {
         reason: err,

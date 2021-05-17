@@ -1,5 +1,7 @@
 // @import_dependencies_node Import libraries
 import * as nodemailer from "nodemailer";
+import { htmlToText } from "nodemailer-html-to-text";
+const hbs = require('nodemailer-express-handlebars')
 // @end
 
 // @import_utilities Import utilities
@@ -8,7 +10,7 @@ import { requestUtility } from '@scnode_core/utilities/requestUtility';
 // @end
 
 // @import types
-import {MailerSMTPConfig} from '@scnode_core/types/default/mailer/mailerTypes'
+import {MailerSMTPConfig, MailerSMTPSendMail} from '@scnode_core/types/default/mailer/mailerTypes'
 // @end
 
 class MailerSmtpUtility {
@@ -70,6 +72,31 @@ class MailerSmtpUtility {
     });
 
     return responseUtility.buildResponseSuccess('json',null,{additional_parameters: {transporter: transporter}});
+  }
+
+  /**
+   * Metodo que permite enviar el mensaje
+   * @param params
+   * @returns
+   */
+  public sendMail = async (params: MailerSMTPSendMail) => {
+
+    try {
+      const transporter = params.transporter;
+
+      if (params.mail_options.html !== "") {
+        transporter.use('compile', htmlToText());
+      } else if (params.mail_options.template !== "") {
+        transporter.use('compile',hbs(params.mail_options.hbsConfig))
+      }
+
+      await transporter.sendMail(params.mail_options);
+
+      return responseUtility.buildResponseSuccess('json');
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 }
 
