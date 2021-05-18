@@ -381,30 +381,35 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:posts_update', description: 'Editar publicaciones'},
         {name: 'permission:posts_delete', description: 'Eliminar publicaciones'},
         {name: 'permission:posts_list', description: 'Ver publicaciones'},
+        {name: 'permission:posts_menu_access', description: 'Menu de publicaciones'},
       ]},
       {name: 'module:banners', description: 'Módulo que permite administrar los banners', permissions: [
         {name: 'permission:banners_create', description: 'Crear banners'},
         {name: 'permission:banners_update', description: 'Editar banners'},
         {name: 'permission:banners_delete', description: 'Eliminar banners'},
         {name: 'permission:banners_list', description: 'Ver banners'},
+        {name: 'permission:banners_menu_access', description: 'Menu de banners'},
       ]},
       { name: 'module:forums', description: 'Módulo que permite administrar los foros', permissions: [
         { name: 'permission:forums_create', description: 'Crear foros' },
         { name: 'permission:forums_update', description: 'Editar foros' },
         { name: 'permission:forums_delete', description: 'Eliminar foros' },
         { name: 'permission:forums_list', description: 'Ver foros' },
+        {name: 'permission:forums_menu_access', description: 'Menu de foros'},
       ] },
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
         {name: 'permission:users_create', description: 'Crear usuarios'},
         {name: 'permission:users_update', description: 'Editar usuarios'},
         {name: 'permission:users_delete', description: 'Eliminar usuarios'},
         {name: 'permission:users_list', description: 'Ver usuarios'},
+        {name: 'permission:users_menu_access', description: 'Menu de usuarios'},
       ]},
       {name: 'module:roles', description: 'Módulo que permite administrar los roles', permissions: [
         {name: 'permission:roles_create', description: 'Crear roles'},
         {name: 'permission:roles_update', description: 'Editar roles'},
         {name: 'permission:roles_delete', description: 'Eliminar roles'},
         {name: 'permission:roles_list', description: 'Ver roles'},
+        {name: 'permission:roles_menu_access', description: 'Menu de roles'},
       ]},
       {name: 'module:modules', description: 'Módulo que permite administrar los modulos', permissions: [
         {name: 'permission:modules_create', description: 'Crear modulos'},
@@ -498,6 +503,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:countries_update'],
           module_permission_ids['permission:countries_delete'],
           module_permission_ids['permission:countries_list'],
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:banners_menu_access'],
+          module_permission_ids['permission:forums_menu_access'],
+          module_permission_ids['permission:users_menu_access'],
+          module_permission_ids['permission:roles_menu_access'],
         ],
         homes: [
           home_ids['admin']
