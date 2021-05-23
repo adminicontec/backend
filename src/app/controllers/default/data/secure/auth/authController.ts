@@ -39,6 +39,31 @@ class AuthController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+   /**
+	 * Metodo que permite generar token de autenticación para recuperar contraseña
+	 * @param req Objeto de la clase Express
+	 * @param res Objeto de la clase Express
+	 * @returns
+	 */
+  public passwordRecovery = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    params.subject = 'passwordRecover.subject'
+    const response = await authService.generateTokenFromDestination(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite validar el token y procesar cambio de contraseña
+	 * @param req Objeto de la clase Express
+	 * @param res Objeto de la clase Express
+	 * @returns
+	 */
+   public changeRecoveredPassword = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await authService.changeRecoveredPassword(req, params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const authController = new AuthController();

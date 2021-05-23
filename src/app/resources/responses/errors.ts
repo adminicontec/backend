@@ -70,7 +70,44 @@ class ErrorResponse {
               "code": 400
             }
           }
-        }
+        },
+        "tokenFromDestination": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.not_found"),
+            "status_code": "secure_tokenFromDestination_not_found",
+            "code": 400
+          },
+          "token_expired": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.token_expired"),
+            "status_code": "secure_tokenFromDestination_token_expired",
+            "code": 400
+          },
+          "user_not_found": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.user_not_found"),
+            "status_code": "secure_tokenFromDestination_user_not_found",
+            "code": 400
+          },
+          "destination_required": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.destination_required"),
+            "status_code": "secure_tokenFromDestination_destination_required",
+            "code": 400
+          },
+          "destination_invalid": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.destination_invalid"),
+            "status_code": "secure_tokenFromDestination_destination_invalid",
+            "code": 400
+          },
+          "email_required": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.email_required"),
+            "status_code": "secure_tokenFromDestination_email_required",
+            "code": 400
+          },
+          "cell_phone_required": {
+            "message": i18nUtility.__("app_error_messages.secure.tokenFromDestination.cell_phone_required"),
+            "status_code": "secure_tokenFromDestination_cell_phone_required",
+            "code": 400
+          }
+        },
       },
       "home": {
         "not_found": {

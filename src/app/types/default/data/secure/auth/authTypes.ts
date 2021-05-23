@@ -13,4 +13,25 @@ export interface UserFields {
   profile: any,
   roles: Array<any>
 }
+
+export interface IGenerateTokenFromDestination {
+  subject: string,
+  destination: 'email' | 'sms'
+  email?: string
+  cell_phone?: string
+}
+
+export interface ILoginTokenData {
+  token_type?: 'destination',
+  config?: object
+}
+
+export interface IChangeRecoveredPassword {
+  token: string
+  password: string
+}
+
+export interface IValidateTokenGenerated {
+  token: string
+}
 //@end

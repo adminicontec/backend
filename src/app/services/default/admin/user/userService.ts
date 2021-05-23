@@ -100,8 +100,6 @@ class UserService {
 
     try {
 
-      console.log('params', params)
-
       // TODO: Que va en los siguientes campos
       // 1. normalizedusername
       // 2. normalizedEmail
@@ -123,7 +121,7 @@ class UserService {
       }
 
       if (!params.roles) {
-        params.roles = []
+        // params.roles = []
       } else if (typeof params.roles === "string") {
         params.roles = params.roles.split(",");
       }

@@ -4,21 +4,25 @@ import bcrypt from 'bcrypt-nodejs'
 
 // @import services
 import {userService} from '@scnode_app/services/default/admin/user/userService'
+import {mailService} from '@scnode_app/services/default/general/mail/mailService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { mapUtility } from '@scnode_core/utilities/mapUtility';
 import { jwtUtility } from '@scnode_core/utilities/jwtUtility'
+import { generalUtility } from '@scnode_core/utilities/generalUtility'
+import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
 // @end
 
 // @import models
-import {AppModule, Role, User} from '@scnode_app/models'
+import {AppModule, Role, User, LoginToken} from '@scnode_app/models'
 // @end
 
 // @import types
-import {LoginFields, UserFields} from '@scnode_app/types/default/data/secure/auth/authTypes'
+import {LoginFields, UserFields, IGenerateTokenFromDestination, ILoginTokenData, IValidateTokenGenerated, IChangeRecoveredPassword} from '@scnode_app/types/default/data/secure/auth/authTypes'
 // @end
+
 
 class AuthService {
 
@@ -30,6 +34,30 @@ class AuthService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  /**
+   * Query que consulta un usuario para login
+   * @param query Objeto con la Query para consultar a base de datos
+   * @returns
+   */
+   private findUserToLoginQuery = async (query) => {
+
+    const user_exist = await User.findOne(query).select(
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles'
+    )
+    .populate({
+      path: 'roles',
+      select: 'id name description homes',
+      populate: {
+        path: 'homes', select: 'id name description'
+      }
+    })
+    if (!user_exist) return responseUtility.buildResponseFailed('json', null, {error_key: { key: 'auth.user_not_found' },})
+
+    return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+      userData: user_exist
+    }})
+  }
 
   /**
 	 * Metodo que permite loguear a un usuario dentro del sistema
@@ -52,18 +80,13 @@ class AuthService {
 	 */
 	private validateLogin = async ({ username, password }: LoginFields) => {
 		try {
-			const user_exist: any = await User.findOne({
-				username: username
-			}).select('username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles')
-      .populate({
-        path: 'roles',
-        select: 'id name description homes',
-        populate: {
-          path: 'homes', select: 'id name description'
-        }
-      })
 
-			if (!user_exist) return responseUtility.buildResponseFailed('json', null, {error_key: { key: 'auth.user_not_found' },})
+      const userDataResponse: any = await this.findUserToLoginQuery({
+        username: username
+      })
+      if (userDataResponse.status === 'error') return userDataResponse
+
+      const user_exist = userDataResponse.userData
 
 			const compare = await new Promise((resolve, reject) => {
 				bcrypt.compare(password, user_exist.passwordHash, (err, check) => {
@@ -174,6 +197,189 @@ class AuthService {
 		}
 		return modules_permissions
 	}
+
+  /**
+   * Metodo que permite generar token de autentificacion hacia un destino
+   * @param params Información necesaria para la autentificacion
+   * @returns
+   */
+  public generateTokenFromDestination = async (params: IGenerateTokenFromDestination) => {
+
+    let user = null
+    let userQuery = {}
+    let item = null
+
+    if (!params.destination) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.destination_required'})
+    if (!["email", "sms"].includes(params.destination)) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.destination_invalid'})
+
+    // @INFO: Validar usuario
+    if (params.destination === 'email') {
+      if (!params.email) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.email_required'})
+
+      userQuery['email'] = params.email
+      item = params.email
+    } else if (params.destination === 'sms') {
+      if (!params.cell_phone) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.cell_phone_required'})
+
+      userQuery['phoneNumber'] = params.cell_phone
+      item = params.cell_phone
+    }
+
+    const validateUser = await User.findOne(userQuery)
+    .populate({ path: 'profile.country', select: 'code_call' })
+    if (!validateUser) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'secure.tokenFromDestination.user_not_found', params: {item: item}} })
+
+    user = validateUser
+
+    const tokenGeneratedResponse = await this.buildLoginToken(
+      user,
+      {
+        token_type: 'destination',
+      },
+      null,
+      params.destination === 'sms' ? 4 : 6
+    )
+
+    // @INFO: Envianto token de autenticación por email
+    if (params.destination === 'email') {
+      const mailResponse = await mailService.sendMail({
+        emails: [user.email],
+        mailOptions: {
+          subject: i18nUtility.i18nMessage(params.subject),
+          html_template: {
+            path_template: 'secure/authenticationEmail',
+            // path_layout: '',
+            params: {
+              token: tokenGeneratedResponse.token,
+            }
+          }
+        },
+        // notification_source: 'authentication-service'
+      })
+
+      if (mailResponse.status === 'error') return mailResponse
+    }
+
+    //   if (params.destination === 'sms') {
+
+    //       const config: SmsOptions = {
+    //           driver: "labsmobile", // Metodo de envió del email.
+    //           number: params.cell_phone, // Número telefónico del destinatario
+    //           country_code, // Código del país del destinatario (Ex. 57, 51)
+    //           message: `Hemos generado el siguiente token de autenticación: ${tokenGenerated.token_generated} para validar tu identidad, tiene un tiempo de expiración de 15 minutos `, // Mensaje de texto que se va a enviar
+    //       }
+
+    //       const response_sms = await smsUtility.sendSms(config)
+    //       if (response_sms.status === 'error') return response_sms
+    //   }
+
+    return responseUtility.buildResponseSuccess('json')
+  }
+
+  /**
+   * Metodo que permite generar el cambio de contraseña
+   * @param req
+   * @param params
+   * @returns
+   */
+  public changeRecoveredPassword = async (req, params: IChangeRecoveredPassword) => {
+
+    // @INFO: Validar token
+    const tokenResponse: any = await this.validateTokenGenerated({ token: params.token }, false)
+    if (tokenResponse.status === 'error') return tokenResponse
+
+    //@INFO: Modificando contraseña del usuario
+    const responseUser = await userService.insertOrUpdate({
+        id: tokenResponse.user._id,
+        password: params.password,
+    })
+    if (responseUser.status === 'error') return responseUser
+
+    //@INFO: Obteniendo data del usuario
+    const response = await this.getUserData(req, tokenResponse.user)
+
+    return response
+  }
+
+  /**
+	 * Metodo que permite validar si un token generado es valido
+	 * @param data Información para el inicio de sesión
+	 * @returns
+	 */
+  private validateTokenGenerated = async (data: IValidateTokenGenerated, preserveToken?: boolean) => {
+
+    try {
+      const token = await LoginToken.findOne({ token: data.token })
+      if (!token) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.not_found',})
+
+      const date = new Date()
+      if (token.expedition_date < date) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.token_expired'})
+
+      if (!preserveToken) {
+        token.delete()
+      }
+
+      const userDataResponse: any = await this.findUserToLoginQuery({ _id: token.user_id })
+      if (userDataResponse.status === 'error') return userDataResponse
+
+      const user = userDataResponse.userData
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          user: user,
+          token_generated: token
+        }
+      })
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  /**
+	 * Metodo que permite construir el token segun la configuración
+	 * @param user Usuario al cual se esta generando el token
+	 * @param alliance_id Identificador de la alianza
+	 * @param [options] Opciones del token
+	 * @param [duration]
+	 * @returns
+	 */
+   private buildLoginToken = async (user, options: ILoginTokenData = null, duration: number = 15, token_length: number = 32) => {
+
+    let durationDefault = (duration) ? duration : 15
+
+    const string_generated = generalUtility.buildRandomChain({
+      characters: token_length,
+      numbers: 1,
+      symbols: 0,
+      uppercase: 0,
+      lowercase: token_length === 32 ? 1 : 0
+    })
+
+    const date = new Date()
+    date.setMinutes(date.getMinutes() + durationDefault)
+
+    let tokenData = {
+      token: string_generated,
+      expedition_date: date,
+      token_type: 'external'
+    }
+
+    if (options) {
+      tokenData = {
+        ...tokenData,
+        ...options
+      }
+    }
+
+    const response = await LoginToken.findOneAndUpdate(
+      { user_id: user._id, token_type: tokenData.token_type },
+      tokenData,
+      { upsert: true, new: true, useFindAndModify: false }
+    )
+
+    return response
+}
 
 }
 

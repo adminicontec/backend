@@ -31,6 +31,14 @@ class AuthMiddleware {
 		await requestUtility.middlewareValidator(fields_config, req, res, next)
 	}
 
+  public changeRecoveredPassword = async (req: Request, res: Response, next: NextFunction) => {
+		const fields_config: ValidatorRequest[] = [
+			{ key: 'token', label: 'token' },
+			{ key: 'password', label: 'password' }
+		]
+		await requestUtility.middlewareValidator(fields_config, req, res, next)
+	}
+
 }
 
 export const authMiddleware = new AuthMiddleware();

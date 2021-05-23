@@ -30,6 +30,8 @@ class AuthRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/login',this.instanceController.login,[{middleware: 'auth', method: 'login', dir: 'data/secure/auth'}],[]);
+    routerUtility.get(app, _route, '/password-recovery', this.instanceController.passwordRecovery, [], [])
+    routerUtility.post(app, _route, '/change-recovered-password', this.instanceController.changeRecoveredPassword, [{middleware: 'auth', method: 'change-recovered-password', dir: 'data/secure/auth'}], [])
     // @end
   }
 }

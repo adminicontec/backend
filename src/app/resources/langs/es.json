@@ -26,6 +26,15 @@
         "insertOrUpdate": {
           "already_exists": "Ya existe un entorno con el nombre :name"
         }
+      },
+      "tokenFromDestination": {
+        "user_not_found": "No existe un usuario relacionado a :item",
+        "destination_required": "El campo destino es requerido",
+        "destination_invalid": "El campo destino no es valido",
+        "email_required": "El email es requerido",
+        "cell_phone_required": "El numero de celular es requerido",
+        "not_found": "El token no existe",
+        "token_expired": "El token ya no es valido"
       }
     },
     "home": {
@@ -137,5 +146,8 @@
       },
       "empty": "El curso :coursename en Moodle no tiene registros de matrícula."
     }
+  },
+  "passwordRecover": {
+    "subject": "Solicitud de recuperación de contraseña"
   }
 }
