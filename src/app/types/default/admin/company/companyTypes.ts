@@ -23,4 +23,9 @@ export interface ICompanyQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
 }
+
+export interface IFetchCompany {
+  id?:string, // Identificador de la compañia
+  slug?:string, // Slug de la compañia
+}
 //@end

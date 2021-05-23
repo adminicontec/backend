@@ -77,7 +77,8 @@
       "not_found": "La compañia no ha sido encontrada",
       "insertOrUpdate": {
         "already_exists": "Ya existe una compañia con el nombre :name"
-      }
+      },
+      "filter_to_search_required": "Es necesario un identificador para buscar la compañia"
     },
     "forum": {
       "category": {

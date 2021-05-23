@@ -198,6 +198,11 @@ class ErrorResponse {
             "status_code": "company_insertOrUpdate_already_exists",
             "code": 400
           }
+        },
+        "filter_to_search_required": {
+          "message": i18nUtility.__("app_error_messages.company.filter_to_search_required"),
+          "status_code": "company_filter_to_search_required",
+          "code": 400
         }
       },
 
