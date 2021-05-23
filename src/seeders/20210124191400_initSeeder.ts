@@ -376,6 +376,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let module_permission_ids = {}
 
     const modules = [
+      {name: 'module:companies', description: 'Módulo que permite administrar las compañias', permissions: [
+        {name: 'permission:companies_create', description: 'Crear compañias'},
+        {name: 'permission:companies_update', description: 'Editar compañias'},
+        {name: 'permission:companies_delete', description: 'Eliminar compañias'},
+        {name: 'permission:companies_list', description: 'Ver compañias'},
+        {name: 'permission:companies_menu_access', description: 'Menu de compañias'},
+      ]},
       {name: 'module:posts', description: 'Módulo que permite administrar las publicaciones', permissions: [
         {name: 'permission:posts_create', description: 'Crear publicaciones'},
         {name: 'permission:posts_update', description: 'Editar publicaciones'},
@@ -503,11 +510,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:countries_update'],
           module_permission_ids['permission:countries_delete'],
           module_permission_ids['permission:countries_list'],
+          module_permission_ids['permission:companies_create'],
+          module_permission_ids['permission:companies_update'],
+          module_permission_ids['permission:companies_delete'],
+          module_permission_ids['permission:companies_list'],
+
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
           module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
+          module_permission_ids['permission:companies_menu_access'],
+
         ],
         homes: [
           home_ids['admin']

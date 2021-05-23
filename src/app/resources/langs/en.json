@@ -73,6 +73,12 @@
         "filter_to_search_required": "Es necesario un identificador para buscar la publicación"
       }
     },
+    "company": {
+      "not_found": "La compañia no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una compañia con el nombre :name"
+      }
+    },
     "forum": {
       "category": {
         "not_found": "La categoria del foro no ha sido encontrada",

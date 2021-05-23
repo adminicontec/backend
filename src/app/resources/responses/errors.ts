@@ -185,6 +185,22 @@ class ErrorResponse {
           }
         }
       },
+
+      "company": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.company.not_found"),
+          "status_code": "company_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.company.insertOrUpdate.already_exists"),
+            "status_code": "company_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
+
       "forum": {
         "category": {
           "not_found": {

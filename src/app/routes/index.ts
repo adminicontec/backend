@@ -1,4 +1,5 @@
 // @import_routes
+import { companyRoute } from "@scnode_app/routes/default/admin/company/companyRoute";
 import { bannerRoute } from "@scnode_app/routes/default/admin/banner/bannerRoute";
 import { completionstatusRoute } from "@scnode_app/routes/default/admin/completionStatus/completionstatusRoute";
 import { enrollmentRoute } from "@scnode_app/routes/default/admin/enrollment/enrollmentRoute";
@@ -28,6 +29,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    companyRoute,
     bannerRoute,
     completionstatusRoute,
     enrollmentRoute,
