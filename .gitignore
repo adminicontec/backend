@@ -69,3 +69,4 @@ Thumbs.db
 ##/app/api_doc/structure/openapi.re_doc.json
 
 # skip custom items
+cliconfig.json
