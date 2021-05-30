@@ -12,6 +12,9 @@ import { DefaultPluginsSeederSeederService } from "@scnode_core/services/default
 import {postService} from '@scnode_app/services/default/admin/post/postService'
 import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
 import {postLocationService} from '@scnode_app/services/default/admin/post/postLocationService'
+
+import {roleService} from '@scnode_app/services/default/admin/secure/roleService'
+import {userService} from '@scnode_app/services/default/admin/user/userService'
 // @end
 
 // @import_types Import types
@@ -45,27 +48,24 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando Noticias
     const news_ids = await this.addNews(post_types, post_locations)
-    // @end
 
     // @INFO: Agregando Noticias
     const events_ids = await this.addEvents(post_types, post_locations)
-    // @end
 
     // @INFO: Agregando Noticias
     const research_ids = await this.addResearch(post_types, post_locations)
-    // @end
 
     // @INFO: Agregando capsulas
     const capsules_ids = await this.addCapsules(post_types, post_locations)
-    // @end
 
     // @INFO: Agregando webinars
     const webinars_ids = await this.addWebinars(post_types, post_locations)
-    // @end
 
     // @INFO: Agregando webinars
     const blogs_ids = await this.addBlogs(post_types, post_locations)
-    // @end
+
+    // @INFO: Agregando usuarios
+    const user_ids = await this.addUsers()
 
     return false; // Always return true | false
   }
@@ -1284,6 +1284,51 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return post_ids
+  }
+
+  /**
+   * Metodo que permite agregar usuarios
+   * @param role_ids
+   * @returns
+   */
+   private addUsers = async () => {
+    let roles = {}
+    const rolesResponse: any = await roleService.list()
+    if (rolesResponse.status === 'success') {
+      for await (const iterator of rolesResponse.roles) {
+        roles[iterator.name] = iterator._id
+      }
+    }
+
+    let user_ids = {}
+    const users = [
+      {
+        username: 'userstudent',
+        password: '123456',
+        email: 'userstudent@example.com',
+        phoneNumber: '3215550128',
+        profile: {
+          first_name: 'User',
+          last_name: 'Student'
+        },
+        roles: [
+          roles['student']
+        ]
+      }
+    ]
+    for await (const user of users) {
+      const exists: any = await userService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'username', value: user.username}]
+      })
+      if (exists.status === 'success') user['id'] = exists.user._id
+
+      const user_response:any = await userService.insertOrUpdate(user)
+      if (user_response.status === 'success') {
+        user_ids[user.username] = user_response.user._id
+      }
+    }
+    return user_ids
   }
   // @end
 }

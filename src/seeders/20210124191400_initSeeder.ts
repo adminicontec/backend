@@ -376,6 +376,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let module_permission_ids = {}
 
     const modules = [
+      {
+        name: 'global_permissions', description: 'Este modulo contiene los permisos globales', permissions: [
+          { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
+          { name: 'config:is_student', description: 'Permiso que identifica a los estudiantes dentro del campus' },
+        ]
+      },
       {name: 'module:companies', description: 'Módulo que permite administrar las compañias', permissions: [
         {name: 'permission:companies_create', description: 'Crear compañias'},
         {name: 'permission:companies_update', description: 'Editar compañias'},
@@ -525,6 +531,16 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['admin']
+        ]
+      },
+      {
+        name: 'student',
+        description: 'Estudiante',
+        app_module_permissions: [
+          module_permission_ids['config:is_student']
+        ],
+        homes: [
+          home_ids['student']
         ]
       }
     ]

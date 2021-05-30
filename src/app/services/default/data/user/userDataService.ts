@@ -46,8 +46,8 @@ class UserDataService {
       if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
 
       let fullName = ''
-      if (user.profile && user.profile.first_name) fullName += user.profile.first_name
-      if (user.profile && user.profile.last_name) fullName += user.profile.last_name
+      if (user.profile && user.profile.first_name) fullName += `${user.profile.first_name} `
+      if (user.profile && user.profile.last_name) fullName += `${user.profile.last_name} `
 
       let roles = []
       if (user.roles) {
