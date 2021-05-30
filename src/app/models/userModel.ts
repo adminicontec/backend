@@ -91,6 +91,7 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "User"
   },
+  last_login: { type: Schema.Types.Date },
   curriculum_vitae: {
     biography: { type: Schema.Types.String },
     laboral_experience: [

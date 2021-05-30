@@ -96,6 +96,11 @@ class AuthService {
 
 			if (!compare) return responseUtility.buildResponseFailed('json', null, {error_key: 'auth.password_invalid'})
 
+      // @INFO: Actualizando la fecha de inicio de sesión del usuario
+      user_exist.last_login = new Date()
+      user_exist.save()
+
+
 			return responseUtility.buildResponseSuccess('json', null, {
 				additional_parameters: { user: user_exist },
 			})
