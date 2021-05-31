@@ -17,6 +17,8 @@ import { Course } from '@scnode_app/models'
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICourse, ICourseQuery, ICourseDelete } from '@scnode_app/types/default/admin/course/courseTypes'
+import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { Console } from 'console';
 import { stringify } from 'querystring';
 //import { generalUtility } from 'core/utilities/generalUtility';
@@ -166,12 +168,26 @@ class CourseService {
 
         var startDate = Math.floor(Date.parse(params.startDate) / 1000.0);
         ///generalUtility.timeUnix(params.startDate);
-        var endDate =  Math.floor(Date.parse(params.endDate) / 1000.0);
+        var endDate = Math.floor(Date.parse(params.endDate) / 1000.0);
         //generalUtility.timeUnix(params.endDate);
 
 
         console.log("FROM: " + startDate);
         console.log("DATE: " + endDate);
+
+        var paramsMoodleCourse:IMoodleCourse = { //: IMoodleUser;
+          shortName: params.name,
+          fullName: params.fullname,
+          summary: params.description,
+          startDate: startDate,
+          endDate:endDate,
+          lang: params.lang,
+          categoryId: 9,
+          idNumber:  response._id,
+        }
+
+        const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
+
 
         // moodle rechaza la creación del urso y no espeicifca el KeyValue errado.
         let moodleParams = {

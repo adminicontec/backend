@@ -436,6 +436,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:countries_delete', description: 'Eliminar ciudades'},
         {name: 'permission:countries_list', description: 'Ver ciudades'},
       ]},
+      {name: 'module:courses', description: 'Módulo que permite administrar las cursos', permissions: [
+        {name: 'permission:courses_create', description: 'Crear cursos'},
+        {name: 'permission:courses_update', description: 'Editar cursos'},
+        {name: 'permission:courses_delete', description: 'Eliminar cursos'},
+        {name: 'permission:courses_list', description: 'Ver cursos'},
+      ]},
+
     ]
 
     for await (const m of modules) {
@@ -516,6 +523,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:countries_update'],
           module_permission_ids['permission:countries_delete'],
           module_permission_ids['permission:countries_list'],
+          module_permission_ids['permission:courses_create'],
+          module_permission_ids['permission:courses_update'],
+          module_permission_ids['permission:courses_delete'],
+          module_permission_ids['permission:courses_list'],
           module_permission_ids['permission:companies_create'],
           module_permission_ids['permission:companies_update'],
           module_permission_ids['permission:companies_delete'],
