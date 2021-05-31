@@ -15,7 +15,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { generalUtility } from 'core/utilities/generalUtility';
 // @end
 
@@ -30,7 +30,7 @@ class MoodleCourseService {
 
   constructor() { }
 
-  public findBy = async (params: IMoodleCourse) => {
+  public findBy = async (params: IMoodleCourseQuery) => {
     try {
       //#region  [ 1. Consultar por ShortName de curso para enrolamiento ]
       var field;
@@ -40,11 +40,11 @@ class MoodleCourseService {
         field = 'id';
         value = params.courseID;
       }
-      if (params.idNumber){
+      if (params.idNumber) {
         field = 'idnumber';
         value = params.idNumber;
       }
-      if (params.shortName){
+      if (params.shortName) {
         field = 'shortname';
         value = params.shortName;
       }
@@ -55,7 +55,8 @@ class MoodleCourseService {
         wsfunction: moodle_setup.services.courses.getByField,
         moodlewsrestformat: moodle_setup.restformat,
         'field': field,
-        'value': value      };
+        'value': value
+      };
       // Consulta a Moodle: [core_course_get_courses_by_field]
       const respMoodleDataCourse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsInfoCourse });
 
@@ -86,6 +87,52 @@ class MoodleCourseService {
       return responseUtility.buildResponseFailed('json')
     }
   }
+
+
+  public insert = async (params: IMoodleCourse) => {
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.course.create,
+      moodlewsrestformat: moodle_setup.restformat,
+      'courses[0][idnumber]': params.idNumber,
+      'courses[0][shortname]': params.shortName,
+      'courses[0][fullname]': params.fullName,
+      'courses[0][categoryid]': params.categoryId,
+      'courses[0][summary]': params.summary,
+      'courses[0][startdate]': params.startDate,
+      'courses[0][enddate]': params.endDate,
+      'courses[0][lang]': params.lang
+    };
+
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+
+    if (respMoodle != null) {
+      // ERROR al crear curso en MOODLE
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      // return
+    }
+    else if(respMoodle.exception)
+    {// error
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+    }
+    else{
+      console.log("Moodle: SUCCESS." + JSON.stringify(respMoodle));
+      console.log("id: " + respMoodle[0].id);
+      console.log("shortname: " + respMoodle[0].shortname);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: {
+            id: respMoodle[0].id,
+            name:  respMoodle[0].shortname,
+          }
+        }
+      });
+
+    }
+
+  }
+
 
 }
 

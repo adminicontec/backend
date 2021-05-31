@@ -20,20 +20,16 @@ const EnrollmentSchema = new Schema({
   },
   documentType: {
     type: Schema.Types.String,
-    required: true,
+    required: false,
   },
   documentID: {
     type: Schema.Types.String,
-    required: true,
+    required: false,
   },
   courseID: {
     type: Schema.Types.String,
     required: true,
-  },
-  course: {
-    type: Schema.Types.String,
-    required: false,
-  },
+  }
   // @end
 }, {
   collection: 'enrollments' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

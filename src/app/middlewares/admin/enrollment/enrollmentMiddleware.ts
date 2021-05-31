@@ -27,11 +27,10 @@ class EnrollmentMiddleware {
 
     const fields_config: ValidatorRequest[] = [
       { key: 'email', label: 'Email de estudiante' },
+      { key: 'password', label: 'Contraseña de estudiante' },
       { key: 'firstname', label: 'Nombre de estudiante' },
       { key: 'lastname', label: 'Apellido de estudiante' },
-      { key: 'documentType', label: 'Tipo de documento' },
-      { key: 'documentID', label: 'Documento de identidad' },
-      //{ key: 'courseID', label: 'ID de curso' }
+      { key: 'courseID', label: 'ID de curso' }
     ];
 
     await requestUtility.middlewareValidator(fields_config, req, res, next)

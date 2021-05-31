@@ -193,12 +193,7 @@ class EnrollmentService {
             paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
 
             //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
-            // Contraseña aleatoria
-            var condicionesPass = {
-              characters: 10,   // Cantidad numerica de caracteres de los cuales estara formada una cadena de texto
-              symbols: 1,
-            }
-            var passw = generalUtility.buildRandomChain() + "$";
+            var passw = params.password;
 
             const respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] });
 
@@ -238,7 +233,7 @@ class EnrollmentService {
               console.log("[  Campus  ] Usuario ya existe: ");
               console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);
 
-              // Si existe Usuario en CV, debe existir en Moodle 
+              // Si existe Usuario en CV, debe existir en Moodle
               paramToEnrollment.user.moodleFirstName = params.firstname;
               paramToEnrollment.user.moodleLastName = params.lastname;
               paramToEnrollment.user.moodleUserName = params.email;
@@ -260,13 +255,13 @@ class EnrollmentService {
               // Creación exitosa de Enrollment en CV
               // parámetros para Enrollment en CV, requiere nombre de Curso
               var paramsCVEnrollment = params;
-              paramsCVEnrollment.shortName = paramToEnrollment.course.moodleCourseName;
+              //paramsCVEnrollment.shortName = paramToEnrollment.course.moodleCourseName;
 
               const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
               console.log("[  Campus  ] Enrollment: ");
               console.log(respCampusDataEnrollment);
             }
-            //#endregion 
+            //#endregion
 
             //#region ENORLLMENT EN MOODLE
             console.log("------------- ENROLLMENT IN MOODLE -------------");
@@ -281,7 +276,7 @@ class EnrollmentService {
               if (respMoodle2.user == null) {
                 console.log("Moodle: user NO exists ");
                 // [revisión[]
-                var paramsMoodleUser = { //: IMoodleUser;
+                var paramsMoodleUser:IMoodleUser = { //: IMoodleUser;
                   firstname: paramToEnrollment.user.moodleFirstName,
                   lastname: paramToEnrollment.user.moodleLastName,
                   password: passw,

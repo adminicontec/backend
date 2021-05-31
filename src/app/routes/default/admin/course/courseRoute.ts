@@ -31,7 +31,7 @@ class CourseRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.get(app, _routeGeneric,'/', this.instanceController.list,[], ['auth']);
-    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
+    routerUtility.get(app, _routeGeneric, '/:id', this.instanceController.get, [], ['auth'])
     routerUtility.post(app, _route, '/create', this.instanceController.create, [], ['auth'])
     routerUtility.post(app, _route, '/update', this.instanceController.update, [], ['auth'])
     // @end
