@@ -292,6 +292,91 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
           {postLocation: post_locations['guest'], viewCounter: 0},
         ]
       },
+
+      {
+        title: "Noticia Student 1",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-02-25 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 2",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-01-30 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 3",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-06-25 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 4",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-03-02 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 5",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-05-07 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 6",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-05-20 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
+      {
+        title: "Noticia Student 7",
+        subtitle: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Eum, ad. Enim deleniti saepe delectus, provident dicta consequuntur voluptas debitis adipisci repellendus expedita est quos laboriosam quisquam doloribus eligendi. Labore, officiis.",
+        coverUrl: "t7Uo80xyewbPDhFtWJqJ.jpeg",
+        content: newsContent,
+        postType: post_types['news'],
+        postDate: "2021-01-25 14:00:00",
+        isActive: true,
+        locations: [
+          {postLocation: post_locations['student'], viewCounter: 0},
+        ]
+      },
     ]
 
     const post_ids = await this.addPosts(post_types, post_locations, posts)
