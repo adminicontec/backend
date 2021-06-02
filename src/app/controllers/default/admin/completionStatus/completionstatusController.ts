@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import { completionstatusService } from 'app/services/default/admin/completionStatus/completionstatusService'
+import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService'
 // @end
 
 // @import_utilities Import utilities
