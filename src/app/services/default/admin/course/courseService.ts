@@ -155,83 +155,68 @@ class CourseService {
         })
 
       } else {
+        //#region   Insert Course in Campus Digital and Moodle
 
-
+        var categoryIdMoodle = 12;
         const exist = await Course.findOne({ name: params.name })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: params.name } } })
 
         console.log("*****");
         console.log("Data from Request: " + JSON.stringify(params));
         console.log("*****");
 
-        const response: any = await Course.create(params);
-
         var startDate = Math.floor(Date.parse(params.startDate) / 1000.0);
-        ///generalUtility.timeUnix(params.startDate);
         var endDate = Math.floor(Date.parse(params.endDate) / 1000.0);
-        //generalUtility.timeUnix(params.endDate);
-
-
         console.log("FROM: " + startDate);
         console.log("DATE: " + endDate);
 
-        var paramsMoodleCourse:IMoodleCourse = { //: IMoodleUser;
+
+        // Si existe en Campus Digital, no permite crear
+        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: params.name } } })
+
+        // A. Creación de Curso en Campus Digital
+        const respCampusCourseCreate: any = await Course.create(params);
+
+        // Parámetros para enviar al endpoint de Moodle (core_course_create_courses)
+        var paramsMoodleCourse: IMoodleCourse = {
           shortName: params.name,
           fullName: params.fullname,
           summary: params.description,
           startDate: startDate,
-          endDate:endDate,
+          endDate: endDate,
           lang: params.lang,
-          categoryId: 9,
-          idNumber:  response._id,
+          categoryId: categoryIdMoodle,
+          idNumber: respCampusCourseCreate._id.toString(),
         }
-
         const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
 
+        if (respMoodle.error_key) {
 
-        // moodle rechaza la creación del urso y no espeicifca el KeyValue errado.
-        let moodleParams = {
-          wstoken: moodle_setup.wstoken,
-          wsfunction: moodle_setup.services.courses.create,
-          moodlewsrestformat: moodle_setup.restformat,
-          'courses[0][idnumber]': response._id,
-          'courses[0][shortname]': params.name,
-          'courses[0][fullname]': params.fullname,
-          'courses[0][categoryid]': 9,
-          'courses[0][summary]': params.description,
-          'courses[0][startdate]': startDate,
-          'courses[0][enddate]': endDate,
-          'courses[0][lang]': params.lang
-        };
-        var respCourseMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
-        console.log("Curso Moodle: " + respCourseMoodle);
-
-        console.log("*****");
-        console.log("Data from Request: " + JSON.stringify(respCourseMoodle));
-        console.log("*****");
-        if (respCourseMoodle.exception) {
-          console.log("Error: " + respCourseMoodle.exception + ". " + respCourseMoodle.message);
+          console.log("Error: " + respMoodle.exception + ". " + respMoodle.message);
 
           return responseUtility.buildResponseSuccess('json', null,
             {
-              error_key: respCourseMoodle
+              error_key: respMoodle
             })
 
         }
         else {
           console.log("Moodle: creación de curso exitosa");
+          console.log(respMoodle);
+
+          //Actualizar el curso en CampusDigital con el ID de curso en Moodle.
 
           return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
               course: {
-                _id: response._id,
-                name: response.name
+                _id: respMoodle.course.id,
+                name: respMoodle.course.name,
+                idNumber: paramsMoodleCourse.idNumber
               }
             }
           })
         }
 
-
+        //#endregion
       }
 
     } catch (e) {
