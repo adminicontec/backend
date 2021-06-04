@@ -41,8 +41,9 @@ class BannerController {
 
     if (files && files.hasOwnProperty('cover')) {
       params['coverFile'] = files['cover']
-
     }
+
+
 
     const response = await bannerService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
