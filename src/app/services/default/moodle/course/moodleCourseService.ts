@@ -92,7 +92,7 @@ class MoodleCourseService {
   public insert = async (params: IMoodleCourse) => {
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
-      wsfunction: moodle_setup.services.course.create,
+      wsfunction: moodle_setup.services.courses.create,
       moodlewsrestformat: moodle_setup.restformat,
       'courses[0][idnumber]': params.idNumber,
       'courses[0][shortname]': params.shortName,
@@ -104,18 +104,24 @@ class MoodleCourseService {
       'courses[0][lang]': params.lang
     };
 
-    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    console.log("Moodle: Inicio Creación de curso.");
+    console.log(moodleParams);
+    console.log("----");
 
-    if (respMoodle != null) {
-      // ERROR al crear curso en MOODLE
-      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-      // return
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    console.log("============");
+
+    console.log(respMoodle);
+
+    if (respMoodle.exception) {// error
+      console.log("Moodle: ERROR - EXCEPTION." + JSON.stringify(respMoodle));
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } }
+        })
     }
-    else if(respMoodle.exception)
-    {// error
-      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-    }
-    else{
+    else {
       console.log("Moodle: SUCCESS." + JSON.stringify(respMoodle));
       console.log("id: " + respMoodle[0].id);
       console.log("shortname: " + respMoodle[0].shortname);
@@ -124,7 +130,7 @@ class MoodleCourseService {
         additional_parameters: {
           course: {
             id: respMoodle[0].id,
-            name:  respMoodle[0].shortname,
+            name: respMoodle[0].shortname,
           }
         }
       });

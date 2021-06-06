@@ -25,6 +25,9 @@ export interface ICourseQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  startDate?: string // Fecha de inicio,
+  courseType?: Array<string>,             // Tipo de curso
+  mode?: Array<string>,             // Modalidad
 }
 
 export interface ICourseDelete {
