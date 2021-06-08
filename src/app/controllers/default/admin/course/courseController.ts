@@ -53,7 +53,14 @@ class CourseController {
 	}
 
   public create = async (req: Request, res: Response) => {
-    const response = await courseService.insertOrUpdate(req.getParameters.all())
+    let params = req.getParameters.all()
+    let files = req.files
+
+    if (files && files.hasOwnProperty('cover')) {
+      params['coverFile'] = files['cover']
+    }
+
+    const response = await courseService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -64,7 +71,14 @@ class CourseController {
 	 * @returns
 	 */
 	public update = async (req: Request, res: Response) => {
-		const response = await courseService.insertOrUpdate(req.getParameters.all())
+    let params = req.getParameters.all()
+    let files = req.files
+
+    if (files && files.hasOwnProperty('cover')) {
+      params['coverFile'] = files['cover']
+    }
+
+		const response = await courseService.insertOrUpdate(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 

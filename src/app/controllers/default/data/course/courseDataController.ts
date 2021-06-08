@@ -30,7 +30,7 @@ class CourseDataController {
 
 
   /**
-   * Metodo que permite consultar las publicaciones
+   * Metodo que permite consultar los cursos
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express
    * @returns
@@ -41,6 +41,17 @@ class CourseDataController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * Metodo que permite consultar un curso
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public fetchCourse = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseDataService.fetchCourse(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 }
 
 export const courseDataController = new CourseDataController();

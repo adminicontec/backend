@@ -33,7 +33,8 @@ class CourseRoute {
     routerUtility.get(app, _routeGeneric,'/', this.instanceController.list,[], ['auth']);
     routerUtility.get(app, _routeGeneric, '/:id', this.instanceController.get, [], ['auth'])
     routerUtility.post(app, _route, '/create', this.instanceController.create, [], ['auth'])
-    routerUtility.post(app, _route, '/update', this.instanceController.update, [], ['auth'])
+    routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
+    routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     // @end
   }
 }

@@ -80,11 +80,11 @@ class PostService {
         .select(select)
         .lean()
 
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.not_found'})
+
         if (register.coverUrl) {
           register.coverUrl = this.coverUrl(register)
         }
-
-        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'post.post.not_found'})
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           post: register
         }})

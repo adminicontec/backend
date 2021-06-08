@@ -30,6 +30,7 @@ class CourseDataRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/fetch-courses',this.instanceController.fetchCourses,[],[]);
+    routerUtility.get(app,_route,'/fetch-course/:slug',this.instanceController.fetchCourse,[],[]);
     routerUtility.post(app,_route,'/fetch-modes',this.instanceController.fetchCourses,[],[]);
 
     // @end

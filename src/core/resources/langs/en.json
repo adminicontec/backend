@@ -189,11 +189,14 @@
 		"first_name_label": "Names",
 		"last_name_label" : "Surnames",
 		"email_label"     : "Email",
-        "password_label"  : "Password",
-        "time": {
-            "hours": "hours",
-            "minutes": "minutes",
-            "seconds": "seconds"
-        }
+    "password_label"  : "Password",
+    "time": {
+      "hours": "hours",
+      "hour": "hour",
+      "minutes": "minutes",
+      "minute": "minute",
+      "seconds": "seconds",
+      "second": "second"
+    }
 	}
 }

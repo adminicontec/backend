@@ -1,4 +1,5 @@
 // @import_models
+import { CourseModeCategoryModel } from "@scnode_app/models/courseModeCategoryModel";
 import { LoginTokenModel } from "@scnode_app/models/loginTokenModel";
 import { CompanyModel } from "@scnode_app/models/companyModel";
 import { BannerModel } from "@scnode_app/models/bannerModel";
@@ -25,6 +26,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CourseModeCategory = CourseModeCategoryModel
 export const LoginToken = LoginTokenModel
 export const Company = CompanyModel
 export const Banner = BannerModel

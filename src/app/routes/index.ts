@@ -1,4 +1,5 @@
 // @import_routes
+import { courseModeCategoryRoute } from "@scnode_app/routes/default/admin/course/courseModeCategoryRoute";
 import { courseDataRoute } from "@scnode_app/routes/default/data/course/courseDataRoute";
 import { userDataRoute } from "@scnode_app/routes/default/data/user/userDataRoute";
 import { companyDataRoute } from "@scnode_app/routes/default/data/company/companyDataRoute";
@@ -32,6 +33,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    courseModeCategoryRoute,
     courseDataRoute,
     userDataRoute,
     companyDataRoute,
