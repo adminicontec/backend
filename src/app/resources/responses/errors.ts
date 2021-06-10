@@ -140,6 +140,11 @@ class ErrorResponse {
             "status_code": "user_insertOrUpdate_password_required",
             "code": 400
           }
+        },
+        "current_password_invalid": {
+          "message": i18nUtility.__("app_error_messages.user.current_password_invalid"),
+          "status_code": "user_current_password_invalid",
+          "code": 400
         }
       },
       "country": {

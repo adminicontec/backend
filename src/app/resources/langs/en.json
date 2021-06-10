@@ -48,7 +48,8 @@
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",
         "password_required": "La contraseña es obligatoria"
-      }
+      },
+      "current_password_invalid": "La contraseña actual es incorrecta"
     },
     "country": {
       "not_found":"El pais no ha sido encontrado",
