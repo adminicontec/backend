@@ -385,6 +385,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'global_permissions', description: 'Este modulo contiene los permisos globales', permissions: [
           { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
           { name: 'config:is_student', description: 'Permiso que identifica a los estudiantes dentro del campus' },
+          { name: 'config:go_to_campus', description: 'Permiso que permite dar acceso al campus' },
+          { name: 'config:go_to_moodle', description: 'Permiso que permite dar acceso al moodle' },
         ]
       },
       {name: 'module:companies', description: 'Módulo que permite administrar las compañias', permissions: [
@@ -554,7 +556,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'student',
         description: 'Estudiante',
         app_module_permissions: [
-          module_permission_ids['config:is_student']
+          module_permission_ids['config:is_student'],
+          module_permission_ids['config:go_to_campus'],
+          module_permission_ids['config:go_to_moodle'],
         ],
         homes: [
           home_ids['student']
