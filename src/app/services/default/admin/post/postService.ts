@@ -309,8 +309,9 @@ class PostService {
       where = {
         ...where,
         $or:[
-          {name: { $regex: '.*' + search + '.*',$options: 'i' }},
-          {description: { $regex: '.*' + search + '.*',$options: 'i' }},
+          {title: { $regex: '.*' + search + '.*',$options: 'i' }},
+          {subtitle: { $regex: '.*' + search + '.*',$options: 'i' }},
+          {content: { $regex: '.*' + search + '.*',$options: 'i' }},
         ]
       }
     }
