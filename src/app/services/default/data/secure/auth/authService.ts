@@ -69,7 +69,7 @@ class AuthService {
 		const user_response: any = await this.validateLogin(loginFields)
 		if (user_response.status === 'error') return user_response
 
-    const response = await this.getUserData(req, user_response.user)
+    const response = await this.getUserData(req, user_response.user, {password: loginFields.password})
 
 		return response
   }
@@ -114,16 +114,24 @@ class AuthService {
 	 * @param req
 	 * @param user Estructura de tipo UserFields con los datos necesarios para loguearse
 	 */
-	private getUserData = async (req, user: UserFields) => {
+	private getUserData = async (req, user: UserFields, tokenCustom?: any) => {
 
     // @INFO: Consultando los permisos del usuario
     let modules_permissions = await this.getAppPermissions(user)
 
 		// @INFO: Generando JWT
-		const jwttoken = jwtUtility.createToken(user._id, jwtUtility.getJwtSecret(req), {
+    let tokenData = {
       locale: user.profile.culture,
-      i18n_configuration: []
-		})
+      i18n_configuration: [],
+		}
+    if (tokenCustom) {
+      tokenData = {
+        ...tokenData,
+        ...tokenCustom
+      }
+    }
+
+		const jwttoken = jwtUtility.createToken(user._id, jwtUtility.getJwtSecret(req), tokenData)
 
     // @INFO: Consultando los homes segun el tipo de usuario
     let home = null
