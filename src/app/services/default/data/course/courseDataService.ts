@@ -73,7 +73,7 @@ class CourseDataService {
           date = moment.utc(params.startDate.date)
         }
         if (params.startDate.direction) direction = params.startDate.direction
-        where['postDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+        where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
       if (params.endDate) {
@@ -83,7 +83,7 @@ class CourseDataService {
           date = moment.utc(params.endDate.date)
         }
         if (params.endDate.direction) direction = params.endDate.direction
-        where['postDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+        where['endDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
 
@@ -94,6 +94,10 @@ class CourseDataService {
       }
 
       let registers = []
+      console.log("--------------------------");
+      console.log(where);
+
+
       try {
         registers = await Course.find(where)
           .select(select)
