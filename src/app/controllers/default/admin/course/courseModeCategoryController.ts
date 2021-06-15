@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {bannerService} from '@scnode_app/services/default/admin/banner/bannerService'
+import {courseModeCategoryService} from '@scnode_app/services/default/admin/course/courseModeCategoryService'
 // @end
 
 // @import_utilities Import utilities
@@ -18,7 +18,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
 // @end
 
-class BannerController {
+class CourseModeCategoryController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -36,16 +36,7 @@ class BannerController {
 	 * @returns
 	 */
 	public create = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-    let files = req.files
-
-    if (files && files.hasOwnProperty('cover')) {
-      params['coverFile'] = files['cover']
-    }
-
-
-
-    const response = await bannerService.insertOrUpdate(params)
+    const response = await courseModeCategoryService.insertOrUpdate(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -56,14 +47,7 @@ class BannerController {
 	 * @returns
 	 */
 	public update = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-    let files = req.files
-
-    if (files && files.hasOwnProperty('cover')) {
-      params['coverFile'] = files['cover']
-    }
-
-		const response = await bannerService.insertOrUpdate(params)
+		const response = await courseModeCategoryService.insertOrUpdate(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -74,7 +58,7 @@ class BannerController {
 	 * @returns
 	 */
 	public delete = async (req: Request, res: Response) => {
-		const response = await bannerService.delete(req.getParameters.all())
+		const response = await courseModeCategoryService.delete(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -85,7 +69,7 @@ class BannerController {
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-		const response = await bannerService.list(req.getParameters.all())
+		const response = await courseModeCategoryService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -97,11 +81,11 @@ class BannerController {
 	 */
 	public get = async (req: Request, res: Response) => {
     const {id} = req.getParameters.all()
-		const response = await bannerService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
+		const response = await courseModeCategoryService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
 }
 
-export const bannerController = new BannerController();
-export { BannerController as DefaultAdminBannerBannerController };
+export const courseModeCategoryController = new CourseModeCategoryController();
+export { CourseModeCategoryController as DefaultAdminCourseCourseModeCategoryController };

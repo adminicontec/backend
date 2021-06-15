@@ -8,6 +8,7 @@ export interface IUser {
   email?: string, // Correo electronico del usuario
   normalizedEmail?: string
   emailConfirmed?: boolean // Establece si el email del usuario es valido
+  current_password?: string // Contraseña actual del usuario
   password?: string // Contraseña sin encriptar (Proporcionada por el usuario)
   passwordHash?: string, // Contraseña encriptada (Generada por el sistema)
   securityStamp?: string,

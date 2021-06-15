@@ -27,8 +27,9 @@ const CourseSchema = new Schema({
     required: false,
   },
   mode: {
-    type: Schema.Types.String,
-    required: false,
+    type: Schema.Types.ObjectId,
+    ref: "CourseModeCategory",
+    required: true
   },
   startDate: {
     type: Schema.Types.Date,
@@ -41,6 +42,10 @@ const CourseSchema = new Schema({
   maxEnrollmentDate: {
     type: Schema.Types.Date,
     required: true,
+  },
+  hasCost: {
+    type: Schema.Types.Boolean,
+    default: false
   },
   priceCOP: {
     type: Schema.Types.Number,
@@ -62,6 +67,20 @@ const CourseSchema = new Schema({
     type: Schema.Types.String,
     required: false,
   },
+  duration: {
+    type: Schema.Types.Number,
+    required: false,
+  },
+  coverUrl: {
+    type: Schema.Types.String
+  },
+  content: {
+    type: Schema.Types.Mixed,
+    required: true,
+  },
+  moodleID: {
+    type: Schema.Types.String,
+  }
   // @end
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

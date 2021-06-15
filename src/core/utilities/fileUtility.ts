@@ -107,7 +107,7 @@ class FileUtility {
    * @param [sep] Separador de la ruta
    * @param [permissions]  Permisos que se asignaran a los directorios creados
    */
-  public createDirRecursive = (dirpath, sep: string = '/', permissions: string = '0744') => {
+  public createDirRecursive = (dirpath, sep: string = '/', permissions: string = '0755') => {
     var parts = dirpath.split(sep);
     for( var i = 1; i <= parts.length; i++ ) {
       if (typeof parts[i] !== 'undefined' && parts[i] !== '') {

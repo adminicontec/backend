@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {courseDataService} from '@scnode_app/services/default/data/course/courseDataService'
+import {bannerDataService} from '@scnode_app/services/default/data/banner/bannerDataService'
 // @end
 
 // @import_utilities Import utilities
@@ -17,7 +17,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @import_types Import types
 // @end
 
-class CourseDataController {
+class BannerDataController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -28,31 +28,19 @@ class CourseDataController {
 
   constructor () {}
 
-
   /**
-   * Metodo que permite consultar los cursos
+   * Metodo que permite consultar los banners
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express
    * @returns
    */
-   public fetchCourses = async (req: Request, res: Response) => {
+   public fetchBanners = async (req: Request, res: Response) => {
     let params = req.getParameters.all()
-    const response = await courseDataService.fetchCourses(params)
+    const response = await bannerDataService.fetchBanners(params)
     return responseUtility.sendResponseFromObject(res,response);
   }
 
-  /**
-   * Metodo que permite consultar un curso
-   * @param req Objeto de clase Express
-   * @param res Objeto de clase Express
-   * @returns
-   */
-   public fetchCourse = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-    const response = await courseDataService.fetchCourse(params)
-    return responseUtility.sendResponseFromObject(res,response);
-  }
 }
 
-export const courseDataController = new CourseDataController();
-export { CourseDataController as DefaultDataCourseCourseDataController };
+export const bannerDataController = new BannerDataController();
+export { BannerDataController as DefaultDataBannerBannerDataController };

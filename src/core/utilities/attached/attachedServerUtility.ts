@@ -60,7 +60,11 @@ class AttachedServerUtility {
   public upload = async (file, file_name, upload_config: UploadConfig) => {
 
     const upload_config_base_path = (upload_config.base_path) ? upload_config.base_path : 'uploads'
-    const base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+    let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+    if (upload_config.base_path_type === "absolute") {
+      base_path = upload_config_base_path
+    }
+    // const base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
     const path_upload = (upload_config.path_upload && upload_config.path_upload !== "") ? upload_config.path_upload + "/" : "";
 
     const full_path_file = `${base_path}/${path_upload}${file_name}`;

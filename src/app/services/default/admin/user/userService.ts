@@ -152,6 +152,12 @@ class UserService {
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.email}} })
         }
 
+        // @INFO: Si se proporciona la contraseña actual la verificamos para establecer si es correcta
+        if(params.current_password){
+          const exist = await bcrypt.compareSync(params.current_password, register.passwordHash)
+          if(!exist) return responseUtility.buildResponseFailed("json", null, {error_key: "user.current_password_invalid"});
+        }
+
         if (params.password && params.password !== "") {
           params.passwordHash = await this.hashPassword(params.password);
         }

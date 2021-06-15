@@ -48,7 +48,8 @@
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",
         "password_required": "La contraseña es obligatoria"
-      }
+      },
+      "current_password_invalid": "La contraseña actual es incorrecta"
     },
     "country": {
       "not_found": "El pais no ha sido encontrado",
@@ -122,9 +123,17 @@
       }
     },
     "course": {
+      "filter_to_search_required": "Es necesario un identificador para buscar el curso",
+      "mode_category": {
+        "not_found": "La categoria modo del curso no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una categoria del modo del curso con el nombre :name"
+        }
+      },
       "not_found": "El curso no ha sido encontrado",
       "insertOrUpdate": {
-        "already_exists": "Ya existe un curso con el nombre :name"
+        "already_exists": "Ya existe un curso con el nombre :name",
+        "cost_required": "El valor del curso es obligatorio"
       }
     },
     "moodle_course": {

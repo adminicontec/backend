@@ -140,6 +140,11 @@ class ErrorResponse {
             "status_code": "user_insertOrUpdate_password_required",
             "code": 400
           }
+        },
+        "current_password_invalid": {
+          "message": i18nUtility.__("app_error_messages.user.current_password_invalid"),
+          "status_code": "user_current_password_invalid",
+          "code": 400
         }
       },
       "country": {
@@ -324,12 +329,36 @@ class ErrorResponse {
         }
       },
       "course": {
+        "filter_to_search_required": {
+          "message": i18nUtility.__("app_error_messages.course.filter_to_search_required"),
+          "status_code": "course_filter_to_search_required",
+          "code": 400
+        },
+        "mode_category": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.course.mode_category.not_found"),
+            "status_code": "course_mode_category_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.course.mode_category.insertOrUpdate.already_exists"),
+              "status_code": "course_mode_category_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course.not_found"),
           "status_code": "course_not_found",
           "code": 400
         },
         "insertOrUpdate": {
+          "cost_required": {
+            "message": i18nUtility.__("app_error_messages.course.insertOrUpdate.cost_required"),
+            "status_code": "course_insertOrUpdate_cost_required",
+            "code": 400
+          },
           "already_exists": {
             "message": i18nUtility.__("app_error_messages.course.insertOrUpdate.already_exists"),
             "status_code": "course_insertOrUpdate_already_exists",

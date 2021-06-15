@@ -188,11 +188,14 @@
 		"first_name_label": "Nombres",
 		"last_name_label" : "Apellidos",
 		"email_label"     : "Email",
-        "password_label"  : "Contraseña",
-        "time": {
-            "hours": "horas",
-            "minutes": "minutos",
-            "seconds": "segundos"
-        }
+    "password_label"  : "Contraseña",
+    "time": {
+      "hours": "horas",
+      "hour": "hora",
+      "minutes": "minutos",
+      "minute": "minuto",
+      "seconds": "segundos",
+      "second": "segundo"
+    }
 	}
 }

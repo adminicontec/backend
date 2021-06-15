@@ -64,9 +64,18 @@ class GeneralUtility {
       seconds: { value: 0, shortLabel: 's', label: i18nUtility.i18nMessage('labels.time.seconds') }
     }
 
-    if (h > 0) convert.hours.value = h
-    if (m > 0) convert.minutes.value = m
-    if (s > 0) convert.seconds.value = s
+    if (h > 0) {
+      convert.hours.value = h
+      if (h === 1) convert.hours.label = i18nUtility.i18nMessage('labels.time.hour')
+    }
+    if (m > 0) {
+      convert.minutes.value = m
+      if (m === 1) convert.hours.label = i18nUtility.i18nMessage('labels.time.minute')
+    }
+    if (s > 0) {
+      convert.seconds.value = s
+      if (s === 1) convert.hours.label = i18nUtility.i18nMessage('labels.time.second')
+    }
 
     return convert
   }

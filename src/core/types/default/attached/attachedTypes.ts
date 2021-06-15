@@ -22,6 +22,7 @@ export interface UploadConfig {
   path_upload?: string,   // Ruta del directorio donde se almacenara el archivo
   credentials?: string;   // Llave de configuración
   base_path?  : string    // Ruta base de servidor
+  base_path_type?: "absolute" | "relative" // Tipo de ruta base de servidor
 }
 
 export enum AttachedDriver {

@@ -17,6 +17,8 @@ import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeS
 import {postLocationService} from '@scnode_app/services/default/admin/post/postLocationService'
 
 import {forumLocationService} from '@scnode_app/services/default/admin/forum/forumLocationService'
+
+import {courseModeCategoryService} from '@scnode_app/services/default/admin/course/courseModeCategoryService'
 // @end
 
 // @import_utilitites Import utilities
@@ -55,6 +57,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando tipos de ubicaciones
     let post_location_ids = await this.addPostLocations()
+
+    // @INFO: Agregando modos de cursos
+    let course_mode_ids = await this.addCourseModesCategories()
 
     // TODO: Agregar PostCategories
 
@@ -380,6 +385,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'global_permissions', description: 'Este modulo contiene los permisos globales', permissions: [
           { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
           { name: 'config:is_student', description: 'Permiso que identifica a los estudiantes dentro del campus' },
+          { name: 'config:go_to_campus', description: 'Permiso que permite dar acceso al campus' },
+          { name: 'config:go_to_moodle', description: 'Permiso que permite dar acceso al moodle' },
         ]
       },
       {name: 'module:companies', description: 'Módulo que permite administrar las compañias', permissions: [
@@ -441,6 +448,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:courses_update', description: 'Editar cursos'},
         {name: 'permission:courses_delete', description: 'Eliminar cursos'},
         {name: 'permission:courses_list', description: 'Ver cursos'},
+        {name: 'permission:courses_menu_access', description: 'Menu de cursos'},
       ]},
 
     ]
@@ -538,7 +546,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
-
+          module_permission_ids['permission:courses_menu_access'],
         ],
         homes: [
           home_ids['admin']
@@ -548,7 +556,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'student',
         description: 'Estudiante',
         app_module_permissions: [
-          module_permission_ids['config:is_student']
+          module_permission_ids['config:is_student'],
+          module_permission_ids['config:go_to_campus'],
+          module_permission_ids['config:go_to_moodle'],
         ],
         homes: [
           home_ids['student']
@@ -687,6 +697,33 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     return forum_location_ids
   }
 
+  /**
+   * Metodo que permite crear categorias para los modos de cursos
+   * @returns
+   */
+  private addCourseModesCategories = async () => {
+
+    let course_mode_ids = {}
+    const courseModes = [
+      {name: 'in_situ', description: 'Presencial'},
+      {name: 'online', description: 'Online'},
+      {name: 'virtual', description: 'Virtual'},
+      {name: 'blended_learning', description: 'Blended Learning'},
+    ]
+    for await (const courseMode of courseModes) {
+      const exists: any = await courseModeCategoryService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: courseMode.name}]
+      })
+      if (exists.status === 'success') courseMode['id'] = exists.courseModeCategory._id
+
+      const response:any = await courseModeCategoryService.insertOrUpdate(courseMode)
+      if (response.status === 'success') {
+        course_mode_ids[courseMode.name] = response.courseModeCategory._id
+      }
+    }
+    return course_mode_ids
+  }
 
   // @end
 }
