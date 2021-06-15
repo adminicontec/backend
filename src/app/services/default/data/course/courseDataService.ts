@@ -153,6 +153,10 @@ class CourseDataService {
       }
 
       let registers = []
+      console.log("--------------------------");
+      console.log(where);
+
+
       try {
         registers = await Course.find(where)
           .select(select)

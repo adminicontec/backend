@@ -119,7 +119,25 @@ class MoodleUserService {
       'users[0][username]': params.email,
       'users[0][password]': params.password,
       'users[0][firstname]': params.firstname,
-      'users[0][lastname]': params.lastname
+      'users[0][lastname]': params.lastname,
+      'users[0][customfields][0][type]': 'regional',
+      'users[0][customfields][0][value]': params.regional,
+      'users[0][customfields][1][type]': 'fecha_nacimiento',
+      'users[0][customfields][1][value]': params.fechaNacimiento,
+      'users[0][customfields][2][type]': 'email_2',
+      'users[0][customfields][2][value]': params.email2,
+      'users[0][customfields][3][type]': 'cargo',
+      'users[0][customfields][3][value]': params.cargo,
+      'users[0][customfields][4][type]': 'profesion',
+      'users[0][customfields][4][value]': params.profesion,
+      'users[0][customfields][5][type]': 'nivel_educativo',
+      'users[0][customfields][5][value]': params.nivelEducativo,
+      'users[0][customfields][6][type]': 'Maestría',
+      'users[0][customfields][6][value]': params.nivelEducativo,
+      'users[0][customfields][7][type]': 'origen',
+      'users[0][customfields][7][value]': params.origen,
+      'users[0][customfields][8][type]': 'genero',
+      'users[0][customfields][8][value]': params.genero,
     };
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {
