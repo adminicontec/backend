@@ -6,7 +6,6 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {courseDataService} from '@scnode_app/services/default/data/course/courseDataService'
 import {moodleEnrollmentService} from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService'
 // @end
 
@@ -18,7 +17,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @import_types Import types
 // @end
 
-class CourseDataController {
+class EnrolledCourseController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -29,32 +28,18 @@ class CourseDataController {
 
   constructor () {}
 
-
   /**
-   * Metodo que permite consultar los cursos
+   * Metodo que permite consultar los cursos que tiene inscrito un estudiante
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express
    * @returns
    */
-   public fetchCourses = async (req: Request, res: Response) => {
+   public enrolledCourses = async (req: Request, res: Response) => {
     let params = req.getParameters.all()
-    const response = await courseDataService.fetchCourses(params)
+    const response = await moodleEnrollmentService.fetchEnrolledCoursesByUser(params)
     return responseUtility.sendResponseFromObject(res,response);
   }
-
-  /**
-   * Metodo que permite consultar un curso
-   * @param req Objeto de clase Express
-   * @param res Objeto de clase Express
-   * @returns
-   */
-   public fetchCourse = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-    const response = await courseDataService.fetchCourse(params)
-    return responseUtility.sendResponseFromObject(res,response);
-  }
-
 }
 
-export const courseDataController = new CourseDataController();
-export { CourseDataController as DefaultDataCourseCourseDataController };
+export const enrolledCourseController = new EnrolledCourseController();
+export { EnrolledCourseController as DefaultDataEnrolledCourseEnrolledCourseController };
