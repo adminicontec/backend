@@ -17,6 +17,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleEnrollment } from '@scnode_app/types/default/moodle/enrollment/moodleEnrollmentTypes'
 import { generalUtility } from 'core/utilities/generalUtility';
+import { Z_PARTIAL_FLUSH } from 'zlib';
 
 // @end
 
@@ -43,7 +44,7 @@ class MoodleEnrollmentService {
       'enrolments[0][userid]': params.userid
     };
 
-    console.log ("Enrollment: ROLE = " + params.roleid + " - COURSE = " +params.courseid + " - USERID = " + params.userid);
+    console.log("Enrollment: ROLE = " + params.roleid + " - COURSE = " + params.courseid + " - USERID = " + params.userid);
 
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle != null) {
@@ -54,8 +55,8 @@ class MoodleEnrollmentService {
     else {
       // La matrícula fue creada con éxito
       console.log("Moodle create ENROLLMENT OK: ");
-      console.log("Moodle UserID: " +  params.userid);
-      console.log("Moodle CourseID: " +params.courseid);
+      console.log("Moodle UserID: " + params.userid);
+      console.log("Moodle CourseID: " + params.courseid);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
@@ -65,6 +66,53 @@ class MoodleEnrollmentService {
           }
         }
       });
+
+    }
+  }
+
+  public fetchEnrolledCoursesByUser = async (params: IMoodleEnrollment) => {
+    let responseCourses = [];
+    let singleCourse = {
+      _id: '',
+      name: ''
+    }
+    let singleHistoryCourse = {
+      _id: '',
+      name: ''
+    }
+
+
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.enrollment.enrolledCourses,
+      moodlewsrestformat: moodle_setup.restformat,
+      'userid': params.userid
+    };
+    console.log("Enrolled courses for: userID = " + params.userid + " [" + moodleParams.wsfunction + "]");
+
+    let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+    if (respMoodle) {
+      // List of Current courses
+
+      respMoodle.forEach(element => {
+        singleCourse = {
+          _id: element.id,
+          name: element.shortname
+        };
+        responseCourses.push(singleCourse);
+        });
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          current_courses: responseCourses,
+          history_courses: []
+        }
+      });
+    }
+    else {
+      // ERROR al crear la matrícula en MOODLE
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      // return
 
     }
   }
