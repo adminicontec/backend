@@ -394,6 +394,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:companies_update', description: 'Editar compañias'},
         {name: 'permission:companies_delete', description: 'Eliminar compañias'},
         {name: 'permission:companies_list', description: 'Ver compañias'},
+        {name: 'permission:companies_viewer', description: 'Consultar compañias'},
         {name: 'permission:companies_menu_access', description: 'Menu de compañias'},
       ]},
       {name: 'module:posts', description: 'Módulo que permite administrar las publicaciones', permissions: [
@@ -401,6 +402,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:posts_update', description: 'Editar publicaciones'},
         {name: 'permission:posts_delete', description: 'Eliminar publicaciones'},
         {name: 'permission:posts_list', description: 'Ver publicaciones'},
+        {name: 'permission:posts_viewer', description: 'Consultar publicaciones'},
         {name: 'permission:posts_menu_access', description: 'Menu de publicaciones'},
       ]},
       {name: 'module:banners', description: 'Módulo que permite administrar los banners', permissions: [
@@ -408,13 +410,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:banners_update', description: 'Editar banners'},
         {name: 'permission:banners_delete', description: 'Eliminar banners'},
         {name: 'permission:banners_list', description: 'Ver banners'},
+        {name: 'permission:banners_viewer', description: 'Consultar banners'},
         {name: 'permission:banners_menu_access', description: 'Menu de banners'},
       ]},
       { name: 'module:forums', description: 'Módulo que permite administrar los foros', permissions: [
-        { name: 'permission:forums_create', description: 'Crear foros' },
-        { name: 'permission:forums_update', description: 'Editar foros' },
-        { name: 'permission:forums_delete', description: 'Eliminar foros' },
-        { name: 'permission:forums_list', description: 'Ver foros' },
+        {name: 'permission:forums_create', description: 'Crear foros' },
+        {name: 'permission:forums_update', description: 'Editar foros' },
+        {name: 'permission:forums_delete', description: 'Eliminar foros' },
+        {name: 'permission:forums_list', description: 'Ver foros' },
+        {name: 'permission:forums_viewer', description: 'Consultar foros' },
         {name: 'permission:forums_menu_access', description: 'Menu de foros'},
       ] },
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
@@ -422,6 +426,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:users_update', description: 'Editar usuarios'},
         {name: 'permission:users_delete', description: 'Eliminar usuarios'},
         {name: 'permission:users_list', description: 'Ver usuarios'},
+        {name: 'permission:users_viewer', description: 'Consultar usuarios'},
         {name: 'permission:users_menu_access', description: 'Menu de usuarios'},
       ]},
       {name: 'module:roles', description: 'Módulo que permite administrar los roles', permissions: [
@@ -429,6 +434,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:roles_update', description: 'Editar roles'},
         {name: 'permission:roles_delete', description: 'Eliminar roles'},
         {name: 'permission:roles_list', description: 'Ver roles'},
+        {name: 'permission:roles_viewer', description: 'Consultar roles'},
         {name: 'permission:roles_menu_access', description: 'Menu de roles'},
       ]},
       {name: 'module:modules', description: 'Módulo que permite administrar los modulos', permissions: [
@@ -436,18 +442,21 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:modules_update', description: 'Editar modulos'},
         {name: 'permission:modules_delete', description: 'Eliminar modulos'},
         {name: 'permission:modules_list', description: 'Ver modulos'},
+        {name: 'permission:modules_viewer', description: 'Consultar modulos'},
       ]},
       {name: 'module:countries', description: 'Módulo que permite administrar las ciudades', permissions: [
         {name: 'permission:countries_create', description: 'Crear ciudades'},
         {name: 'permission:countries_update', description: 'Editar ciudades'},
         {name: 'permission:countries_delete', description: 'Eliminar ciudades'},
         {name: 'permission:countries_list', description: 'Ver ciudades'},
+        {name: 'permission:countries_viewer', description: 'Consultar ciudades'},
       ]},
       {name: 'module:courses', description: 'Módulo que permite administrar las cursos', permissions: [
         {name: 'permission:courses_create', description: 'Crear cursos'},
         {name: 'permission:courses_update', description: 'Editar cursos'},
         {name: 'permission:courses_delete', description: 'Eliminar cursos'},
         {name: 'permission:courses_list', description: 'Ver cursos'},
+        {name: 'permission:courses_viewer', description: 'Consultar cursos'},
         {name: 'permission:courses_menu_access', description: 'Menu de cursos'},
       ]},
 
@@ -563,7 +572,42 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         homes: [
           home_ids['student']
         ]
-      }
+      },
+      {
+        name: 'viewer',
+        description: 'Espectador del sistema',
+        app_module_permissions: [
+          module_permission_ids['permission:posts_list'],
+          module_permission_ids['permission:posts_viewer'],
+          module_permission_ids['permission:banners_list'],
+          module_permission_ids['permission:banners_viewer'],
+          module_permission_ids['permission:forums_list'],
+          module_permission_ids['permission:forums_viewer'],
+          module_permission_ids['permission:users_list'],
+          module_permission_ids['permission:users_viewer'],
+          module_permission_ids['permission:roles_list'],
+          module_permission_ids['permission:roles_viewer'],
+          module_permission_ids['permission:modules_list'],
+          module_permission_ids['permission:modules_viewer'],
+          module_permission_ids['permission:countries_list'],
+          module_permission_ids['permission:countries_viewer'],
+          module_permission_ids['permission:courses_list'],
+          module_permission_ids['permission:courses_viewer'],
+          module_permission_ids['permission:companies_list'],
+          module_permission_ids['permission:companies_viewer'],
+
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:banners_menu_access'],
+          module_permission_ids['permission:forums_menu_access'],
+          module_permission_ids['permission:users_menu_access'],
+          module_permission_ids['permission:roles_menu_access'],
+          module_permission_ids['permission:companies_menu_access'],
+          module_permission_ids['permission:courses_menu_access'],
+        ],
+        homes: [
+          home_ids['admin']
+        ]
+      },
     ]
 
     for await (const role of roles) {
@@ -604,6 +648,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         },
         roles: [
           role_ids['admin']
+        ]
+      },
+      {
+        username: 'userviewer',
+        password: '123456',
+        email: 'userviewer@example.com',
+        profile: {
+          first_name: 'User',
+          last_name: 'Viewer'
+        },
+        roles: [
+          role_ids['viewer']
         ]
       }
     ]
