@@ -316,8 +316,10 @@ class PostService {
       }
     }
 
-    if (typeof filters.isActive === 'undefined' || filters.isActive === true) {
+    if (filters.isActive === true) {
       where['isActive'] = true
+    } else if (filters.isActive === false) {
+      where['isActive'] = false
     }
 
     if (filters.postType && Array.isArray(filters.postType) && filters.postType.length > 0) {

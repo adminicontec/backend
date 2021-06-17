@@ -5,7 +5,7 @@
 export interface IRole {
   name: string, // Nombre del rol
   description?: string, // Descripción del rol
-  app_module_permissions?: Array<any>, // Array con los permisos asignados al modulo
+  app_module_permissions?: Array<any> | string, // Array con los permisos asignados al modulo
   id?: string // Identificador del rol
 }
 

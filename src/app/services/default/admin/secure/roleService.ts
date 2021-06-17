@@ -75,6 +75,12 @@ class RoleService {
   public insertOrUpdate = async (params: IRole) => {
 
     try {
+      if (!params.app_module_permissions) {
+        // params.app_module_permissions = []
+      } else if (typeof params.app_module_permissions === "string") {
+        params.app_module_permissions = params.app_module_permissions.split(",");
+      }
+
       if (params.id) {
         const register = await Role.findOne({_id: params.id})
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.role.not_found'})
