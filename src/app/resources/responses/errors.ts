@@ -227,7 +227,20 @@ class ErrorResponse {
           }
         }
       },
-
+      "regional": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.regional.not_found"),
+          "status_code": "regional_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.regional.insertOrUpdate.already_exists"),
+            "status_code": "regional_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
       "company": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.company.not_found"),
