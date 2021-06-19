@@ -1399,6 +1399,20 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
         roles: [
           roles['student']
         ]
+      },
+      {
+        username: 'lvalero@poligran.edu.co',
+        password: 'Poli2021*',
+        email: 'lvalero@poligran.edu.co',
+        phoneNumber: '3215550121',
+        profile: {
+          first_name: 'Lidia',
+          last_name: 'Valero'
+        },
+        roles: [
+          roles['student']
+        ],
+        moodle_id: 7
       }
     ]
     for await (const user of users) {

@@ -126,7 +126,8 @@ const UserSchema = new Schema({
       }
     ]
 
-  }
+  },
+  moodle_id: { type: Schema.Types.String }
   // @end
 }, {
   collection: 'users', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
