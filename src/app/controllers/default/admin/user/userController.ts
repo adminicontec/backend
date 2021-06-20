@@ -91,6 +91,17 @@ class UserController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite listar los docentes
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public listTeachers = async (req: Request, res: Response) => {
+		const response = await userService.listTeachers(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
     /**
 	 * Metodo que permite obtener un unico registro
 	 * @param req Objeto de clase Express

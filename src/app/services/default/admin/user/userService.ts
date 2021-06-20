@@ -17,7 +17,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Country, Role, User} from '@scnode_app/models'
+import {Country, Role, User, AppModulePermission} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -330,6 +330,14 @@ class UserService {
       }
     }
 
+    if (filters.roles) {
+      if (typeof filters.roles === "string") {
+          filters.roles = filters.roles.split(",");
+      }
+
+      where["roles"] = { $in: filters.roles };
+    }
+
     let registers = []
     try {
       registers =  await User.find(where)
@@ -358,6 +366,38 @@ class UserService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que permite listar los usuarios con con el permiso is_teacher
+   * @param [id] Id del usuario
+   * @returns
+   */
+  public listTeachers = async (filters: IUserQuery = {}) => {
+    try {
+      // Consultando el ID de Permiso is_teacher
+      let roles_ids = [];
+      const permission_teacher = await AppModulePermission.findOne({name: "config:is_teacher"}).select("_id");
+      if (permission_teacher) {
+        let roles = await Role.find({app_module_permissions: { $in: permission_teacher._id }}).select("_id");
+        if (roles && roles.length > 0) {
+          roles_ids = roles.reduce((accum, element) => {
+            accum.push(element._id)
+            return accum
+          }, [])
+
+          filters.roles = roles_ids;
+        }
+      }
+
+      if (!filters.roles) {
+        filters.roles = []
+      }
+
+      return await this.list(filters);
+    } catch (e) {
+      return responseUtility.buildResponseFailed("json");
+    }
   }
 
   /**
