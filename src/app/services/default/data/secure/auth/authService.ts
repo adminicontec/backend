@@ -43,7 +43,7 @@ class AuthService {
    private findUserToLoginQuery = async (query) => {
 
     const user_exist = await User.findOne(query).select(
-      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles'
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id'
     )
     .populate({
       path: 'roles',
@@ -69,7 +69,7 @@ class AuthService {
 		const user_response: any = await this.validateLogin(loginFields)
 		if (user_response.status === 'error') return user_response
 
-    const response = await this.getUserData(req, user_response.user, {password: loginFields.password})
+    const response = await this.getUserData(req, user_response.user, {username: loginFields.username, password: loginFields.password})
 
 		return response
   }
@@ -159,6 +159,10 @@ class AuthService {
           avatar: userService.avatarUrl(user),
 					screen_mode: user.profile.screen_mode,
           home,
+          moodle: {
+            ...tokenCustom,
+            moodle_id: user.moodle_id
+          }
 				},
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,

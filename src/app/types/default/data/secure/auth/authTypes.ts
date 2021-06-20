@@ -12,6 +12,7 @@ export interface UserFields {
   username: string
   profile: any,
   roles: Array<any>
+  moodle_id: string
 }
 
 export interface IGenerateTokenFromDestination {

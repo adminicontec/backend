@@ -83,6 +83,12 @@
         "filter_to_search_required": "Es necesario un identificador para buscar la publicación"
       }
     },
+    "regional": {
+      "not_found": "La regional no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una regional con el nombre :name"
+      }
+    },
     "company": {
       "not_found": "La compañia no ha sido encontrada",
       "insertOrUpdate": {
