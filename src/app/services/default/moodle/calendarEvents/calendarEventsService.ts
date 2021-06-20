@@ -34,7 +34,7 @@ class CalendarEventsService {
 
   public fetchEvents = async (params: IMoodleCalendarEventsQuery) => {
     try {
-      let responseEvents= [];
+      let responseEvents = [];
       let singleEvent = {
         id: 0,
         name: "",
@@ -90,18 +90,22 @@ class CalendarEventsService {
           var modTime = new Date(eventTime.timemodified * 1000).toISOString();
           eventTime.timemodified = modTime;
 
-          singleEvent = {
-            id: eventTime.id,
-            name: eventTime.name,
-            description: eventTime.description,
-            courseid: eventTime.courseid,
-            modulename: eventTime.modulename,
-            instance: eventTime.instance,
-            eventtype: eventTime.eventype,
-            timestart: evTime,
-            timemodified: modTime
-          };
-          responseEvents.push(singleEvent);
+          // Ignore every event named "attendance"
+          if (eventTime.modulename != "attendance" ) {
+
+            singleEvent = {
+              id: eventTime.id,
+              name: eventTime.name,
+              description: eventTime.description,
+              courseid: eventTime.courseid,
+              modulename: eventTime.modulename,
+              instance: eventTime.instance,
+              eventtype: eventTime.eventype,
+              timestart: evTime,
+              timemodified: modTime
+            };
+            responseEvents.push(singleEvent);
+          }
         });
 
         return responseUtility.buildResponseSuccess('json', null, {
