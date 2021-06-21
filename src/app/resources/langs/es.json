@@ -142,6 +142,9 @@
         "cost_required": "El valor del curso es obligatorio"
       }
     },
+    "course_scheduling": {
+      "not_found": "La programación no ha sido encontrada"
+    },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",
       "insertOrUpdate": {
