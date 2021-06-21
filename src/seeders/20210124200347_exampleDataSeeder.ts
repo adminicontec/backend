@@ -1401,6 +1401,19 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
         ]
       },
       {
+        username: 'userteacher',
+        password: '123456',
+        email: 'userteacher@example.com',
+        phoneNumber: '32155501211',
+        profile: {
+          first_name: 'User',
+          last_name: 'Teacher'
+        },
+        roles: [
+          roles['teacher']
+        ]
+      },
+      {
         username: 'lvalero@poligran.edu.co',
         password: 'Poli2021*',
         email: 'lvalero@poligran.edu.co',

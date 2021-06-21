@@ -2,16 +2,16 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminUserUserController as Controller } from "@scnode_app/controllers/default/admin/user/userController";
+import { DefaultAdminCourseCourseSchedulingController as Controller } from "@scnode_app/controllers/default/admin/course/courseSchedulingController";
 // @end
 
 // @import_utilities Import utilities
 import { routerUtility } from "@scnode_core/utilities/routerUtility";
 // @end
 
-class UserRoute {
+class CourseSchedulingRoute {
 
-  private router_prefix: string = '/admin/user'; //Ej: /user
+  private router_prefix: string = '/admin/course-scheduling'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -29,9 +29,7 @@ class UserRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.get(app, _route, '/list-teachers', this.instanceController.listTeachers, [], ['auth'])
-
-    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'user', method: 'create', dir: 'admin/user' }], ['auth'])
+    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'course-scheduling', method: 'create', dir: 'admin/course' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
@@ -40,5 +38,5 @@ class UserRoute {
   }
 }
 
-export const userRoute = new UserRoute();
-export { UserRoute as DefaultAdminUserUserRoute };
+export const courseSchedulingRoute = new CourseSchedulingRoute();
+export { CourseSchedulingRoute as DefaultAdminCourseCourseSchedulingRoute };

@@ -1,4 +1,5 @@
 // @import_models
+import { CourseSchedulingModel } from "@scnode_app/models/courseSchedulingModel";
 import { RegionalModel } from "@scnode_app/models/regionalModel";
 import { CourseModeCategoryModel } from "@scnode_app/models/courseModeCategoryModel";
 import { LoginTokenModel } from "@scnode_app/models/loginTokenModel";
@@ -27,6 +28,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CourseScheduling = CourseSchedulingModel
 export const Regional = RegionalModel
 export const CourseModeCategory = CourseModeCategoryModel
 export const LoginToken = LoginTokenModel

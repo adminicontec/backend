@@ -19,6 +19,7 @@ import {postLocationService} from '@scnode_app/services/default/admin/post/postL
 import {forumLocationService} from '@scnode_app/services/default/admin/forum/forumLocationService'
 
 import {courseModeCategoryService} from '@scnode_app/services/default/admin/course/courseModeCategoryService'
+import {regionalService} from '@scnode_app/services/default/admin/regional/regionalService'
 // @end
 
 // @import_utilitites Import utilities
@@ -60,6 +61,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando modos de cursos
     let course_mode_ids = await this.addCourseModesCategories()
+
+    // @INFO: Agregando regionales
+    let regional_ids = await this.addRegionals()
 
     // TODO: Agregar PostCategories
 
@@ -352,6 +356,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     const homes = [
       {name: 'student', description: 'Home destinado para estudiantes'},
+      {name: 'teacher', description: 'Home destinado para docentes'},
       {name: 'admin', description: 'Home destinado para administradores'},
     ]
 
@@ -459,6 +464,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:courses_viewer', description: 'Consultar cursos'},
         {name: 'permission:courses_menu_access', description: 'Menu de cursos'},
       ]},
+      {name: 'module:course_scheduling', description: 'Módulo que permite administrar los programas', permissions: [
+        {name: 'permission:course_scheduling_create', description: 'Crear programas'},
+        {name: 'permission:course_scheduling_update', description: 'Editar programas'},
+        {name: 'permission:course_scheduling_delete', description: 'Eliminar programas'},
+        {name: 'permission:course_scheduling_list', description: 'Ver programas'},
+        {name: 'permission:course_scheduling_viewer', description: 'Consultar programas'},
+        {name: 'permission:course_scheduling_menu_access', description: 'Menu de programas'},
+      ]},
 
     ]
 
@@ -543,7 +556,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:courses_create'],
           module_permission_ids['permission:courses_update'],
           module_permission_ids['permission:courses_delete'],
-          module_permission_ids['permission:courses_list'],
+          module_permission_ids['permission:course_scheduling_list'],
+          module_permission_ids['permission:course_scheduling_create'],
+          module_permission_ids['permission:course_scheduling_update'],
+          module_permission_ids['permission:course_scheduling_delete'],
+          module_permission_ids['permission:course_scheduling_list'],
           module_permission_ids['permission:companies_create'],
           module_permission_ids['permission:companies_update'],
           module_permission_ids['permission:companies_delete'],
@@ -556,6 +573,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],
+          module_permission_ids['permission:course_scheduling_menu_access'],
         ],
         homes: [
           home_ids['admin']
@@ -571,6 +589,16 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['student']
+        ]
+      },
+      {
+        name: 'teacher',
+        description: 'Docente',
+        app_module_permissions: [
+          module_permission_ids['config:is_teacher'],
+        ],
+        homes: [
+          home_ids['teacher']
         ]
       },
       {
@@ -779,6 +807,36 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return course_mode_ids
+  }
+
+  /**
+   * Metodo que permite crear categorias para los modos de cursos
+   * @returns
+   */
+  private addRegionals = async () => {
+
+    let regional_ids = {}
+    const regionals = [
+      {name: 'Antioquia, Chocó y Eje Cafetero'},
+      {name: 'Sur Occidente'},
+      {name: 'Oriente'},
+      {name: 'Centro y Sur Oriente'},
+      {name: 'Caribe'},
+      {name: 'Internacional'},
+    ]
+    for await (const regional of regionals) {
+      const exists: any = await regionalService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: regional.name}]
+      })
+      if (exists.status === 'success') regional['id'] = exists.regional._id
+
+      const response:any = await regionalService.insertOrUpdate(regional)
+      if (response.status === 'success') {
+        regional_ids[regional.name] = response.regional._id
+      }
+    }
+    return regional_ids
   }
 
   // @end

@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {userService} from '@scnode_app/services/default/admin/user/userService'
+import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import_utilities Import utilities
@@ -18,7 +18,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
 // @end
 
-class UserController {
+class CourseSchedulingController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -37,15 +37,7 @@ class UserController {
 	 */
 	public create = async (req: Request, res: Response) => {
     let params = req.getParameters.all()
-    let files = req.files
-
-    if (files && files.hasOwnProperty('avatar')) {
-      params['avatar'] = files['avatar']
-    } else {
-      params['avatar'] = null
-    }
-
-    const response = await userService.insertOrUpdate(params)
+    const response = await courseSchedulingService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -56,16 +48,8 @@ class UserController {
 	 * @returns
 	 */
 	public update = async (req: Request, res: Response) => {
-		let params = req.getParameters.all()
-    let files = req.files
-
-    if (files && files.hasOwnProperty('avatar')) {
-      params['avatar'] = files['avatar']
-    } else {
-      params['avatar'] = null
-    }
-
-    const response = await userService.insertOrUpdate(params)
+    let params = req.getParameters.all()
+		const response = await courseSchedulingService.insertOrUpdate(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -76,7 +60,7 @@ class UserController {
 	 * @returns
 	 */
 	public delete = async (req: Request, res: Response) => {
-		const response = await userService.delete(req.getParameters.all())
+		const response = await courseSchedulingService.delete(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -87,18 +71,7 @@ class UserController {
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-		const response = await userService.list(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
-  }
-
-  /**
-	 * Metodo que permite listar los docentes
-	 * @param req Objeto de clase Express
-	 * @param res Objeto de clase Express
-	 * @returns
-	 */
-	public listTeachers = async (req: Request, res: Response) => {
-		const response = await userService.listTeachers(req.getParameters.all())
+		const response = await courseSchedulingService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -110,11 +83,11 @@ class UserController {
 	 */
 	public get = async (req: Request, res: Response) => {
     const {id} = req.getParameters.all()
-		const response = await userService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
+		const response = await courseSchedulingService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
 }
 
-export const userController = new UserController();
-export { UserController as DefaultAdminUserUserController };
+export const courseSchedulingController = new CourseSchedulingController();
+export { CourseSchedulingController as DefaultAdminCourseCourseSchedulingController };

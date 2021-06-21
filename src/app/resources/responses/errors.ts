@@ -379,6 +379,13 @@ class ErrorResponse {
           }
         }
       },
+      "course_scheduling": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.course_scheduling.not_found"),
+          "status_code": "course_scheduling_not_found",
+          "code": 400
+        }
+      },
       "moodle_course": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.moodle_course.not_found"),
