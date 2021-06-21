@@ -19,6 +19,7 @@ import {postLocationService} from '@scnode_app/services/default/admin/post/postL
 import {forumLocationService} from '@scnode_app/services/default/admin/forum/forumLocationService'
 
 import {courseModeCategoryService} from '@scnode_app/services/default/admin/course/courseModeCategoryService'
+import {regionalService} from '@scnode_app/services/default/admin/regional/regionalService'
 // @end
 
 // @import_utilitites Import utilities
@@ -60,6 +61,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando modos de cursos
     let course_mode_ids = await this.addCourseModesCategories()
+
+    // @INFO: Agregando regionales
+    let regional_ids = await this.addRegionals()
 
     // TODO: Agregar PostCategories
 
@@ -803,6 +807,36 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return course_mode_ids
+  }
+
+  /**
+   * Metodo que permite crear categorias para los modos de cursos
+   * @returns
+   */
+  private addRegionals = async () => {
+
+    let regional_ids = {}
+    const regionals = [
+      {name: 'Antioquia, Chocó y Eje Cafetero'},
+      {name: 'Sur Occidente'},
+      {name: 'Oriente'},
+      {name: 'Centro y Sur Oriente'},
+      {name: 'Caribe'},
+      {name: 'Internacional'},
+    ]
+    for await (const regional of regionals) {
+      const exists: any = await regionalService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: regional.name}]
+      })
+      if (exists.status === 'success') regional['id'] = exists.regional._id
+
+      const response:any = await regionalService.insertOrUpdate(regional)
+      if (response.status === 'success') {
+        regional_ids[regional.name] = response.regional._id
+      }
+    }
+    return regional_ids
   }
 
   // @end
