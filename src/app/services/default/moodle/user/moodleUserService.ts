@@ -132,13 +132,17 @@ class MoodleUserService {
       'users[0][customfields][4][value]': params.profesion,
       'users[0][customfields][5][type]': 'nivel_educativo',
       'users[0][customfields][5][value]': params.nivelEducativo,
-      'users[0][customfields][6][type]': 'Maestría',
-      'users[0][customfields][6][value]': params.nivelEducativo,
+      'users[0][customfields][6][type]': 'empresa',
+      'users[0][customfields][6][value]': params.empresa,
       'users[0][customfields][7][type]': 'origen',
       'users[0][customfields][7][value]': params.origen,
       'users[0][customfields][8][type]': 'genero',
       'users[0][customfields][8][value]': params.genero,
     };
+
+  console.log("--------------- Create user in Moodle with: ---------------------------");
+  console.log(moodleParams);
+
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {
       // ERROR al crear el usuario en Moodle

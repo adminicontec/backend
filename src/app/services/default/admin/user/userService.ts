@@ -6,6 +6,7 @@ const ObjectID = require('mongodb').ObjectID
 
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
 // @end
 
 // @import config
@@ -17,12 +18,13 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Country, Role, User} from '@scnode_app/models'
+import { Country, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
-import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {IUser, IUserDelete, IUserQuery, IUserDateTimezone} from '@scnode_app/types/default/admin/user/userTypes'
+import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone } from '@scnode_app/types/default/admin/user/userTypes'
+import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 // @end
 class UserService {
 
@@ -35,7 +37,7 @@ class UserService {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   /**
    * Metodo que permite validar si un registro existe segun parametros
@@ -53,10 +55,10 @@ class UserService {
       let select = '-created_at -updated_at -__v'
       if (params.query === QueryValues.ALL) {
         const registers: any = await User.find(where)
-        .populate({path: 'roles', select: 'id name description'})
-        .populate({path: 'profile.country', select: 'id name iso2 iso3'})
-        .select(select)
-        .lean()
+          .populate({ path: 'roles', select: 'id name description' })
+          .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
+          .select(select)
+          .lean()
 
         for await (const register of registers) {
           if (register.profile) {
@@ -65,24 +67,28 @@ class UserService {
           }
         }
 
-        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-          users: registers
-        }})
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            users: registers
+          }
+        })
       } else if (params.query === QueryValues.ONE) {
         const register: any = await User.findOne(where)
-        .populate({path: 'roles', select: 'id name description'})
-        .populate({path: 'profile.country', select: 'id name iso2 iso3'})
-        .select(select)
-        .lean()
-        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+          .populate({ path: 'roles', select: 'id name description' })
+          .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
+          .select(select)
+          .lean()
+        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
         if (register.profile) {
           register.profile.avatarImageUrl = this.avatarUrl(register)
           register.profile.avatar = register.profile.avatarImageUrl
         }
-        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-          user: register
-        }})
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            user: register
+          }
+        })
       }
 
       return responseUtility.buildResponseFailed('json')
@@ -106,14 +112,19 @@ class UserService {
       // 3. securityStamp
       // 4. concurrencyStamp
 
+      console.log("--> ");
+      console.log(params);
+
       if (!params.profile) {
         params.profile = {}
       } else if (params.profile && typeof params.profile === "string") {
         params.profile = JSON.parse(params.profile);
       }
 
+      console.log("--> ");
       // @INFO: Almacenando en servidor la imagen adjunta
       if (params.avatar) {
+        console.log("--> avatar");
         const defaulPath = this.default_avatar_path
         const response_upload: any = await uploadService.uploadFile(params.avatar, defaulPath)
         if (response_upload.status === 'error') return response_upload
@@ -131,31 +142,32 @@ class UserService {
       // lastModifiedBy
 
       if (params.id) {
-        let register: any = await User.findOne({_id: params.id})
-        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+        let register: any = await User.findOne({ _id: params.id })
+        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+
 
         // @INFO: Validando campos unicos
         if (params.username && params.email) {
           const exist = await User.findOne({
             $or: [
-              {username: params.username},
-              {email: params.email},
+              { username: params.username },
+              { email: params.email },
             ],
-            _id: {$ne: params.id}
-           })
-           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.username}|${params.email}`}} })
+            _id: { $ne: params.id }
+          })
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
         } else if (params.username) {
-          const exist = await User.findOne({ username: params.username, _id: {$ne: params.id}})
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.username}} })
+          const exist = await User.findOne({ username: params.username, _id: { $ne: params.id } })
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.username } } })
         } else if (params.email) {
-          const exist = await User.findOne({ email: params.email, _id: {$ne: params.id}})
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: params.email}} })
+          const exist = await User.findOne({ email: params.email, _id: { $ne: params.id } })
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.email } } })
         }
 
         // @INFO: Si se proporciona la contraseña actual la verificamos para establecer si es correcta
-        if(params.current_password){
+        if (params.current_password) {
           const exist = await bcrypt.compareSync(params.current_password, register.passwordHash)
-          if(!exist) return responseUtility.buildResponseFailed("json", null, {error_key: "user.current_password_invalid"});
+          if (!exist) return responseUtility.buildResponseFailed("json", null, { error_key: "user.current_password_invalid" });
         }
 
         if (params.password && params.password !== "") {
@@ -181,8 +193,8 @@ class UserService {
           new: true,
           lean: true,
         })
-        await Role.populate(response, {path: 'roles', select: 'id name description'})
-        await Country.populate(response, {path: 'profile.country', select: 'id name iso2 iso3'})
+        await Role.populate(response, { path: 'roles', select: 'id name description' })
+        await Country.populate(response, { path: 'profile.country', select: 'id name iso2 iso3' })
 
         if (response.profile) {
           response.profile.avatarImageUrl = this.avatarUrl(response)
@@ -200,26 +212,67 @@ class UserService {
       } else {
         const exist = await User.findOne({
           $or: [
-            {username: params.username},
-            {email: params.email},
+            { username: params.username },
+            { email: params.email },
           ]
-         })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'user.insertOrUpdate.already_exists', params: {data: `${params.username}|${params.email}`}} })
+        })
+        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
-        if (!params.password) return responseUtility.buildResponseFailed("json", null, {error_key: "user.insertOrUpdate.password_required"});
+        if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
         params.passwordHash = await this.hashPassword(params.password);
 
-        const {_id} = await User.create(params)
-        const response: any = await User.findOne({_id})
-        .populate({path: 'roles', select: 'id name description'})
-        .populate({path: 'profile.country', select: 'id name iso2 iso3'})
-        .lean()
+        const { _id } = await User.create(params)
+        const response: any = await User.findOne({ _id })
+          .populate({ path: 'roles', select: 'id name description' })
+          .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
+          .lean()
 
         if (response.profile) {
           response.profile.avatarImageUrl = this.avatarUrl(response)
           response.profile.avatar = response.profile.avatarImageUrl
         }
+
+        console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
+            var paramUserMoodle = {
+              email: params.email
+            }
+        let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+        console.log(respMoodle2);
+        if (respMoodle2.status == "success") {
+          if (respMoodle2.user == null) {
+            console.log("Moodle: user NO exists ");
+            // [revisión[]
+            var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
+              email: params.email,
+              username: params.username,
+              password: params.password,
+              firstname: params.profile.first_name,
+              lastname: params.profile.last_name,
+              regional: '',
+              fechaNacimiento: params.profile.birthDate,
+              origen: params.profile.origen,
+              genero: params.profile.genero,
+              cargo: '',
+              profesion:'',
+              nivelEducativo:'',
+              empresa: '',
+              email2: ''
+            }
+            console.log(paramsMoodleUser);
+
+            // crear nuevo uusario en MOODLE
+            let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
+            console.log("Moodle: Usuario creado con Éxito.");
+            console.log(respMoodle2);
+
+          }
+          else {
+            console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
+          }
+
+        }
+
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -256,8 +309,8 @@ class UserService {
    */
   public avatarUrl = ({ profile }) => {
     return profile && profile.avatarImageUrl && profile.avatarImageUrl !== ''
-    ? `${customs['uploads']}/${this.default_avatar_path}/${profile.avatarImageUrl}`
-    : `${customs['uploads']}/${this.default_avatar_path}/default.jpg`
+      ? `${customs['uploads']}/${this.default_avatar_path}/${profile.avatarImageUrl}`
+      : `${customs['uploads']}/${this.default_avatar_path}/default.jpg`
   }
 
   /**
@@ -287,8 +340,8 @@ class UserService {
 
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
-    const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
-    const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
     let select = '-created_at -updated_at -__v'
     if (filters.select) {
@@ -297,7 +350,7 @@ class UserService {
 
     let where = {}
 
-    if(filters.search){
+    if (filters.search) {
       const search = filters.search
       where = {
         ...where,
@@ -332,13 +385,13 @@ class UserService {
 
     let registers = []
     try {
-      registers =  await User.find(where)
-      .select(select)
-      .populate({path: 'roles', select: 'id name description'})
-      .populate({path: 'profile.country', select: 'id name iso2 iso3'})
-      .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
-      .limit(paging ? nPerPage : null)
-      .lean()
+      registers = await User.find(where)
+        .select(select)
+        .populate({ path: 'roles', select: 'id name description' })
+        .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .lean()
 
       for await (const register of registers) {
         if (register.profile) {
@@ -346,7 +399,7 @@ class UserService {
           register.profile.avatar = register.profile.avatarImageUrl
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
@@ -361,18 +414,18 @@ class UserService {
   }
 
   /**
-	 * Metodo que permite convertir una fecha segun el timezone del usuario
-	 * @param data Información a convertir
-	 * @returns
-	 */
-	public getDateByUserTimezone = async (params: IUserDateTimezone) => {
+   * Metodo que permite convertir una fecha segun el timezone del usuario
+   * @param data Información a convertir
+   * @returns
+   */
+  public getDateByUserTimezone = async (params: IUserDateTimezone) => {
     let user = null
 
     const userIsObjectId = await ObjectID.isValid(params.user)
     if (typeof params.user === 'string' || userIsObjectId) {
-      user = await User.findOne({_id: params.user})
-      .select('id profile.timezone profile.culture')
-      .lean()
+      user = await User.findOne({ _id: params.user })
+        .select('id profile.timezone profile.culture')
+        .lean()
       // if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
     } else {
       user = params.user
@@ -386,7 +439,7 @@ class UserService {
     if (user && user.profile && user.profile.timezone) {
       timezone = user.profile.timezone
     }
-    timezone = timezone.replace('GMT','')
+    timezone = timezone.replace('GMT', '')
 
     let momentDate = null
     if (params.date) {

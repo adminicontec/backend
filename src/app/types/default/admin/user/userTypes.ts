@@ -23,11 +23,15 @@ export interface IUser {
     first_name?: string, // Nombres del usuario
     last_name?: string, // Apellidos del usuario
     avatarImageUrl?: string, // Avatar del usuario
-    city?: string, // Ciudad del usuario
-    country?: string // Pais del usuario
+    city?: string,      // Ciudad del usuario
+    country?: string,   // Pais del usuario
+    regional?: string,  // regional del Usuario
+    origen?: string,
+    genero?: string,
+    birthDate?:string, // Fecha de nacimiento de usuario
   },
   curriculum_vitae?: {
-    biography: string, // Biografia curriculo del usuario
+    biography?: string, // Biografia curriculo del usuario
     laboral_experience?: ILaboralExperience[], // Array experiencia laboral del usuario
     academic_info?: IAcademicInfo[] // Array grados academicos del usuario
     skill?: ISkill[] // Array de habilidades
@@ -35,7 +39,7 @@ export interface IUser {
   },
   roles?: Array<string> | string, // Roles asignados al usuario
   createdBy?: string,
-  lastModifiedBy?: string
+  lastModifiedBy?: string,
   avatar?: string // Objeto de clase File que posee el archivo que sera cargado al servidor
   id?: string // Identificador del permiso
 }

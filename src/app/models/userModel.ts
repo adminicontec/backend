@@ -75,6 +75,18 @@ const UserSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "Country"
     },
+    regional: {
+      type: Schema.Types.ObjectId,
+      ref: "Regional"
+    },
+    origen: {
+      type: Schema.Types.String
+    },
+    genero: {
+      type: Schema.Types.String
+    },
+
+    birthDate: { type: Schema.Types.Date },
     timezone: { type: Schema.Types.String, default: 'GMT-5' },
     culture: { type: Schema.Types.String, default: 'es_CO' },
     screen_mode: { type: Schema.Types.String, default: 'light-mode' },
