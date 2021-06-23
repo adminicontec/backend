@@ -111,6 +111,17 @@ class MoodleUserService {
 
   public insertOrUpdate = async (params: IMoodleUser) => {
 
+    var posArray = 0;
+    var customFieldType = 'users[0][customfields][0][type]';
+    var customFieldValue = 'users[0][customfields][0][value]';
+
+    if(params.regional){
+      customFieldType = 'users[0][customfields][' + posArray + '][type]';
+      customFieldValue = 'users[0][customfields][' + posArray + '][value]';
+    }
+
+
+
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
       wsfunction: moodle_setup.services.users.create,
