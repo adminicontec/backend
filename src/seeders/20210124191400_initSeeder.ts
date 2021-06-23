@@ -20,6 +20,9 @@ import {forumLocationService} from '@scnode_app/services/default/admin/forum/for
 
 import {courseModeCategoryService} from '@scnode_app/services/default/admin/course/courseModeCategoryService'
 import {regionalService} from '@scnode_app/services/default/admin/regional/regionalService'
+import {courseSchedulingModeService} from '@scnode_app/services/default/admin/course/courseSchedulingModeService'
+import {courseSchedulingStatusService} from '@scnode_app/services/default/admin/course/courseSchedulingStatusService'
+import {courseSchedulingTypeService} from '@scnode_app/services/default/admin/course/courseSchedulingTypeService'
 // @end
 
 // @import_utilitites Import utilities
@@ -64,6 +67,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando regionales
     let regional_ids = await this.addRegionals()
+
+    // @INFO: Agregando estados de programación
+    let scheduling_status_ids = await this.addCourseSchedulingStatuses()
+
+    // @INFO: Agregando tipos de programación
+    let scheduling_type_ids = await this.addCourseSchedulingTypes()
+
+    // @INFO: Agregando modos de programación
+    let scheduling_mode_ids = await this.addCourseSchedulingModes()
 
     // TODO: Agregar PostCategories
 
@@ -837,6 +849,87 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return regional_ids
+  }
+
+  /**
+   * Metodo que permite crear estados de programación
+   * @returns
+   */
+  private addCourseSchedulingStatuses = async () => {
+
+    let status_ids = {}
+    const statuses = [
+      {name: 'Programado', description: 'Programado'},
+      {name: 'Confirmado', description: 'Confirmado'},
+      {name: 'Ejecutado', description: 'Ejecutado'},
+      {name: 'Cancelado', description: 'Cancelado'},
+    ]
+    for await (const status of statuses) {
+      const exists: any = await courseSchedulingStatusService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: status.name}]
+      })
+      if (exists.status === 'success') status['id'] = exists.courseSchedulingStatus._id
+
+      const response:any = await courseSchedulingStatusService.insertOrUpdate(status)
+      if (response.status === 'success') {
+        status_ids[status.name] = response.courseSchedulingStatus._id
+      }
+    }
+    return status_ids
+  }
+
+  /**
+   * Metodo que permite crear tipos de programación
+   * @returns
+   */
+   private addCourseSchedulingTypes = async () => {
+
+    let type_ids = {}
+    const types = [
+      {name: 'Abierto', description: 'Abierto'},
+      {name: 'Empresarial', description: 'Empresarial'},
+    ]
+    for await (const type of types) {
+      const exists: any = await courseSchedulingTypeService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: type.name}]
+      })
+      if (exists.status === 'success') type['id'] = exists.courseSchedulingType._id
+
+      const response:any = await courseSchedulingTypeService.insertOrUpdate(type)
+      if (response.status === 'success') {
+        type_ids[type.name] = response.courseSchedulingType._id
+      }
+    }
+    return type_ids
+  }
+
+  /**
+   * Metodo que permite crear modos de programación
+   * @returns
+   */
+   private addCourseSchedulingModes = async () => {
+
+    let mode_ids = {}
+    const modes = [
+      {name: 'Presencial', description: 'Presencial'},
+      {name: 'Virtual', description: 'Virtual'},
+      {name: 'Online', description: 'Online'},
+    ]
+    for await (const mode of modes) {
+      const exists: any = await courseSchedulingModeService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: mode.name}]
+      })
+      if (exists.status === 'success') mode['id'] = exists.courseSchedulingMode._id
+
+      const response:any = await courseSchedulingModeService.insertOrUpdate(mode)
+      if (response.status === 'success') {
+        mode_ids[mode.name] = response.courseSchedulingMode._id
+      }
+    }
+    return mode_ids
   }
 
   // @end

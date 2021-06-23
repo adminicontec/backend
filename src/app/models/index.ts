@@ -1,4 +1,8 @@
 // @import_models
+import { CourseSchedulingModeModel } from "@scnode_app/models/courseSchedulingModeModel";
+import { CourseSchedulingTypeModel } from "@scnode_app/models/courseSchedulingTypeModel";
+import { CourseSchedulingStatusModel } from "@scnode_app/models/courseSchedulingStatusModel";
+import { ProgramModel } from "@scnode_app/models/programModel";
 import { CourseSchedulingModel } from "@scnode_app/models/courseSchedulingModel";
 import { RegionalModel } from "@scnode_app/models/regionalModel";
 import { CourseModeCategoryModel } from "@scnode_app/models/courseModeCategoryModel";
@@ -28,6 +32,10 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CourseSchedulingMode = CourseSchedulingModeModel
+export const CourseSchedulingType = CourseSchedulingTypeModel
+export const CourseSchedulingStatus = CourseSchedulingStatusModel
+export const Program = ProgramModel
 export const CourseScheduling = CourseSchedulingModel
 export const Regional = RegionalModel
 export const CourseModeCategory = CourseModeCategoryModel

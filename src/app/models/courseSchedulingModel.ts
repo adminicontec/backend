@@ -6,6 +6,26 @@ const { Schema } = mongoose;
 
 const CourseSchedulingSchema = new Schema({
   // @add_schema Add schema here
+  schedulingStatus: {
+    type: Schema.Types.ObjectId,
+    ref: "CourseSchedulingStatus",
+    required: true
+  },
+  program: {
+    type: Schema.Types.ObjectId,
+    ref: "Program",
+    required: true
+  },
+  schedulingType: {
+    type: Schema.Types.ObjectId,
+    ref: "CourseSchedulingType",
+    required: true
+  },
+  schedulingMode: {
+    type: Schema.Types.ObjectId,
+    ref: "CourseSchedulingMode",
+    required: true
+  },
   course: {
     type: Schema.Types.ObjectId,
     ref: "Course",
@@ -32,6 +52,7 @@ const CourseSchedulingSchema = new Schema({
   observations: {
     type: Schema.Types.String,
   },
+  duration: {type: Schema.Types.Number},
   sessions: [{
     startDate: {
       type: Schema.Types.Date,

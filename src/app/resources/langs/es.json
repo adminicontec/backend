@@ -142,8 +142,32 @@
         "cost_required": "El valor del curso es obligatorio"
       }
     },
+    "program": {
+      "not_found": "El programa no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un programa con el nombre :name"
+      }
+    },
     "course_scheduling": {
-      "not_found": "La programación no ha sido encontrada"
+      "not_found": "La programación no ha sido encontrada",
+      "status": {
+        "not_found": "El estado no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un estado con el nombre :name"
+        }
+      },
+      "type": {
+        "not_found": "El tipo de programación no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un tipo de programación con el nombre :name"
+        }
+      },
+      "mode": {
+        "not_found": "La modalidad de programación no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una modalidad de programación con el nombre :name"
+        }
+      }
     },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",

@@ -1,4 +1,8 @@
 // @import_routes
+import { courseSchedulingModeRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingModeRoute";
+import { courseSchedulingTypeRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingTypeRoute";
+import { courseSchedulingStatusRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingStatusRoute";
+import { programRoute } from "@scnode_app/routes/default/admin/program/programRoute";
 import { courseSchedulingRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingRoute";
 import { regionalRoute } from "@scnode_app/routes/default/admin/regional/regionalRoute";
 import { enrolledCourseRoute } from "@scnode_app/routes/default/data/enrolledCourse/enrolledCourseRoute";
@@ -38,6 +42,10 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    courseSchedulingModeRoute,
+    courseSchedulingTypeRoute,
+    courseSchedulingStatusRoute,
+    programRoute,
     courseSchedulingRoute,
     regionalRoute,
     enrolledCourseRoute,

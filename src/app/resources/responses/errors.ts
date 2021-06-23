@@ -379,12 +379,68 @@ class ErrorResponse {
           }
         }
       },
+      "program": {
+        'not_found': {
+          "message": i18nUtility.__("app_error_messages.program.not_found"),
+          "status_code": "program_not_found",
+          "code": 400
+        },
+        'insertOrUpdate': {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.program.insertOrUpdate.already_exists"),
+            "status_code": "program_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
       "course_scheduling": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course_scheduling.not_found"),
           "status_code": "course_scheduling_not_found",
           "code": 400
-        }
+        },
+        "status": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.status.not_found"),
+            "status_code": "course_scheduling_status_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.course_scheduling.status.insertOrUpdate.already_exists"),
+              "status_code": "course_scheduling_status_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "type": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.type.not_found"),
+            "status_code": "course_scheduling_type_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.course_scheduling.type.insertOrUpdate.already_exists"),
+              "status_code": "course_scheduling_type_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "mode": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.mode.not_found"),
+            "status_code": "course_scheduling_mode_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.course_scheduling.mode.insertOrUpdate.already_exists"),
+              "status_code": "course_scheduling_mode_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
       },
       "moodle_course": {
         "not_found": {
