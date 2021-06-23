@@ -110,15 +110,44 @@ class MoodleUserService {
   }
 
   public insertOrUpdate = async (params: IMoodleUser) => {
-
+    const customFieldName=  [ "regional",  "fechaNacimiento", "email2", "cargo", "profesion", "nivelEducativo", "empresa", "origen", "genero"];
     var posArray = 0;
-    var customFieldType = 'users[0][customfields][0][type]';
-    var customFieldValue = 'users[0][customfields][0][value]';
+    const prefix = 'users[0][customfields][';
 
-    if(params.regional){
-      customFieldType = 'users[0][customfields][' + posArray + '][type]';
-      customFieldValue = 'users[0][customfields][' + posArray + '][value]';
+    var jsonPropertyName = 'users[0][customfields][0][type]';
+    var customFieldType = '';
+
+    var jsonPropertyValue = 'users[0][customfields][0][value]';
+    var customFieldValue = '';
+
+
+
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+    for (let p in params){
+
+      var cf = customFieldName.find( field => field == p);
+      if(cf != null && params[p] != '') {
+        posArray++;
+        jsonPropertyName = prefix + posArray + '][type]';
+        customFieldType = p;
+
+        jsonPropertyValue =  prefix + posArray + '][value]';
+        customFieldValue = params[p];
+
+        console.log('[' + posArray + ']' + jsonPropertyName + ' : ' + customFieldType + '\r\n');
+        console.log('[' + posArray + ']' + jsonPropertyValue + ' : ' + customFieldValue + '\r\n');
+      }
+
+
     }
+    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
+
+    // if(params.regional){
+    //   customFieldType = 'users[0][customfields][' + posArray + '][type]';
+    //   customFieldValue = 'users[0][customfields][' + posArray + '][value]';
+    //   posArray++;
+    // }
 
 
 
