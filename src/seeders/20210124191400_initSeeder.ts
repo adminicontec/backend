@@ -484,7 +484,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_viewer', description: 'Consultar programas'},
         {name: 'permission:course_scheduling_menu_access', description: 'Menu de programas'},
       ]},
-
+      {name: 'module:modular', description: 'Módulo que permite administrar los modulares', permissions: [
+        {name: 'permission:modular_create', description: 'Crear modulares'},
+        {name: 'permission:modular_update', description: 'Editar modulares'},
+        {name: 'permission:modular_delete', description: 'Eliminar modulares'},
+        {name: 'permission:modular_list', description: 'Ver modulares'},
+        {name: 'permission:modular_viewer', description: 'Consultar modulares'},
+        {name: 'permission:modular_menu_access', description: 'Menu de modulares'},
+      ]},
     ]
 
     for await (const m of modules) {
@@ -577,6 +584,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:companies_update'],
           module_permission_ids['permission:companies_delete'],
           module_permission_ids['permission:companies_list'],
+          module_permission_ids['permission:modular_create'],
+          module_permission_ids['permission:modular_update'],
+          module_permission_ids['permission:modular_delete'],
+          module_permission_ids['permission:modular_list'],
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
@@ -586,6 +597,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],
           module_permission_ids['permission:course_scheduling_menu_access'],
+          module_permission_ids['permission:modular_menu_access'],
         ],
         homes: [
           home_ids['admin']
@@ -915,7 +927,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const modes = [
       {name: 'Presencial', description: 'Presencial'},
       {name: 'Virtual', description: 'Virtual'},
-      {name: 'Online', description: 'Online'},
+      {name: 'En linea', description: 'En linea'},
+      {name: 'Combinada', description: 'Combinada'},
     ]
     for await (const mode of modes) {
       const exists: any = await courseSchedulingModeService.findBy({

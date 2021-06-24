@@ -11,6 +11,13 @@ const CourseSchedulingSchema = new Schema({
     ref: "CourseSchedulingStatus",
     required: true
   },
+  modular: {
+    type: Schema.Types.ObjectId,
+    ref: "Modular",
+  },
+  schedulingCode: {
+    type: Schema.Types.String,
+  },
   program: {
     type: Schema.Types.ObjectId,
     ref: "Program",
@@ -48,6 +55,15 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Regional",
     required: true
+  },
+  city: {
+    type: Schema.Types.ObjectId,
+    ref: "City",
+    required: true
+  },
+  amountParticipants: {
+    type: Schema.Types.Number,
+    default: 0
   },
   observations: {
     type: Schema.Types.String,

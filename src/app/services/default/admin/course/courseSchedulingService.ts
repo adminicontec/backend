@@ -11,7 +11,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Program, Regional, User} from '@scnode_app/models'
+import {City, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Modular, Program, Regional, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -43,16 +43,18 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingStatus program schedulingType schedulingMode course startDate endDate teacher regional observations duration sessions'
+      let select = 'id schedulingStatus modular schedulingCode program schedulingType schedulingMode course startDate endDate teacher regional city amountParticipants observations duration sessions'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
         .populate({path: 'schedulingStatus', select: 'id name'})
+        .populate({path: 'modular', select: 'id name'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingMode', select: 'id name'})
         .populate({path: 'program', select: 'id name'})
         .populate({path: 'course', select: 'id name'})
         .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'regional', select: 'id name'})
+        .populate({path: 'city', select: 'id name'})
         .select(select)
         .lean()
 
@@ -62,12 +64,14 @@ class CourseSchedulingService {
       } else if (params.query === QueryValues.ONE) {
         const register: any = await CourseScheduling.findOne(where)
         .populate({path: 'schedulingStatus', select: 'id name'})
+        .populate({path: 'modular', select: 'id name'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingMode', select: 'id name'})
         .populate({path: 'program', select: 'id name'})
         .populate({path: 'course', select: 'id name'})
         .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'regional', select: 'id name'})
+        .populate({path: 'city', select: 'id name'})
         .select(select)
         .lean()
 
@@ -93,6 +97,20 @@ class CourseSchedulingService {
 
     try {
 
+      if (params.city) {
+        const isObjectID = await ObjectID.isValid(params.city);
+
+        if (!isObjectID) {
+          const cityExists = await City.findOne({name: params.city}).select('id').lean()
+          if (!cityExists) {
+            const response = await City.create({name: params.city});
+            params.city = response._id;
+          } else {
+            params.city = cityExists._id;
+          }
+        }
+      }
+
       if (params.id) {
         const register: any = await CourseScheduling.findOne({_id: params.id}).lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
@@ -103,12 +121,14 @@ class CourseSchedulingService {
           lean: true,
         })
         await CourseSchedulingStatus.populate(response, {path: 'schedulingStatus', select: 'id name'})
+        await Modular.populate(response, {path: 'modular', select: 'id name'})
         await CourseSchedulingType.populate(response, {path: 'schedulingType', select: 'id name'})
         await CourseSchedulingMode.populate(response, {path: 'schedulingMode', select: 'id name'})
         await Program.populate(response, {path: 'program', select: 'id name'})
         await Course.populate(response, {path: 'course', select: 'id name'})
         await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
         await Regional.populate(response, {path: 'regional', select: 'id name'})
+        await City.populate(response, {path: 'city', select: 'id name'})
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -123,12 +143,14 @@ class CourseSchedulingService {
         const {_id} = await CourseScheduling.create(params)
         const response: any = await CourseScheduling.findOne({_id})
         .populate({path: 'schedulingStatus', select: 'id name'})
+        .populate({path: 'modular', select: 'id name'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingMode', select: 'id name'})
         .populate({path: 'program', select: 'id name'})
         .populate({path: 'course', select: 'id name'})
         .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'regional', select: 'id name'})
+        .populate({path: 'city', select: 'id name'})
         .lean()
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -175,7 +197,7 @@ class CourseSchedulingService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id schedulingStatus program schedulingType schedulingMode course startDate endDate teacher regional observations duration sessions'
+    let select = 'id schedulingStatus modular schedulingCode program schedulingType schedulingMode course startDate endDate teacher regional city amountParticipants observations duration sessions'
     if (filters.select) {
       select = filters.select
     }
@@ -197,12 +219,14 @@ class CourseSchedulingService {
       registers =  await CourseScheduling.find(where)
       .select(select)
       .populate({path: 'schedulingStatus', select: 'id name'})
+      .populate({path: 'modular', select: 'id name'})
       .populate({path: 'schedulingType', select: 'id name'})
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'program', select: 'id name'})
       .populate({path: 'course', select: 'id name'})
       .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
       .populate({path: 'regional', select: 'id name'})
+      .populate({path: 'city', select: 'id name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
       .sort({created_at: -1})

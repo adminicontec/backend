@@ -1,4 +1,6 @@
 // @import_models
+import { CityModel } from "@scnode_app/models/cityModel";
+import { ModularModel } from "@scnode_app/models/modularModel";
 import { CourseSchedulingModeModel } from "@scnode_app/models/courseSchedulingModeModel";
 import { CourseSchedulingTypeModel } from "@scnode_app/models/courseSchedulingTypeModel";
 import { CourseSchedulingStatusModel } from "@scnode_app/models/courseSchedulingStatusModel";
@@ -32,6 +34,8 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const City = CityModel
+export const Modular = ModularModel
 export const CourseSchedulingMode = CourseSchedulingModeModel
 export const CourseSchedulingType = CourseSchedulingTypeModel
 export const CourseSchedulingStatus = CourseSchedulingStatusModel

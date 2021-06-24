@@ -393,6 +393,34 @@ class ErrorResponse {
           }
         }
       },
+      "modular": {
+        'not_found': {
+          "message": i18nUtility.__("app_error_messages.modular.not_found"),
+          "status_code": "modular_not_found",
+          "code": 400
+        },
+        'insertOrUpdate': {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.modular.insertOrUpdate.already_exists"),
+            "status_code": "modular_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
+      "city": {
+        'not_found': {
+          "message": i18nUtility.__("app_error_messages.city.not_found"),
+          "status_code": "city_not_found",
+          "code": 400
+        },
+        'insertOrUpdate': {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.city.insertOrUpdate.already_exists"),
+            "status_code": "city_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        }
+      },
       "course_scheduling": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course_scheduling.not_found"),

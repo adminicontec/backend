@@ -148,6 +148,18 @@
         "already_exists": "Ya existe un programa con el nombre :name"
       }
     },
+    "modular": {
+      "not_found": "El modular no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un modular con el nombre :name"
+      }
+    },
+    "city": {
+      "not_found": "La ciudad no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una ciudad con el nombre :name"
+      }
+    },
     "course_scheduling": {
       "not_found": "La programación no ha sido encontrada",
       "status": {
