@@ -643,10 +643,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:modules_viewer'],
           module_permission_ids['permission:countries_list'],
           module_permission_ids['permission:countries_viewer'],
+          module_permission_ids['permission:course_scheduling_list'],
+          module_permission_ids['permission:course_scheduling_viewer'],
           module_permission_ids['permission:courses_list'],
           module_permission_ids['permission:courses_viewer'],
           module_permission_ids['permission:companies_list'],
           module_permission_ids['permission:companies_viewer'],
+          module_permission_ids['permission:modular_list'],
+          module_permission_ids['permission:modular_viewer'],
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
@@ -655,6 +659,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],
+          module_permission_ids['permission:course_scheduling_menu_access'],
+          module_permission_ids['permission:modular_menu_access'],
         ],
         homes: [
           home_ids['admin']
