@@ -110,9 +110,11 @@ class MoodleUserService {
   }
 
   public insertOrUpdate = async (params: IMoodleUser) => {
-    const customFieldName=  [ "regional",  "fechaNacimiento", "email2", "cargo", "profesion", "nivelEducativo", "empresa", "origen", "genero"];
+    const customFieldNamesArray=  [ "regional",  "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
     var posArray = 0;
     const prefix = 'users[0][customfields][';
+    const sufixType = '][type]';
+    const sufixValue = '][value]';
 
     var jsonPropertyName = 'users[0][customfields][0][type]';
     var customFieldType = '';
@@ -121,64 +123,38 @@ class MoodleUserService {
     var customFieldValue = '';
 
 
-
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-    for (let p in params){
-
-      var cf = customFieldName.find( field => field == p);
-      if(cf != null && params[p] != '') {
-        posArray++;
-        jsonPropertyName = prefix + posArray + '][type]';
-        customFieldType = p;
-
-        jsonPropertyValue =  prefix + posArray + '][value]';
-        customFieldValue = params[p];
-
-        console.log('[' + posArray + ']' + jsonPropertyName + ' : ' + customFieldType + '\r\n');
-        console.log('[' + posArray + ']' + jsonPropertyValue + ' : ' + customFieldValue + '\r\n');
-      }
-
-
-    }
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
-
-    // if(params.regional){
-    //   customFieldType = 'users[0][customfields][' + posArray + '][type]';
-    //   customFieldValue = 'users[0][customfields][' + posArray + '][value]';
-    //   posArray++;
-    // }
-
-
-
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
       wsfunction: moodle_setup.services.users.create,
       moodlewsrestformat: moodle_setup.restformat,
       'users[0][email]': params.email,
-      'users[0][username]': params.email,
+      'users[0][username]': params.username,
       'users[0][password]': params.password,
       'users[0][firstname]': params.firstname,
       'users[0][lastname]': params.lastname,
-      'users[0][customfields][0][type]': 'regional',
-      'users[0][customfields][0][value]': params.regional,
-      'users[0][customfields][1][type]': 'fecha_nacimiento',
-      'users[0][customfields][1][value]': params.fechaNacimiento,
-      'users[0][customfields][2][type]': 'email_2',
-      'users[0][customfields][2][value]': params.email2,
-      'users[0][customfields][3][type]': 'cargo',
-      'users[0][customfields][3][value]': params.cargo,
-      'users[0][customfields][4][type]': 'profesion',
-      'users[0][customfields][4][value]': params.profesion,
-      'users[0][customfields][5][type]': 'nivel_educativo',
-      'users[0][customfields][5][value]': params.nivelEducativo,
-      'users[0][customfields][6][type]': 'empresa',
-      'users[0][customfields][6][value]': params.empresa,
-      'users[0][customfields][7][type]': 'origen',
-      'users[0][customfields][7][value]': params.origen,
-      'users[0][customfields][8][type]': 'genero',
-      'users[0][customfields][8][value]': params.genero,
     };
+
+    for (let p in params){
+
+      var cf = customFieldNamesArray.find( field => field == p);
+      if(cf != null && params[p] != null) {
+        jsonPropertyName = prefix + posArray + sufixType;
+        customFieldType = p;
+
+        jsonPropertyValue =  prefix + posArray + sufixValue;
+
+        if(cf == 'fechaNacimiento'){
+          customFieldValue = generalUtility.unixTime(params[p]).toString();
+        }
+        else
+          customFieldValue = params[p];
+
+        moodleParams[jsonPropertyName] = customFieldType;
+        moodleParams[jsonPropertyValue] = customFieldValue;
+        posArray++;
+      }
+    }
+
 
   console.log("--------------- Create user in Moodle with: ---------------------------");
   console.log(moodleParams);

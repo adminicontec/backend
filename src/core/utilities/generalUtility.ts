@@ -232,6 +232,16 @@ class GeneralUtility {
   public time = () => {
     return Math.floor(new Date().getTime() / 1000)
   }
+  /**
+   * Método que retorna una fecha en formato Unix
+   * @param dateToChange
+   * @returns
+   */
+
+  public unixTime = (dateToChange: string) => {
+    return Math.floor(Date.parse(dateToChange) / 1000.0)
+  }
+
 
   // public timeUnix = (date: string) => {
   //   return Math.floor(Date.parse(date) / 1000.0);
@@ -444,6 +454,9 @@ class GeneralUtility {
     const logGamma = (number - 0.5) * Math.log(number) - number + halfLogTwoPi + series;
     return logGamma;
   }
+
+
+
 }
 
 export const generalUtility = new GeneralUtility();

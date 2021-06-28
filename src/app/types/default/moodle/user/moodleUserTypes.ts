@@ -9,11 +9,11 @@ export interface IMoodleUser {
   firstname: string,      // Nombre de Usuario
   lastname: string,       // Apellido de Usuario
   regional?: string,      // Campo opcional: regional a la que pertenece
-  fechaNacimiento?: string, // Campo opcional: fecha de nacimiento (Unix time)
-  email2?: string,       // Campo opcional: email alternativo
+  fecha_nacimiento?: string, // Campo opcional: fecha de nacimiento (Unix time)
+  email_2?: string,       // Campo opcional: email alternativo
   cargo?: string,         // Campo opcional: cargo dentro de la empresa
   profesion?:string,      // Campo opcional: profesion
-  nivelEducativo?:string, // Campo opcional: Nivel educativo
+  nivel_educativo?:string, // Campo opcional: Nivel educativo
   empresa?:string,        // Campo opcional: empresa
   origen?:string,         // Campo opcional: Origen ??
   genero?:string,         // Campo opcional: género

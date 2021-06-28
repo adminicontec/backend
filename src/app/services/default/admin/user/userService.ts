@@ -121,7 +121,7 @@ class UserService {
         params.profile = JSON.parse(params.profile);
       }
 
-      console.log("--> ");
+      console.log("Avatar --> ");
       // @INFO: Almacenando en servidor la imagen adjunta
       if (params.avatar) {
         console.log("--> avatar");
@@ -130,7 +130,7 @@ class UserService {
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.profile.avatarImageUrl = response_upload.name
       }
-
+      console.log("Roles --> ");
       if (!params.roles) {
         // params.roles = []
       } else if (typeof params.roles === "string") {
@@ -142,6 +142,7 @@ class UserService {
       // lastModifiedBy
 
       if (params.id) {
+        console.log("User ID --> ");
         let register: any = await User.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
@@ -210,77 +211,89 @@ class UserService {
         })
 
       } else {
+        console.log("User.findOne --> ");
         const exist = await User.findOne({
           $or: [
             { username: params.username },
             { email: params.email },
           ]
         })
+        console.log("If user Exists --> ");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
+        console.log("If Password --> ");
         if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
         params.passwordHash = await this.hashPassword(params.password);
 
-        const { _id } = await User.create(params)
-        const response: any = await User.findOne({ _id })
-          .populate({ path: 'roles', select: 'id name description' })
-          .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
-          .lean()
+        console.log("User --> ");
+        try {
+          const { _id } = await User.create(params)
 
-        if (response.profile) {
-          response.profile.avatarImageUrl = this.avatarUrl(response)
-          response.profile.avatar = response.profile.avatarImageUrl
-        }
 
-        console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
-        var paramUserMoodle = {
-          email: params.email
-        }
-        let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
-        console.log(respMoodle2);
-        if (respMoodle2.status == "success") {
-          if (respMoodle2.user == null) {
-            console.log("Moodle: user NO exists ");
-            // [revisión[]
-            var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
-              email: params.email,
-              username: params.username,
-              password: params.password,
-              firstname: params.profile.first_name,
-              lastname: params.profile.last_name,
-              regional: '',
-              fechaNacimiento: params.profile.birthDate,
-              email2: '',
-              cargo: '',
-              profesion: '',
-              nivelEducativo: '',
-              empresa: '',
-              origen: params.profile.origen,
-              genero: params.profile.genero,
+          console.log("Get created  User --> ");
+          const response: any = await User.findOne({ _id })
+            .populate({ path: 'roles', select: 'id name description' })
+            .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
+            .lean()
+
+          if (response.profile) {
+            response.profile.avatarImageUrl = this.avatarUrl(response)
+            response.profile.avatar = response.profile.avatarImageUrl
+          }
+
+          console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
+          var paramUserMoodle = {
+            email: params.email
+          }
+          let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+          console.log(respMoodle2);
+          if (respMoodle2.status == "success") {
+            if (respMoodle2.user == null) {
+              console.log("Moodle: user NO exists ");
+              // [revisión[]
+              var paramsMoodleUser: IMoodleUser = {
+                email: params.email,
+                username: params.username,
+                password: params.password,
+                firstname: params.profile.first_name,
+                lastname: params.profile.last_name,
+                fecha_nacimiento: params.profile.birthDate,
+                genero: params.profile.genre,
+                email_2: params.profile.alternativeEmail,
+                origen: params.profile.origen,
+                regional: params.profile.regional,
+                cargo: params.profile.currentPosition,
+                profesion: params.profile.carreer,
+                nivel_educativo: params.profile.educationalLevel,
+                empresa: params.profile.company,
+              }
+              console.log(paramsMoodleUser);
+
+              // crear nuevo uusario en MOODLE
+              let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
+              console.log("Moodle: Usuario creado con Éxito.");
+              console.log(respMoodle2);
+
             }
-            console.log(paramsMoodleUser);
-
-            // crear nuevo uusario en MOODLE
-            let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
-            console.log("Moodle: Usuario creado con Éxito.");
-            console.log(respMoodle2);
-
-          }
-          else {
-            console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
-          }
-
-        }
-
-
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            user: {
-              ...response
+            else {
+              console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
             }
+
           }
-        })
+
+
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              user: {
+                ...response
+              }
+            }
+          })
+        }
+        catch (error) {
+          console.log(error);
+        }
       }
 
     } catch (e) {
