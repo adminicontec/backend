@@ -23,11 +23,21 @@ export interface IUser {
     first_name?: string, // Nombres del usuario
     last_name?: string, // Apellidos del usuario
     avatarImageUrl?: string, // Avatar del usuario
-    city?: string, // Ciudad del usuario
-    country?: string // Pais del usuario
+    city?: string,      // Ciudad del usuario
+    country?: string,   // Pais del usuario
+    birthDate?: string, // Fecha de nacimiento de usuario
+    regional?: string,  // regional del Usuario
+    origen?: string,
+    genre?: string,
+    alternativeEmail?: string,
+
+    currentPosition?:string,
+    carreer?: string,
+    educationalLevel?: string,
+    company?: string,
   },
   curriculum_vitae?: {
-    biography: string, // Biografia curriculo del usuario
+    biography?: string, // Biografia curriculo del usuario
     laboral_experience?: ILaboralExperience[], // Array experiencia laboral del usuario
     academic_info?: IAcademicInfo[] // Array grados academicos del usuario
     skill?: ISkill[] // Array de habilidades
@@ -35,8 +45,9 @@ export interface IUser {
   },
   roles?: Array<string> | string, // Roles asignados al usuario
   createdBy?: string,
-  lastModifiedBy?: string
-  avatar?: string // Objeto de clase File que posee el archivo que sera cargado al servidor
+  lastModifiedBy?: string,
+  avatar?: string, // Objeto de clase File que posee el archivo que sera cargado al servidor
+  moodle_id?:number,
   id?: string // Identificador del permiso
 }
 
@@ -71,10 +82,10 @@ export interface IUserDelete {
 }
 
 export interface IUserQuery {
-  pageNumber?:string, // Numero de pagina
-  nPerPage?:string, // Cantidad de elementos por pagina
+  pageNumber?: string, // Numero de pagina
+  nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
-  search?:string, // Busca sobre los campos de la coleccion
+  search?: string, // Busca sobre los campos de la coleccion
   roles?: Array<string> | string // Roles
 }
 

@@ -7,7 +7,7 @@ const { Schema } = mongoose;
 const UserSchema = new Schema({
   // @add_schema Add schema here
   username: {
-    type:  Schema.Types.String,
+    type: Schema.Types.String,
     required: true,
   },
   normalizedUserName: {
@@ -60,10 +60,10 @@ const UserSchema = new Schema({
   },
   profile: {
     first_name: {
-      type:  Schema.Types.String
+      type: Schema.Types.String
     },
     last_name: {
-      type:  Schema.Types.String
+      type: Schema.Types.String
     },
     avatarImageUrl: {
       type: Schema.Types.String
@@ -75,6 +75,20 @@ const UserSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "Country"
     },
+    genero: {
+      type: Schema.Types.String
+    },
+    alternativeEmail: {
+      type: Schema.Types.String
+    },
+    birthDate: { type: Schema.Types.Date },
+    regional: { type: Schema.Types.String },
+    origen: { type: Schema.Types.String},
+    currentPosition: { type: Schema.Types.String},
+    carreer: { type: Schema.Types.String},
+    educationalLevel: { type: Schema.Types.String},
+    company: { type: Schema.Types.String},
+
     timezone: { type: Schema.Types.String, default: 'GMT-5' },
     culture: { type: Schema.Types.String, default: 'es_CO' },
     screen_mode: { type: Schema.Types.String, default: 'light-mode' },
@@ -115,17 +129,16 @@ const UserSchema = new Schema({
     ],
     skill: [
       {
-        name: { type: Schema.Types.String},
-        score: { type: Schema.Types.Number},
+        name: { type: Schema.Types.String },
+        score: { type: Schema.Types.Number },
       }
     ],
     language: [
       {
-        name: { type: Schema.Types.String},
-        score: { type: Schema.Types.Number},
+        name: { type: Schema.Types.String },
+        score: { type: Schema.Types.Number },
       }
     ]
-
   },
   moodle_id: { type: Schema.Types.String }
   // @end
