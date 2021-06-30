@@ -11,16 +11,14 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 // @import models
-import { Course } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
-import { generalUtility } from 'core/utilities/generalUtility';
 // @end
 
-class MasterCourseService {
+class CourseContentService {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -33,63 +31,56 @@ class MasterCourseService {
 
   public list = async (params: IMoodleCourseQuery = {}) => {
 
-    let responseCourses = [];
-    let singleCourse = {
+    let responseCourseContents = [];
+    let singleCourseContent = {
       id: 0,
-      courseCode: "",
       name: "",
-      fullname: "",
-      displayname: "",
-      categoryid: 0,
       description: ""
     }
+
+    console.log("FEtch Course sections for " + params.courseID);
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
-      wsfunction: moodle_setup.services.courses.get,
+      wsfunction: moodle_setup.services.courses.getContent,
       moodlewsrestformat: moodle_setup.restformat,
+      "courseid": params.courseID
     };
 
-    console.log("--------------- Fetch courses in Moodle : ---------------------------");
+    console.log("--------------- Fetch contents for CourseID " + params.courseID + ": ---------------------------");
 
     let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {
-      // ERROR al consultar los cursos en Moodle
+      // ERROR al consultar las categorías de curso en Moodle
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
     }
     else {
-      console.log("Response: ");
-      // Filter if the course belongs to categoryID
-      let courses = respMoodle.filter(course => course.categoryid === params.categoryId);
+      console.log(respMoodle);
 
-      courses.forEach(courseDetail => {
+      respMoodle.forEach(element => {
 
-        // compose the final response object
-        singleCourse = {
-          id: courseDetail.id,
-          courseCode: courseDetail.idnumber,
-          name: courseDetail.shortname,
-          fullname: courseDetail.fullname,
-          displayname: courseDetail.displayname,
-          categoryid: courseDetail.categoryid,
-          description: courseDetail.summary
+        if (element.section != 0) {
+
+          singleCourseContent = {
+            id: element.id,
+            name: element.name,
+            description: element.summary
+          }
+          responseCourseContents.push(singleCourseContent);
         }
-        responseCourses.push(singleCourse);
-
       })
-      // masterCategoriesIDs.forEach(catId => {
-      // });
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          courses: responseCourses, //respMoodle.events,
+          courseContents: responseCourseContents, //respMoodle.events,
         }
       })
     }
 
   }
+
 }
 
-export const masterCourseService = new MasterCourseService();
-export { MasterCourseService as DefaultMoodleCourseMasterCourseService };
+export const courseContentService = new CourseContentService();
+export { CourseContentService as DefaultMoodleCourseCourseContentService };
