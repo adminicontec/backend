@@ -1,4 +1,5 @@
 // @import_routes
+import { masterCourseRoute } from "@scnode_app/routes/default/admin/course/masterCourseRoute";
 import { cityRoute } from "@scnode_app/routes/default/admin/city/cityRoute";
 import { modularRoute } from "@scnode_app/routes/default/admin/modular/modularRoute";
 import { courseSchedulingModeRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingModeRoute";
@@ -44,6 +45,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    masterCourseRoute,
     cityRoute,
     modularRoute,
     courseSchedulingModeRoute,
