@@ -38,7 +38,7 @@ class CourseContentService {
       description: ""
     }
 
-    console.log("FEtch Course sections for " + params.courseID);
+    console.log("Fetch Course sections for " + params.courseID);
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
     let moodleParams = {

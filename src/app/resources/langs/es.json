@@ -177,14 +177,18 @@
       "mode": {
         "not_found": "La modalidad de programación no ha sido encontrada",
         "insertOrUpdate": {
-          "already_exists": "Ya existe una modalidad de programación con el nombre :name"
+          "already_exists": "Ya existe un curso con el nombre \" :name \"",
+          "category_not_found": "No existe la categoría con id :id",
+          "course_not_found": "No existe el curso con id :id a replicar."
         }
       }
     },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",
       "insertOrUpdate": {
-        "already_exists": "Ya existe un curso con el nombre :name"
+        "already_exists": "Ya existe un curso con el nombre \" :name \"",
+        "category_not_found": "No existe la categoría con id :id",
+        "course_not_found": "No existe el curso con id :id a replicar."
       }
     },
     "enrollment": {
