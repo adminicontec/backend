@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 
 // @import_services Import services
 import { masterCourseService } from 'app/services/default/moodle/course/masterCourseService';
+import { moodleCourseService } from 'app/services/default/moodle/course/moodleCourseService';
 // @end
 
 // @import_utilities Import utilities
@@ -33,6 +34,13 @@ class MasterCourseController {
 		const response = await masterCourseService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+
+	public duplicate = async (req: Request, res: Response) => {
+		const response = await moodleCourseService.createFromMaster(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 
 }
 

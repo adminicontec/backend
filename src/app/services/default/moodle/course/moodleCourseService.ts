@@ -140,6 +140,45 @@ class MoodleCourseService {
   }
 
 
+  public createFromMaster = async (params: IMoodleCourse) => {
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.courses.duplicate,
+      moodlewsrestformat: moodle_setup.restformat,
+      'courseid': params.masterId,
+      'categoryid': params.categoryId,
+      'shortname': params.shortName,
+      'fullname': params.shortName,
+      'options[0][name]': 'users',
+      'options[0][value]': 0
+    };
+
+    console.log("Moodle: Copia de curso Maestro " + params.masterId);
+    console.log(moodleParams);
+    console.log("----");
+
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    if (respMoodle.exception) {
+      // ERROR al consultar las categorías de curso en Moodle
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } } });
+    }
+    console.log(respMoodle);
+    console.log("============");
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        course: {
+          id: respMoodle.id,
+          name: respMoodle.shortname
+        }, //respMoodle.events,
+      }
+    })
+
+
+  }
+
+
 }
 
 export const moodleCourseService = new MoodleCourseService();
