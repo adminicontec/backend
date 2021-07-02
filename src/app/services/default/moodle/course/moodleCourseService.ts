@@ -159,19 +159,50 @@ class MoodleCourseService {
 
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {
-      // ERROR al consultar las categorías de curso en Moodle
-      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } } });
+
+      console.log("RESP:");
+      console.log(respMoodle.errorcode);
+
+      if (respMoodle.errorcode === "invalidcourseid") {
+        return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: {
+            key: 'moodle_course.insertOrUpdate.course_not_found',
+            params: { id: params.masterId }
+          }
+        });
+      }
+      if (respMoodle.errorcode === "invalidrecord") {
+        return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: {
+            key: 'moodle_course.insertOrUpdate.category_not_found',
+            params: { id: params.categoryId }
+          }
+        });
+      }
+      if (respMoodle.errorcode === "shortnametaken") {
+        return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: {
+            key: 'moodle_course.insertOrUpdate.already_exists',
+            params: { name: params.shortName }
+          }
+        });
+      }
+
     }
     console.log(respMoodle);
     console.log("============");
+
+    // Take dates and update course data:
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         course: {
           id: respMoodle.id,
           name: respMoodle.shortname
-        }, //respMoodle.events,
+        }
       }
     })
 

@@ -481,7 +481,17 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.moodle_course.insertOrUpdate.already_exists"),
             "status_code": "moodle_course_insertOrUpdate_already_exists",
             "code": 400
-          }
+          },
+          "category_not_found": {
+            "message": i18nUtility.__("app_error_messages.moodle_course.insertOrUpdate.category_not_found"),
+            "status_code": "moodle_course_insertOrUpdate_category_not_found",
+            "code": 400
+          },
+          "course_not_found": {
+            "message": i18nUtility.__("app_error_messages.moodle_course.insertOrUpdate.course_not_found"),
+            "status_code": "moodle_course_insertOrUpdate_course_not_found",
+            "code": 400
+          },
         }
       },
       "enrollment": {
