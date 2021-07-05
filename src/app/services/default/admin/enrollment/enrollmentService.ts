@@ -2,6 +2,7 @@
 // @end
 
 // @import services
+import {roleService} from '@scnode_app/services/default/admin/secure/roleService'
 // @end
 
 // @import utilities
@@ -51,30 +52,42 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id email firstname lastname documentType documentID courseID'
+    let select = 'id user email firstname lastname documentType documentID courseID'
     if (filters.select) {
       select = filters.select
     }
 
     let where = {}
 
-    if (filters.search) {
-      const search = filters.search
-      where = {
-        ...where,
-        $or: [
-          { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-          { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-        ]
-      }
+    // if (filters.search) {
+    //   const search = filters.search
+    //   where = {
+    //     ...where,
+    //     $or: [
+    //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //     ]
+    //   }
+    // }
+
+    if (filters.courseID) {
+      where['courseID'] = filters.courseID
     }
 
     let registers = []
     try {
       registers = await Enrollment.find(where)
         .select(select)
+        .populate({path: 'user', select: 'id profile.first_name profile.last_name email'})
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
+        .lean()
+
+        for await (const register of registers) {
+          if (register.user && register.user.profile) {
+            register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
+          }
+        }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -133,6 +146,14 @@ class EnrollmentService {
  * @returns
  */
   public insertOrUpdate = async (params: IEnrollment) => {
+
+    let roles = {}
+    const rolesResponse: any = await roleService.list()
+    if (rolesResponse.status === 'success') {
+      for await (const iterator of rolesResponse.roles) {
+        roles[iterator.name] = iterator._id
+      }
+    }
 
     try {
       if (params.id) {
@@ -206,7 +227,7 @@ class EnrollmentService {
                 username: params.email,
                 email: params.email,
                 password: passw,
-                roles: ["607e2e80c37a5d75273ade37"], // Id de ROL sujeto a verificación en CV
+                roles: [roles['student']], // Id de ROL sujeto a verificación en CV
                 profile: {
                   first_name: params.firstname,
                   last_name: params.lastname
@@ -221,6 +242,7 @@ class EnrollmentService {
               // Insertar nuevo Usuario si existe
               const respoUser = await userService.insertOrUpdate(cvUserParams);
               if (respoUser.status == "success") {
+                params.user = respoUser.user._id
                 console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
               }
               else {
@@ -229,6 +251,8 @@ class EnrollmentService {
               }
             }
             else {
+              params.user = respCampusDataUser.user._id
+
               // Usuario ya existe en CV:
               console.log("[  Campus  ] Usuario ya existe: ");
               console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);

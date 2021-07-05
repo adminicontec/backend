@@ -6,6 +6,11 @@ const { Schema } = mongoose;
 
 const EnrollmentSchema = new Schema({
   // @add_schema Add schema here
+  user: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'User'
+  },
   email: {
     type: Schema.Types.String,
     required: true,

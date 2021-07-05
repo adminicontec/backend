@@ -3,6 +3,7 @@
 
 // @add your types
 export interface IEnrollment{
+  user?: string // Identificador del usuario en campus
   email: string,          // email de estudiante
   password: string,
   firstname: string,      // Nombre de estudiante
@@ -14,6 +15,7 @@ export interface IEnrollment{
 }
 
 export interface IEnrollmentQuery {
+  courseID?: string // Identificador del curso de moodle
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
