@@ -159,8 +159,12 @@ class EnrollmentService {
 
           var paramFullname = params.firstname + " " + params.lastname;
           console.log("Inicio de Enrollment");
+
+          // check rolename, if not exists, guest as default in moodle, viewer in CV
+          //if(params.rolename ==)
+
           var paramToEnrollment = {
-            moodleRoleID: 5,
+
             user: {
               moodleUserID: 0,
               moodleFirstName: '',
@@ -173,7 +177,7 @@ class EnrollmentService {
               moodleCourseID: 0,
               moodleCourseName: ''
             },
-
+            moodleRoleID: 5,
             moodleUserID: 0,
             moodleCourseID: 0
           };
