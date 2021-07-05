@@ -7,7 +7,7 @@ import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility, ValidatorRequest } from "@scnode_core/utilities/requestUtility";
 // @end
 
-class CourseSchedulingMiddleware {
+class CourseSchedulingSectionMiddleware {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -26,11 +26,7 @@ class CourseSchedulingMiddleware {
   public create = async (req: Request, res: Response, next: NextFunction) => {
 
 		const fields_config: ValidatorRequest[] = [
-      // { key: 'course', label: 'Curso del programa'},
-      { key: 'startDate', label: 'Fecha de inicio'},
-      { key: 'endDate', label: 'Fecha de finalización'},
-      // { key: 'teacher', label: 'Docente'},
-      { key: 'regional', label: 'Regional'},
+      { key: 'name', label: 'Nombre de la sección'},
 		];
 
 		await requestUtility.middlewareValidator(fields_config, req, res, next)
@@ -38,5 +34,5 @@ class CourseSchedulingMiddleware {
 
 }
 
-export const courseSchedulingMiddleware = new CourseSchedulingMiddleware();
-export { CourseSchedulingMiddleware as AdminCourseCourseSchedulingMiddleware }
+export const courseSchedulingSectionMiddleware = new CourseSchedulingSectionMiddleware();
+export { CourseSchedulingSectionMiddleware as AdminCourseCourseSchedulingSectionMiddleware }

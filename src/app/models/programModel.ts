@@ -9,7 +9,8 @@ const ProgramSchema = new Schema({
   name: {
     type: Schema.Types.String,
     required: true
-  }
+  },
+  moodle_id: { type: Schema.Types.String }
   // @end
 }, {
   collection: 'programs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

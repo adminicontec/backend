@@ -1,0 +1,258 @@
+// @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
+import moment from 'moment'
+// @end
+
+// @import services
+// @end
+
+// @import utilities
+import { responseUtility } from '@scnode_core/utilities/responseUtility';
+// @end
+
+// @import models
+import {CourseSchedulingSection, CourseSchedulingDetails, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Modular, Program, Regional, User} from '@scnode_app/models'
+// @end
+
+// @import types
+import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
+import {ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery} from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+// @end
+
+class CourseSchedulingDetailsService {
+
+  /*===============================================
+  =            Estructura de un metodo            =
+  ================================================
+    // La estructura de un metodo debe ser la siguiente:
+    public methodName = () => {}
+  /*======  End of Estructura de un metodo  =====*/
+
+  constructor () {}
+
+  /**
+   * Metodo que permite validar si un registro existe segun parametros
+   * @param params Filtros para buscar el elemento
+   * @returns
+   */
+   public findBy = async (params: IQueryFind) => {
+
+    try {
+      let where = {}
+      if (params.where && Array.isArray(params.where)) {
+        params.where.map((p) => where[p.field] = p.value)
+      }
+
+      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+      if (params.query === QueryValues.ALL) {
+        const registers: any = await CourseSchedulingDetails.find(where)
+        .populate({path: 'course_scheduling', select: 'id moodle_id'})
+        .populate({path: 'course', select: 'id name moodle_id'})
+        .populate({path: 'schedulingMode', select: 'id name moodle_id'})
+        .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .select(select)
+        .lean()
+
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          schedulings: registers
+        }})
+      } else if (params.query === QueryValues.ONE) {
+        const register: any = await CourseSchedulingDetails.findOne(where)
+        .populate({path: 'course_scheduling', select: 'id moodle_id'})
+        .populate({path: 'course', select: 'id name moodle_id'})
+        .populate({path: 'schedulingMode', select: 'id name moodle_id'})
+        .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .select(select)
+        .lean()
+
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.details.not_found'})
+
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          scheduling: register
+        }})
+      }
+
+      return responseUtility.buildResponseFailed('json')
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar un registro
+   * @param params Elementos a registrar
+   * @returns
+   */
+  public insertOrUpdate = async (params: ICourseSchedulingDetail) => {
+
+    try {
+
+      if (params.course && typeof params.course !== "string" && params.course.hasOwnProperty('value')) {
+        const courseLocal = await CourseSchedulingSection.findOne({
+          moodle_id: params.course.value
+        }).select('id').lean()
+        if (courseLocal) {
+          params.course = courseLocal._id
+        } else {
+          const newCourseLocal = await CourseSchedulingSection.create({
+            name: params.course.label,
+            moodle_id: params.course.value
+          })
+          if (newCourseLocal) {
+            params.course = newCourseLocal._id
+          }
+        }
+      }
+
+      if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
+        const schedulingModeLocal = await CourseSchedulingMode.findOne({
+          moodle_id: params.schedulingMode.value
+        }).select('id').lean()
+        if (schedulingModeLocal) {
+          params.schedulingMode = schedulingModeLocal._id
+        } else {
+          const newSchedulingModeLocal = await CourseSchedulingMode.create({
+            name: params.schedulingMode.label,
+            moodle_id: params.schedulingMode.value
+          })
+          if (newSchedulingModeLocal) {
+            params.schedulingMode = newSchedulingModeLocal._id
+          }
+        }
+      }
+
+      if (params.id) {
+        const register: any = await CourseSchedulingDetails.findOne({_id: params.id}).lean()
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.details.not_found'})
+
+        const response: any = await CourseSchedulingDetails.findByIdAndUpdate(params.id, params, {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
+        })
+        await CourseScheduling.populate(response, {path: 'course_scheduling', select: 'id moodle_id'})
+        await Course.populate(response, {path: 'course', select: 'id name moodle_id'})
+        await CourseSchedulingMode.populate(response, {path: 'schedulingMode', select: 'id name moodle_id'})
+        await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            scheduling: {
+              ...response,
+            }
+          }
+        })
+
+      } else {
+
+        const {_id} = await CourseSchedulingDetails.create(params)
+        const response: any = await CourseSchedulingDetails.findOne({_id})
+        .populate({path: 'course_scheduling', select: 'id moodle_id'})
+        .populate({path: 'course', select: 'id name moodle_id'})
+        .populate({path: 'schedulingMode', select: 'id name moodle_id'})
+        .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .lean()
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            scheduling: {
+              ...response,
+            }
+          }
+        })
+      }
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite hacer borrar un registro
+   * @param params Filtros para eliminar
+   * @returns
+   */
+  public delete = async (params: ICourseSchedulingDetailDelete) => {
+    try {
+      const find: any = await CourseSchedulingDetails.findOne({ _id: params.id })
+      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
+
+      await find.delete()
+
+      return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite listar todos los registros
+   * @param [filters] Estructura de filtros para la consulta
+   * @returns
+   */
+  public list = async (filters: ICourseSchedulingDetailQuery = {}) => {
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+
+    const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {}
+
+    if (filters.course_scheduling) {
+      where['course_scheduling'] = filters.course_scheduling
+    }
+
+    // if(filters.search){
+    //   const search = filters.search
+    //   where = {
+    //     ...where,
+    //     $or:[
+    //       {observations: { $regex: '.*' + search + '.*',$options: 'i' }}
+    //     ]
+    //   }
+    // }
+
+    let registers = []
+    try {
+      registers =  await CourseSchedulingDetails.find(where)
+      .select(select)
+      .populate({path: 'course_scheduling', select: 'id moodle_id'})
+      .populate({path: 'course', select: 'id name moodle_id'})
+      .populate({path: 'schedulingMode', select: 'id name moodle_id'})
+      .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+      .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
+      .limit(paging ? nPerPage : null)
+      .sort({created_at: -1})
+      .lean()
+
+      for await (const register of registers) {
+        if (register.startDate) register.startDate = moment.utc(register.startDate).format('YYYY-MM-DD')
+        if (register.endDate) register.endDate = moment.utc(register.endDate).format('YYYY-MM-DD')
+        if (register.teacher && register.teacher.profile) {
+          register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
+        }
+      }
+    } catch (e) {}
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        schedulings: [
+          ...registers
+        ],
+        total_register: (paging) ? await CourseSchedulingDetails.find(where).count() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    })
+  }
+
+}
+
+export const courseSchedulingDetailsService = new CourseSchedulingDetailsService();
+export { CourseSchedulingDetailsService as DefaultAdminCourseCourseSchedulingDetailsService };

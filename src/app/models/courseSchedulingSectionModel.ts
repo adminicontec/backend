@@ -4,35 +4,32 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 // @end
 
-const CourseSchedulingModeSchema = new Schema({
+const CourseSchedulingSectionSchema = new Schema({
   // @add_schema Add schema here
   name: {
     type: Schema.Types.String,
     required: true
   },
-  description: {
-    type: Schema.Types.String,
-  },
   moodle_id: { type: Schema.Types.String }
   // @end
 }, {
-  collection: 'course_scheduling_modes' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'course_scheduling_sections' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-CourseSchedulingModeSchema.plugin(mongoose_delete,{
+CourseSchedulingSectionSchema.plugin(mongoose_delete,{
   deletedAt : true,
   overrideMethods: 'all',
   indexFields: 'all'
 });
 
 // INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
-// CourseSchedulingModeSchema.methods.invalid_fields = ["field1", "field2"];
+// CourseSchedulingSectionSchema.methods.invalid_fields = ["field1", "field2"];
 
 // INFO: Si desea implementar un metodo despues de guardar habilite el siguiente metodo
-// CourseSchedulingModeSchema.methods.postSave = (parameters) => {
+// CourseSchedulingSectionSchema.methods.postSave = (parameters) => {
 // }
 
 
-export const CourseSchedulingModeModel = mongoose.model<any, any>('CourseSchedulingMode', CourseSchedulingModeSchema);
+export const CourseSchedulingSectionModel = mongoose.model<any, any>('CourseSchedulingSection', CourseSchedulingSectionSchema);

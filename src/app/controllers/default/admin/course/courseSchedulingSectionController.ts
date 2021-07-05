@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import {courseSchedulingSectionService} from '@scnode_app/services/default/admin/course/courseSchedulingSectionService'
 // @end
 
 // @import_utilities Import utilities
@@ -18,7 +18,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
 // @end
 
-class CourseSchedulingController {
+class CourseSchedulingSectionController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -36,11 +36,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public create = async (req: Request, res: Response) => {
-    const user_id = req.user.sub
-    let params = req.getParameters.all()
-    params['user'] = user_id
-
-    const response = await courseSchedulingService.insertOrUpdate(params)
+    const response = await courseSchedulingSectionService.insertOrUpdate(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -51,11 +47,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public update = async (req: Request, res: Response) => {
-    const user_id = req.user.sub
-    let params = req.getParameters.all()
-    params['user'] = user_id
-
-		const response = await courseSchedulingService.insertOrUpdate(params)
+		const response = await courseSchedulingSectionService.insertOrUpdate(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -66,7 +58,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public delete = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.delete(req.getParameters.all())
+		const response = await courseSchedulingSectionService.delete(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -77,7 +69,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.list(req.getParameters.all())
+		const response = await courseSchedulingSectionService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -89,11 +81,10 @@ class CourseSchedulingController {
 	 */
 	public get = async (req: Request, res: Response) => {
     const {id} = req.getParameters.all()
-		const response = await courseSchedulingService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
+		const response = await courseSchedulingSectionService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
 		return responseUtility.sendResponseFromObject(res, response)
 	}
-
 }
 
-export const courseSchedulingController = new CourseSchedulingController();
-export { CourseSchedulingController as DefaultAdminCourseCourseSchedulingController };
+export const courseSchedulingSectionController = new CourseSchedulingSectionController();
+export { CourseSchedulingSectionController as DefaultAdminCourseCourseSchedulingSectionController };

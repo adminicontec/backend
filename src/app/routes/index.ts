@@ -1,4 +1,6 @@
 // @import_routes
+import { courseSchedulingSectionRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingSectionRoute";
+import { courseSchedulingDetailsRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingDetailsRoute";
 import { courseContentRoute } from "@scnode_app/routes/default/admin/course/courseContentRoute";
 import { masterCategoryRoute } from "@scnode_app/routes/default/admin/course/masterCategoryRoute";
 import { masterCourseRoute } from "@scnode_app/routes/default/admin/course/masterCourseRoute";
@@ -47,6 +49,8 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    courseSchedulingSectionRoute,
+    courseSchedulingDetailsRoute,
     courseContentRoute,
     masterCategoryRoute,
     masterCourseRoute,

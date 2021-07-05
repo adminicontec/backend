@@ -4,8 +4,8 @@
 // @add your types
 export interface ICourse {
   name             : string,             // Nombre del curso
-  fullname         : string,             // Nombre Completo del curso
-  displayname      : string,             // Nombre Para mostrar del curso
+  fullname?         : string,             // Nombre Completo del curso
+  displayname?      : string,             // Nombre Para mostrar del curso
   description      : string,             // Descripción del curso
   courseType?      : string,             // Tipo de curso
   mode?            : string,             // Modalidad

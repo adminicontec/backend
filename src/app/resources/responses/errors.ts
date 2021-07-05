@@ -427,6 +427,13 @@ class ErrorResponse {
           "status_code": "course_scheduling_not_found",
           "code": 400
         },
+        "insertOrUpdate": {
+          "failed": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.insertOrUpdate.failed"),
+            "status_code": "course_scheduling_insertOrUpdate_failed",
+            "code": 400
+          }
+        },
         "status": {
           "not_found": {
             "message": i18nUtility.__("app_error_messages.course_scheduling.status.not_found"),
@@ -437,6 +444,20 @@ class ErrorResponse {
             "already_exists": {
               "message": i18nUtility.__("app_error_messages.course_scheduling.status.insertOrUpdate.already_exists"),
               "status_code": "course_scheduling_status_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
+        "section": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.section.not_found"),
+            "status_code": "course_scheduling_section_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.course_scheduling.section.insertOrUpdate.already_exists"),
+              "status_code": "course_scheduling_section_insertOrUpdate_already_exists",
               "code": 400
             }
           }

@@ -8,22 +8,31 @@ export interface ICourseSchedulingSession {
 }
 
 export interface ICourseScheduling {
-  schedulingStatus: string //Identificador del estado de programación
+  metadata?: {
+    user: string // Identificador del usuario que genera el registro
+    date: string // Fecha del servicio
+    service_id: string // Campo unico que identifica el servicio
+    year: string // Año en que se genera el servicio
+  }
+  user: string // Identificador del usuario logueado
+  schedulingMode: {value: number, label: string} | string // Identificador del modo de programación
   modular: string // Identificador del modular
-  schedulingCode: string // Codigo de programación
-  program: string // Identificador del programa
+  program: {value: number, label: string} | string // Identificador del programa
   schedulingType: string // Identificador del tipo de programación
-  schedulingMode: string // Identificador del modo de programación
-  course?: string // Curso de la programación
+  schedulingStatus: string //Identificador del estado de programación
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
-  teacher?: string // Docente de la programación
   regional?: string // Regional de la programación
   city?: string // Identificador de la ciudad
   amountParticipants?: string // Cantidad de participantes
   observations?: string // Observaciones
+  client?: string // Cliente
   duration?: number // Duración del programa
-  sessions?: Array<ICourseSchedulingSession> // Array de sesiones de clase
+  in_design?: boolean | string // Booleano que indica si esta en diseño o no
+  // schedulingCode: string // Codigo de programación
+  // course?: string // Curso de la programación
+  // teacher?: string // Docente de la programación
+  // sessions?: Array<ICourseSchedulingSession> // Array de sesiones de clase
   id?: string // Identificador de la categoria
 }
 

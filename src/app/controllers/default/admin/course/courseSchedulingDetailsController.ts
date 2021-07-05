@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import {courseSchedulingDetailsService} from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService'
 // @end
 
 // @import_utilities Import utilities
@@ -18,7 +18,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
 // @end
 
-class CourseSchedulingController {
+class CourseSchedulingDetailsController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -40,7 +40,7 @@ class CourseSchedulingController {
     let params = req.getParameters.all()
     params['user'] = user_id
 
-    const response = await courseSchedulingService.insertOrUpdate(params)
+    const response = await courseSchedulingDetailsService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -55,7 +55,7 @@ class CourseSchedulingController {
     let params = req.getParameters.all()
     params['user'] = user_id
 
-		const response = await courseSchedulingService.insertOrUpdate(params)
+		const response = await courseSchedulingDetailsService.insertOrUpdate(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -66,7 +66,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public delete = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.delete(req.getParameters.all())
+		const response = await courseSchedulingDetailsService.delete(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -77,7 +77,7 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.list(req.getParameters.all())
+		const response = await courseSchedulingDetailsService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -89,11 +89,11 @@ class CourseSchedulingController {
 	 */
 	public get = async (req: Request, res: Response) => {
     const {id} = req.getParameters.all()
-		const response = await courseSchedulingService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
+		const response = await courseSchedulingDetailsService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
 }
 
-export const courseSchedulingController = new CourseSchedulingController();
-export { CourseSchedulingController as DefaultAdminCourseCourseSchedulingController };
+export const courseSchedulingDetailsController = new CourseSchedulingDetailsController();
+export { CourseSchedulingDetailsController as DefaultAdminCourseCourseSchedulingDetailsController };

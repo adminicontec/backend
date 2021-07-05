@@ -162,10 +162,19 @@
     },
     "course_scheduling": {
       "not_found": "La programación no ha sido encontrada",
+      "insertOrUpdate": {
+        "failed": "Se ha presentado un error al guardar"
+      },
       "status": {
         "not_found": "El estado no ha sido encontrado",
         "insertOrUpdate": {
           "already_exists": "Ya existe un estado con el nombre :name"
+        }
+      },
+      "section": {
+        "not_found": "La sección no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una sección con el nombre :name"
         }
       },
       "type": {

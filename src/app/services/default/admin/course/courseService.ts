@@ -173,6 +173,11 @@ class CourseService {
   public insertOrUpdate = async (params: ICourse) => {
     try {
 
+      if (params.name) {
+        params.fullname = params.name
+        params.displayname = params.name
+      }
+
       if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       // @INFO: Cargando imagen al servidor

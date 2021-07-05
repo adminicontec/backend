@@ -6,17 +6,33 @@ const { Schema } = mongoose;
 
 const CourseSchedulingSchema = new Schema({
   // @add_schema Add schema here
-  schedulingStatus: {
+  metadata: {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    service_id: {
+      type: Schema.Types.String,
+      require: true
+    },
+    date: {
+      type: Schema.Types.String,
+      require: true
+    },
+    year: {
+      type: Schema.Types.String,
+      require: true
+    }
+  },
+  schedulingMode: {
     type: Schema.Types.ObjectId,
-    ref: "CourseSchedulingStatus",
+    ref: "CourseSchedulingMode",
     required: true
   },
   modular: {
     type: Schema.Types.ObjectId,
     ref: "Modular",
-  },
-  schedulingCode: {
-    type: Schema.Types.String,
   },
   program: {
     type: Schema.Types.ObjectId,
@@ -28,14 +44,9 @@ const CourseSchedulingSchema = new Schema({
     ref: "CourseSchedulingType",
     required: true
   },
-  schedulingMode: {
+  schedulingStatus: {
     type: Schema.Types.ObjectId,
-    ref: "CourseSchedulingMode",
-    required: true
-  },
-  course: {
-    type: Schema.Types.ObjectId,
-    ref: "Course",
+    ref: "CourseSchedulingStatus",
     required: true
   },
   startDate: {
@@ -45,11 +56,6 @@ const CourseSchedulingSchema = new Schema({
   endDate: {
     type: Schema.Types.Date,
     required: true,
-  },
-  teacher: {
-    type: Schema.Types.ObjectId,
-    ref: "User",
-    required: true
   },
   regional: {
     type: Schema.Types.ObjectId,
@@ -68,17 +74,18 @@ const CourseSchedulingSchema = new Schema({
   observations: {
     type: Schema.Types.String,
   },
+  client: {
+    type: Schema.Types.String,
+  },
   duration: {type: Schema.Types.Number},
-  sessions: [{
-    startDate: {
-      type: Schema.Types.Date,
-      required: true,
-    },
-    duration: {
-      type: Schema.Types.Number,
-      required: true,
-    }
-  }]
+  in_design: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
+  moodle_id: { type: Schema.Types.String }
+  // schedulingCode: {
+  //   type: Schema.Types.String,
+  // },
   // @end
 }, {
   collection: 'course_schedulings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
