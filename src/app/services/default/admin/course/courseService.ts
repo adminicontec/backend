@@ -100,6 +100,7 @@ class CourseService {
    * @returns
    */
   public list = async (filters: ICourseQuery = {}) => {
+    console.log("Get list of Courses in Campus Digital");
 
     // let queryMoodle = await queryUtility.query({
     //   method: 'get',
@@ -117,7 +118,7 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content'
+    let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
     }
