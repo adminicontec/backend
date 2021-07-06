@@ -19,6 +19,10 @@ const RoleSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Home"
   }],
+  moodle_id: {
+    type: Schema.Types.Number,
+    required: false
+  }
   // @end
 }, {
   collection: 'roles' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

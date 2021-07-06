@@ -601,7 +601,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['admin']
-        ]
+        ],
+        moodle_id: 1
       },
       {
         name: 'student',
@@ -613,7 +614,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['student']
-        ]
+        ],
+        moodle_id: 5
       },
       {
         name: 'teacher',
@@ -623,7 +625,19 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['teacher']
-        ]
+        ],
+        moodle_id: 4
+      },
+      {
+        name: 'Tutor',
+        description: 'Encargado de crear y modificar la programación de servicios educativos.',
+        app_module_permissions: [
+          module_permission_ids['config:is_teacher'],
+        ],
+        homes: [
+          home_ids['teacher']
+        ],
+        moodle_id: 4
       },
       {
         name: 'viewer',
@@ -664,7 +678,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         homes: [
           home_ids['admin']
-        ]
+        ],
+        moodle_id: 7
       },
     ]
 

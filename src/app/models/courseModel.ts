@@ -6,6 +6,9 @@ const { Schema } = mongoose;
 
 const CourseSchema = new Schema({
   // @add_schema Add schema here
+  moodleID: {
+    type: Schema.Types.String,
+  },
   name: {
     type: Schema.Types.String,
     required: true,
@@ -78,9 +81,6 @@ const CourseSchema = new Schema({
     type: Schema.Types.Mixed,
     required: true,
   },
-  moodleID: {
-    type: Schema.Types.String,
-  }
   // @end
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

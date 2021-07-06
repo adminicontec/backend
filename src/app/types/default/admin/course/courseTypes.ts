@@ -3,6 +3,7 @@
 
 // @add your types
 export interface ICourse {
+  moodleID?: number,
   name             : string,             // Nombre del curso
   fullname?         : string,             // Nombre Completo del curso
   displayname?      : string,             // Nombre Para mostrar del curso
@@ -20,9 +21,9 @@ export interface ICourse {
   lang             : string,             // Idioma en el que se da el curso
   id?              : string              // Identificador del curso
   coverUrl?        : string              // URL de la imagen del curso
-  coverFile?       : any                 // Objeto tipo file que contiene la imagen a cargar
-  duration?        : number              // Numero de segundos para la duración del curso
-  content?         : any                 // Contenido del curso
+  coverFile?       : any,                 // Objeto tipo file que contiene la imagen a cargar
+  duration?        : number,              // Numero de segundos para la duración del curso
+  content?         : any,                 // Contenido del curso
 }
 
 export interface ICourseQuery {
