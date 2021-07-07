@@ -16,7 +16,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
-import { generalUtility } from 'core/utilities/generalUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 class MoodleCourseService {

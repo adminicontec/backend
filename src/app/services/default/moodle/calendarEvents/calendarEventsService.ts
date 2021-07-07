@@ -16,9 +16,9 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
-import { generalUtility } from 'core/utilities/generalUtility';
-import { IMoodleCalendarEventsQuery } from 'app/types/default/moodle/calendarEvents/calendarEventsTypes';
-import { consoleUtility } from 'core/utilities/consoleUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
+import { consoleUtility } from '@scnode_core/utilities/consoleUtility';
 // @end
 
 class CalendarEventsService {

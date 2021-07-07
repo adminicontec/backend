@@ -22,7 +22,7 @@ import { IEnrollment, IEnrollmentQuery } from '@scnode_app/types/default/admin/e
 import { userService } from '../user/userService';
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IdentityStore } from 'aws-sdk';
-import { generalUtility } from 'core/utilities/generalUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';

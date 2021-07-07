@@ -16,7 +16,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleEnrollment } from '@scnode_app/types/default/moodle/enrollment/moodleEnrollmentTypes'
-import { generalUtility } from 'core/utilities/generalUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { Z_PARTIAL_FLUSH } from 'zlib';
 
 // @end

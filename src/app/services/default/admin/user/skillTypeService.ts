@@ -14,7 +14,7 @@ import {SkillType} from '@scnode_app/models'
 
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {ISkillType, ISkillTypeDelete, ISkillTypeQuery} from 'app/types/default/admin/user/skillTypeTypes'
+import {ISkillType, ISkillTypeDelete, ISkillTypeQuery} from '@scnode_app/types/default/admin/user/skillTypeTypes'
 // @end
 
 class SkillTypeService {

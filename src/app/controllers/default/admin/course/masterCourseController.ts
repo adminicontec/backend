@@ -6,8 +6,8 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import { masterCourseService } from 'app/services/default/moodle/course/masterCourseService';
-import { moodleCourseService } from 'app/services/default/moodle/course/moodleCourseService';
+import { masterCourseService } from '@scnode_app/services/default/moodle/course/masterCourseService';
+import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService';
 // @end
 
 // @import_utilities Import utilities
