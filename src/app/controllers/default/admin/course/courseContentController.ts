@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_models Import models
-import { courseContentService } from 'app/services/default/moodle/course/courseContentService';
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 // @end
 
 // @import_services Import services
