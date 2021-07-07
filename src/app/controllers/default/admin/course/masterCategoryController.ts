@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_models Import models
-import { masterCategoryService } from 'app/services/default/moodle/course/masterCategoryService';
+import { masterCategoryService } from '@scnode_app/services/default/moodle/course/masterCategoryService';
 // @end
 
 // @import_services Import services
