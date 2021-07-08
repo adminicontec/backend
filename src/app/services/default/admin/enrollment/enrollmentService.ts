@@ -390,20 +390,22 @@ class EnrollmentService {
     let content = params.contentFile;
 
     let dataFromWorksheet = xlsxUtility.extractXLSX(content.data, 'Estudiantes');
+    if (dataFromWorksheet != null) {
+      console.log("Sheet content:")
+      console.log(dataFromWorksheet);
+
+      for (const key in dataFromWorksheet) {
+
+        console.log(dataFromWorksheet[key]);
+      }
 
 
-    // let buffer = Buffer.from(content.data);
-    // const workbook = XLSX.read(buffer, { type: "buffer" });
 
-    // const sheet_name_list = workbook.SheetNames;
-    // // Lee la primer hoja del archivo
+    }
+    else {
+      console.log("Worksheet not found");
+    }
 
-    // console.log("List of sheets:");
-    // console.log(sheet_name_list);
-
-    // const xlData: any = XLSX.utils.sheet_to_json(
-    // workbook.Sheets[sheet_name_list[0]]
-    // );
     // for (const key in xlData) {
     // }
 
