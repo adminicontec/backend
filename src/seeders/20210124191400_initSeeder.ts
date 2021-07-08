@@ -862,12 +862,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     let regional_ids = {}
     const regionals = [
-      {name: 'Antioquia, Chocó y Eje Cafetero'},
-      {name: 'Sur Occidente'},
-      {name: 'Oriente'},
-      {name: 'Centro y Sur Oriente'},
-      {name: 'Caribe'},
-      {name: 'Internacional'},
+      {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19},
+      {name: 'Sur Occidente', moodle_id: 20},
+      {name: 'Oriente', moodle_id: 21},
+      {name: 'Centro y Sur Oriente', moodle_id: 22},
+      {name: 'Caribe', moodle_id: 13},
+      {name: 'Internacional', moodle_id: 23},
     ]
     for await (const regional of regionals) {
       const exists: any = await regionalService.findBy({

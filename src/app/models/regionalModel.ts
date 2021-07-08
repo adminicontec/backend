@@ -10,6 +10,7 @@ const RegionalSchema = new Schema({
     type: Schema.Types.String,
     required: true,
   },
+  moodle_id: { type: Schema.Types.String }
   // @end
 }, {
   collection: 'regionals' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
