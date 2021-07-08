@@ -206,7 +206,7 @@ class CourseSchedulingService {
         .populate({path: 'program', select: 'id name moodle_id'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
-        .populate({path: 'regional', select: 'id name'})
+        .populate({path: 'regional', select: 'id name moodle_id'})
         .populate({path: 'city', select: 'id name'})
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
@@ -215,7 +215,7 @@ class CourseSchedulingService {
         const moodleResponse: any = await moodleCourseService.createFromMaster({
           "shortName": `${response.program.name} ${generalUtility.getDurationFormated(response.duration)}`,
           "masterId" : `${response.program.moodle_id}`,
-          "categoryId": `${response.schedulingMode.moodle_id}`,
+          "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`
         })
