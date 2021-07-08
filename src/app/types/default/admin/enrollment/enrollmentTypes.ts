@@ -22,4 +22,13 @@ export interface IEnrollmentQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
 }
+
+export interface IMassiveEnrollment{
+  courseID: string,       // ID de curso (listado de cursos en CV)
+  contentFile:      // contento of file to be processed.
+  {
+    name: string,
+    data: Buffer,
+  }
+}
 //@end

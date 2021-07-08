@@ -11,13 +11,13 @@ import { attachedUtility } from '@scnode_core/utilities/attached/attachedUtility
 // @end
 
 // @import types
-import {UploadConfig} from '@scnode_core/types/default/attached/attachedTypes'
-import {IBuildXLSX, IGenerateXLSXConfig} from '@scnode_core/types/default/xls/xlsTypes'
+import { UploadConfig } from '@scnode_core/types/default/attached/attachedTypes'
+import { IBuildXLSX, IGenerateXLSXConfig } from '@scnode_core/types/default/xls/xlsTypes'
 // @end
 
 class XlsxUtility {
 
-  constructor () {}
+  constructor() { }
 
 
   /**
@@ -102,6 +102,30 @@ class XlsxUtility {
       return null
     }
   }
+
+
+  public extractXLSX = async (buffer_data: Buffer, sheetName: string) => {
+
+    let buffer = Buffer.from(buffer_data);
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+
+    const sheet_name_list = workbook.SheetNames;
+
+    console.log("List of sheets:");
+    console.log(sheet_name_list);
+
+    // Lee la primer hoja del archivo
+
+    const xlData: any = XLSX.utils.sheet_to_json(
+      workbook.Sheets[sheet_name_list[0]]
+    );
+    for (const key in xlData) {
+
+    }
+
+    return xlData;
+  }
+
 }
 
 export const xlsxUtility = new XlsxUtility();

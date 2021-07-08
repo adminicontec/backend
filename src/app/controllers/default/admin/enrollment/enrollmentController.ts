@@ -43,16 +43,16 @@ class EnrollmentController {
 
 
   /**
-	 * Metodo que permite obtener un unico registro
-	 * @param req Objeto de clase Express
-	 * @param res Objeto de clase Express
-	 * @returns
-	 */
-   public get = async (req: Request, res: Response) => {
-    const {id} = req.getParameters.all()
-		const response = await enrollmentService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
-		return responseUtility.sendResponseFromObject(res, response)
-	}
+   * Metodo que permite obtener un unico registro
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+  public get = async (req: Request, res: Response) => {
+    const { id } = req.getParameters.all()
+    const response = await enrollmentService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: id }] })
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 
 
   /**
@@ -63,6 +63,23 @@ class EnrollmentController {
    */
   public create = async (req: Request, res: Response) => {
     const response = await enrollmentService.insertOrUpdate(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  public massive = async (req: Request, res: Response) => {
+
+    console.log(req);
+
+    let params = req.getParameters.all()
+    let files = req.files
+    if (files && files.hasOwnProperty('file_xlsx')) {
+      params['contentFile'] = files['file_xlsx']
+    } else {
+      params['contentFile'] = null
+    }
+
+
+    const response = await enrollmentService.massive(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 

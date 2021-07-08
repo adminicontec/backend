@@ -2,14 +2,15 @@
 // @end
 
 // @import services
-import {roleService} from '@scnode_app/services/default/admin/secure/roleService'
+import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
-import { moodle_setup } from '@scnode_core/config/globals';
 import { campus_setup } from '@scnode_core/config/globals';
+import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
+import * as XLSX from "xlsx";
 // @end
 
 // @import models
@@ -18,7 +19,7 @@ import { Enrollment } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { userService } from '../user/userService';
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IdentityStore } from 'aws-sdk';
@@ -78,16 +79,16 @@ class EnrollmentService {
     try {
       registers = await Enrollment.find(where)
         .select(select)
-        .populate({path: 'user', select: 'id profile.first_name profile.last_name email'})
+        .populate({ path: 'user', select: 'id profile.first_name profile.last_name email' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
 
-        for await (const register of registers) {
-          if (register.user && register.user.profile) {
-            register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
-          }
+      for await (const register of registers) {
+        if (register.user && register.user.profile) {
+          register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
         }
+      }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -304,7 +305,7 @@ class EnrollmentService {
               if (respMoodle2.user == null) {
                 console.log("Moodle: user NO exists ");
                 // [revisión[]
-                var paramsMoodleUser:IMoodleUser = { //: IMoodleUser;
+                var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
                   firstname: paramToEnrollment.user.moodleFirstName,
                   lastname: paramToEnrollment.user.moodleLastName,
                   password: passw,
@@ -380,6 +381,34 @@ class EnrollmentService {
       console.log(e);
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+
+  public massive = async (params: IMassiveEnrollment) => {
+
+    console.log("Begin file process:")
+    let content = params.contentFile;
+
+    let dataFromWorksheet = xlsxUtility.extractXLSX(content.data, 'Estudiantes');
+
+
+    // let buffer = Buffer.from(content.data);
+    // const workbook = XLSX.read(buffer, { type: "buffer" });
+
+    // const sheet_name_list = workbook.SheetNames;
+    // // Lee la primer hoja del archivo
+
+    // console.log("List of sheets:");
+    // console.log(sheet_name_list);
+
+    // const xlData: any = XLSX.utils.sheet_to_json(
+    // workbook.Sheets[sheet_name_list[0]]
+    // );
+    // for (const key in xlData) {
+    // }
+
+
+
   }
 }
 
