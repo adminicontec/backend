@@ -336,7 +336,6 @@ class EnrollmentService {
               let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
               console.log(respMoodle3);
 
-
               const timeElapsed = Date.now();
               const currentDate = new Date(timeElapsed);
 
@@ -386,12 +385,10 @@ class EnrollmentService {
 
   public massive = async (params: IMassiveEnrollment) => {
 
-    let userEnrollmentContents = [];
+    let userEnrollmentResponse = [];
     let singleUserEnrollmentContent: IEnrollment;
 
-
-
-    console.log("Begin file process:")
+    console.log("Begin file process for courseID: " + params.courseID)
     let content = params.contentFile;
 
     let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
@@ -399,35 +396,36 @@ class EnrollmentService {
       console.log("Sheet content:")
 
 
-      dataFromWorksheet.forEach(element => {
+      dataFromWorksheet.forEach(async element => {
 
         singleUserEnrollmentContent =
         {
           documentType: element['Tipo Documento'],
           documentID: element['Documento de Identidad'],
           user: element['Documento de Identidad'],
-          password: 'erre',
+          password: 'Icontec2021*',  // <-- Contraseña provisional
           email: element['Correo Electrónico'],
           firstname: element['Nombres'],
           lastname: element['Apellidos'],
-          courseID: '45',
+          courseID: params.courseID,
           rolename: 'student',
         }
 
         console.log(singleUserEnrollmentContent);
+        console.log(">>>>>>>>>>>>>>>>>>>>")
+        const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
+        console.log(resp);
 
+        // build process Response
+        userEnrollmentResponse.push(resp);
       });
 
+      return userEnrollmentResponse;
     }
     else {
+      // Return Error
       console.log("Worksheet not found");
     }
-
-    // for (const key in xlData) {
-    // }
-
-
-
   }
 }
 
