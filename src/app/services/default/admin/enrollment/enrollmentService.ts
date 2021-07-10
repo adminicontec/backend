@@ -386,20 +386,37 @@ class EnrollmentService {
 
   public massive = async (params: IMassiveEnrollment) => {
 
+    let userEnrollmentContents = [];
+    let singleUserEnrollmentContent: IEnrollment;
+
+
+
     console.log("Begin file process:")
     let content = params.contentFile;
 
-    let dataFromWorksheet = xlsxUtility.extractXLSX(content.data, 'Estudiantes');
+    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
     if (dataFromWorksheet != null) {
       console.log("Sheet content:")
-      console.log(dataFromWorksheet);
-
-      for (const key in dataFromWorksheet) {
-
-        console.log(dataFromWorksheet[key]);
-      }
 
 
+      dataFromWorksheet.forEach(element => {
+
+        singleUserEnrollmentContent =
+        {
+          documentType: element['Tipo Documento'],
+          documentID: element['Documento de Identidad'],
+          user: element['Documento de Identidad'],
+          password: 'erre',
+          email: element['Correo Electrónico'],
+          firstname: element['Nombres'],
+          lastname: element['Apellidos'],
+          courseID: '45',
+          rolename: 'student',
+        }
+
+        console.log(singleUserEnrollmentContent);
+
+      });
 
     }
     else {
