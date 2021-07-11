@@ -93,6 +93,7 @@ const UserSchema = new Schema({
     culture: { type: Schema.Types.String, default: 'es_CO' },
     screen_mode: { type: Schema.Types.String, default: 'light-mode' },
   },
+  short_key: {type: Schema.Types.String},
   roles: [{
     type: Schema.Types.ObjectId,
     ref: "Role"

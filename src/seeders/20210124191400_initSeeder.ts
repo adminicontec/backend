@@ -591,7 +591,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
-          module_permission_ids['permission:forums_menu_access'],
+          // module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
@@ -668,7 +668,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
-          module_permission_ids['permission:forums_menu_access'],
+          // module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
@@ -862,12 +862,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     let regional_ids = {}
     const regionals = [
-      {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19},
-      {name: 'Sur Occidente', moodle_id: 20},
-      {name: 'Oriente', moodle_id: 21},
-      {name: 'Centro y Sur Oriente', moodle_id: 22},
-      {name: 'Caribe', moodle_id: 13},
-      {name: 'Internacional', moodle_id: 23},
+      {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19, short_key: 'AN'},
+      {name: 'Sur Occidente', moodle_id: 20, short_key: 'SO'},
+      {name: 'Oriente', moodle_id: 21, short_key: 'OR'},
+      {name: 'Centro y Sur Oriente', moodle_id: 22, short_key: 'CS'},
+      {name: 'Caribe', moodle_id: 13, short_key: 'CA'},
+      {name: 'Internacional', moodle_id: 23, short_key: 'IN'},
     ]
     for await (const regional of regionals) {
       const exists: any = await regionalService.findBy({

@@ -107,6 +107,8 @@ class CourseSchedulingService {
 
     try {
 
+      const user: any = await User.findOne({_id: params.user}).select('id short_key')
+
       if (typeof params.in_design === "string") {
         if (params.in_design === "0") params.in_design = false
         if (params.in_design === "1") params.in_design = true
@@ -121,7 +123,8 @@ class CourseSchedulingService {
         } else {
           const newSchedulingModeLocal = await CourseSchedulingMode.create({
             name: params.schedulingMode.label,
-            moodle_id: params.schedulingMode.value
+            moodle_id: params.schedulingMode.value,
+            short_key: params.schedulingMode.label.substr(0,1)
           })
           if (newSchedulingModeLocal) {
             params.schedulingMode = newSchedulingModeLocal._id
@@ -189,13 +192,32 @@ class CourseSchedulingService {
 
       } else {
 
+        let service_id = ''
+
+        if (user.short_key) {
+          service_id += `${user.short_key}`
+        }
+
+        if (params.regional) {
+          const regional = await Regional.findOne({_id: params.regional}).select('id short_key')
+          if (regional && regional.short_key) {
+            service_id += `${regional.short_key}`
+          }
+        }
+
+        const currentDate = moment()
+        service_id += `${currentDate.format('YYMMDD')}`
+
+
+        let countRegisters = await CourseScheduling.count()
+        countRegisters += 1
+
+        service_id += `${generalUtility.formatNumberWithZero(countRegisters,4)}`
+
         params.metadata = {
           user: params.user,
           date: moment().format('YYYY-MM-DD'),
-          service_id: generalUtility.buildRandomChain({
-            characters: 6,
-            symbols: 0
-          }),
+          service_id,
           year: moment().format('YYYY')
         }
 

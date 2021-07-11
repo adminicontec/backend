@@ -68,8 +68,6 @@ class EnrollmentController {
 
   public massive = async (req: Request, res: Response) => {
 
-    console.log(req);
-
     let params = req.getParameters.all()
     let files = req.files
     if (files && files.hasOwnProperty('file_xlsx')) {

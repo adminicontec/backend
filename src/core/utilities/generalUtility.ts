@@ -47,6 +47,33 @@ class GeneralUtility {
   constructor() { }
 
   /**
+   * Metodo que permite formatear un numero y colocar la cantidad de ceros solicitada a la izquierda
+   * @param number Numero a formatear
+   * @param width Tamaño del formato
+   * @returns
+   */
+  public formatNumberWithZero = (number, width) => {
+
+    const numberOutput = Math.abs(number); /* Valor absoluto del número */
+    const length = number.toString().length; /* Largo del número */
+    const zero = "0"; /* String de cero */
+
+    if (width <= length) {
+      if (number < 0) {
+        return ("-" + numberOutput.toString());
+      } else {
+        return numberOutput.toString();
+      }
+    } else {
+      if (number < 0) {
+        return ("-" + (zero.repeat(width - length)) + numberOutput.toString());
+      } else {
+        return ((zero.repeat(width - length)) + numberOutput.toString());
+      }
+    }
+  }
+
+  /**
    * Metodo que permite formatear segundos a horas, minutos, segundos
    * @param seconds Cantidad de segundos a convertir
    * @returns

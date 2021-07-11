@@ -13,7 +13,8 @@ const CourseSchedulingModeSchema = new Schema({
   description: {
     type: Schema.Types.String,
   },
-  moodle_id: { type: Schema.Types.String }
+  moodle_id: { type: Schema.Types.String },
+  short_key: { type: Schema.Types.String },
   // @end
 }, {
   collection: 'course_scheduling_modes' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
