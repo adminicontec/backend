@@ -1,0 +1,23 @@
+<div class="img_icontec">
+  <img src="https://uploads-kuepa.s3.us-west-2.amazonaws.com/alliance/academic_component/backgrounds/07e5a6b3c9215f31b20b9bdacc1fab1503e9b807.png">
+</div>
+
+<div class="txt_icontec">
+
+  <h2>¡Bienvenid@ al campus virtual Icontec!</h2>
+  <p>
+    Apreciado {{params.first_name}}
+
+    Lo invitamos a ingresar por la siguiente dirección:
+    <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
+
+    Ingrese con su usuario: {{params.username}}
+    y contraseña: {{params.password}}
+
+    En caso de cualquier inquietud comunicarse al correo de soporte {{params.mailer.email_technical_support}} o Líneas de atención {{params.mailer.phone_technical_support}}.
+
+    Cordialmente
+    Unidad Técnica de Educación
+  </p>
+  <img src="{{params.mailer.footer_icon}}">
+</div>

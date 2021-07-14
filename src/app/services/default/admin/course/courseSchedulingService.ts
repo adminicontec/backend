@@ -5,15 +5,21 @@ import moment from 'moment'
 
 // @import services
 import {moodleCourseService} from '@scnode_app/services/default/moodle/course/moodleCourseService'
+import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+// @end
+
+// @import config
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import {City, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Modular, Program, Regional, User} from '@scnode_app/models'
+import {City, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -182,6 +188,10 @@ class CourseSchedulingService {
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+          await this.checkEnrollmentUsers(response)
+        }
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: {
@@ -249,6 +259,10 @@ class CourseSchedulingService {
               new: true,
               lean: true,
             })
+
+            if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+              await this.checkEnrollmentUsers(response)
+            }
           } else {
             await this.delete({id: _id})
             return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.insertOrUpdate.failed'})
@@ -269,6 +283,58 @@ class CourseSchedulingService {
 
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite buscar los usuarios matriculados y enviar un mensaje de bienvenida
+   * @param courseScheduling Programa
+   */
+  private checkEnrollmentUsers = async (courseScheduling) => {
+
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+    .populate({path: 'user', select: 'id email profile.first_name profile.last_name'})
+    .lean()
+
+    for await (const enrolled of userEnrolled) {
+      await this.sendEnrollmentUserEmail([enrolled.user.email], {
+        mailer: customs['mailer'],
+        first_name: enrolled.user.profile.first_name,
+        course_name: courseScheduling.program.name,
+        course_start: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
+        course_end: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+      })
+    }
+  }
+
+  /**
+   * Metodo que permite enviar emails de bienvenida a los usuarios
+   * @param emails Emails a los que se va a enviar
+   * @param paramsTemplate Parametros para construir el email
+   * @returns
+   */
+   private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.enrollment_user.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: 'user/enrollmentUser',
+            params: {...paramsTemplate}
+          }
+        }
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 

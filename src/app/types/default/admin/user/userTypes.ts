@@ -48,6 +48,7 @@ export interface IUser {
   lastModifiedBy?: string,
   avatar?: string, // Objeto de clase File que posee el archivo que sera cargado al servidor
   moodle_id?:number,
+  sendEmail?: boolean // Booleano que identifica si se va a enviar notificación de creación
   id?: string // Identificador del permiso
 }
 

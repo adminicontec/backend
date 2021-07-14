@@ -29,6 +29,7 @@ export interface ICourseScheduling {
   client?: string // Cliente
   duration?: number // Duración del programa
   in_design?: boolean | string // Booleano que indica si esta en diseño o no
+  sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar email de notificación
   // schedulingCode: string // Codigo de programación
   // course?: string // Curso de la programación
   // teacher?: string // Docente de la programación

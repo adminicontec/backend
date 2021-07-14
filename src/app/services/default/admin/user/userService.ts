@@ -7,6 +7,7 @@ const ObjectID = require('mongodb').ObjectID
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
+import { mailService } from "@scnode_app/services/default/general/mail/mailService";
 // @end
 
 // @import config
@@ -15,6 +16,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
@@ -282,6 +284,17 @@ class UserService {
 
           }
 
+          // @INFO: Se envia email de bienvenida
+          if (params.sendEmail === true) {
+            await this.sendRegisterUserEmail([response.email], {
+              mailer: customs['mailer'],
+              fullname: `${response.profile.first_name} ${response.profile.last_name}`,
+              first_name: response.profile.first_name,
+              last_name: response.profile.last_name,
+              username: response.username,
+              password: params.password
+            })
+          }
 
           return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
@@ -298,6 +311,35 @@ class UserService {
 
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite enviar emails de bienvenida a los usuarios
+   * @param emails Emails a los que se va a enviar
+   * @param paramsTemplate Parametros para construir el email
+   * @returns
+   */
+  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.welcome_user.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: 'user/welcomeUser',
+            params: {...paramsTemplate}
+          }
+        }
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 

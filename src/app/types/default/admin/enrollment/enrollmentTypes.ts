@@ -3,6 +3,7 @@
 
 // @add your types
 export interface IEnrollment{
+  courseScheduling?: string    // Identificador de la programación
   user?: string // Identificador del usuario en campus
   email: string,          // email de estudiante
   password: string,
@@ -12,6 +13,7 @@ export interface IEnrollment{
   documentID?: string,     // Documento de identidad
   courseID: string,       // ID de curso (listado de cursos en CV)
   rolename?: string,
+  sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
   id?: string             // Identificador del Enrollment
 }
 
@@ -24,8 +26,10 @@ export interface IEnrollmentQuery {
 }
 
 export interface IMassiveEnrollment{
-  courseID: string,       // ID de curso (listado de cursos en CV)
-  contentFile:      // contento of file to be processed.
+  courseID        : string,   // ID de curso (listado de cursos en CV)
+  courseScheduling: string    // Identificador de la programación
+  sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
+  contentFile     :           // contento of file to be processed.
   {
     name: string,
     data: Buffer,

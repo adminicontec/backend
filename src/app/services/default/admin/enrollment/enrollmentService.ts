@@ -3,6 +3,11 @@
 
 // @import services
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
+import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+// @end
+
+// @import config
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -10,7 +15,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { campus_setup } from '@scnode_core/config/globals';
 import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
-import * as XLSX from "xlsx";
+import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
@@ -22,11 +27,11 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { userService } from '../user/userService';
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
-import { IdentityStore } from 'aws-sdk';
-import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import { courseSchedulingService } from '../course/courseSchedulingService';
+import moment from 'moment';
 // @end
 
 class EnrollmentService {
@@ -156,6 +161,14 @@ class EnrollmentService {
       }
     }
 
+    let courseScheduling = null
+    if (params.courseScheduling) {
+      const courseSchedulingResponse: any = await courseSchedulingService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.courseScheduling }] })
+      if (courseSchedulingResponse.status === 'success') {
+        courseScheduling = courseSchedulingResponse.scheduling
+      }
+    }
+
     try {
       if (params.id) {
 
@@ -179,8 +192,8 @@ class EnrollmentService {
         // @INFO: Validando matrícula única: email y courseID
         if (params.email && params.courseID) {
 
-          var paramFullname = params.firstname + " " + params.lastname;
-          console.log("Inicio de Enrollment");
+          // var paramFullname = params.firstname + " " + params.lastname;
+          // console.log("Inicio de Enrollment");
 
           // check rolename, if not exists, guest as default in moodle, viewer in CV
           //if(params.rolename ==)
@@ -207,7 +220,7 @@ class EnrollmentService {
           //#region  [ 1. Consultar Id del curso para verificar ]
           // Llamado a Servicio MoodleGetCourse
           const respMoodle: any = await moodleCourseService.findBy(params);
-          console.log(respMoodle);
+          // console.log(respMoodle);
 
           if (respMoodle.status == "error") {
             // Curso en Moodle NO existe.
@@ -221,11 +234,12 @@ class EnrollmentService {
             //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
             var passw = params.password;
 
-            const respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] });
+            let userEnrollment = null
+            let respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] });
 
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
-              console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+              // console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
 
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
               var cvUserParams = {
@@ -236,7 +250,8 @@ class EnrollmentService {
                 profile: {
                   first_name: params.firstname,
                   last_name: params.lastname
-                }
+                },
+                sendEmail: true
               }
               paramToEnrollment.user.moodleFirstName = params.firstname;
               paramToEnrollment.user.moodleLastName = params.lastname;
@@ -248,19 +263,21 @@ class EnrollmentService {
               const respoUser = await userService.insertOrUpdate(cvUserParams);
               if (respoUser.status == "success") {
                 params.user = respoUser.user._id
-                console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
+                userEnrollment = respoUser.user
+                // console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
               }
               else {
                 // Retornar ERROR: revisar con equipo
-                console.log(respoUser);
+                // console.log(respoUser);
               }
             }
             else {
+              userEnrollment = respCampusDataUser.user
               params.user = respCampusDataUser.user._id
 
               // Usuario ya existe en CV:
-              console.log("[  Campus  ] Usuario ya existe: ");
-              console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);
+              // console.log("[  Campus  ] Usuario ya existe: ");
+              // console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);
 
               // Si existe Usuario en CV, debe existir en Moodle
               paramToEnrollment.user.moodleFirstName = params.firstname;
@@ -276,8 +293,8 @@ class EnrollmentService {
             const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
             if (exist) {
               // Si existe la matrícula en CV, intentar matricular en Moodle
-              console.log("[  Campus  ] Matrícula ya existe: ");
-              console.log(exist);
+              // console.log("[  Campus  ] Matrícula ya existe: ");
+              // console.log(exist);
               //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
             }
             else {
@@ -287,23 +304,34 @@ class EnrollmentService {
               //paramsCVEnrollment.shortName = paramToEnrollment.course.moodleCourseName;
 
               const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
-              console.log("[  Campus  ] Enrollment: ");
-              console.log(respCampusDataEnrollment);
+
+              // @INFO: Se envia email de bienvenida
+              if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
+                await this.sendEnrollmentUserEmail([params.email], {
+                  mailer: customs['mailer'],
+                  first_name: userEnrollment.profile.first_name,
+                  course_name: courseScheduling.program.name,
+                  course_start: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
+                  course_end: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+                })
+              }
+              // console.log("[  Campus  ] Enrollment: ");
+              // console.log(respCampusDataEnrollment);
             }
             //#endregion
 
             //#region ENORLLMENT EN MOODLE
-            console.log("------------- ENROLLMENT IN MOODLE -------------");
+            // console.log("------------- ENROLLMENT IN MOODLE -------------");
             // 2. Validación si Existe Usuario en Moodle
-            console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
+            // console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
             var paramUserMoodle = {
               email: params.email
             }
             let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
-            console.log(respMoodle2);
+            // console.log(respMoodle2);
             if (respMoodle2.status == "success") {
               if (respMoodle2.user == null) {
-                console.log("Moodle: user NO exists ");
+                // console.log("Moodle: user NO exists ");
                 // [revisión[]
                 var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
                   firstname: paramToEnrollment.user.moodleFirstName,
@@ -314,12 +342,12 @@ class EnrollmentService {
                 }
                 // crear nuevo uusario en MOODLE
                 let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
-                console.log("Moodle: Usuario creado con Éxito.");
-                console.log(respMoodle2);
+                // console.log("Moodle: Usuario creado con Éxito.");
+                // console.log(respMoodle2);
                 paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
               }
               else {
-                console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
+                // console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
                 paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
               }
 
@@ -334,11 +362,10 @@ class EnrollmentService {
               }
 
               let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
-              console.log(respMoodle3);
+              // console.log(respMoodle3);
 
               const timeElapsed = Date.now();
               const currentDate = new Date(timeElapsed);
-
 
               return responseUtility.buildResponseSuccess('json', null, {
                 additional_parameters: {
@@ -371,14 +398,43 @@ class EnrollmentService {
 
         }
         else {
-          console.log("ERROR en Enrolamiento");
+          // console.log("ERROR en Enrolamiento");
         }
       }
 
     } catch (e) {
-      console.log("catch Exception ");
-      console.log(e);
+      // console.log("catch Exception ");
+      // console.log(e);
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite enviar emails de bienvenida a los usuarios
+   * @param emails Emails a los que se va a enviar
+   * @param paramsTemplate Parametros para construir el email
+   * @returns
+   */
+   private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.enrollment_user.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: 'user/enrollmentUser',
+            params: {...paramsTemplate}
+          }
+        }
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 
@@ -387,17 +443,14 @@ class EnrollmentService {
 
     let userEnrollmentResponse = [];
     let singleUserEnrollmentContent: IEnrollment;
-
-    console.log("Begin file process for courseID: " + params.courseID)
+    // console.log("Begin file process for courseID: " + params.courseID)
     let content = params.contentFile;
 
     let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
     if (dataFromWorksheet != null) {
-      console.log("Sheet content:")
+      // console.log("Sheet content:")
 
-
-      dataFromWorksheet.forEach(async element => {
-
+      for await (const element of dataFromWorksheet) {
         singleUserEnrollmentContent =
         {
           documentType: element['Tipo Documento'],
@@ -409,22 +462,27 @@ class EnrollmentService {
           lastname: element['Apellidos'],
           courseID: params.courseID,
           rolename: 'student',
+          courseScheduling: params.courseScheduling,
+          sendEmail: params.sendEmail
         }
 
-        console.log(singleUserEnrollmentContent);
-        console.log(">>>>>>>>>>>>>>>>>>>>")
+        // console.log(singleUserEnrollmentContent);
+        // console.log(">>>>>>>>>>>>>>>>>>>>")
         const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
-        console.log(resp);
+        // console.log(resp);
 
         // build process Response
         userEnrollmentResponse.push(resp);
-      });
+      }
 
-      return userEnrollmentResponse;
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        ...userEnrollmentResponse
+      }})
+
     }
     else {
       // Return Error
-      console.log("Worksheet not found");
+      // console.log("Worksheet not found");
     }
   }
 }
