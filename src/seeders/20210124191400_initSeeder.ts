@@ -622,6 +622,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         description: 'Docente',
         app_module_permissions: [
           module_permission_ids['config:is_teacher'],
+          module_permission_ids['config:go_to_campus'],
+          module_permission_ids['config:go_to_moodle'],
         ],
         homes: [
           home_ids['teacher']
