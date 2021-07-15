@@ -219,7 +219,7 @@
   },
   "mailer": {
     "welcome_user": {
-      "subject": "¡Bienvenid@ al campus virtual Icontec!"
+      "subject": "¡Bienvenid@ al Campus Digital Icontec!"
     },
     "enrollment_user": {
       "subject": "Inicio del curso"
