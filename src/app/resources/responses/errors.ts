@@ -3,7 +3,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 class ErrorResponse {
 
-  constructor() {}
+  constructor() { }
 
   /**
    * Metodo que permite construir un objeto en formato JSON que contiene la estructura de mensajes
@@ -547,6 +547,21 @@ class ErrorResponse {
           "status_code": "moodle_enrollment_empty",
           "code": 400
         },
+      },
+      "moodle_user": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.moodle_user.not_found"),
+          "status_code": "moodle_user_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "failed": {
+            "message": i18nUtility.__("app_error_messages.moodle_user.insertOrUpdate.failed"),
+            "status_code": "moodle_user_insertOrUpdate_failed",
+            "code": 400
+
+          }
+        }
       },
     };
 

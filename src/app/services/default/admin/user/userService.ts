@@ -277,6 +277,29 @@ class UserService {
               console.log("Moodle: Usuario creado con Éxito.");
               console.log(respMoodle2);
 
+              //respMoodle2.user.id;
+
+              if (respMoodle2.status === 'success') {
+                if (respMoodle2.user.id && respMoodle2.user.username) {
+
+                  await User.findByIdAndUpdate(_id, {moodle_id: respMoodle2.user.id}, {
+                    useFindAndModify: false,
+                    new: true,
+                    lean: true,
+                  })
+
+
+                }
+                else {
+                  await this.delete({id: _id})
+                  return responseUtility.buildResponseFailed('json', null, {error_key: 'moodle_user.insertOrUpdate.failed'})
+                }
+              }
+              else {
+                await this.delete({id: _id})
+                return responseUtility.buildResponseFailed('json', null, {error_key: 'moodle_user.insertOrUpdate.failed'})
+              }
+
             }
             else {
               console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
@@ -331,7 +354,7 @@ class UserService {
           html_template: {
             path_layout: 'icontec',
             path_template: 'user/welcomeUser',
-            params: {...paramsTemplate}
+            params: { ...paramsTemplate }
           }
         }
       })

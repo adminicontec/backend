@@ -212,7 +212,7 @@ class EnrollmentService {
               moodleCourseID: 0,
               moodleCourseName: ''
             },
-            moodleRoleID: 5,
+            moodleRoleID: 5, /// <-- Ojo, valor del rol aquí (5 estudiante, 4 teacher)
             moodleUserID: 0,
             moodleCourseID: 0
           };
@@ -243,7 +243,7 @@ class EnrollmentService {
 
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
               var cvUserParams = {
-                username: params.email,
+                username: params.user,
                 email: params.email,
                 password: passw,
                 roles: [roles['student']], // Id de ROL sujeto a verificación en CV
@@ -255,7 +255,7 @@ class EnrollmentService {
               }
               paramToEnrollment.user.moodleFirstName = params.firstname;
               paramToEnrollment.user.moodleLastName = params.lastname;
-              paramToEnrollment.user.moodleUserName = params.email;
+              paramToEnrollment.user.moodleUserName = params.documentID;  // docId as UserName
               paramToEnrollment.user.moodleEmail = params.email;
               paramToEnrollment.user.moodlePassword = passw;
 
@@ -282,7 +282,7 @@ class EnrollmentService {
               // Si existe Usuario en CV, debe existir en Moodle
               paramToEnrollment.user.moodleFirstName = params.firstname;
               paramToEnrollment.user.moodleLastName = params.lastname;
-              paramToEnrollment.user.moodleUserName = params.email;
+              paramToEnrollment.user.moodleUserName = params.documentID;
               paramToEnrollment.user.moodleEmail = params.email;
               paramToEnrollment.user.moodlePassword = passw;
 
@@ -338,7 +338,7 @@ class EnrollmentService {
                   lastname: paramToEnrollment.user.moodleLastName,
                   password: passw,
                   email: paramToEnrollment.user.moodleEmail,
-                  username: paramToEnrollment.user.moodleEmail
+                  username: paramToEnrollment.user.moodleUserName
                 }
                 // crear nuevo uusario en MOODLE
                 let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
@@ -456,7 +456,7 @@ class EnrollmentService {
           documentType: element['Tipo Documento'],
           documentID: element['Documento de Identidad'],
           user: element['Documento de Identidad'],
-          password: 'Icontec2021*',  // <-- Contraseña provisional
+          password: element['Documento de Identidad'],  // <-- Contraseña provisional
           email: element['Correo Electrónico'],
           firstname: element['Nombres'],
           lastname: element['Apellidos'],

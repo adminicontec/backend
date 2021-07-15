@@ -163,6 +163,9 @@ class MoodleUserService {
     if (respMoodle.exception) {
       // ERROR al crear el usuario en Moodle
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+
+      //return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+
       // return
     }
     else {

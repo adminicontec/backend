@@ -210,6 +210,12 @@
         "already_exists": "Ya existe una matricula en Moodle para el estudiante :username del curso :coursename"
       },
       "empty": "El curso :coursename en Moodle no tiene registros de matrícula."
+    },
+    "moodle_user": {
+      "not_found": "El usuario en Moodle no ha sido encontrado",
+      "insertOrUpdate": {
+        "failed": "Ya existe un usuario en Moodle :username"
+      }
     }
   },
   "passwordRecover": {
