@@ -42,6 +42,7 @@ export interface ICourseSchedulingDelete {
 }
 
 export interface ICourseSchedulingQuery {
+  user?: string // Identificador del usuario logueado
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar

@@ -112,7 +112,6 @@ class CourseSchedulingService {
   public insertOrUpdate = async (params: ICourseScheduling) => {
 
     try {
-
       const user: any = await User.findOne({_id: params.user}).select('id short_key')
 
       if (typeof params.in_design === "string") {
@@ -383,6 +382,10 @@ class CourseSchedulingService {
           {observations: { $regex: '.*' + search + '.*',$options: 'i' }}
         ]
       }
+    }
+
+    if (filters.user) {
+      where['metadata.user'] = filters.user
     }
 
     let registers = []

@@ -77,7 +77,11 @@ class CourseSchedulingController {
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.list(req.getParameters.all())
+    const user_id = (req.user) ? req.user.sub : null
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+		const response = await courseSchedulingService.list(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
