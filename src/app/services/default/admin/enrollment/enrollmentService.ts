@@ -24,7 +24,7 @@ import { Enrollment } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { userService } from '../user/userService';
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { moodleUserService } from '../../moodle/user/moodleUserService';
@@ -306,7 +306,7 @@ class EnrollmentService {
               const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
 
               // @INFO: Se envia email de bienvenida
-              if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
+              if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
                 await this.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
                   first_name: userEnrollment.profile.first_name,
@@ -409,13 +409,63 @@ class EnrollmentService {
     }
   }
 
+  public delete = async (params: IEnrollmentDelete) => {
+
+    console.log("Begin delete Enrolment.")
+
+    try {
+      const find: any = await Enrollment.findOne({ _id: params.id })
+      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
+
+      console.log("Enrollment to delete: " + find.firstname + " " + find.lastname);
+      await find.delete()
+
+      // Search UserId on Moodle
+      var paramUserMoodle = {
+        email: find.email
+      }
+      let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+      if (respMoodle2.status == "success") {
+        var enrollment = {
+          courseid: find.courseID,
+          userid: respMoodle2.user.id,
+        }
+        let respMoodle3: any = await moodleEnrollmentService.delete(enrollment);
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            enrollment: {
+              ...respMoodle3
+            }
+          }
+        });
+
+
+      }
+      else {
+        // Error al consultar el usuario
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            enrollment: {
+              ...respMoodle2
+            }
+          }
+        });
+      }
+
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+
   /**
    * Metodo que permite enviar emails de bienvenida a los usuarios
    * @param emails Emails a los que se va a enviar
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-   private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+  private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
 
     try {
 
@@ -426,7 +476,7 @@ class EnrollmentService {
           html_template: {
             path_layout: 'icontec',
             path_template: 'user/enrollmentUser',
-            params: {...paramsTemplate}
+            params: { ...paramsTemplate }
           }
         }
       })
@@ -475,9 +525,11 @@ class EnrollmentService {
         userEnrollmentResponse.push(resp);
       }
 
-      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-        ...userEnrollmentResponse
-      }})
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          ...userEnrollmentResponse
+        }
+      })
 
     }
     else {
