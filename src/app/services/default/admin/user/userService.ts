@@ -228,7 +228,7 @@ class UserService {
 
         params.passwordHash = await this.hashPassword(params.password);
 
-        console.log("User --> ");
+        console.log("User --> " + params.username);
         try {
           const { _id } = await User.create(params)
 

@@ -70,6 +70,43 @@ class MoodleEnrollmentService {
     }
   }
 
+  public delete = async (params: IMoodleEnrollment) => {
+
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.enrollment.delete,
+      moodlewsrestformat: moodle_setup.restformat,
+      'enrolments[0][courseid]': params.courseid,
+      'enrolments[0][userid]': params.userid
+    };
+    console.log("Delete enrollment: COURSE = " + params.courseid + " - USERID = " + params.userid);
+
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    if (respMoodle != null) {
+      // ERROR al crear la matrícula en MOODLE
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      // return
+    }
+    else {
+      // La matrícula fue creada con éxito
+      console.log("Moodle delete ENROLLMENT OK: ");
+      console.log("Moodle UserID: " + params.userid);
+      console.log("Moodle CourseID: " + params.courseid);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          unenrollment: {
+            userId: params.userid,
+            courseId: params.courseid,
+          }
+        }
+      });
+
+    }
+
+  }
+
+
   public fetchEnrolledCoursesByUser = async (params: IMoodleEnrollment) => {
     let responseCourses = [];
     let singleCourse = {
@@ -100,7 +137,7 @@ class MoodleEnrollmentService {
           name: element.shortname
         };
         responseCourses.push(singleCourse);
-        });
+      });
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
