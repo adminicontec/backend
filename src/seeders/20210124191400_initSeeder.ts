@@ -13,6 +13,10 @@ import {userService} from '@scnode_app/services/default/admin/user/userService'
 import {homeService} from '@scnode_app/services/default/admin/home/homeService'
 import {countryService} from '@scnode_app/services/default/admin/country/countryService'
 
+import { questionCategoryService } from "@scnode_app/services/default/admin/academicContent/questions/questionCategoryService";
+import {academicResourceCategoryService} from '@scnode_app/services/default/admin/academicContent/academicResource/academicResourceCategoryService'
+import { academicResourceConfigCategoryService } from "@scnode_app/services/default/admin/academicContent/academicResource/academicResourceConfigCategoryService";
+
 import {postTypeService} from '@scnode_app/services/default/admin/post/postTypeService'
 import {postLocationService} from '@scnode_app/services/default/admin/post/postLocationService'
 
@@ -76,6 +80,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO: Agregando modos de programación
     let scheduling_mode_ids = await this.addCourseSchedulingModes()
+
+    // @INFO: Agregando categorias de recursos academicos
+    let academic_resource_category_ids = await this.addAcademicResourceCategories()
+
+    // @INFO: Agregando categorias de recursos academicos
+    let academic_resource_config_category_ids = await this.addAcademicResourceConfigCategories()
+
+    // @INFO: Agregando categorias de preguntas
+    let question_category_ids = await this.addQuestionCategories()
 
     // TODO: Agregar PostCategories
 
@@ -944,7 +957,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
    * Metodo que permite crear modos de programación
    * @returns
    */
-   private addCourseSchedulingModes = async () => {
+  private addCourseSchedulingModes = async () => {
 
     let mode_ids = {}
     const modes = [
@@ -966,6 +979,94 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return mode_ids
+  }
+
+  /**
+   * Metodo que permite crear categorias de recursos academicos
+   * @returns
+   */
+  private addAcademicResourceCategories = async () => {
+    let academic_resource_category_ids = {}
+
+    const academic_resource_categories = [
+      { name: 'survey', description: 'Encuesta', config: {
+        has_order_of_questions: true,
+      }},
+    ]
+
+    for await (const category of academic_resource_categories) {
+      const exists: any = await academicResourceCategoryService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: category.name}]
+      })
+      if (exists.status === 'success') category['id'] = exists.category._id
+
+      const register: any = await academicResourceCategoryService.insertOrUpdate(category)
+      if (register.status === 'success') {
+          academic_resource_category_ids[category.name] = register.category._id
+      }
+    }
+    return academic_resource_category_ids
+  }
+
+  /**
+   * Metodo que permite agregar categorias de configuraciones de lanzamiento
+   * @returns
+   */
+  private addAcademicResourceConfigCategories = async () => {
+
+    let academic_resource_config_category_ids = {}
+
+    const academic_resource_config_categories = [
+      {
+        name: 'survey', description: 'Encuestas', config: {
+          has_order_of_questions: true,
+        }
+      },
+    ]
+
+    for await (const category of academic_resource_config_categories) {
+      const exists: any = await academicResourceConfigCategoryService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: 'name', value: category.name }]
+      })
+      if (exists.status === 'success') category['id'] = exists.category._id
+
+      const register: any = await academicResourceConfigCategoryService.insertOrUpdate(category)
+      if (register.status === 'success') {
+        academic_resource_config_category_ids[category.name] = register.category._id
+      }
+    }
+
+    return academic_resource_config_category_ids
+  }
+
+  /**
+   * Metodo que permite crear categorias de preguntas
+   * @returns
+   */
+  private addQuestionCategories = async () => {
+    let question_category_ids = {}
+    const question_categories = [
+      {
+        name: 'select-range', description: 'Pregunta de selección con rango', config: {
+          has_order_of_answers: true,
+        }
+      }
+    ]
+    for await (const category of question_categories) {
+      const exists: any = await questionCategoryService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: category.name}]
+      })
+      if (exists.status === 'success') category['id'] = exists.category._id
+
+      const response:any = await questionCategoryService.insertOrUpdate(category)
+      if (response.status === 'success') {
+        question_category_ids[category.name] = response.category._id
+      }
+    }
+    return question_category_ids
   }
 
   // @end

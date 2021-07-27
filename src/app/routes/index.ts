@@ -1,4 +1,12 @@
 // @import_routes
+import { academicResourceDataRoute } from "@scnode_app/routes/default/data/academicContent/academicResource/academicResourceDataRoute";
+import { surveyRoute } from "@scnode_app/routes/default/admin/academicContent/survey/surveyRoute";
+import { academicResourceConfigRoute } from "@scnode_app/routes/default/admin/academicContent/academicResource/academicResourceConfigRoute";
+import { academicResourceConfigCategoryRoute } from "@scnode_app/routes/default/admin/academicContent/academicResource/academicResourceConfigCategoryRoute";
+import { academicResourceRoute } from "@scnode_app/routes/default/admin/academicContent/academicResource/academicResourceRoute";
+import { academicResourceCategoryRoute } from "@scnode_app/routes/default/admin/academicContent/academicResource/academicResourceCategoryRoute";
+import { questionRoute } from "@scnode_app/routes/default/admin/academicContent/questions/questionRoute";
+import { questionCategoryRoute } from "@scnode_app/routes/default/admin/academicContent/questions/questionCategoryRoute";
 import { courseSchedulingSectionRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingSectionRoute";
 import { courseSchedulingDetailsRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingDetailsRoute";
 import { courseContentRoute } from "@scnode_app/routes/default/admin/course/courseContentRoute";
@@ -49,6 +57,14 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    academicResourceDataRoute,
+    surveyRoute,
+    academicResourceConfigRoute,
+    academicResourceConfigCategoryRoute,
+    academicResourceRoute,
+    academicResourceCategoryRoute,
+    questionRoute,
+    questionCategoryRoute,
     courseSchedulingSectionRoute,
     courseSchedulingDetailsRoute,
     courseContentRoute,

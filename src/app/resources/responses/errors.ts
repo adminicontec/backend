@@ -147,6 +147,377 @@ class ErrorResponse {
           "code": 400
         }
       },
+      "questionCategory": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.questionCategory.not_found"),
+          "status_code": "questionCategory_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.questionCategory.insertOrUpdate.already_exists"),
+            "status_code": "questionCategory_insertOrUpdate_already_exists",
+            "code": 400
+          },
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.questionCategory.insertOrUpdate.fail_action"),
+            "status_code": "questionCategory_insertOrUpdate_fail_action",
+            "code": 400
+          }
+        },
+        "delete": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.questionCategory.delete.fail_action"),
+            "status_code": "questionCategory_delete_fail_action",
+            "code": 400
+          }
+        },
+      },
+      "question": {
+        "category_invalid": {
+          "message": i18nUtility.__("app_error_messages.question.category_invalid"),
+          "status_code": "question_category_invalid",
+          "code": 400
+        },
+        "value_required": {
+          "message": i18nUtility.__("app_error_messages.question.value_required"),
+          "status_code": "question_value_required",
+          "code": 400
+        },
+        "answers": {
+          "required": {
+            "message": i18nUtility.__("app_error_messages.question.answers.required"),
+            "status_code": "question_answers_required",
+            "code": 400
+          },
+          "invalid": {
+            "message": i18nUtility.__("app_error_messages.question.answers.invalid"),
+            "status_code": "question_answers_invalid",
+            "code": 400
+          },
+          "limit": {
+            "message": i18nUtility.__("app_error_messages.question.answers.limit"),
+            "status_code": "question_answers_limit",
+            "code": 400
+          },
+          "answers_value_invalid": {
+            "message": i18nUtility.__("app_error_messages.question.answers.answers_value_invalid"),
+            "status_code": "question_answers_answers_value_invalid",
+            "code": 400
+          },
+          "answer_corrected_required": {
+            "message": i18nUtility.__("app_error_messages.question.answers.answer_corrected_required"),
+            "status_code": "question_answers_answer_corrected_required",
+            "code": 400
+          },
+          "answer_corrected_limit": {
+            "message": i18nUtility.__("app_error_messages.question.answers.answer_corrected_limit"),
+            "status_code": "question_answers_answer_corrected_limit",
+            "code": 400
+          },
+          "relate_item": {
+            "relation_required": {
+              "message": i18nUtility.__("app_error_messages.question.answers.relate_item.relation_required"),
+              "status_code": "question_answers_relate_item_relation_required",
+              "code": 400
+            },
+            "relation_invalid": {
+              "message": i18nUtility.__("app_error_messages.question.answers.relate_item.relation_invalid"),
+              "status_code": "question_answers_relate_item_relation_invalid",
+              "code": 400
+            }
+          },
+          "fill_in_spaces": {
+            "words_required": {
+              "message": i18nUtility.__("app_error_messages.question.answers.fill_in_spaces.words_required"),
+              "status_code": "question_answers_fill_in_spaces_words_required",
+              "code": 400
+            },
+            "words_data_invalid": {
+              "message": i18nUtility.__("app_error_messages.question.answers.fill_in_spaces.words_data_invalid"),
+              "status_code": "question_answers_fill_in_spaces_words_data_invalid",
+              "code": 400
+            },
+            "config_invalid": {
+              "message": i18nUtility.__("app_error_messages.question.answers.fill_in_spaces.config_invalid"),
+              "status_code": "question_answers_fill_in_spaces_config_invalid",
+              "code": 400
+            }
+          }
+        },
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.question.not_found"),
+          "status_code": "question_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.question.insertOrUpdate.fail_action"),
+            "status_code": "question_insertOrUpdate_fail_action",
+            "code": 400
+          },
+          "tag_duplicated": {
+            "message": i18nUtility.__("app_error_messages.question.insertOrUpdate.tag_duplicated"),
+            "status_code": "questionTag_insertOrUpdate_tag_duplicated",
+            "code": 400
+          }
+        },
+        "delete": {
+          "node_invalid": {
+            "message": i18nUtility.__("app_error_messages.question.delete.node_invalid"),
+            "status_code": "question_delete_node_invalid",
+            "code": 400
+          },
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.question.delete.fail_action"),
+            "status_code": "question_delete_fail_action",
+            "code": 400
+          }
+        },
+        "qualification": {
+          "answers_required": {
+            "message": i18nUtility.__("app_error_messages.question.qualification.answers_required"),
+            "status_code": "question_qualification_answers_required",
+            "code": 400
+          },
+          "answer_format_invalid": {
+            "message": i18nUtility.__("app_error_messages.question.qualification.answer_format_invalid"),
+            "status_code": "question_qualification_answer_format_invalid",
+            "code": 400
+          },
+          "answer_selected_invalid": {
+            "message": i18nUtility.__("app_error_messages.question.qualification.answer_selected_invalid"),
+            "status_code": "question_qualification_answer_selected_invalid",
+            "code": 400
+          }
+        }
+      },
+      "academicResourceCategory": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.academicResourceCategory.not_found"),
+          "status_code": "academicResourceCategory_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.academicResourceCategory.insertOrUpdate.already_exists"),
+            "status_code": "academicResourceCategory_insertOrUpdate_already_exists",
+            "code": 400
+          },
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceCategory.insertOrUpdate.fail_action"),
+            "status_code": "academicResourceCategory_insertOrUpdate_fail_action",
+            "code": 400
+          }
+        },
+        "delete": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceCategory.delete.fail_action"),
+            "status_code": "academicResourceCategory_delete_fail_action",
+            "code": 400
+          }
+        },
+      },
+      "academicResource": {
+        "category_invalid": {
+          "message": i18nUtility.__("app_error_messages.academicResource.category_invalid"),
+          "status_code": "academicResource_category_invalid",
+          "code": 400
+        },
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.academicResource.not_found"),
+          "status_code": "academicResource_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResource.insertOrUpdate.fail_action"),
+            "status_code": "academicResource_insertOrUpdate_fail_action",
+            "code": 400
+          }
+        },
+        "delete": {
+          "node_invalid": {
+            "message": i18nUtility.__("app_error_messages.academicResource.delete.node_invalid"),
+            "status_code": "academicResource_delete_node_invalid",
+            "code": 400
+          },
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResource.delete.fail_action"),
+            "status_code": "academicResource_delete_fail_action",
+            "code": 400
+          }
+        },
+        "resources": {
+          "questions_invalid": {
+              "message": i18nUtility.__("app_error_messages.academicResource.resources.questions_invalid"),
+              "status_code": "academicResource_resources_questions_invalid",
+              "code": 400
+          },
+          "duration_invalid": {
+              "message": i18nUtility.__("app_error_messages.academicResource.resources.duration_invalid"),
+              "status_code": "academicResource_resources_duration_invalid",
+              "code": 400
+          },
+          "survey_resource": {
+            "config_invalid": {
+                "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.config_invalid"),
+                "status_code": "academicResource_resources_survey_resource_config_invalid",
+                "code": 400
+            },
+            "question_bank_invalid": {
+                "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_bank_invalid"),
+                "status_code": "academicResource_resources_survey_resource_question_bank_invalid",
+                "code": 400
+            },
+            "question_configuration": {
+                "invalid": {
+                    "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_configuration.invalid"),
+                    "status_code": "academicResource_resources_survey_resource_question_configuration_invalid",
+                    "code": 400
+                }
+            }
+          },
+        },
+        "qualification": {
+          "questions_to_evaluate_required": {
+            "message": i18nUtility.__("app_error_messages.academicResource.qualification.questions_to_evaluate_required"),
+            "status_code": "academicResource_qualification_questions_to_evaluate_required",
+            "code": 400
+          }
+        },
+        "attempt": {
+          "status_ended": {
+            "message": i18nUtility.__("app_error_messages.academicResource.attempt.status_ended"),
+            "status_code": "academicResource_attempt_status_ended",
+            "code": 400
+          }
+        },
+        "fetchAcademicResourceData": {
+          "survey": {
+            "invalid": {
+              "message": i18nUtility.__("app_error_messages.academicResource.fetchAcademicResourceData.survey.invalid"),
+              "status_code": "academicResource_fetchAcademicResourceData_survey_invalid",
+              "code": 400
+            }
+          },
+          "config": {
+            "max_attemps": {
+              "message": i18nUtility.__("app_error_messages.academicResource.fetchAcademicResourceData.config.max_attemps"),
+              "status_code": "academicResource_fetchAcademicResourceData_config_max_attemps",
+              "code": 400
+            },
+            "availability_range": {
+              "start_end": {
+                "message": i18nUtility.__("app_error_messages.academicResource.fetchAcademicResourceData.config.availability_range.start_end"),
+                "status_code": "academicResource_fetchAcademicResourceData_config_availability_range.start_end",
+                "code": 400
+              },
+              "end": {
+                "message": i18nUtility.__("app_error_messages.academicResource.fetchAcademicResourceData.config.availability_range.end"),
+                "status_code": "academicResource_fetchAcademicResourceData_config_availability_range.end",
+                "code": 400
+              },
+              "start": {
+                "message": i18nUtility.__("app_error_messages.academicResource.fetchAcademicResourceData.config.availability_range.start"),
+                "status_code": "academicResource_fetchAcademicResourceData_config_availability_range.start",
+                "code": 400
+              }
+            }
+          }
+        },
+      },
+      "academicResourceConfigCategory": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.academicResourceConfigCategory.not_found"),
+          "status_code": "academicResourceConfigCategory_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.academicResourceConfigCategory.insertOrUpdate.already_exists"),
+            "status_code": "academicResourceConfigCategory_insertOrUpdate_already_exists",
+            "code": 400
+          },
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceConfigCategory.insertOrUpdate.fail_action"),
+            "status_code": "academicResourceConfigCategory_insertOrUpdate_fail_action",
+            "code": 400
+          }
+        },
+        "delete": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceConfigCategory.delete.fail_action"),
+            "status_code": "academicResourceConfigCategory_delete_fail_action",
+            "code": 400
+          }
+        },
+      },
+      "academicResourceConfig": {
+        "category_invalid": {
+          "message": i18nUtility.__("app_error_messages.academicResourceConfig.category_invalid"),
+          "status_code": "academicResourceConfig_category_invalid",
+          "code": 400
+        },
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.academicResourceConfig.not_found"),
+          "status_code": "academicResourceConfig_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceConfig.insertOrUpdate.fail_action"),
+            "status_code": "academicResourceConfig_insertOrUpdate_fail_action",
+            "code": 400
+          }
+        },
+        "delete": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.academicResourceConfig.delete.fail_action"),
+            "status_code": "academicResourceConfig_delete_fail_action",
+            "code": 400
+          }
+        },
+      },
+      "survey": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.survey.not_found"),
+          "status_code": "survey_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.survey.insertOrUpdate.fail_action"),
+            "status_code": "survey_insertOrUpdate_fail_action",
+            "code": 400
+          },
+          "content_required": {
+            "message": i18nUtility.__("app_error_messages.survey.insertOrUpdate.content_required"),
+            "status_code": "survey_insertOrUpdate_content_required",
+            "code": 400
+          }
+        },
+        "delete": {
+          "fail_action": {
+            "message": i18nUtility.__("app_error_messages.survey.delete.fail_action"),
+            "status_code": "survey_delete_fail_action",
+            "code": 400
+          }
+        },
+        "results": {
+          "surveys_required": {
+            "message": i18nUtility.__("app_error_messages.survey.results.surveys_required"),
+            "status_code": "survey_results_surveys_required",
+            "code": 400
+          },
+          "surveys_invalid": {
+            "message": i18nUtility.__("app_error_messages.survey.results.surveys_invalid"),
+            "status_code": "survey_results_surveys_invalid",
+            "code": 400
+          }
+        }
+    },
+
       "country": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.country.not_found"),
