@@ -1052,7 +1052,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'select-range', description: 'Pregunta de selección con rango', config: {
           has_order_of_answers: true,
         }
-      }
+      },
+      { name: 'container', description: 'Pregunta de tipo estimulo', config: {} },
     ]
     for await (const category of question_categories) {
       const exists: any = await questionCategoryService.findBy({
