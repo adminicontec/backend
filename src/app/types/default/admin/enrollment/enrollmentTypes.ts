@@ -35,4 +35,8 @@ export interface IMassiveEnrollment{
     data: Buffer,
   }
 }
+
+export interface IEnrollmentDelete {
+  id: string // Identificador de la matrícula en Campus Digital
+}
 //@end
