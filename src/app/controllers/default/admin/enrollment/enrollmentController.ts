@@ -66,6 +66,11 @@ class EnrollmentController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public delete = async (req: Request, res: Response) => {
+    const response = await enrollmentService.delete(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
   public massive = async (req: Request, res: Response) => {
 
     let params = req.getParameters.all()

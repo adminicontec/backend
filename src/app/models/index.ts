@@ -1,4 +1,11 @@
 // @import_models
+import { SurveyModel } from "@scnode_app/models/surveyModel";
+import { AcademicResourceConfigModel } from "@scnode_app/models/academicResourceConfigModel";
+import { AcademicResourceConfigCategoryModel } from "@scnode_app/models/academicResourceConfigCategoryModel";
+import { AcademicResourceModel } from "@scnode_app/models/academicResourceModel";
+import { AcademicResourceCategoryModel } from "@scnode_app/models/academicResourceCategoryModel";
+import { QuestionModel } from "@scnode_app/models/questionModel";
+import { QuestionCategoryModel } from "@scnode_app/models/questionCategoryModel";
 import { CourseSchedulingSectionModel } from "@scnode_app/models/courseSchedulingSectionModel";
 import { CourseSchedulingDetailsModel } from "@scnode_app/models/courseSchedulingDetailsModel";
 import { CityModel } from "@scnode_app/models/cityModel";
@@ -36,6 +43,13 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const Survey = SurveyModel
+export const AcademicResourceConfig = AcademicResourceConfigModel
+export const AcademicResourceConfigCategory = AcademicResourceConfigCategoryModel
+export const AcademicResource = AcademicResourceModel
+export const AcademicResourceCategory = AcademicResourceCategoryModel
+export const Question = QuestionModel
+export const QuestionCategory = QuestionCategoryModel
 export const CourseSchedulingSection = CourseSchedulingSectionModel
 export const CourseSchedulingDetails = CourseSchedulingDetailsModel
 export const City = CityModel

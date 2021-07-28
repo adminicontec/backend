@@ -3,34 +3,191 @@
     "secure": {
       "appModule": {
         "permission": {
-          "not_found":"El permiso no ha sido encontrado",
+          "not_found": "El permiso no ha sido encontrado",
           "insertOrUpdate": {
-            "already_exists":"Ya existe un permiso con el nombre :name"
+            "already_exists": "Ya existe un permiso con el nombre :name"
           }
         },
         "module": {
-          "not_found":"El modulo no ha sido encontrado",
+          "not_found": "El modulo no ha sido encontrado",
           "insertOrUpdate": {
-            "already_exists":"Ya existe un modulo con el nombre :name"
+            "already_exists": "Ya existe un modulo con el nombre :name"
           }
         }
       },
       "role": {
-        "not_found":"El rol no ha sido encontrado",
+        "not_found": "El rol no ha sido encontrado",
         "insertOrUpdate": {
-          "already_exists":"Ya existe un rol con el nombre :name"
+          "already_exists": "Ya existe un rol con el nombre :name"
         }
+      },
+      "environment": {
+        "not_found": "El entorno no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un entorno con el nombre :name"
+        }
+      },
+      "tokenFromDestination": {
+        "user_not_found": "No existe un usuario relacionado a :item",
+        "destination_required": "El campo destino es requerido",
+        "destination_invalid": "El campo destino no es valido",
+        "email_required": "El email es requerido",
+        "cell_phone_required": "El numero de celular es requerido",
+        "not_found": "El token no existe",
+        "token_expired": "El token ya no es valido"
+      }
+    },
+    "home": {
+      "not_found": "El home no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un home con el nombre :name"
       }
     },
     "user": {
-      "not_found":"El usuario no ha sido encontrado",
+      "not_found": "El usuario no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",
         "password_required": "La contraseña es obligatoria"
+      },
+      "current_password_invalid": "La contraseña actual es incorrecta"
+    },
+    "questionCategory": {
+			"not_found": "La categoría no ha sido encontrada",
+			"insertOrUpdate": {
+				"already_exists": "Ya existe una categoría con el nombre :name",
+				"fail_action": "Ha ocurrido un error al generar el registro"
+			},
+			"delete": {
+				"fail_action": "Se ha presentado un error al borrar el registro"
+			}
+    },
+    "question": {
+			"category_invalid": "Categoria invalida",
+			"value_required": "El valor de la pregunta es obligatorio",
+			"answers": {
+				"required": "Las respuestas son obligatorias",
+				"invalid": "Las respuestas no tienen un formato valido",
+				"limit": "Solo se permite :number opcion(es) de respuesta(s)",
+				"answers_value_invalid": "El valor de la pregunta y la suma de las respuestas no coincide, verifique para continuar",
+				"answer_corrected_required": "Se requiere al menos :number respuesta(s) correcta(s)",
+				"answer_corrected_limit": "Solo es posible tener :number respuesta(s) correcta(s)",
+				"relate_item": {
+					"relation_required": "La relación entre las opciones es obligatoria",
+					"relation_invalid": "La configuración de la relación es invalida"
+				},
+				"fill_in_spaces": {
+					"words_required": "Debes tener al menos 1 palabra para reemplazar",
+					"words_data_invalid": "No se han configurado correctamente las palabras que se desean reemplazar",
+					"config_invalid": "La configuración de la respuesta es invalida"
+				}
+			},
+			"not_found": "La pregunta no ha sido encontrada",
+			"insertOrUpdate": {
+        "fail_action": "Ha ocurrido un error al generar el registro",
+        "tag_duplicated": "No pueden existir dos o mas tags iguales"
+			},
+			"delete": {
+				"fail_action": "Se ha presentado un error al borrar el registro"
+			},
+      "qualification": {
+        "answers_required": "Las opciones de respuesta de la pregunta son obligatorias",
+        "answer_format_invalid": "El formato de la respuesta proporcionada por el usuario no es valida",
+        "answer_selected_invalid": "La opción seleccionada no es valida"
+      }
+    },
+    "academicResourceCategory": {
+			"not_found": "La categoría no ha sido encontrada",
+			"insertOrUpdate": {
+				"already_exists": "Ya existe una categoría con el nombre :name",
+				"fail_action": "Ha ocurrido un error al generar el registro"
+			},
+			"delete": {
+				"fail_action": "Se ha presentado un error al borrar el registro"
+			}
+		},
+    "academicResource": {
+			"category_invalid": "Categoria invalida",
+			"not_found": "El recurso académico no ha sido encontrada",
+			"insertOrUpdate": {
+				"fail_action": "Ha ocurrido un error al generar el registro"
+			},
+			"delete": {
+        "node_invalid": "Solo un recurso sin hijos puede ser eliminado",
+        "fail_action": "Se ha presentado un error al borrar el registro"
+			},
+			"resources": {
+        "questions_invalid": "Las preguntas tienen un formato invalido",
+				"duration_invalid": "La duración del recurso no es valida",
+        "survey_resource": {
+          "config_invalid": "La configuración del recurso es invalido",
+          "question_bank_invalid": "El banco de preguntas no es valido",
+          "question_configuration": {
+            "invalid": "La configuración de preguntas no es valida"
+          }
+        }
+			},
+      "qualification": {
+        "questions_to_evaluate_required": "Las preguntas que se van a evaluar son obligatorias"
+      },
+      "attempt": {
+        "status_ended": "El intento ya finalizo, no es posible actualizar"
+      },
+      "fetchAcademicResourceData": {
+        "academic_components": {
+          "invalid": "Los componentes academicos proporcionados no son validos"
+        },
+        "simulacrum": {
+          "invalid": "El simulacro proporcionado no es valido"
+        },
+        "academic_group_resource": {
+          "invalid": "The academic group resource is invalid "
+        },
+        "flow": {
+          "invalid": "The flow is invalid "
+        },
+        "config": {
+          "max_attemps": "Haz alcanzado el limite de intentos",
+          "availability_range": {
+            "start_end": "El recurso solo esta disponible desde :start hasta :end",
+            "end": "El recurso estuvo disponible hasta :end",
+            "start": "El recurso estará disponible desde :start"
+          }
+        },
+        "fail_update": "Se ha presentado un error al guardar"
+      }
+    },
+    "academicResourceConfigCategory": {
+			"not_found": "La categoría no ha sido encontrada",
+			"insertOrUpdate": {
+				"already_exists": "Ya existe una categoría con el nombre :name",
+				"fail_action": "Ha ocurrido un error al generar el registro"
+			},
+			"delete": {
+				"fail_action": "Se ha presentado un error al borrar el registro"
+			}
+		},
+    "academicResourceConfig": {
+			"category_invalid": "Categoria invalida",
+			"not_found": "La configuración del recurso no existe",
+			"insertOrUpdate": {
+				"fail_action": "Ha ocurrido un error al generar el registro"
+			},
+			"delete": {
+				"fail_action": "Se ha presentado un error al borrar el registro"
+			}
+		},
+    "survey": {
+      "not_found": "La encuesta no ha sido encontrada",
+      "insertOrUpdate": {
+        "fail_action": "Ha ocurrido un error al guardar el registro",
+        "content_required": "La configuración de la encuesta es obligatoria"
+      },
+      "delete": {
+        "fail_action": "Ocurrio un error al eliminar el registro"
       }
     },
     "country": {
-      "not_found":"El pais no ha sido encontrado",
+      "not_found": "El pais no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un pais con el nombre :name"
       }
@@ -55,16 +212,24 @@
         }
       },
       "post": {
-        "not_found":"El post no ha sido encontrado",
+        "not_found": "El post no ha sido encontrado",
         "post_date_required": "Fecha de publicación requerida",
-        "event_date_required": "Fecha del evento requerida"
+        "event_date_required": "Fecha del evento requerida",
+        "filter_to_search_required": "Es necesario un identificador para buscar la publicación"
+      }
+    },
+    "regional": {
+      "not_found": "La regional no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una regional con el nombre :name"
       }
     },
     "company": {
       "not_found": "La compañia no ha sido encontrada",
       "insertOrUpdate": {
         "already_exists": "Ya existe una compañia con el nombre :name"
-      }
+      },
+      "filter_to_search_required": "Es necesario un identificador para buscar la compañia"
     },
     "forum": {
       "category": {
@@ -80,7 +245,7 @@
         }
       },
       "forum": {
-        "not_found":"El foro no ha sido encontrado",
+        "not_found": "El foro no ha sido encontrado",
         "post_date_required": "Fecha de publicación requerida"
       },
       "message": {
@@ -90,14 +255,78 @@
           "only_my_messages": "Solo puedo eliminar mensajes que me pertenecen",
           "fail_action": "Ha ocurrido un error al borrar el mensaje"
         }
+      },
+      "skylltype": {
+        "not_found": "El tipo de habilidad no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un tipo de habilidad con el nombre :name"
+        }
       }
     },
     "course": {
-			"not_found": "El curso no ha sido encontrado",
-			"insertOrUpdate": {
-				"already_exists": "Ya existe un curso con el nombre :name"
-			}
-		},
+      "filter_to_search_required": "Es necesario un identificador para buscar el curso",
+      "mode_category": {
+        "not_found": "La categoria modo del curso no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una categoria del modo del curso con el nombre :name"
+        }
+      },
+      "not_found": "El curso no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un curso con el nombre :name",
+        "cost_required": "El valor del curso es obligatorio"
+      }
+    },
+    "program": {
+      "not_found": "El programa no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un programa con el nombre :name"
+      }
+    },
+    "modular": {
+      "not_found": "El modular no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe un modular con el nombre :name"
+      }
+    },
+    "city": {
+      "not_found": "La ciudad no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una ciudad con el nombre :name"
+      }
+    },
+    "course_scheduling": {
+      "not_found": "La programación no ha sido encontrada",
+      "insertOrUpdate": {
+        "failed": "Se ha presentado un error al guardar"
+      },
+      "status": {
+        "not_found": "El estado no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un estado con el nombre :name"
+        }
+      },
+      "section": {
+        "not_found": "La sección no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe una sección con el nombre :name"
+        }
+      },
+      "type": {
+        "not_found": "El tipo de programación no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un tipo de programación con el nombre :name"
+        }
+      },
+      "mode": {
+        "not_found": "La modalidad de programación no ha sido encontrada",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un curso con el nombre \" :name \"",
+          "category_not_found": "No existe la categoría con id :id",
+          "course_not_found": "No existe el curso con id :id a replicar."
+        }
+      }
+    },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",
       "insertOrUpdate": {
@@ -107,7 +336,7 @@
       }
     },
     "enrollment": {
-      "not_found": "La matrícula del curso  no ha sido encontrada",
+      "not_found": "La matrícula del curso no ha sido encontrada",
       "insertOrUpdate": {
         "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename"
       }
@@ -124,6 +353,17 @@
       "insertOrUpdate": {
         "failed": "Ya existe un usuario en Moodle :username"
       }
+    }
+  },
+  "passwordRecover": {
+    "subject": "Solicitud de recuperación de contraseña"
+  },
+  "mailer": {
+    "welcome_user": {
+      "subject": "¡Bienvenid@ al Campus Digital Icontec!"
+    },
+    "enrollment_user": {
+      "subject": "Inicio del curso"
     }
   }
 }

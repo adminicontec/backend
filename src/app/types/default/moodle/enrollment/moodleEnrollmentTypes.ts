@@ -3,7 +3,7 @@
 
 // @add your types
 export interface IMoodleEnrollment{
-  roleid: number,
+  roleid?: number,
   courseid: number,
   userid: number
 }
