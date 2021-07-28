@@ -16,7 +16,7 @@ import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
 // @end
 
 // @import models
-import {AppModule, Role, User, LoginToken} from '@scnode_app/models'
+import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -133,6 +133,12 @@ class AuthService {
 
 		const jwttoken = jwtUtility.createToken(user._id, jwtUtility.getJwtSecret(req), tokenData)
 
+    // @INFO: Consultando categorias de recursos academicos
+    const academicResourceCategories = await AcademicResourceCategory.find().select('id name description config')
+
+    // @INFO: Consultando categorias de preguntas
+    const questionCategories = await QuestionCategory.find().select('id name description config')
+
     // @INFO: Consultando los homes segun el tipo de usuario
     let home = null
     if (user.roles) {
@@ -164,6 +170,8 @@ class AuthService {
             moodle_id: user.moodle_id
           }
 				},
+        academicResourceCategories: academicResourceCategories,
+        questionCategories: questionCategories,
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,
 			},
