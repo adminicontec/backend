@@ -503,6 +503,29 @@ class GeneralUtility {
     return response
   }
 
+  /**
+   * @INFO Obtener segundos de texto
+   * @param inputValue
+   */
+   public getSecondsFromDuration = (inputValue: string) => {
+    const auxVector = inputValue.split(' ')
+    let seconds: number = 0
+    if(auxVector.length){
+      auxVector.forEach(item => {
+        if(item.includes('h')){
+          const hours = Number(item.replace('h', ''))
+          seconds += hours*3600
+        }else if(item.includes('m')){
+          const minutes = Number(item.replace('m', ''))
+          seconds += minutes*60
+        }else if(item.includes('s')){
+          seconds += Number(item.replace('s', ''))
+        }
+      })
+    }
+    return seconds
+  }
+
 }
 
 export const generalUtility = new GeneralUtility();

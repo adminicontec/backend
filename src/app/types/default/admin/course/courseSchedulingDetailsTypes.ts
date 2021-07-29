@@ -16,6 +16,7 @@ export interface ICourseSchedulingDetail {
   teacher?: string // Docente de la programación
   number_of_sessions?: number // Cantidad de sesiones de la programación
   sessions?: Array<ICourseSchedulingDetailSession> // Array de sesiones de clase
+  duration?: number // Duración del programa
   id?: string // Identificador de la categoria
 }
 

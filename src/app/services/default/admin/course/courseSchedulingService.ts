@@ -19,7 +19,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import {City, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
+import {City, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -57,7 +57,7 @@ class CourseSchedulingService {
         .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
@@ -75,7 +75,7 @@ class CourseSchedulingService {
         .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
@@ -92,6 +92,24 @@ class CourseSchedulingService {
             register.metadata.user.fullname = `${register.metadata.user.profile.first_name} ${register.metadata.user.profile.last_name}`
           }
         }
+
+        let total_scheduling = 0
+
+        const detailSessions = await CourseSchedulingDetails.find({
+          course_scheduling: register._id
+        }).select('duration sessions')
+
+        detailSessions.map((element) => {
+          if (element.sessions.length === 0) {
+            total_scheduling += parseInt(element.duration)
+          } else {
+            element.sessions.map((session) => {
+              total_scheduling += parseInt(session.duration)
+            })
+          }
+        })
+
+        register.total_scheduling = total_scheduling
 
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           scheduling: register
@@ -138,18 +156,22 @@ class CourseSchedulingService {
       }
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
-        const programLocal = await Program.findOne({
-          moodle_id: params.program.value
-        }).select('id').lean()
-        if (programLocal) {
-          params.program = programLocal._id
-        } else {
-          const newprogramLocal = await Program.create({
-            name: params.program.label,
+        const programArr = params.program.label.toString().split('|')
+        if (programArr[0] && programArr[1]) {
+          const programLocal = await Program.findOne({
             moodle_id: params.program.value
-          })
-          if (newprogramLocal) {
-            params.program = newprogramLocal._id
+          }).select('id').lean()
+          if (programLocal) {
+            params.program = programLocal._id
+          } else {
+            const newprogramLocal = await Program.create({
+              name: programArr[1].trim(),
+              moodle_id: params.program.value,
+              code: programArr[0].trim(),
+            })
+            if (newprogramLocal) {
+              params.program = newprogramLocal._id
+            }
           }
         }
       }
@@ -179,7 +201,7 @@ class CourseSchedulingService {
         })
         await CourseSchedulingMode.populate(response, {path: 'schedulingMode', select: 'id name moodle_id'})
         await Modular.populate(response, {path: 'modular', select: 'id name'})
-        await Program.populate(response, {path: 'program', select: 'id name moodle_id'})
+        await Program.populate(response, {path: 'program', select: 'id name moodle_id code'})
         await CourseSchedulingType.populate(response, {path: 'schedulingType', select: 'id name'})
         await CourseSchedulingStatus.populate(response, {path: 'schedulingStatus', select: 'id name'})
         await Regional.populate(response, {path: 'regional', select: 'id name'})
@@ -234,7 +256,7 @@ class CourseSchedulingService {
         const response: any = await CourseScheduling.findOne({_id})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name moodle_id'})
@@ -244,7 +266,8 @@ class CourseSchedulingService {
         .lean()
 
         const moodleResponse: any = await moodleCourseService.createFromMaster({
-          "shortName": `${response.program.name} ${generalUtility.getDurationFormated(response.duration)}`,
+          "shortName": `${response.program.code}_${service_id}`,
+          "fullName": `${response.program.name}`,
           "masterId" : `${response.program.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
@@ -395,7 +418,7 @@ class CourseSchedulingService {
       .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
       .populate({path: 'schedulingMode', select: 'id name moodle_id'})
       .populate({path: 'modular', select: 'id name'})
-      .populate({path: 'program', select: 'id name moodle_id'})
+      .populate({path: 'program', select: 'id name moodle_id code'})
       .populate({path: 'schedulingType', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({path: 'regional', select: 'id name'})

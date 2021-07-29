@@ -148,7 +148,7 @@ class MoodleCourseService {
       'courseid': params.masterId,
       'categoryid': params.categoryId,
       'shortname': params.shortName,
-      'fullname': params.shortName,
+      'fullname': params.fullName,
       'options[0][name]': 'users',
       'options[0][value]': 0
     };

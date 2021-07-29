@@ -9,6 +9,7 @@ import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmen
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
@@ -44,7 +45,7 @@ class CourseSchedulingDetailsService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseSchedulingDetails.find(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
@@ -212,7 +213,7 @@ class CourseSchedulingDetailsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
     if (filters.select) {
       select = filters.select
     }
@@ -251,6 +252,16 @@ class CourseSchedulingDetailsService {
         if (register.endDate) register.endDate = moment.utc(register.endDate).format('YYYY-MM-DD')
         if (register.teacher && register.teacher.profile) {
           register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
+        }
+        register.duration_formated = 0
+        if (register.sessions && register.sessions.length > 0) {
+          let total = 0
+          register.sessions.map((session) => {
+            total += session.duration
+          })
+          register.duration_formated = generalUtility.getDurationFormated(total)
+        } else if (register.duration) {
+          register.duration_formated = generalUtility.getDurationFormated(register.duration)
         }
       }
     } catch (e) { }
