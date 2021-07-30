@@ -17,6 +17,7 @@ export interface ICourseSchedulingDetail {
   number_of_sessions?: number // Cantidad de sesiones de la programación
   sessions?: Array<ICourseSchedulingDetailSession> // Array de sesiones de clase
   duration?: number // Duración del programa
+  sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar email de notificación
   id?: string // Identificador de la categoria
 }
 

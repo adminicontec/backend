@@ -81,6 +81,8 @@ const UserSchema = new Schema({
     alternativeEmail: {
       type: Schema.Types.String
     },
+    doc_type: { type: Schema.Types.String },
+    doc_number: { type: Schema.Types.String },
     birthDate: { type: Schema.Types.Date },
     regional: { type: Schema.Types.String },
     origen: { type: Schema.Types.String},

@@ -37,6 +37,7 @@ export interface MailOptions {
   template?     : string                       // Nombre del archivo que se usara como template para el email, se asigna automaticamente
   context?      : Object                       // Parametros que se pasan al template del email, se construyen automaticamente
   hbsConfig?    : Object                       // Configuración de nodemailer-express-handlebars
+  amount_notifications?: number | null
 };
 
 export interface MailerSMTPConfig {

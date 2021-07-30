@@ -1,4 +1,5 @@
 // @import_models
+import { MailMessageLogModel } from "@scnode_app/models/mailMessageLogModel";
 import { SurveyModel } from "@scnode_app/models/surveyModel";
 import { AcademicResourceConfigModel } from "@scnode_app/models/academicResourceConfigModel";
 import { AcademicResourceConfigCategoryModel } from "@scnode_app/models/academicResourceConfigCategoryModel";
@@ -43,6 +44,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const MailMessageLog = MailMessageLogModel
 export const Survey = SurveyModel
 export const AcademicResourceConfig = AcademicResourceConfigModel
 export const AcademicResourceConfigCategory = AcademicResourceConfigCategoryModel

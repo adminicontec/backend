@@ -211,6 +211,7 @@ class CourseSchedulingService {
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
           await this.checkEnrollmentUsers(response)
+          await this.checkEnrollmentTeachers(response)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -284,6 +285,7 @@ class CourseSchedulingService {
 
             if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
               await this.checkEnrollmentUsers(response)
+              await this.checkEnrollmentTeachers(response)
             }
           } else {
             await this.delete({id: _id})
@@ -325,8 +327,32 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         first_name: enrolled.user.profile.first_name,
         course_name: courseScheduling.program.name,
-        course_start: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
-        course_end: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+        course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        type: 'student',
+        notification_source: `course_start_${enrolled.user._id}_${courseScheduling._id}`,
+        amount_notifications: 1
+      })
+    }
+  }
+
+  private checkEnrollmentTeachers = async (courseScheduling) => {
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id teacher')
+    .populate({path: 'teacher', select: 'id email profile.first_name profile.last_name'})
+    .lean()
+
+    for await (const course of courses) {
+      await this.sendEnrollmentUserEmail([course.teacher.email], {
+        mailer: customs['mailer'],
+        first_name: course.teacher.profile.first_name,
+        course_name: courseScheduling.program.name,
+        course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        type: 'teacher',
+        notification_source: `course_start_${course.teacher._id}_${course._id}`,
+        amount_notifications: 1
       })
     }
   }
@@ -337,9 +363,13 @@ class CourseSchedulingService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-   private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+   public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
 
     try {
+      let path_template = 'user/enrollmentUser'
+      if (paramsTemplate.type && paramsTemplate.type === 'teacher') {
+        path_template = 'user/enrollmentTeacher'
+      }
 
       const mail = await mailService.sendMail({
         emails,
@@ -347,10 +377,12 @@ class CourseSchedulingService {
           subject: i18nUtility.__('mailer.enrollment_user.subject'),
           html_template: {
             path_layout: 'icontec',
-            path_template: 'user/enrollmentUser',
+            path_template: path_template,
             params: {...paramsTemplate}
-          }
-        }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
       })
 
       return mail

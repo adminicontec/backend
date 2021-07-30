@@ -5,6 +5,11 @@ import moment from 'moment'
 
 // @import services
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+// @end
+
+// @import config
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -136,10 +141,27 @@ class CourseSchedulingDetailsService {
           new: true,
           lean: true,
         })
-        await CourseScheduling.populate(response, { path: 'course_scheduling', select: 'id moodle_id' })
+        await CourseScheduling.populate(response, {
+          path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
+            {path: 'schedulingStatus', select: 'id name'},
+            {path: 'program', select: 'id name'}
+          ]})
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
-        await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name' })
+        await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+          await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
+            mailer: customs['mailer'],
+            first_name: response.teacher.profile.first_name,
+            course_name: response.course_scheduling.program.name,
+            course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
+            course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
+            type: 'teacher',
+            notification_source: `course_start_${response.teacher._id}_${response._id}`,
+            amount_notifications: 1
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -153,10 +175,13 @@ class CourseSchedulingDetailsService {
 
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
-          .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+          .populate({ path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
+            {path: 'schedulingStatus', select: 'id name'},
+            {path: 'program', select: 'id name'}
+          ] })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id'})
+          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email'})
           .lean()
 
         // asignación del rol: Teacher en Moodle (sin permisos)
@@ -168,6 +193,19 @@ class CourseSchedulingDetailsService {
         }
 
         let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+          await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
+            mailer: customs['mailer'],
+            first_name: response.teacher.profile.first_name,
+            course_name: response.course_scheduling.program.name,
+            course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
+            course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
+            type: 'teacher',
+            notification_source: `course_start_${response.teacher._id}_${response._id}`,
+            amount_notifications: 1
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
