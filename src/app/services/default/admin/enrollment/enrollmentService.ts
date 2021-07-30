@@ -89,10 +89,13 @@ class EnrollmentService {
         .limit(paging ? nPerPage : null)
         .lean()
 
+      let count = 1
       for await (const register of registers) {
+        register.count = count
         if (register.user && register.user.profile) {
           register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
         }
+        count++
       }
     } catch (e) { }
 
