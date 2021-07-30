@@ -279,7 +279,7 @@ class AuthService {
             }
           }
         },
-        // notification_source: 'authentication-service'
+        notification_source: 'authentication_service'
       })
 
       if (mailResponse.status === 'error') return mailResponse

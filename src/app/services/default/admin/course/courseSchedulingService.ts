@@ -19,7 +19,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import {City, Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
+import {City, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -57,7 +57,7 @@ class CourseSchedulingService {
         .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
@@ -75,7 +75,7 @@ class CourseSchedulingService {
         .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
@@ -92,6 +92,24 @@ class CourseSchedulingService {
             register.metadata.user.fullname = `${register.metadata.user.profile.first_name} ${register.metadata.user.profile.last_name}`
           }
         }
+
+        let total_scheduling = 0
+
+        const detailSessions = await CourseSchedulingDetails.find({
+          course_scheduling: register._id
+        }).select('duration sessions')
+
+        detailSessions.map((element) => {
+          if (element.sessions.length === 0) {
+            total_scheduling += parseInt(element.duration)
+          } else {
+            element.sessions.map((session) => {
+              total_scheduling += parseInt(session.duration)
+            })
+          }
+        })
+
+        register.total_scheduling = total_scheduling
 
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           scheduling: register
@@ -138,18 +156,22 @@ class CourseSchedulingService {
       }
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
-        const programLocal = await Program.findOne({
-          moodle_id: params.program.value
-        }).select('id').lean()
-        if (programLocal) {
-          params.program = programLocal._id
-        } else {
-          const newprogramLocal = await Program.create({
-            name: params.program.label,
+        const programArr = params.program.label.toString().split('|')
+        if (programArr[0] && programArr[1]) {
+          const programLocal = await Program.findOne({
             moodle_id: params.program.value
-          })
-          if (newprogramLocal) {
-            params.program = newprogramLocal._id
+          }).select('id').lean()
+          if (programLocal) {
+            params.program = programLocal._id
+          } else {
+            const newprogramLocal = await Program.create({
+              name: programArr[1].trim(),
+              moodle_id: params.program.value,
+              code: programArr[0].trim(),
+            })
+            if (newprogramLocal) {
+              params.program = newprogramLocal._id
+            }
           }
         }
       }
@@ -179,7 +201,7 @@ class CourseSchedulingService {
         })
         await CourseSchedulingMode.populate(response, {path: 'schedulingMode', select: 'id name moodle_id'})
         await Modular.populate(response, {path: 'modular', select: 'id name'})
-        await Program.populate(response, {path: 'program', select: 'id name moodle_id'})
+        await Program.populate(response, {path: 'program', select: 'id name moodle_id code'})
         await CourseSchedulingType.populate(response, {path: 'schedulingType', select: 'id name'})
         await CourseSchedulingStatus.populate(response, {path: 'schedulingStatus', select: 'id name'})
         await Regional.populate(response, {path: 'regional', select: 'id name'})
@@ -189,6 +211,7 @@ class CourseSchedulingService {
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
           await this.checkEnrollmentUsers(response)
+          await this.checkEnrollmentTeachers(response)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -234,7 +257,7 @@ class CourseSchedulingService {
         const response: any = await CourseScheduling.findOne({_id})
         .populate({path: 'schedulingMode', select: 'id name moodle_id'})
         .populate({path: 'modular', select: 'id name'})
-        .populate({path: 'program', select: 'id name moodle_id'})
+        .populate({path: 'program', select: 'id name moodle_id code'})
         .populate({path: 'schedulingType', select: 'id name'})
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name moodle_id'})
@@ -244,7 +267,8 @@ class CourseSchedulingService {
         .lean()
 
         const moodleResponse: any = await moodleCourseService.createFromMaster({
-          "shortName": `${response.program.name} ${generalUtility.getDurationFormated(response.duration)}`,
+          "shortName": `${response.program.code}_${service_id}`,
+          "fullName": `${response.program.name}`,
           "masterId" : `${response.program.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
@@ -261,6 +285,7 @@ class CourseSchedulingService {
 
             if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
               await this.checkEnrollmentUsers(response)
+              await this.checkEnrollmentTeachers(response)
             }
           } else {
             await this.delete({id: _id})
@@ -302,8 +327,32 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         first_name: enrolled.user.profile.first_name,
         course_name: courseScheduling.program.name,
-        course_start: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
-        course_end: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+        course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        type: 'student',
+        notification_source: `course_start_${enrolled.user._id}_${courseScheduling._id}`,
+        amount_notifications: 1
+      })
+    }
+  }
+
+  private checkEnrollmentTeachers = async (courseScheduling) => {
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id teacher')
+    .populate({path: 'teacher', select: 'id email profile.first_name profile.last_name'})
+    .lean()
+
+    for await (const course of courses) {
+      await this.sendEnrollmentUserEmail([course.teacher.email], {
+        mailer: customs['mailer'],
+        first_name: course.teacher.profile.first_name,
+        course_name: courseScheduling.program.name,
+        course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        type: 'teacher',
+        notification_source: `course_start_${course.teacher._id}_${course._id}`,
+        amount_notifications: 1
       })
     }
   }
@@ -314,9 +363,13 @@ class CourseSchedulingService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-   private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+   public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
 
     try {
+      let path_template = 'user/enrollmentUser'
+      if (paramsTemplate.type && paramsTemplate.type === 'teacher') {
+        path_template = 'user/enrollmentTeacher'
+      }
 
       const mail = await mailService.sendMail({
         emails,
@@ -324,10 +377,12 @@ class CourseSchedulingService {
           subject: i18nUtility.__('mailer.enrollment_user.subject'),
           html_template: {
             path_layout: 'icontec',
-            path_template: 'user/enrollmentUser',
+            path_template: path_template,
             params: {...paramsTemplate}
-          }
-        }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
       })
 
       return mail
@@ -395,7 +450,7 @@ class CourseSchedulingService {
       .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
       .populate({path: 'schedulingMode', select: 'id name moodle_id'})
       .populate({path: 'modular', select: 'id name'})
-      .populate({path: 'program', select: 'id name moodle_id'})
+      .populate({path: 'program', select: 'id name moodle_id code'})
       .populate({path: 'schedulingType', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({path: 'regional', select: 'id name'})

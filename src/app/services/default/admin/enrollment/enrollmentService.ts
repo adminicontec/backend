@@ -4,6 +4,7 @@
 // @import services
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import config
@@ -19,7 +20,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import { Enrollment } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -30,7 +31,6 @@ import { moodleCourseService } from '@scnode_app/services/default/moodle/course/
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
-import { courseSchedulingService } from '../course/courseSchedulingService';
 import moment from 'moment';
 // @end
 
@@ -58,7 +58,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user email firstname lastname documentType documentID courseID'
+    let select = 'id user courseID'
     if (filters.select) {
       select = filters.select
     }
@@ -84,7 +84,7 @@ class EnrollmentService {
     try {
       registers = await Enrollment.find(where)
         .select(select)
-        .populate({ path: 'user', select: 'id profile.first_name profile.last_name email' })
+        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
@@ -162,10 +162,21 @@ class EnrollmentService {
     }
 
     let courseScheduling = null
+    let teachers = []
     if (params.courseScheduling) {
       const courseSchedulingResponse: any = await courseSchedulingService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.courseScheduling }] })
       if (courseSchedulingResponse.status === 'success') {
         courseScheduling = courseSchedulingResponse.scheduling
+
+        const courses = await CourseSchedulingDetails.find({
+          course_scheduling: courseScheduling._id
+        }).select('id teacher')
+        .populate({path: 'teacher', select: 'id email profile.first_name profile.last_name'})
+        .lean()
+
+        for await (const course of courses) {
+          teachers.push(course.teacher._id.toString())
+        }
       }
     }
 
@@ -220,7 +231,7 @@ class EnrollmentService {
           //#region  [ 1. Consultar Id del curso para verificar ]
           // Llamado a Servicio MoodleGetCourse
           const respMoodle: any = await moodleCourseService.findBy(params);
-          // console.log(respMoodle);
+          // console.log('respMoodle', respMoodle);
 
           if (respMoodle.status == "error") {
             // Curso en Moodle NO existe.
@@ -247,9 +258,13 @@ class EnrollmentService {
                 email: params.email,
                 password: passw,
                 roles: [roles['student']], // Id de ROL sujeto a verificación en CV
+                phoneNumber: params.phoneNumber,
                 profile: {
                   first_name: params.firstname,
-                  last_name: params.lastname
+                  last_name: params.lastname,
+                  doc_type: params.documentType,
+                  doc_number: params.documentID,
+
                 },
                 sendEmail: true
               }
@@ -272,6 +287,10 @@ class EnrollmentService {
               }
             }
             else {
+
+              if (teachers.includes(respCampusDataUser.user._id.toString())) {
+                return responseUtility.buildResponseFailed('json')
+              }
               userEnrollment = respCampusDataUser.user
               params.user = respCampusDataUser.user._id
 
@@ -307,12 +326,13 @@ class EnrollmentService {
 
               // @INFO: Se envia email de bienvenida
               if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
-                await this.sendEnrollmentUserEmail([params.email], {
+                await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
                   first_name: userEnrollment.profile.first_name,
                   course_name: courseScheduling.program.name,
-                  course_start: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
-                  course_end: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+                  course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+                  course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                  type: 'student'
                 })
               }
               // console.log("[  Campus  ] Enrollment: ");
@@ -328,7 +348,7 @@ class EnrollmentService {
               email: params.email
             }
             let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
-            // console.log(respMoodle2);
+            // console.log('respMoodle2', respMoodle2);
             if (respMoodle2.status == "success") {
               if (respMoodle2.user == null) {
                 // console.log("Moodle: user NO exists ");
@@ -343,7 +363,7 @@ class EnrollmentService {
                 // crear nuevo uusario en MOODLE
                 let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
                 // console.log("Moodle: Usuario creado con Éxito.");
-                // console.log(respMoodle2);
+                // console.log('respMoodle2222', respMoodle2);
                 paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
               }
               else {
@@ -362,7 +382,7 @@ class EnrollmentService {
               }
 
               let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
-              // console.log(respMoodle3);
+              // console.log('respMoodle3', respMoodle3);
 
               const timeElapsed = Date.now();
               const currentDate = new Date(timeElapsed);
@@ -458,37 +478,6 @@ class EnrollmentService {
     }
   }
 
-
-  /**
-   * Metodo que permite enviar emails de bienvenida a los usuarios
-   * @param emails Emails a los que se va a enviar
-   * @param paramsTemplate Parametros para construir el email
-   * @returns
-   */
-  private sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
-
-    try {
-
-      const mail = await mailService.sendMail({
-        emails,
-        mailOptions: {
-          subject: i18nUtility.__('mailer.enrollment_user.subject'),
-          html_template: {
-            path_layout: 'icontec',
-            path_template: 'user/enrollmentUser',
-            params: { ...paramsTemplate }
-          }
-        }
-      })
-
-      return mail
-
-    } catch (e) {
-      return responseUtility.buildResponseFailed('json', null)
-    }
-  }
-
-
   public massive = async (params: IMassiveEnrollment) => {
 
     let userEnrollmentResponse = [];
@@ -510,6 +499,7 @@ class EnrollmentService {
           email: element['Correo Electrónico'],
           firstname: element['Nombres'],
           lastname: element['Apellidos'],
+          phoneNumber: element['N° Celular'],
           courseID: params.courseID,
           rolename: 'student',
           courseScheduling: params.courseScheduling,

@@ -4,36 +4,34 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 // @end
 
-const ProgramSchema = new Schema({
+const MailMessageLogSchema = new Schema({
   // @add_schema Add schema here
-  name: {
-    type: Schema.Types.String,
-    required: true
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
   },
-  code: {
-    type: Schema.Types.String,
-    required: true
-  },
-  moodle_id: { type: Schema.Types.String }
+  email: {type: Schema.Types.String},
+  subject: {type: Schema.Types.String},
+  notification_source: {type: Schema.Types.String},
   // @end
 }, {
-  collection: 'programs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'mail_message_logs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-ProgramSchema.plugin(mongoose_delete,{
+MailMessageLogSchema.plugin(mongoose_delete,{
   deletedAt : true,
   overrideMethods: 'all',
   indexFields: 'all'
 });
 
 // INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
-// ProgramSchema.methods.invalid_fields = ["field1", "field2"];
+// MailMessageLogSchema.methods.invalid_fields = ["field1", "field2"];
 
 // INFO: Si desea implementar un metodo despues de guardar habilite el siguiente metodo
-// ProgramSchema.methods.postSave = (parameters) => {
+// MailMessageLogSchema.methods.postSave = (parameters) => {
 // }
 
 
-export const ProgramModel = mongoose.model<any, any>('Program', ProgramSchema);
+export const MailMessageLogModel = mongoose.model<any, any>('MailMessageLog', MailMessageLogSchema);

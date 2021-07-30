@@ -5,10 +5,16 @@ import moment from 'moment'
 
 // @import services
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+// @end
+
+// @import config
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
@@ -44,7 +50,7 @@ class CourseSchedulingDetailsService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseSchedulingDetails.find(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
@@ -135,10 +141,27 @@ class CourseSchedulingDetailsService {
           new: true,
           lean: true,
         })
-        await CourseScheduling.populate(response, { path: 'course_scheduling', select: 'id moodle_id' })
+        await CourseScheduling.populate(response, {
+          path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
+            {path: 'schedulingStatus', select: 'id name'},
+            {path: 'program', select: 'id name'}
+          ]})
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
-        await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name' })
+        await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+          await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
+            mailer: customs['mailer'],
+            first_name: response.teacher.profile.first_name,
+            course_name: response.course_scheduling.program.name,
+            course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
+            course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
+            type: 'teacher',
+            notification_source: `course_start_${response.teacher._id}_${response._id}`,
+            amount_notifications: 1
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -152,10 +175,13 @@ class CourseSchedulingDetailsService {
 
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
-          .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+          .populate({ path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
+            {path: 'schedulingStatus', select: 'id name'},
+            {path: 'program', select: 'id name'}
+          ] })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id'})
+          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email'})
           .lean()
 
         // asignación del rol: Teacher en Moodle (sin permisos)
@@ -167,6 +193,19 @@ class CourseSchedulingDetailsService {
         }
 
         let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+          await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
+            mailer: customs['mailer'],
+            first_name: response.teacher.profile.first_name,
+            course_name: response.course_scheduling.program.name,
+            course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
+            course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
+            type: 'teacher',
+            notification_source: `course_start_${response.teacher._id}_${response._id}`,
+            amount_notifications: 1
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -212,7 +251,7 @@ class CourseSchedulingDetailsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions'
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
     if (filters.select) {
       select = filters.select
     }
@@ -251,6 +290,16 @@ class CourseSchedulingDetailsService {
         if (register.endDate) register.endDate = moment.utc(register.endDate).format('YYYY-MM-DD')
         if (register.teacher && register.teacher.profile) {
           register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
+        }
+        register.duration_formated = 0
+        if (register.sessions && register.sessions.length > 0) {
+          let total = 0
+          register.sessions.map((session) => {
+            total += session.duration
+          })
+          register.duration_formated = generalUtility.getDurationFormated(total)
+        } else if (register.duration) {
+          register.duration_formated = generalUtility.getDurationFormated(register.duration)
         }
       }
     } catch (e) { }

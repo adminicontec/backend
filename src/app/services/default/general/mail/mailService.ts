@@ -10,6 +10,7 @@ import { mailerUtility } from "@scnode_core/utilities/mailer/mailerUtility";
 // @end
 
 // @import models
+import {MailMessageLog} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -24,6 +25,7 @@ interface IMailerUtilityConfig {
 interface IMailMessageData {
   emails: Array<string>
   mailOptions: Partial<MailOptions>
+  notification_source: string
 }
 
 class MailService {
@@ -55,13 +57,39 @@ class MailService {
         ...mailMessageData.mailOptions
       }
 
+      if (mailMessageData.mailOptions && mailMessageData.mailOptions.amount_notifications) {
+        const amountNotifications = await MailMessageLog.find({notification_source: mailMessageData.notification_source}).count()
+        if (amountNotifications >= mailMessageData.mailOptions.amount_notifications) {
+          return responseUtility.buildResponseFailed('json')
+        }
+      }
+
       // @INFO: Enviando mensaje
       const mail_message_response: any = await mailerUtility.sendMail(mailOptions);
       if (mail_message_response.status === 'error') return mail_message_response
 
+      await this.generateMailLog(mailMessageData.emails, mailOptions, mailMessageData.notification_source)
+
       return responseUtility.buildResponseSuccess('json')
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que genera el log de envio de email
+   * @param user Usuario al que se envia el email
+   * @param mailOptions Información del email enviado
+   * @param notification_source Origen de la solicitud de envio
+   * @returns
+   */
+  private generateMailLog = async (emails: Array<string>, mailOptions: MailOptions, notification_source: string) => {
+    for await (const email of emails) {
+      await MailMessageLog.create({
+        email: email,
+        subject: mailOptions.subject,
+        notification_source: notification_source
+      })
     }
   }
 }

@@ -315,7 +315,9 @@ class UserService {
               first_name: response.profile.first_name,
               last_name: response.profile.last_name,
               username: response.username,
-              password: params.password
+              password: params.password,
+              notification_source: `user_register_${response._id}`,
+              amount_notifications: 1
             })
           }
 
@@ -355,8 +357,10 @@ class UserService {
             path_layout: 'icontec',
             path_template: 'user/welcomeUser',
             params: { ...paramsTemplate }
-          }
-        }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
       })
 
       return mail

@@ -36,6 +36,7 @@ const CourseSchedulingDetailsSchema = new Schema({
   number_of_sessions: {
     type: Schema.Types.Number,
   },
+  duration: {type: Schema.Types.Number},
   sessions: [{
     startDate: {
       type: Schema.Types.Date,

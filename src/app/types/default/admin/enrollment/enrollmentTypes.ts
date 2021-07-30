@@ -11,6 +11,7 @@ export interface IEnrollment{
   lastname: string,       // Apellido de estudiante
   documentType?: string,   // Tipo de documento (CC, CE, PAS )
   documentID?: string,     // Documento de identidad
+  phoneNumber?: string // Numero de telefono
   courseID: string,       // ID de curso (listado de cursos en CV)
   rolename?: string,
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
