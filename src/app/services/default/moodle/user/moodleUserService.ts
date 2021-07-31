@@ -132,6 +132,10 @@ class MoodleUserService {
       'users[0][password]': params.password,
       'users[0][firstname]': params.firstname,
       'users[0][lastname]': params.lastname,
+      'users[0][idnumber]': params.documentNumber,
+      'users[0][city]': params.city,
+      'users[0][country]': params.country,
+
     };
 
     for (let p in params){
