@@ -43,9 +43,11 @@ class QuestionSelectRangeService extends DefaultAdminAcademicContentQuestionsQue
     // if (validateValueRequired.status === 'error') return validateValueRequired
 
     // @INFO: Si se esta creando el registro se debe validar siempre que exista al menos una respuesta
-    if (options.action === 'new') {
-      if (answers.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'question.answers.required'})
-    }
+    // if (options.action === 'new') {
+    //   if (answers.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'question.answers.required'})
+    // }
+
+    // TODO: Validar configuración del rango
 
     if (!params.force) {
       // @INFO: Validando que exista al menos 1 respuesta correcta para este tipo de pregunta

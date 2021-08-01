@@ -42,6 +42,10 @@ const QuestionSchema = new Schema({
       type: Schema.Types.String,
       default: 'text',
       enum: [ 'text', 'input', 'date', 'number', 'tiny' ]
+    },
+    range: {
+      type: Schema.Types.Number,
+      default: 1
     }
   },
   answers: [ {
