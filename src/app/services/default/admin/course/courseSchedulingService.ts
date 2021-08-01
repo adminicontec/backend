@@ -19,7 +19,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import {City, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
+import {City, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -51,7 +51,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
         .populate({path: 'metadata.user', select: 'id profile.first_name profile.last_name'})
@@ -62,6 +62,7 @@ class CourseSchedulingService {
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
         .populate({path: 'city', select: 'id name'})
+        .populate({path: 'country', select: 'id name'})
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .select(select)
@@ -80,6 +81,7 @@ class CourseSchedulingService {
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name'})
         .populate({path: 'city', select: 'id name'})
+        .populate({path: 'country', select: 'id name'})
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .select(select)
@@ -190,6 +192,10 @@ class CourseSchedulingService {
         }
       }
 
+      if (params.country === '') delete params.country
+
+      console.log('params', params)
+
       if (params.id) {
         const register: any = await CourseScheduling.findOne({_id: params.id}).lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
@@ -206,6 +212,7 @@ class CourseSchedulingService {
         await CourseSchedulingStatus.populate(response, {path: 'schedulingStatus', select: 'id name'})
         await Regional.populate(response, {path: 'regional', select: 'id name'})
         await City.populate(response, {path: 'city', select: 'id name'})
+        await Country.populate(response, {path: 'country', select: 'id name'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
@@ -262,6 +269,7 @@ class CourseSchedulingService {
         .populate({path: 'schedulingStatus', select: 'id name'})
         .populate({path: 'regional', select: 'id name moodle_id'})
         .populate({path: 'city', select: 'id name'})
+        .populate({path: 'country', select: 'id name'})
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .lean()
@@ -422,7 +430,7 @@ class CourseSchedulingService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city amountParticipants observations client duration in_design moodle_id'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
     if (filters.select) {
       select = filters.select
     }
@@ -455,6 +463,7 @@ class CourseSchedulingService {
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({path: 'regional', select: 'id name'})
       .populate({path: 'city', select: 'id name'})
+      .populate({path: 'country', select: 'id name'})
       // .populate({path: 'course', select: 'id name'})
       // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
