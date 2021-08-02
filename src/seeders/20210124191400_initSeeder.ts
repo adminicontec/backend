@@ -1080,6 +1080,20 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         }
       },
       { name: 'container', description: 'Pregunta de tipo estimulo', config: {} },
+      {
+        name: 'multiple-choice-unique-answer', description: 'Pregunta de opción multiple con selección unica', config: {
+          has_order_of_answers: true,
+          has_min_checked: true,
+          has_max_checked: true
+        }
+      },
+      {
+        name: 'open-answer', description: 'Pregunta de tipo abierta', config: {
+          has_min_length: true,
+          has_max_length: true,
+          has_type_input: true,
+        }
+      },
     ]
     for await (const category of question_categories) {
       const exists: any = await questionCategoryService.findBy({
