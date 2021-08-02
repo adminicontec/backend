@@ -41,7 +41,8 @@ class MasterCourseService {
       fullname: "",
       displayname: "",
       categoryid: 0,
-      description: ""
+      description: "",
+      classhours: ""
     }
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
@@ -65,6 +66,8 @@ class MasterCourseService {
 
       courses.forEach(courseDetail => {
 
+        const customClassHours = courseDetail.customfields.find(el => el.shortname == 'programa_horas');
+
         // compose the final response object
         singleCourse = {
           id: courseDetail.id,
@@ -73,7 +76,8 @@ class MasterCourseService {
           fullname: courseDetail.fullname,
           displayname: courseDetail.displayname,
           categoryid: courseDetail.categoryid,
-          description: courseDetail.summary
+          description: courseDetail.summary,
+          classhours: customClassHours.value
         }
         responseCourses.push(singleCourse);
 
