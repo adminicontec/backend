@@ -34,6 +34,7 @@ import {courseSchedulingTypeService} from '@scnode_app/services/default/admin/co
 
 // @import_types Import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
+import { IModulePermission } from "@scnode_app/types/default/global/permissionTypes";
 // @end
 
 class InitSeeder extends DefaultPluginsSeederSeederService {
@@ -410,7 +411,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let module_ids = {}
     let module_permission_ids = {}
 
-    const modules = [
+    const modules: IModulePermission[] = [
       {
         name: 'global_permissions', description: 'Este modulo contiene los permisos globales', permissions: [
           { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
@@ -513,6 +514,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:modular_viewer', description: 'Consultar modulares'},
         {name: 'permission:modular_menu_access', description: 'Menu de modulares'},
       ]},
+      {name: 'module:survey', description: 'Modulo que permite la creación de encuestas', permissions: [
+        {name: 'permission:survey_create', description: 'Crear contenido'},
+        {name: 'permission:survey_update', description: 'Actualizar contenido'},
+        {name: 'permission:survey_delete', description: 'Eliminar contenido'},
+        {name: 'permission:survey_menu_access', description: 'Menu de encuesta'}
+      ]}
     ]
 
     for await (const m of modules) {
@@ -622,6 +629,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:courses_menu_access'],
           module_permission_ids['permission:course_scheduling_menu_access'],
           module_permission_ids['permission:modular_menu_access'],
+
+          // @INFO Permisos para el modulo editor (Catalogador)
+          module_permission_ids['permission:survey_menu_access'],
+          module_permission_ids['permission:survey_create'],
+          module_permission_ids['permission:survey_update'],
+          module_permission_ids['permission:survey_delete'],
         ],
         homes: [
           home_ids['admin']

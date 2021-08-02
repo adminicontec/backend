@@ -16,7 +16,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import {IQuestion,IQuestionOptions} from '@scnode_app/types/default/admin/academicContent/questions/questionTypes'
 // @end
 
-class QuestionSelectRangeService extends DefaultAdminAcademicContentQuestionsQuestionService {
+class QuestionMultipleChoiceUniqueAnswerService extends DefaultAdminAcademicContentQuestionsQuestionService {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -43,21 +43,19 @@ class QuestionSelectRangeService extends DefaultAdminAcademicContentQuestionsQue
     // if (validateValueRequired.status === 'error') return validateValueRequired
 
     // @INFO: Si se esta creando el registro se debe validar siempre que exista al menos una respuesta
-    // if (options.action === 'new') {
-    //   if (answers.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'question.answers.required'})
-    // }
-
-    // TODO: Validar configuración del rango
+    if (options.action === 'new') {
+        if (answers.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'question.answers.required'})
+    }
 
     if (!params.force) {
       // @INFO: Validando que exista al menos 1 respuesta correcta para este tipo de pregunta
-      // const answersCorrected = await this.getAnswersCorrected(answers)
-      // if (answersCorrected.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'question.answers.answer_corrected_required', params: {number: 1}}})
-      // if (answersCorrected.length > 1) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'question.answers.answer_corrected_limit', params: {number: 1}}})
+      const answersCorrected = await this.getAnswersCorrected(answers)
+      if (answersCorrected.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'question.answers.answer_corrected_required', params: {number: 1}}})
+      if (answersCorrected.length > 1) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'question.answers.answer_corrected_limit', params: {number: 1}}})
 
-      // // @INFO: Validando el valor de la pregunta contra el valor de las respuestas
-      // const validateValue = await this.validateValue(params, options, answers)
-      // if (validateValue.status === 'error') return validateValue
+      // @INFO: Validando el valor de la pregunta contra el valor de las respuestas
+      const validateValue = await this.validateValue(params, options, answers)
+      if (validateValue.status === 'error') return validateValue
 
     }
 
@@ -67,8 +65,7 @@ class QuestionSelectRangeService extends DefaultAdminAcademicContentQuestionsQue
       }
     })
 }
-
 }
 
-export const questionSelectRangeService = new QuestionSelectRangeService();
-export { QuestionSelectRangeService as DefaultAdminAcademicContentQuestionsQuestionSelectRangeService };
+export const questionMultipleChoiceUniqueAnswerService = new QuestionMultipleChoiceUniqueAnswerService();
+export { QuestionMultipleChoiceUniqueAnswerService as DefaultAdminAcademicContentQuestionsQuestionMultipleChoiceUniqueAnswerService };

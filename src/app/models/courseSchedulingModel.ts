@@ -67,6 +67,10 @@ const CourseSchedulingSchema = new Schema({
     ref: "City",
     required: true
   },
+  country: {
+    type: Schema.Types.ObjectId,
+    ref: "Country"
+  },
   amountParticipants: {
     type: Schema.Types.Number,
     default: 0

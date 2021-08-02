@@ -166,6 +166,7 @@ class CountryService {
       .select(select)
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
+      .sort({name: 1})
     } catch (e) {}
 
     return responseUtility.buildResponseSuccess('json', null, {
