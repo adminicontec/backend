@@ -49,7 +49,7 @@ class MoodleCourseService {
         value = params.shortName;
       }
 
-      console.log("Field: " + field);
+      console.log("MoodleCourseService.findBy() Field: " + field);
       let moodleParamsInfoCourse = {
         wstoken: moodle_setup.wstoken,
         wsfunction: moodle_setup.services.courses.getByField,
@@ -205,10 +205,7 @@ class MoodleCourseService {
         }
       }
     })
-
-
   }
-
 
 }
 

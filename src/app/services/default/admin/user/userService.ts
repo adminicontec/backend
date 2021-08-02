@@ -7,7 +7,8 @@ const ObjectID = require('mongodb').ObjectID
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
-import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 // @end
 
 // @import config
@@ -114,7 +115,7 @@ class UserService {
       // 3. securityStamp
       // 4. concurrencyStamp
 
-      console.log("--> ");
+      console.log("UserService.insertOrUpdate()--> ");
       console.log(params);
 
       if (!params.profile) {
@@ -228,10 +229,13 @@ class UserService {
 
         params.passwordHash = await this.hashPassword(params.password);
 
-        console.log("User --> " + params.username);
+        console.log("User --> " + params.username + "[Country]:" + params.profile.country);
         try {
-          const { _id } = await User.create(params)
 
+          const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
+          let userParams = params;
+          userParams.profile.country = respCountry.country._id;
+          const { _id } = await User.create(userParams)
 
           console.log("Get created  User --> ");
           const response: any = await User.findOne({ _id })
@@ -255,9 +259,13 @@ class UserService {
               console.log("Moodle: user NO exists ");
               // [revisión[]
               var paramsMoodleUser: IMoodleUser = {
+                city: params.profile.city,
+                country: params.profile.country,
+                documentNumber: params.profile.doc_number,
                 email: params.email,
                 username: params.username,
                 password: params.password,
+                phonenumber: params.phoneNumber,
                 firstname: params.profile.first_name,
                 lastname: params.profile.last_name,
                 fecha_nacimiento: params.profile.birthDate,
@@ -282,7 +290,7 @@ class UserService {
               if (respMoodle2.status === 'success') {
                 if (respMoodle2.user.id && respMoodle2.user.username) {
 
-                  await User.findByIdAndUpdate(_id, {moodle_id: respMoodle2.user.id}, {
+                  await User.findByIdAndUpdate(_id, { moodle_id: respMoodle2.user.id }, {
                     useFindAndModify: false,
                     new: true,
                     lean: true,
@@ -291,20 +299,18 @@ class UserService {
 
                 }
                 else {
-                  await this.delete({id: _id})
-                  return responseUtility.buildResponseFailed('json', null, {error_key: 'moodle_user.insertOrUpdate.failed'})
+                  await this.delete({ id: _id })
+                  return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
                 }
               }
               else {
-                await this.delete({id: _id})
-                return responseUtility.buildResponseFailed('json', null, {error_key: 'moodle_user.insertOrUpdate.failed'})
+                await this.delete({ id: _id })
+                return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
               }
-
             }
             else {
               console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
             }
-
           }
 
           // @INFO: Se envia email de bienvenida
