@@ -9,19 +9,20 @@ export interface IMoodleUser {
   firstname: string,      // Nombre de Usuario
   lastname: string,       // Apellido de Usuario
 
+  phonenumber?: string,   // teléfono de contacto de Usuario
   documentNumber?: string, // numero de documento del usuario
   city?: string,          // ciudad del usuario
-  country?: string,        // País del usuario
+  country?: string,       // País del usuario
 
   regional?: string,      // Campo opcional: regional a la que pertenece
   fecha_nacimiento?: string, // Campo opcional: fecha de nacimiento (Unix time)
   email_2?: string,       // Campo opcional: email alternativo
   cargo?: string,         // Campo opcional: cargo dentro de la empresa
-  profesion?:string,      // Campo opcional: profesion
-  nivel_educativo?:string, // Campo opcional: Nivel educativo
-  empresa?:string,        // Campo opcional: empresa
-  origen?:string,         // Campo opcional: Origen ??
-  genero?:string,         // Campo opcional: género
+  profesion?: string,     // Campo opcional: profesion
+  nivel_educativo?: string, // Campo opcional: Nivel educativo
+  empresa?: string,       // Campo opcional: empresa
+  origen?: string,        // Campo opcional: Origen ??
+  genero?: string,        // Campo opcional: género
   id?: string             // Identificador del usuario en Moodle
 }
 //@end

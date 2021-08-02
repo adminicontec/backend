@@ -2,6 +2,7 @@
 // @end
 
 // @import services
+import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 // @end
 
 // @import utilities
@@ -49,7 +50,7 @@ class MoodleUserService {
         value = params.username;
       }
 
-      console.log("MoodleUserService() => Field: " + field + " - Value: " + value);
+      console.log("MoodleUserService.findBy() => Field: " + field + " - Value: " + value);
       // 2. Validación si Existe Usuario en Moodle
       let moodleParams = {
         wstoken: moodle_setup.wstoken,
@@ -110,7 +111,7 @@ class MoodleUserService {
   }
 
   public insertOrUpdate = async (params: IMoodleUser) => {
-    const customFieldNamesArray=  [ "regional",  "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
+    const customFieldNamesArray = ["regional", "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
     var posArray = 0;
     const prefix = 'users[0][customfields][';
     const sufixType = '][type]';
@@ -122,6 +123,21 @@ class MoodleUserService {
     var jsonPropertyValue = 'users[0][customfields][0][value]';
     var customFieldValue = '';
 
+    //#region Process Country; send ISO-2
+    var countryCode = "";
+    if (params.country) {
+      var country = params.country;
+      const response: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: country }] })
+      if (response.status === 'success') {
+        countryCode = response.country.iso2;
+        console.log("==> " + countryCode);
+      }
+      else {
+        countryCode = "CO";  // by default
+        console.log("==> " + "NO country");
+      }
+    }
+    //#endregion
 
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
@@ -134,20 +150,20 @@ class MoodleUserService {
       'users[0][lastname]': params.lastname,
       'users[0][idnumber]': params.documentNumber,
       'users[0][city]': params.city,
-      'users[0][country]': params.country,
-
+      'users[0][country]': countryCode,
+      'users[0][phone1]': params.phonenumber,
     };
 
-    for (let p in params){
+    for (let p in params) {
 
-      var cf = customFieldNamesArray.find( field => field == p);
-      if(cf != null && params[p] != null) {
+      var cf = customFieldNamesArray.find(field => field == p);
+      if (cf != null && params[p] != null) {
         jsonPropertyName = prefix + posArray + sufixType;
         customFieldType = p;
 
-        jsonPropertyValue =  prefix + posArray + sufixValue;
+        jsonPropertyValue = prefix + posArray + sufixValue;
 
-        if(cf == 'fechaNacimiento'){
+        if (cf == 'fechaNacimiento') {
           customFieldValue = generalUtility.unixTime(params[p]).toString();
         }
         else
@@ -160,8 +176,8 @@ class MoodleUserService {
     }
 
 
-  console.log("--------------- Create user in Moodle with: ---------------------------");
-  console.log(moodleParams);
+    console.log("--------------- Create user in Moodle with: ---------------------------");
+    console.log(moodleParams);
 
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {

@@ -5,7 +5,12 @@
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
-import { countryService } from '@scnode_app/services/default/admin/country/countryService'
+import { userService } from '../user/userService';
+
+import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
+import { moodleUserService } from '../../moodle/user/moodleUserService';
+import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+
 
 // @end
 
@@ -28,11 +33,8 @@ import { Enrollment, CourseSchedulingDetails } from '@scnode_app/models'
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
-import { userService } from '../user/userService';
-import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
-import { moodleUserService } from '../../moodle/user/moodleUserService';
+import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
-import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
 import moment from 'moment';
 // @end
 
@@ -266,7 +268,7 @@ class EnrollmentService {
               // console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
 
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
-              var cvUserParams = {
+              var cvUserParams: IUser = {
                 username: params.user,
                 email: params.email,
                 password: passw,
@@ -278,8 +280,16 @@ class EnrollmentService {
                   doc_type: params.documentType,
                   doc_number: params.documentID,
                   city: params.city,
+                  country: params.country,
                   birthDate: params.birthdate,
-                  alternativeEmail: params.emailAlt
+                  alternativeEmail: params.emailAlt,
+                  genre: params.genre,
+                  regional: params.regional,
+                  company: params.company,
+                  carreer: params.title,
+                  currentPosition: params.job,
+                  educationalLevel: params.educationalLevel,
+                  origen: params.origin,
                 },
                 sendEmail: true
               }
@@ -294,6 +304,9 @@ class EnrollmentService {
               if (respoUser.status == "success") {
                 params.user = respoUser.user._id
                 userEnrollment = respoUser.user
+
+                // Usuario creado en Campus y en moodle:
+
                 // console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
               }
               else {
@@ -353,7 +366,7 @@ class EnrollmentService {
             }
             //#endregion
 
-            //#region ENORLLMENT EN MOODLE
+            //#region ENROLLMENT EN MOODLE
             // console.log("------------- ENROLLMENT IN MOODLE -------------");
             // 2. Validación si Existe Usuario en Moodle
             // console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
@@ -365,24 +378,40 @@ class EnrollmentService {
             if (respMoodle2.status == "success") {
               if (respMoodle2.user == null) {
                 // console.log("Moodle: user NO exists ");
+
+                // paramToEnrollment.user.moodleCity =
+                // paramToEnrollment.user.moodleCountry = params.country;
+                // paramToEnrollment.user.moodleCustomRegional = params.regional;
+                // paramToEnrollment.user.moodleCustomBirthDate = params.birthdate;
+                // paramToEnrollment.user.moodleCustomEmailAlt = params.emailAlt;
+                // paramToEnrollment.user.moodleCustomJob = params.job;
+                // paramToEnrollment.user.moodleCustomTitle = params.title;
+                // paramToEnrollment.user.moodleCustomEducationalLevel = params.educationalLevel;
+                // paramToEnrollment.user.moodleCustomCompany = params.company;
+                // paramToEnrollment.user.moodleCustomGenre = params.genre;
+                // paramToEnrollment.user.moodleCustomOrigin = params.origin;
+
                 var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
                   firstname: paramToEnrollment.user.moodleFirstName,
                   lastname: paramToEnrollment.user.moodleLastName,
                   password: passw,
                   email: paramToEnrollment.user.moodleEmail,
                   username: paramToEnrollment.user.moodleUserName,
-                  city: paramToEnrollment.user.moodleCity,
-                  country: paramToEnrollment.user.moodleCountry,
-                  regional:  paramToEnrollment.user.moodleCustomEmailAlt,
-                  fecha_nacimiento: paramToEnrollment.user.moodleCustomBirthDate,
-                  cargo: paramToEnrollment.user.moodleCustomJob,
-                  profesion:  paramToEnrollment.user.moodleCustomEmailAlt,
-                  empresa: paramToEnrollment.user.moodleCustomCompany,
-                  genero:  paramToEnrollment.user.moodleCustomGenre,
-                  email_2: paramToEnrollment.user.moodleCustomEmailAlt,
-                  nivel_educativo: paramToEnrollment.user.moodleCustomEmailAlt,
-                  origen:  paramToEnrollment.user.moodleCustomEmailAlt,
+                  city: params.city,
+                  country: params.country,
+                  regional: params.regional,
+                  fecha_nacimiento: params.birthdate,
+                  cargo: params.job,
+                  profesion: params.title,
+                  empresa: params.company,
+                  genero: params.genre,
+                  email_2: params.emailAlt,
+                  nivel_educativo: params.educationalLevel,
+                  origen: params.origin,
                 }
+                console.log("Antes de carga en moodle. ");
+                console.log(paramsMoodleUser);
+
                 // crear nuevo uusario en MOODLE
                 let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
                 paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
@@ -508,25 +537,9 @@ class EnrollmentService {
 
     let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
     if (dataFromWorksheet != null) {
-      // console.log("Sheet content:")
+      console.log("Sheet content:")
 
       for await (const element of dataFromWorksheet) {
-        //#region Process Country; send ISO-2
-        var countryCode = "";
-        if (element['País']) {
-          var country = element['País'];
-          const response: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: country }] })
-          if (response.status === 'success') {
-            countryCode = response.country.iso2;
-            console.log("==> " + countryCode);
-          }
-          else {
-            countryCode = "CO";  // by default
-            console.log("==> " + "NO country");
-          }
-        }
-        //#endregion
-
         singleUserEnrollmentContent =
         {
           documentType: element['Tipo Documento'],
@@ -536,12 +549,12 @@ class EnrollmentService {
           email: element['Correo Electrónico'],
           firstname: element['Nombres'],
           lastname: element['Apellidos'],
-          phoneNumber: element['N° Celular'],
+          phoneNumber: element['N° Celular'].toString(),
           city: element['Ciudad'],
-          country: countryCode,
+          country: element['País'],
           emailAlt: element['Correo Alt'],
           regional: element['Regional'],
-          birthdate: element['Fecha Nacimiento'],
+          birthdate: element['Fecha Nacimiento'].toString(),
           job: element['Cargo'],
           title: element['Profesión'],
           educationalLevel: element['Nivel Educativo'],
@@ -555,8 +568,8 @@ class EnrollmentService {
           sendEmail: params.sendEmail
         }
 
-        // console.log(singleUserEnrollmentContent);
-        // console.log(">>>>>>>>>>>>>>>>>>>>")
+        console.log(singleUserEnrollmentContent);
+        console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
         const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
 
         // build process Response

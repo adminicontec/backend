@@ -20,6 +20,8 @@ export interface IUser {
   lockoutEnabled?: boolean,
   accessFailedCount?: number,
   profile?: {
+    doc_type?:string,
+    doc_number?:string,
     first_name?: string, // Nombres del usuario
     last_name?: string, // Apellidos del usuario
     avatarImageUrl?: string, // Avatar del usuario
