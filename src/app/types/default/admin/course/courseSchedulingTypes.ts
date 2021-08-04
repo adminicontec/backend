@@ -49,4 +49,8 @@ export interface ICourseSchedulingQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
 }
+
+export interface ICourseSchedulingReport {
+  course_scheduling: string // Identificador del programa
+}
 //@end

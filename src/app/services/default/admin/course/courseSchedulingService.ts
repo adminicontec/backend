@@ -16,6 +16,7 @@ import { customs } from '@scnode_core/config/globals'
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
+import {htmlPdfUtility} from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
@@ -24,7 +25,12 @@ import { City, Country, Course, CourseScheduling, CourseSchedulingDetails, Cours
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourseScheduling, ICourseSchedulingDelete, ICourseSchedulingQuery } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
+import {
+  ICourseScheduling,
+  ICourseSchedulingDelete,
+  ICourseSchedulingQuery,
+  ICourseSchedulingReport
+} from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 // @end
 
 class CourseSchedulingService {
@@ -501,6 +507,138 @@ class CourseSchedulingService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que permite generar un reporte en PDF
+   * @param params
+   * @returns
+   */
+  public generatePdfReport = async (params: ICourseSchedulingReport) => {
+
+    try {
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
+
+      let where = {
+        _id: params.course_scheduling
+      }
+
+      const register: any = await CourseScheduling.findOne(where)
+      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
+      .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+      .populate({ path: 'modular', select: 'id name' })
+      .populate({ path: 'program', select: 'id name moodle_id code' })
+      .populate({ path: 'schedulingType', select: 'id name' })
+      .populate({ path: 'schedulingStatus', select: 'id name' })
+      .populate({ path: 'regional', select: 'id name' })
+      .populate({ path: 'city', select: 'id name' })
+      .populate({ path: 'country', select: 'id name' })
+      // .populate({path: 'course', select: 'id name'})
+      // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+      .select(select)
+      .lean()
+
+      if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
+
+      let total_scheduling = 0
+      let courses = []
+
+      const detailSessions = await CourseSchedulingDetails.find({
+        course_scheduling: register._id
+      }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
+      .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+      .populate({ path: 'course', select: 'id name moodle_id' })
+      .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+      .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+      .select(select)
+      .lean()
+
+      detailSessions.map((element, index) => {
+        let duration_scheduling = 0
+
+        if (element.sessions.length === 0) {
+          total_scheduling += parseInt(element.duration)
+          duration_scheduling = parseInt(element.duration)
+        } else {
+          element.sessions.map((session) => {
+            total_scheduling += parseInt(session.duration)
+            duration_scheduling += parseInt(session.duration)
+          })
+        }
+        let item = {
+          course_code: 'xxx',
+          course_name: (element.course && element.course.name) ? element.course.name : '',
+          course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+          consecutive: index + 1,
+          teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+          start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
+          end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
+          schedule: ''
+        }
+        courses.push(item)
+      })
+
+      let scheduling_free = register.duration
+      if (total_scheduling < register.duration) {
+        scheduling_free = register.duration - total_scheduling
+      } else if (total_scheduling >= register.duration) {
+        scheduling_free = 0
+      }
+
+      const responsePdf = await htmlPdfUtility.generatePdf({
+        from: 'file',
+        file: {
+          path: '/admin/course/courseSchedulingReport',
+          type: 'hbs',
+          context: {
+            program_name: (register.program && register.program.name) ? register.program.name : '',
+            service_id: (register.metadata && register.metadata.service_id) ? register.metadata.service_id : '',
+            regional_name: (register.regional && register.regional.name) ? register.regional.name : '',
+            cliente_name: (register.client) ? register.client : '',
+            schedule_mode: (register.schedulingMode && register.schedulingMode.name) ? register.schedulingMode.name : '',
+            service_city: (register.city && register.city.name) ? register.city.name : '',
+            courses: courses,
+            total_scheduling: (total_scheduling) ? generalUtility.getDurationFormated(total_scheduling) : '0h',
+            scheduling_free: (scheduling_free) ? generalUtility.getDurationFormated(scheduling_free) : '0h',
+            observations: (register.observations) ? register.observations : '',
+          }
+        },
+        to_file: {
+          file: {
+            name: `${register.metadata.service_id}_${register.program.code}.pdf`,
+          },
+          path: 'admin/course/courseSchedulingReport'
+        },
+        options: {
+          // orientation: "landscape",
+          format: "Tabloid",
+          border: {
+            top: "15mm",            // default is 0, units: mm, cm, in, px
+            right: "15mm",
+            bottom: "12mm",
+            left: "15mm"
+          },
+          "footer": {
+            "height": "10mm",
+            "contents": {
+              // first: 'Cover page',
+              // 2: 'Second page', // Any page number is working. 1-based index
+              default: '<div style="font-size:0.8rem"><span >{{page}}</span>/<span>{{pages}}</span></div>', // fallback value
+              // last: 'Last Page'
+            }
+          }
+        },
+      })
+
+      if (responsePdf.status === 'error') return responsePdf
+      console.log('responsePdf',responsePdf)
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        path: responsePdf.path
+      }})
+    } catch (error) {
+      console.log('error', error)
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
 }
