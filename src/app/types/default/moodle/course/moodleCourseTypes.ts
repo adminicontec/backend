@@ -23,6 +23,7 @@ export interface IMoodleCourse{
   startDate?: number | string,
   endDate?: number | string,
   lang?: string,
-  masterId?:number | string
+  masterId?:number | string,
+  customClassHours?: string,
 }
 //@end

@@ -97,6 +97,16 @@ class CourseSchedulingController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+  /**
+	 * Metodo que permite generar reporte
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public generatePdfReport = async (req: Request, res: Response) => {
+		const response = await courseSchedulingService.generatePdfReport(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+	}
 }
 
 export const courseSchedulingController = new CourseSchedulingController();

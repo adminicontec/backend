@@ -15,6 +15,18 @@ export interface IEnrollment{
   courseID: string,       // ID de curso (listado de cursos en CV)
   rolename?: string,
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
+  regional?: string,
+  city?:string,
+  country?:string,
+  birthdate?:string,
+  emailAlt?:string,
+  job?:string,
+  title?:string,
+  educationalLevel?:string,
+  company?:string,
+  genre?:string,
+  origin?:string,
+
   id?: string             // Identificador del Enrollment
 }
 

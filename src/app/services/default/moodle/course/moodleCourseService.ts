@@ -49,7 +49,7 @@ class MoodleCourseService {
         value = params.shortName;
       }
 
-      console.log("Field: " + field);
+      console.log("MoodleCourseService.findBy() Field: " + field);
       let moodleParamsInfoCourse = {
         wstoken: moodle_setup.wstoken,
         wsfunction: moodle_setup.services.courses.getByField,
@@ -134,11 +134,53 @@ class MoodleCourseService {
           }
         }
       });
-
     }
 
   }
 
+
+  public update = async (params: IMoodleCourse) => {
+
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.courses.update,
+      moodlewsrestformat: moodle_setup.restformat,
+      'courses[0][id]': params.id,
+      'courses[0][startdate]': generalUtility.unixTime(params.startDate.toString()),
+      'courses[0][enddate]': generalUtility.unixTime(params.endDate.toString()),
+      'courses[0][customfields][0][shortname]': 'programa_horas',
+      'courses[0][customfields][0][value]': params.customClassHours,
+    };
+
+    console.log("Moodle: Actualización de curso.");
+    console.log(moodleParams);
+    console.log("-------------------");
+
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    console.log("============");
+
+    console.log(respMoodle);
+
+    if (respMoodle.exception) {// error
+      console.log("Moodle: ERROR - EXCEPTION." + JSON.stringify(respMoodle));
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } }
+        })
+    }
+    else {
+      console.log("Moodle: SUCCESS." + JSON.stringify(respMoodle));
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: {
+            id: params.id
+          }
+        }
+      });
+
+    }
+  }
 
   public createFromMaster = async (params: IMoodleCourse) => {
     let moodleParams = {
@@ -150,7 +192,7 @@ class MoodleCourseService {
       'shortname': params.shortName,
       'fullname': params.fullName,
       'options[0][name]': 'users',
-      'options[0][value]': 0
+      'options[0][value]': 0,
     };
 
     console.log("Moodle: Copia de curso Maestro " + params.masterId);
@@ -165,30 +207,30 @@ class MoodleCourseService {
 
       if (respMoodle.errorcode === "invalidcourseid") {
         return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: {
-            key: 'moodle_course.insertOrUpdate.course_not_found',
-            params: { id: params.masterId }
-          }
-        });
+          {
+            error_key: {
+              key: 'moodle_course.insertOrUpdate.course_not_found',
+              params: { id: params.masterId }
+            }
+          });
       }
       if (respMoodle.errorcode === "invalidrecord") {
         return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: {
-            key: 'moodle_course.insertOrUpdate.category_not_found',
-            params: { id: params.categoryId }
-          }
-        });
+          {
+            error_key: {
+              key: 'moodle_course.insertOrUpdate.category_not_found',
+              params: { id: params.categoryId }
+            }
+          });
       }
       if (respMoodle.errorcode === "shortnametaken") {
         return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: {
-            key: 'moodle_course.insertOrUpdate.already_exists',
-            params: { name: params.shortName }
-          }
-        });
+          {
+            error_key: {
+              key: 'moodle_course.insertOrUpdate.already_exists',
+              params: { name: params.shortName }
+            }
+          });
       }
 
     }
@@ -196,19 +238,23 @@ class MoodleCourseService {
     console.log("============");
 
     // Take dates and update course data:
+    params.id = respMoodle.id;
+    let respMoodleUpdate: any = await this.update(params);
+    if (respMoodleUpdate.status === 'success') {
 
-    return responseUtility.buildResponseSuccess('json', null, {
-      additional_parameters: {
-        course: {
-          id: respMoodle.id,
-          name: respMoodle.shortname
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: {
+            id: respMoodleUpdate.course.id,
+            name: respMoodle.shortname
+          }
         }
-      }
-    })
-
-
+      })
+    }
+    else {
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+    }
   }
-
 
 }
 

@@ -65,7 +65,7 @@ const CourseSchedulingSchema = new Schema({
   city: {
     type: Schema.Types.ObjectId,
     ref: "City",
-    required: true
+    required: false
   },
   country: {
     type: Schema.Types.ObjectId,

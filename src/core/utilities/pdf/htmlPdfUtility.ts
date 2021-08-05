@@ -1,10 +1,11 @@
 // @import_dependencies_node Import libraries
 const pdf = require('html-pdf');
 const Handlebars = require("handlebars");
+import path from "path";
 // @end
 
 // @import config
-import { environment, dist_dir, pdf_config } from "@scnode_core/config/globals";
+import { host, pdf_config, public_dir, attached } from "@scnode_core/config/globals";
 // @end
 
 // @import utilities
@@ -74,22 +75,51 @@ class HtmlPdfUtility {
 
       if (!content) return responseUtility.buildResponseFailed('json', null, {error_key: 'pdf.html_pdf.content_config_required'})
 
-      const pdfGenerated: {buffer: any, base64: any} | null = await new Promise((resolve, reject) => {
-        pdf.create(content, configPdf).toBuffer(function(err, buffer) {
-          if (err) return null
-          resolve({
-            buffer: buffer,
-            base64: buffer.toString('base64')
+      if (config.to_file) {
+        let driver = attached['driver'];
+        let attached_config = attached[driver];
+
+        const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+        let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+        if (attached_config.base_path_type === "absolute") {
+          base_path = upload_config_base_path
+        }
+
+        const path_upload = (config.to_file.path && config.to_file.path !== "") ? `pdfs/${config.to_file.path}/` : "pdfs/";
+
+        const full_path_file = `${base_path}/${path_upload}${config.to_file.file.name}`;
+        const public_path_file = `${host}/uploads/${path_upload}${config.to_file.file.name}`;
+
+        const pdfGenerated: {file: any} | null = await new Promise((resolve, reject) => {
+          pdf.create(content, configPdf).toFile(full_path_file, function(err, res) {
+            if (err) return null
+            resolve({
+              file: res.filename,
+            })
           })
-        });
-      })
+        })
+        if (!pdfGenerated) return responseUtility.buildResponseFailed('json', null, {error_key: 'pdf.html_pdf.fail_to_generate'})
 
-      if (!pdfGenerated) return responseUtility.buildResponseFailed('json', null, {error_key: 'pdf.html_pdf.fail_to_generate'})
+        // @INFO: Carga del PDF a un servidor para su futura consulta
+        response.path = public_path_file
+      } else {
+        const pdfGenerated: {buffer: any, base64: any} | null = await new Promise((resolve, reject) => {
+          pdf.create(content, configPdf).toBuffer(function(err, buffer) {
+            if (err) return null
+            resolve({
+              buffer: buffer,
+              base64: buffer.toString('base64')
+            })
+          });
+        })
 
-      response.buffer = pdfGenerated.base64
+        if (!pdfGenerated) return responseUtility.buildResponseFailed('json', null, {error_key: 'pdf.html_pdf.fail_to_generate'})
 
-      // @INFO: Carga del PDF a un servidor para su futura consulta
-      response.path = await this.updloadPdfGenerated(config, pdfGenerated.buffer)
+        response.buffer = pdfGenerated.base64
+
+        // @INFO: Carga del PDF a un servidor para su futura consulta
+        response.path = await this.updloadPdfGenerated(config, pdfGenerated.buffer)
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         ...response

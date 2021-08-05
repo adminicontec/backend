@@ -63,11 +63,19 @@ export interface IAttachedConfig {
   path_upload_default?: string // Ubicación por defecto donde se alojaran los PDF
 }
 
+export interface IToFileConfig {
+  file: {
+    name: string,   // Nombre original del archivo adjunto (Ex: car.jpg)
+  },
+  path: string // Ubicación por defecto donde se alojaran los PDF
+}
+
 export interface IGeneratePdfConfig {
   from     : 'file' | 'content'  // Origen del tipo de información a convertir en PDF (File: Archivo hbs o html | content: Contenido Html)
   file?    : IPdfFromFile        // Configuración del archivo a convertir (Solo aplica si es from: file)
   content? : IPdfFromContent     // Configuración del contenido HTML a convertir (Solo aplica si es from: content)
   options? : IPdfOptions         // Opciones de configuración del PDF
   attached?: IAttachedConfig,    // Configuración para la carga del PDF a un servidor
+  to_file?: IToFileConfig
 }
 //@end

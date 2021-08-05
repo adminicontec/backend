@@ -37,7 +37,7 @@ class AcademicResourceConfigCategorySurveyService extends DefaultDataAcademicCon
      * @param params Objeto con los datos para buscar la información del recurso
      * @returns
      */
-   protected getResourceContainer = async (params: IFetchAcademicResourceData) => {
+  protected getResourceContainer = async (params: IFetchAcademicResourceData) => {
 
     if (!params.survey) return responseUtility.buildResponseFailed('json', null, {error_key: 'academicResource.fetchAcademicResourceData.survey.invalid'})
 
