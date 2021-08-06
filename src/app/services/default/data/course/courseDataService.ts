@@ -39,7 +39,7 @@ class CourseDataService {
 
     try {
 
-      let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content'
+      let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content generalities requirements benefits'
 
       let where = {}
 
