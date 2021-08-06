@@ -49,7 +49,7 @@ class MasterCategoryService {
     };
 
 
-    console.log("--------------- Fetch courses in Moodle : ---------------------------");
+    console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
     let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {

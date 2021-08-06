@@ -77,9 +77,21 @@ const CourseSchema = new Schema({
   coverUrl: {
     type: Schema.Types.String
   },
+  generalities: {
+    type: Schema.Types.String,
+    required: false,
+  },
+  requirements: {
+    type: Schema.Types.String,
+    required: false,
+  },
   content: {
     type: Schema.Types.Mixed,
     required: true,
+  },
+  benefits: {
+    type: Schema.Types.Mixed,
+    required: false,
   },
   // @end
 }, {
