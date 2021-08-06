@@ -540,6 +540,16 @@ class EnrollmentService {
       console.log("Sheet content:")
 
       for await (const element of dataFromWorksheet) {
+
+        let dob;
+        // check for element['Fecha Nacimiento']
+        if (element['Fecha Nacimiento']) {
+          dob = moment.utc(element['Fecha Nacimiento'].toString()).format('YYYY-MM-DD');
+        }
+        else {
+          dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
+        }
+
         singleUserEnrollmentContent =
         {
           documentType: element['Tipo Documento'],
@@ -554,7 +564,7 @@ class EnrollmentService {
           country: element['País'],
           emailAlt: element['Correo Alt'],
           regional: element['Regional'],
-          birthdate: element['Fecha Nacimiento'].toString(),
+          birthdate: dob,
           job: element['Cargo'],
           title: element['Profesión'],
           educationalLevel: element['Nivel Educativo'],
