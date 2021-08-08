@@ -90,6 +90,11 @@ class HtmlPdfUtility {
         const full_path_file = `${base_path}/${path_upload}${config.to_file.file.name}`;
         const public_path_file = `${host}/uploads/${path_upload}${config.to_file.file.name}`;
 
+        const fileExists = await fileUtility.fileExists(full_path_file)
+        if (fileExists) {
+          await fileUtility.removeFileSync(full_path_file)
+        }
+
         const pdfGenerated: {file: any} | null = await new Promise((resolve, reject) => {
           pdf.create(content, configPdf).toFile(full_path_file, function(err, res) {
             if (err) return null

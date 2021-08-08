@@ -583,29 +583,63 @@ class CourseSchedulingService {
       .select(select)
       .lean()
 
+      let session_count = 0
+
       detailSessions.map((element, index) => {
-        let duration_scheduling = 0
+        let duration_scheduling = parseInt(element.duration)
+        let first_session = true
 
         if (element.sessions.length === 0) {
           total_scheduling += parseInt(element.duration)
-          duration_scheduling = parseInt(element.duration)
+
+          let item = {
+            course_code: 'xxx',
+            course_name: (element.course && element.course.name) ? element.course.name : '',
+            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+            course_row_span: 0,
+            consecutive: index + 1,
+            teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+            start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
+            duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
+            schedule: '-',
+          }
+
+          courses.push(item)
         } else {
           element.sessions.map((session) => {
             total_scheduling += parseInt(session.duration)
-            duration_scheduling += parseInt(session.duration)
+
+            let row_content = {
+              course_code: 'xxx',
+              course_name: (element.course && element.course.name) ? element.course.name : '',
+              course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+              course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
+            }
+
+            let schedule = ''
+            if (session.startDate && session.duration) {
+              let endDate = moment(session.startDate).add(session.duration, 'seconds')
+              schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+            }
+            let session_data = {
+              consecutive: session_count + 1,
+              teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+              start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+              duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+              schedule: schedule,
+            }
+            let item = {}
+            if (first_session) {
+              item = {...item, ...row_content, ...session_data}
+            } else {
+              item = {...item, ...session_data}
+            }
+            session_count++
+            first_session = false
+            courses.push(item)
           })
         }
-        let item = {
-          course_code: 'xxx',
-          course_name: (element.course && element.course.name) ? element.course.name : '',
-          course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-          consecutive: index + 1,
-          teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-          start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
-          end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
-          schedule: ''
-        }
-        courses.push(item)
+
       })
 
       let scheduling_free = register.duration
