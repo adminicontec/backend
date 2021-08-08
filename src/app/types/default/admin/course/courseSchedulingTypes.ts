@@ -48,6 +48,7 @@ export interface ICourseSchedulingQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  course_scheduling_code?: string // Busca por codigo
 }
 
 export interface ICourseSchedulingReport {

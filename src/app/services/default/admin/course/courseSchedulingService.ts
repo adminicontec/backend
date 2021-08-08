@@ -489,6 +489,15 @@ class CourseSchedulingService {
       }
     }
 
+    if (filters.course_scheduling_code) {
+      const programs = await Program.find({code: {$regex: '.*' + filters.course_scheduling_code + '.*', $options: 'i' }}).select('id')
+      const program_ids = programs.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+      where['program'] = {$in: program_ids}
+    }
+
     if (filters.user) {
       where['metadata.user'] = filters.user
     }
