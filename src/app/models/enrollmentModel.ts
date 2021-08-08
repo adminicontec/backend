@@ -11,6 +11,10 @@ const EnrollmentSchema = new Schema({
     required: true,
     ref: 'User'
   },
+  course_scheduling: {
+    type: Schema.Types.ObjectId,
+    ref: 'CourseScheduling'
+  },
   email: {
     type: Schema.Types.String,
     required: true,

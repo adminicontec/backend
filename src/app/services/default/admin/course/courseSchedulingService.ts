@@ -413,6 +413,36 @@ class CourseSchedulingService {
   }
 
   /**
+   * Metodo que permite enviar email de desmatriculación a un usuario
+   * @param email Email al usuario que desmatricula
+   * @param paramsTemplate Parametros para construir el email
+   */
+  public sendUnenrollmentUserEmail = async (email: string, paramsTemplate: any) => {
+    try {
+      let path_template = 'user/unenrollmentUser'
+
+      const mail = await mailService.sendMail({
+        emails: [email],
+        mailOptions: {
+          subject: i18nUtility.__('mailer.unenrollment_user.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  /**
    * Metodo que permite hacer borrar un registro
    * @param params Filtros para eliminar
    * @returns
