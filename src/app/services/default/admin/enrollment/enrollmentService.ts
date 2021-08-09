@@ -554,6 +554,8 @@ class EnrollmentService {
 
   public massive = async (params: IMassiveEnrollment) => {
 
+
+    console.log(">>>>>>>>>>> Begin Massive Enrollment")
     let userEnrollmentResponse = [];
     let singleUserEnrollmentContent: IEnrollment;
     // console.log("Begin file process for courseID: " + params.courseID)
@@ -603,6 +605,10 @@ class EnrollmentService {
         }
 
         console.log(singleUserEnrollmentContent);
+        console.log('Tipo: ' + element['Tipo Documento']);
+        console.log('Doc:' +  element['Documento de Identidad']);
+
+
         console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
         const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
 
