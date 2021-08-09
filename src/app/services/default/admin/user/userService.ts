@@ -231,10 +231,11 @@ class UserService {
 
         console.log("User --> " + params.username + "[Country]:" + params.profile.country);
         try {
-
-          const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
           let userParams = params;
-          userParams.profile.country = respCountry.country._id;
+          if (params.profile.country) {
+            const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
+            userParams.profile.country = respCountry.country._id;
+          }
           const { _id } = await User.create(userParams)
 
           console.log("Get created  User --> ");
