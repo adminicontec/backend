@@ -16,7 +16,7 @@ import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
 // @end
 
 // @import models
-import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory} from '@scnode_app/models'
+import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory, AcademicResourceConfigCategory} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -136,6 +136,9 @@ class AuthService {
     // @INFO: Consultando categorias de recursos academicos
     const academicResourceCategories = await AcademicResourceCategory.find().select('id name description config')
 
+    // @INFO: Consultando categorias de recursos academicos
+    const academicResourceConfigCategories = await AcademicResourceConfigCategory.find().select('id name description config')
+
     // @INFO: Consultando categorias de preguntas
     const questionCategories = await QuestionCategory.find().select('id name description config')
 
@@ -171,6 +174,7 @@ class AuthService {
           }
 				},
         academicResourceCategories: academicResourceCategories,
+        academicResourceConfigCategories: academicResourceConfigCategories,
         questionCategories: questionCategories,
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,
