@@ -1017,6 +1017,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const academic_resource_categories = [
       { name: 'survey', description: 'Encuesta', config: {
         has_order_of_questions: true,
+        has_course_modes: true
       }},
     ]
 
@@ -1047,6 +1048,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {
         name: 'survey', description: 'Encuestas', config: {
           has_order_of_questions: true,
+          has_course_modes: true
         }
       },
     ]

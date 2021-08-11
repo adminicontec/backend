@@ -21,6 +21,7 @@ const AcademicResourceCategorySchema = new Schema({
     // has_show_results: {type: Schema.Types.Boolean},
     // has_continue_exercise: {type: Schema.Types.Boolean},
     has_order_of_questions: {type: Schema.Types.Boolean},
+    has_course_modes: {type: Schema.Types.Boolean},
     // has_time_limit: {type: Schema.Types.Boolean},
 
     //@INFO: Utilizado para definir tipos de preguntas admitidas

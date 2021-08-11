@@ -17,5 +17,6 @@ export interface ICourseSchedulingModeQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  moodle_id?: boolean | string // Busca por moodle id
 }
 //@end
