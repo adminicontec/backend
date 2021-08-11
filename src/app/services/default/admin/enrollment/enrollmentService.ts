@@ -160,7 +160,7 @@ class EnrollmentService {
  */
   public insertOrUpdate = async (params: IEnrollment) => {
 
-    console.log("Begin: enrollmentService.insertOrUpdate()" );
+    console.log("Begin: enrollmentService.insertOrUpdate()");
     let roles = {}
     const rolesResponse: any = await roleService.list()
     if (rolesResponse.status === 'success') {
@@ -181,10 +181,12 @@ class EnrollmentService {
         }).select('id teacher')
           .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
           .lean()
-
         for await (const course of courses) {
-          teachers.push(course.teacher._id.toString())
+          if (course.teacher) {
+            teachers.push(course.teacher._id.toString())
+          }
         }
+
       }
     }
 
@@ -250,7 +252,7 @@ class EnrollmentService {
           // console.log('respMoodle', respMoodle);
 
           if (respMoodle.status == "error") {
-            // Curso en Moodle NO existe.
+            console.log('Curso ' + params.courseID + ' en Moodle NO existe.');
             return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
           }
           else {
@@ -261,12 +263,24 @@ class EnrollmentService {
             //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
             var passw = params.password;
 
-            let userEnrollment = null
-            let respCampusDataUser: any = await userService.findBy({ query: QueryValues.ONE, where: [{ field: 'email', value: params.email }] });
+            let userEnrollment = null;
+            let respCampusDataUser: any = null;
+            console.log(">>>>>>>>>>>>>> [CampusVirtual]: reponse");
+
+            // Si username === email --> TIENDA VIRTUAL
+            // Si username === documentID --> Carga Masiva
+
+            respCampusDataUser = await userService.findBy({
+              query: QueryValues.ONE,
+              where: [{ field: 'profile.doc_number', value: params.documentID}]
+            });
+            console.log('By doc_number: ');
+            console.log(respCampusDataUser);
+
 
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
-              // console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+              console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
 
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
               var cvUserParams: IUser = {
@@ -300,7 +314,7 @@ class EnrollmentService {
               paramToEnrollment.user.moodleEmail = params.email;
               paramToEnrollment.user.moodlePassword = passw;
 
-              // Insertar nuevo Usuario si existe
+              // Insertar nuevo Usuario si no existe
               const respoUser = await userService.insertOrUpdate(cvUserParams);
               if (respoUser.status == "success") {
                 params.user = respoUser.user._id
@@ -316,10 +330,13 @@ class EnrollmentService {
               }
             }
             else {
+              console.log(">>[CampusVirtual]: El usuario existe.");
+
+
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
                 return responseUtility.buildResponseFailed('json')
               }
-              userEnrollment = respCampusDataUser.user
+              userEnrollment = respCampusDataUser.userD
               params.user = respCampusDataUser.user._id
 
               // Usuario ya existe en CV:
@@ -336,17 +353,18 @@ class EnrollmentService {
             //#endregion
 
             //#region [ 3. Creación de la matrícula en CV (enrollment) ]
-            const exist = await Enrollment.findOne({ email: params.email, courseID: params.courseID })
+            //const exist = await Enrollment.findOne({ email: params.email, documentID: params.documentID, courseID: params.courseID })
+            const exist = await Enrollment.findOne({documentID: params.documentID, courseID: params.courseID })
             if (exist) {
               // Si existe la matrícula en CV, intentar matricular en Moodle
-              // console.log("[  Campus  ] Matrícula ya existe: ");
-              // console.log(exist);
-              //return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: paramFullname, coursename: params.course } } })
+              console.log("[  Campus  ] Matrícula ya existe: ");
+              console.log(exist);
+              return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
             }
             else {
               // Creación exitosa de Enrollment en CV
               // parámetros para Enrollment en CV, requiere nombre de Curso
-              let paramsCVEnrollment = {...params};
+              let paramsCVEnrollment = { ...params };
               if (courseScheduling && courseScheduling._id) {
                 paramsCVEnrollment['course_scheduling'] = courseScheduling._id
               }
@@ -491,13 +509,13 @@ class EnrollmentService {
       if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
 
       // @INFO: Buscando usuario dentro de campus
-      const user: any = await User.findOne({_id: find.user}).select('id email profile.first_name profile.last_name')
+      const user: any = await User.findOne({ _id: find.user }).select('id email profile.first_name profile.last_name')
 
       // @INFO: Buscando programa dentro de campus
-      const course_scheduling: any = await CourseScheduling.findOne({_id: find.course_scheduling})
-      .select('id program schedulingStatus')
-      .populate({path: 'program', select: 'id name'})
-      .populate({path: 'schedulingStatus', select: 'id name'})
+      const course_scheduling: any = await CourseScheduling.findOne({ _id: find.course_scheduling })
+        .select('id program schedulingStatus')
+        .populate({ path: 'program', select: 'id name' })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
 
       // Search UserId on Moodle
       const paramUserMoodle = {
@@ -516,7 +534,7 @@ class EnrollmentService {
         if (user && course_scheduling) {
           if (course_scheduling.schedulingStatus.name === 'Confirmado') {
             // @INFO: Eliminando notificación de inicio del curso en caso que se vuelva a matricular en el mismo programa
-            const amountNotification = await MailMessageLog.findOne({notification_source: `course_start_${user._id}_${course_scheduling._id}`})
+            const amountNotification = await MailMessageLog.findOne({ notification_source: `course_start_${user._id}_${course_scheduling._id}` })
             if (amountNotification) await amountNotification.delete()
 
             // @INFO: Enviando mensaje de desmatriculación
@@ -607,7 +625,7 @@ class EnrollmentService {
 
         console.log(singleUserEnrollmentContent);
         console.log('Tipo: ' + element['Tipo Documento']);
-        console.log('Doc:' +  element['Documento de Identidad']);
+        console.log('Doc:' + element['Documento de Identidad']);
 
 
         console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
