@@ -74,7 +74,7 @@ class MoodleCourseService {
           additional_parameters: {
             course: {
               id: respMoodleDataCourse.courses[0].id,
-              name: respMoodleDataCourse.courses[0].shortname,
+              name: respMoodleDataCourse.courses[0].fullname,
               categoryname: respMoodleDataCourse.courses[0].categoryname,
               summary: respMoodleDataCourse.courses[0].summary,
             }
