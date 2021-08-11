@@ -27,7 +27,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import { Enrollment, CourseSchedulingDetails } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -345,7 +345,11 @@ class EnrollmentService {
             else {
               // Creación exitosa de Enrollment en CV
               // parámetros para Enrollment en CV, requiere nombre de Curso
-              var paramsCVEnrollment = params;
+              let paramsCVEnrollment = {...params};
+              if (courseScheduling && courseScheduling._id) {
+                paramsCVEnrollment['course_scheduling'] = courseScheduling._id
+              }
+
               //paramsCVEnrollment.shortName = paramToEnrollment.course.moodleCourseName;
 
               const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
@@ -481,26 +485,48 @@ class EnrollmentService {
 
   public delete = async (params: IEnrollmentDelete) => {
 
-    console.log("Begin delete Enrolment.")
-
     try {
       const find: any = await Enrollment.findOne({ _id: params.id })
       if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
 
-      console.log("Enrollment to delete: " + find.firstname + " " + find.lastname);
-      await find.delete()
+      // @INFO: Buscando usuario dentro de campus
+      const user: any = await User.findOne({_id: find.user}).select('id email profile.first_name profile.last_name')
+
+      // @INFO: Buscando programa dentro de campus
+      const course_scheduling: any = await CourseScheduling.findOne({_id: find.course_scheduling})
+      .select('id program schedulingStatus')
+      .populate({path: 'program', select: 'id name'})
+      .populate({path: 'schedulingStatus', select: 'id name'})
 
       // Search UserId on Moodle
-      var paramUserMoodle = {
+      const paramUserMoodle = {
         email: find.email
       }
-      let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+      const respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
       if (respMoodle2.status == "success") {
-        var enrollment = {
+        const enrollment = {
           courseid: find.courseID,
           userid: respMoodle2.user.id,
         }
         let respMoodle3: any = await moodleEnrollmentService.delete(enrollment);
+
+        await find.delete()
+
+        if (user && course_scheduling) {
+          if (course_scheduling.schedulingStatus.name === 'Confirmado') {
+            // @INFO: Eliminando notificación de inicio del curso en caso que se vuelva a matricular en el mismo programa
+            const amountNotification = await MailMessageLog.findOne({notification_source: `course_start_${user._id}_${course_scheduling._id}`})
+            if (amountNotification) await amountNotification.delete()
+
+            // @INFO: Enviando mensaje de desmatriculación
+            await courseSchedulingService.sendUnenrollmentUserEmail(user.email, {
+              mailer: customs['mailer'],
+              first_name: user.profile.first_name,
+              course_name: course_scheduling.program.name,
+              notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
+            })
+          }
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -509,8 +535,6 @@ class EnrollmentService {
             }
           }
         });
-
-
       }
       else {
         // Error al consultar el usuario
@@ -530,6 +554,8 @@ class EnrollmentService {
 
   public massive = async (params: IMassiveEnrollment) => {
 
+
+    console.log(">>>>>>>>>>> Begin Massive Enrollment")
     let userEnrollmentResponse = [];
     let singleUserEnrollmentContent: IEnrollment;
     // console.log("Begin file process for courseID: " + params.courseID)
@@ -540,6 +566,16 @@ class EnrollmentService {
       console.log("Sheet content:")
 
       for await (const element of dataFromWorksheet) {
+
+        let dob;
+        // check for element['Fecha Nacimiento']
+        if (element['Fecha Nacimiento']) {
+          dob = moment.utc(element['Fecha Nacimiento'].toString()).format('YYYY-MM-DD');
+        }
+        else {
+          dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
+        }
+
         singleUserEnrollmentContent =
         {
           documentType: element['Tipo Documento'],
@@ -554,7 +590,7 @@ class EnrollmentService {
           country: element['País'],
           emailAlt: element['Correo Alt'],
           regional: element['Regional'],
-          birthdate: element['Fecha Nacimiento'].toString(),
+          birthdate: dob,
           job: element['Cargo'],
           title: element['Profesión'],
           educationalLevel: element['Nivel Educativo'],
@@ -569,6 +605,10 @@ class EnrollmentService {
         }
 
         console.log(singleUserEnrollmentContent);
+        console.log('Tipo: ' + element['Tipo Documento']);
+        console.log('Doc:' +  element['Documento de Identidad']);
+
+
         console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
         const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
 

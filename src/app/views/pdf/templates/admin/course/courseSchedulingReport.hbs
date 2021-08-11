@@ -50,31 +50,37 @@
       <tr style="background-color: #0085ca; color: #FFFFFF;">
         <td style="width: 10%">Código  del curso</td>
         <td style="width: 30%">Nombre del curso</td>
-        <td style="width: 10%">Nro de horas del curso-para el servicio</td>
+        <td style="width: 10%">Nro de horas del curso para el servicio</td>
         <td style="width: 10%">Sesión (consecutivo)</td>
-        <td style="width: 20%">Docente/Tutor</td>
-        <td style="width: 10%">Fecha de inicio</td>
-        <td style="width: 10%">Fecha de finalización</td>
-        {{!-- <td style="width: 10%">Horario</td> --}}
+        <td style="width: 10%">Docente/Tutor</td>
+        <td style="width: 10%">Fecha</td>
+        <td style="width: 10%">Horas por sesión</td>
+        <td style="width: 10%">Horario</td>
       </tr>
       {{#each courses}}
         <tr>
-          <td>{{this.course_code}}</td>
-          <td>{{this.course_name}}</td>
-          <td>{{this.course_duration}}</td>
+          {{#if this.course_code}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
+          {{/if}}
+          {{#if this.course_name}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
+          {{/if}}
+          {{#if this.course_duration}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
+          {{/if}}
           <td>{{this.consecutive}}</td>
           <td>{{this.teacher_name}}</td>
           <td>{{this.start_date}}</td>
-          <td>{{this.end_date}}</td>
-          {{!-- <td>{{this.schedule}}</td> --}}
+          <td>{{this.duration}}</td>
+          <td>{{this.schedule}}</td>
         </tr>
       {{/each}}
       <tr>
-        <td style="color: #0085ca;" colspan="6">Nro de Horas Programadas a la fecha</td>
+        <td style="color: #0085ca;" colspan="7">Nro de Horas Programadas a la fecha</td>
         <td>{{total_scheduling}}</td>
       </tr>
       <tr>
-        <td style="color: #0085ca;" colspan="6">Nro de Horas pendientes por programar</td>
+        <td style="color: #0085ca;" colspan="7">Nro de Horas pendientes por programar</td>
         <td>{{scheduling_free}}</td>
       </tr>
     </table>

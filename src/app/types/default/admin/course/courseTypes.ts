@@ -21,9 +21,12 @@ export interface ICourse {
   lang             : string,             // Idioma en el que se da el curso
   id?              : string              // Identificador del curso
   coverUrl?        : string              // URL de la imagen del curso
-  coverFile?       : any,                 // Objeto tipo file que contiene la imagen a cargar
-  duration?        : number,              // Numero de segundos para la duración del curso
-  content?         : any,                 // Contenido del curso
+  coverFile?       : any,             // Objeto tipo file que contiene la imagen a cargar
+  duration?        : number,          // Numero de segundos para la duración del curso
+  generalities?    : string,
+  requirements?    : string,
+  content?         : Array<string>,   // Contenido del curso
+  benefits?        : Array<string>,   // Beneficios
 }
 
 export interface ICourseQuery {

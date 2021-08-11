@@ -364,6 +364,9 @@
     },
     "enrollment_user": {
       "subject": "Inicio del curso"
+    },
+    "unenrollment_user": {
+      "subject": "Retiro del curso"
     }
   }
 }

@@ -134,7 +134,7 @@ class MoodleEnrollmentService {
       respMoodle.forEach(element => {
         singleCourse = {
           _id: element.id,
-          name: element.shortname
+          name: element.fullname
         };
         responseCourses.push(singleCourse);
       });
