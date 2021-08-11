@@ -160,6 +160,7 @@ class EnrollmentService {
  */
   public insertOrUpdate = async (params: IEnrollment) => {
 
+    console.log("Begin: enrollmentService.insertOrUpdate()" );
     let roles = {}
     const rolesResponse: any = await roleService.list()
     if (rolesResponse.status === 'success') {
