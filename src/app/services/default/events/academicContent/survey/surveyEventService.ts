@@ -101,6 +101,7 @@ class SurveyEventService {
         {
           $match: {
             'config.content.config.course_modes': ObjectID(enrollment.course_scheduling.schedulingMode._id),
+            'deleted': false
           }
         },
         {
