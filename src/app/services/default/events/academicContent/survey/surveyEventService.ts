@@ -51,6 +51,7 @@ class SurveyEventService {
         path: 'schedulingMode', select: 'id name'
       }})
       .lean()
+      console.log('enrollment', enrollment)
 
       if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
@@ -58,6 +59,7 @@ class SurveyEventService {
       // TODO: Consultar la programación
       // En virtual va dirigido al programa y en online y presencial a cada curso
       const schedulingMode = enrollment.course_scheduling.schedulingMode.name
+      console.log('schedulingMode', schedulingMode)
       if (schedulingMode === 'Presencial' || schedulingMode === 'En linea') {
         // TODO: Fechas de los cursos
         const detailScheduling = await CourseSchedulingDetails.find({
@@ -67,8 +69,9 @@ class SurveyEventService {
         .lean()
         .sort({startDate: 1})
 
-        if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
         console.log('detailScheduling', detailScheduling)
+
+        if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
 
         surveyAvailable = true
       } else if (schedulingMode === 'Virtual') {
@@ -78,9 +81,12 @@ class SurveyEventService {
         if (today.isSameOrBefore(endDate)) {
           surveyAvailable = true
         } else {
+          console.log('entro a virtual false')
           return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
         }
       }
+
+      console.log('surveyAvailable', surveyAvailable)
 
       if (surveyAvailable === false) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
 
@@ -114,9 +120,9 @@ class SurveyEventService {
       ]
 
       const data = await Survey.aggregate(aggregateQuery)
+      console.log('data', data)
 
       if (data.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente
-      console.log('data', data)
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         survey: data[0].survey,
