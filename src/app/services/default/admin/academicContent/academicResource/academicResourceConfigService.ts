@@ -97,6 +97,9 @@ class AcademicResourceConfigService {
       let academic_resource;
 
       if (!params.hasOwnProperty('config')) params.config = {}
+      if (params.config && params.config.hasOwnProperty('course_modes') && params.config.course_modes === "") {
+        delete params.config.course_modes
+      }
 
       // @INFO: Validando el recurso
       if (params.academic_resource) {
