@@ -60,7 +60,7 @@ class SurveyEventService {
       // En virtual va dirigido al programa y en online y presencial a cada curso
       const schedulingMode = enrollment.course_scheduling.schedulingMode.name
       console.log('schedulingMode', schedulingMode)
-      if (schedulingMode === 'Presencial' || schedulingMode === 'En linea') {
+      if (schedulingMode === 'Presencial' || schedulingMode === 'En linea' || schedulingMode === 'En Línea') {
         // TODO: Fechas de los cursos
         const detailScheduling = await CourseSchedulingDetails.find({
           course_scheduling: enrollment.course_scheduling._id,
