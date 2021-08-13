@@ -43,6 +43,7 @@ const AcademicResourceAttemptSchema = new Schema({
     ],
     questionsByConfiguration: { type: Schema.Types.Mixed },
     score: { type: Schema.Types.String },
+    surveyRelated: { type: Schema.Types.String },
     score_date: { type: Schema.Types.Date },
     time_taken: { type: Schema.Types.Number, default: 0 },
     statistics: [{

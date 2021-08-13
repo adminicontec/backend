@@ -12,7 +12,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { CourseSchedulingDetails, Enrollment, Survey } from '@scnode_app/models';
+import { AcademicResourceAttempt, CourseSchedulingDetails, Enrollment, Survey } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -55,17 +55,36 @@ class SurveyEventService {
 
       if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
+      const surveyAnswered = await AcademicResourceAttempt.find({
+        user: params.user,
+        'results.surveyRelated': {$exists: true}
+      }).select('id results.surveyRelated')
+      .lean()
+
+      const survey_related = surveyAnswered.reduce((accum, element) => {
+        accum.push(element.results.surveyRelated.toString())
+        return accum
+      }, [])
+
+      console.log('survey_related', survey_related)
+
       let surveyAvailable = false
+      let surveyRelated = null
       // TODO: Consultar la programación
       // En virtual va dirigido al programa y en online y presencial a cada curso
       const schedulingMode = enrollment.course_scheduling.schedulingMode.name
       console.log('schedulingMode', schedulingMode)
       if (schedulingMode === 'Presencial' || schedulingMode === 'En linea' || schedulingMode === 'En Línea') {
         // TODO: Fechas de los cursos
-        const detailScheduling = await CourseSchedulingDetails.find({
+        let whereDetailScheduling = {
           course_scheduling: enrollment.course_scheduling._id,
           endDate: {$lt: today}
-        }).select('id startDate endDate')
+        }
+        if (survey_related.length > 0) {
+          whereDetailScheduling['_id'] = {$nin: survey_related}
+        }
+        const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
+        .select('id startDate endDate')
         .lean()
         .sort({startDate: 1})
 
@@ -74,25 +93,29 @@ class SurveyEventService {
         if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
 
         surveyAvailable = true
+        surveyRelated = detailScheduling[0]._id
       } else if (schedulingMode === 'Virtual') {
         // TODO: Fechas del programa
         const endDate = moment.utc(enrollment.course_scheduling.endDate)
         console.log('endDate', endDate)
-        if (today.isSameOrBefore(endDate)) {
-          surveyAvailable = true
-        } else {
-          console.log('entro a virtual false')
-          return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+        console.log('today', today)
+        console.log('compare', today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD'))
+        console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
+        if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
+          if (today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD')) {
+            surveyAvailable = true
+            surveyRelated = enrollment.course_scheduling._id
+          } else {
+            console.log('entro a virtual false')
+            return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+          }
         }
+
       }
 
       console.log('surveyAvailable', surveyAvailable)
 
       if (surveyAvailable === false) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
-
-      // TODO: Verificar si ya se ejecuto la encuesta
-
-      // console.log('schedulingMode', schedulingMode)
 
       const aggregateQuery = [
         {
@@ -126,6 +149,7 @@ class SurveyEventService {
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         survey: data[0].survey,
+        surveyRelated,
         academic_resource_config: data[0].academic_resource_config,
       }})
     } catch (error) {
