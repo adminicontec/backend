@@ -191,9 +191,7 @@ class CourseService {
         params.program = await courseSchedulingService.saveLocalProgram(params.program)
       }
 
-      // if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
-
-      // // @INFO: Cargando imagen al servidor
+      // @INFO: Cargando imagen al servidor
       if (params.coverFile) {
         const defaulPath = this.default_cover_path
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
@@ -204,19 +202,6 @@ class CourseService {
       if (params.id) {
         const register: any = await Course.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.not_found' })
-
-        // if (params.hasCost) {
-        //   let hasParamsCost = false
-        //   if (params.priceCOP) hasParamsCost = true
-        //   if (params.priceUSD) hasParamsCost = true
-        //   if (register.priceCOP) hasParamsCost = true
-        //   if (register.priceUSD) hasParamsCost = true
-
-        //   if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
-        // } else {
-        //   params.priceCOP = 0
-        //   params.priceUSD = 0
-        // }
 
         // @INFO: Validando nombre unico
         // if (params.name) {
@@ -243,18 +228,6 @@ class CourseService {
         })
 
       } else {
-
-        //#region   Insert Course in Campus Digital and Moodle
-        // if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
-        //   let hasParamsCost = false
-        //   if (params.priceCOP) hasParamsCost = true
-        //   if (params.priceUSD) hasParamsCost = true
-
-        //   if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
-        // } else {
-        //   params.priceCOP = 0
-        //   params.priceUSD = 0
-        // }
 
         // const categoryIdMoodle = 12;
         // @INFO: Validando programa unico

@@ -57,7 +57,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -149,6 +149,8 @@ class CourseSchedulingService {
         if (params.in_design === "1") params.in_design = true
       }
 
+      if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
+
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
         params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode)
       }
@@ -176,6 +178,20 @@ class CourseSchedulingService {
       if (params.id) {
         const register: any = await CourseScheduling.findOne({ _id: params.id }).lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
+
+
+        if (params.hasCost) {
+          let hasParamsCost = false
+          if (params.priceCOP) hasParamsCost = true
+          if (params.priceUSD) hasParamsCost = true
+          if (register.priceCOP) hasParamsCost = true
+          if (register.priceUSD) hasParamsCost = true
+
+          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+        } else {
+          params.priceCOP = 0
+          params.priceUSD = 0
+        }
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -208,6 +224,17 @@ class CourseSchedulingService {
 
       } else {
 
+        if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
+          let hasParamsCost = false
+          if (params.priceCOP) hasParamsCost = true
+          if (params.priceUSD) hasParamsCost = true
+
+          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+        } else {
+          params.priceCOP = 0
+          params.priceUSD = 0
+        }
+
         let service_id = ''
 
         if (user.short_key) {
@@ -237,7 +264,6 @@ class CourseSchedulingService {
           year: moment().format('YYYY')
         }
 
-        console.log('CourseScheduling.create()');
         const { _id } = await CourseScheduling.create(params)
         const response: any = await CourseScheduling.findOne({ _id })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -493,7 +519,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
     if (filters.select) {
       select = filters.select
     }
