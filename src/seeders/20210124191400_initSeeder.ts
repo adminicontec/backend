@@ -620,6 +620,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:modular_delete'],
           module_permission_ids['permission:modular_list'],
 
+          module_permission_ids['permission:courses_create'],
+          module_permission_ids['permission:courses_update'],
+          module_permission_ids['permission:courses_delete'],
+          module_permission_ids['permission:courses_list'],
+
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
           // module_permission_ids['permission:forums_menu_access'],

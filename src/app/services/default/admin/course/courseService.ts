@@ -12,10 +12,11 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import models
-import { Course } from '@scnode_app/models'
+import { Course, CourseSchedulingMode, Program } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -51,18 +52,19 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content'
+      let select = 'id schedulingMode program generalities requirements content'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
-        .populate({path: 'mode', select: 'name description'})
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
         .select(select)
         .lean()
 
-        for await (const register of registers) {
-          if (register.coverUrl) {
-            register.coverUrl = this.coverUrl(register)
-          }
-        }
+        // for await (const register of registers) {
+        //   if (register.coverUrl) {
+        //     register.coverUrl = this.coverUrl(register)
+        //   }
+        // }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -71,15 +73,16 @@ class CourseService {
         })
       } else if (params.query === QueryValues.ONE) {
         const register: any = await Course.findOne(where)
-        .populate({path: 'mode', select: 'name description'})
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
         .select(select)
         .lean()
 
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.not_found' })
 
-        if (register.coverUrl) {
-          register.coverUrl = this.coverUrl(register)
-        }
+        // if (register.coverUrl) {
+        //   register.coverUrl = this.coverUrl(register)
+        // }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -100,8 +103,6 @@ class CourseService {
    * @returns
    */
   public list = async (filters: ICourseQuery = {}) => {
-    console.log("Get list of Courses in Campus Digital");
-
     // let queryMoodle = await queryUtility.query({
     //   method: 'get',
     //   url: '',
@@ -112,46 +113,48 @@ class CourseService {
     //     moodlewsrestformat: moodle_setup.restformat
     //   } });
     // Sincronizar búsquda en CV con datos en el Moodle.
-
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
+    let select = 'id schedulingMode program generalities requirements content'
+    // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
     }
 
     let where = {}
 
-    if (filters.search) {
-      const search = filters.search
-      where = {
-        ...where,
-        $or: [
-          { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-          { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-          { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-          { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-        ]
-      }
-    }
+    // if (filters.search) {
+    //   const search = filters.search
+    //   where = {
+    //     ...where,
+    //     $or: [
+    //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //       { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //       { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+    //     ]
+    //   }
+    // }
 
     let registers = []
     try {
       registers = await Course.find(where)
         .select(select)
-        .populate({path: 'mode', select: 'name description'})
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
+        .sort({ created_at: -1 })
         .lean()
 
-      for await (const register of registers) {
-        if (register.coverUrl) {
-          register.coverUrl = this.coverUrl(register)
-        }
-      }
+      // for await (const register of registers) {
+      //   if (register.coverUrl) {
+      //     register.coverUrl = this.coverUrl(register)
+      //   }
+      // }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -174,56 +177,66 @@ class CourseService {
   public insertOrUpdate = async (params: ICourse) => {
     try {
 
-      if (params.name) {
-        params.fullname = params.name
-        params.displayname = params.name
+      if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
+      if (params.requirements && typeof params.requirements === 'string') params.requirements = JSON.parse(params.requirements)
+      if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
+      if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
+
+      if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
+        params.schedulingMode = await courseSchedulingService.saveLocalSchedulingMode(params.schedulingMode)
       }
 
-      if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
-
-      // @INFO: Cargando imagen al servidor
-      if (params.coverFile) {
-        const defaulPath = this.default_cover_path
-        const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
-        if (response_upload.status === 'error') return response_upload
-        if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
+        params.program = await courseSchedulingService.saveLocalProgram(params.program)
       }
 
-      if (params.content && typeof params.content === 'string') {
-        params.content = JSON.parse(params.content)
-      }
+      // if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
+
+      // // @INFO: Cargando imagen al servidor
+      // if (params.coverFile) {
+      //   const defaulPath = this.default_cover_path
+      //   const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
+      //   if (response_upload.status === 'error') return response_upload
+      //   if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      // }
 
       if (params.id) {
         const register: any = await Course.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.not_found' })
 
-        if (params.hasCost) {
-          let hasParamsCost = false
-          if (params.priceCOP) hasParamsCost = true
-          if (params.priceUSD) hasParamsCost = true
-          if (register.priceCOP) hasParamsCost = true
-          if (register.priceUSD) hasParamsCost = true
+        // if (params.hasCost) {
+        //   let hasParamsCost = false
+        //   if (params.priceCOP) hasParamsCost = true
+        //   if (params.priceUSD) hasParamsCost = true
+        //   if (register.priceCOP) hasParamsCost = true
+        //   if (register.priceUSD) hasParamsCost = true
 
-          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
-        } else {
-          params.priceCOP = 0
-          params.priceUSD = 0
-        }
+        //   if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+        // } else {
+        //   params.priceCOP = 0
+        //   params.priceUSD = 0
+        // }
 
         // @INFO: Validando nombre unico
-        if (params.name) {
-          const exist = await Course.findOne({ name: params.name, _id: { $ne: params.id } })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: params.name } } })
+        // if (params.name) {
+        //   const exist = await Course.findOne({ name: params.name, _id: { $ne: params.id } })
+        //   if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: params.name } } })
+        // }
+
+        // @INFO: Validando programa unico
+        if (params.program) {
+          const exist = await Course.findOne({program: params.program, _id: {$ne: params.id}})
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists' } })
         }
 
         const response: any = await Course.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
+        await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
+        await Program.populate(response, { path: 'program', select: 'id name moodle_id code' })
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             course: {
-              _id: response._id,
-              name: response.name,
-              description: response.description
+              ...response,
             }
           }
         })
@@ -231,71 +244,85 @@ class CourseService {
       } else {
 
         //#region   Insert Course in Campus Digital and Moodle
-        if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
-          let hasParamsCost = false
-          if (params.priceCOP) hasParamsCost = true
-          if (params.priceUSD) hasParamsCost = true
+        // if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
+        //   let hasParamsCost = false
+        //   if (params.priceCOP) hasParamsCost = true
+        //   if (params.priceUSD) hasParamsCost = true
 
-          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
-        } else {
-          params.priceCOP = 0
-          params.priceUSD = 0
+        //   if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+        // } else {
+        //   params.priceCOP = 0
+        //   params.priceUSD = 0
+        // }
+
+        // const categoryIdMoodle = 12;
+        // @INFO: Validando programa unico
+        if (params.program) {
+          const exist = await Course.findOne({program: params.program})
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists' } })
         }
 
-        const categoryIdMoodle = 12;
-        const exist = await Course.findOne({ name: params.name }).select('id').lean()
-
-        const startDate = Math.floor(Date.parse(params.startDate) / 1000.0);
-        const endDate = Math.floor(Date.parse(params.endDate) / 1000.0);
-
-        // Si existe en Campus Digital, no permite crear
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: params.name } } })
+        // const startDate = Math.floor(Date.parse(params.startDate) / 1000.0);
+        // const endDate = Math.floor(Date.parse(params.endDate) / 1000.0);
 
         // A. Creación de Curso en Campus Digital
-        const respCampusCourseCreate: any = await Course.create(params);
+        const {_id} = await Course.create(params);
 
-        // @INFO: Parámetros para enviar al endpoint de Moodle (core_course_create_courses)
-        const paramsMoodleCourse: IMoodleCourse = {
-          shortName: params.name,
-          fullName: params.fullname,
-          summary: params.description,
-          startDate: startDate,
-          endDate: endDate,
-          lang: params.lang,
-          categoryId: categoryIdMoodle,
-          idNumber: respCampusCourseCreate._id.toString(),
-        }
-        const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
+        const response: any = await Course.findOne({ _id })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .lean()
 
-        if (respMoodle.error_key) {
-
-          // @INFO: En caso de error borro el curso creado
-          await this.delete({id: respCampusCourseCreate._id})
-
-          console.log("Error: " + respMoodle.exception + ". " + respMoodle.message);
-
-          return responseUtility.buildResponseSuccess('json', null,{error_key: respMoodle})
-        }
-        else {
-          console.log("Moodle: creación de curso exitosa");
-          console.log(respMoodle);
-
-          // @Actualizar el curso en CampusDigital con el ID de curso en Moodle.
-          respCampusCourseCreate.moodleID = respMoodle.course.id
-          respCampusCourseCreate.save()
-
-          return responseUtility.buildResponseSuccess('json', null, {
-            additional_parameters: {
-              course: {
-                _id: respMoodle.course.id,
-                name: respMoodle.course.name,
-                idNumber: paramsMoodleCourse.idNumber
-              }
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            course: {
+              ...response
             }
-          })
-        }
+          }
+        })
 
-        //#endregion
+      //   // @INFO: Parámetros para enviar al endpoint de Moodle (core_course_create_courses)
+      //   const paramsMoodleCourse: IMoodleCourse = {
+      //     shortName: params.name,
+      //     fullName: params.fullname,
+      //     summary: params.description,
+      //     startDate: startDate,
+      //     endDate: endDate,
+      //     lang: params.lang,
+      //     categoryId: categoryIdMoodle,
+      //     idNumber: respCampusCourseCreate._id.toString(),
+      //   }
+      //   const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
+
+      //   if (respMoodle.error_key) {
+
+      //     // @INFO: En caso de error borro el curso creado
+      //     await this.delete({id: respCampusCourseCreate._id})
+
+      //     console.log("Error: " + respMoodle.exception + ". " + respMoodle.message);
+
+      //     return responseUtility.buildResponseSuccess('json', null,{error_key: respMoodle})
+      //   }
+      //   else {
+      //     console.log("Moodle: creación de curso exitosa");
+      //     console.log(respMoodle);
+
+      //     // @Actualizar el curso en CampusDigital con el ID de curso en Moodle.
+      //     respCampusCourseCreate.moodleID = respMoodle.course.id
+      //     respCampusCourseCreate.save()
+
+      //     return responseUtility.buildResponseSuccess('json', null, {
+      //       additional_parameters: {
+      //         course: {
+      //           _id: respMoodle.course.id,
+      //           name: respMoodle.course.name,
+      //           idNumber: paramsMoodleCourse.idNumber
+      //         }
+      //       }
+      //     })
+      //   }
+
+      //   //#endregion
       }
 
     } catch (e) {

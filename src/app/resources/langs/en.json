@@ -273,7 +273,7 @@
       },
       "not_found": "El curso no ha sido encontrado",
       "insertOrUpdate": {
-        "already_exists": "Ya existe un curso con el nombre :name",
+        "already_exists": "Ya se configuro el programa",
         "cost_required": "El valor del curso es obligatorio"
       }
     },

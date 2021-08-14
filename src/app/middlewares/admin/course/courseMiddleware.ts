@@ -26,7 +26,7 @@ class CourseMiddleware {
   public create = async (req: Request, res: Response, next: NextFunction) => {
 
 		const fields_config: ValidatorRequest[] = [
-      { key: 'name', label: 'Nombre del curso'}
+      // { key: 'name', label: 'Nombre del curso'}
 
 		];
 

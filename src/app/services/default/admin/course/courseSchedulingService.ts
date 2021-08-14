@@ -150,42 +150,11 @@ class CourseSchedulingService {
       }
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
-        const schedulingModeLocal = await CourseSchedulingMode.findOne({
-          moodle_id: params.schedulingMode.value
-        }).select('id').lean()
-        if (schedulingModeLocal) {
-          params.schedulingMode = schedulingModeLocal._id
-        } else {
-          const newSchedulingModeLocal = await CourseSchedulingMode.create({
-            name: params.schedulingMode.label,
-            moodle_id: params.schedulingMode.value,
-            short_key: params.schedulingMode.label.substr(0, 1)
-          })
-          if (newSchedulingModeLocal) {
-            params.schedulingMode = newSchedulingModeLocal._id
-          }
-        }
+        params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode)
       }
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
-        const programArr = params.program.label.toString().split('|')
-        if (programArr[0] && programArr[1]) {
-          const programLocal = await Program.findOne({
-            moodle_id: params.program.value
-          }).select('id').lean()
-          if (programLocal) {
-            params.program = programLocal._id
-          } else {
-            const newprogramLocal = await Program.create({
-              name: programArr[1].trim(),
-              moodle_id: params.program.value,
-              code: programArr[0].trim(),
-            })
-            if (newprogramLocal) {
-              params.program = newprogramLocal._id
-            }
-          }
-        }
+        params.program = await this.saveLocalProgram(params.program)
       }
 
       if (params.city) {
@@ -203,8 +172,6 @@ class CourseSchedulingService {
       }
 
       if (params.country === '') delete params.country
-
-      console.log('params', params)
 
       if (params.id) {
         const register: any = await CourseScheduling.findOne({ _id: params.id }).lean()
@@ -328,6 +295,60 @@ class CourseSchedulingService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  /**
+   * Metodo que permite identificar si una modalidad ya fue creado de forma local
+   * @param program Objeto de la modalidad
+   * @returns
+   */
+  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}) => {
+    let newSchedulingMode = null
+    const schedulingModeLocal = await CourseSchedulingMode.findOne({
+      moodle_id: schedulingMode.value
+    }).select('id').lean()
+    if (schedulingModeLocal) {
+      newSchedulingMode = schedulingModeLocal._id
+    } else {
+      const newSchedulingModeLocal = await CourseSchedulingMode.create({
+        name: schedulingMode.label,
+        moodle_id: schedulingMode.value,
+        short_key: schedulingMode.label.substr(0, 1)
+      })
+      if (newSchedulingModeLocal) {
+        newSchedulingMode = newSchedulingModeLocal._id
+      }
+    }
+    return newSchedulingMode
+  }
+
+  /**
+   * Metodo que permite identificar si un programa ya fue creado de forma local
+   * @param program Objeto del programa
+   * @returns
+   */
+  public saveLocalProgram = async (program: {value: string | number, label: string}) => {
+
+    let newProgram = null
+    const programArr = program.label.toString().split('|')
+    if (programArr[0] && programArr[1]) {
+      const programLocal = await Program.findOne({
+        moodle_id: program.value
+      }).select('id').lean()
+      if (programLocal) {
+        newProgram = programLocal._id
+      } else {
+        const newprogramLocal = await Program.create({
+          name: programArr[1].trim(),
+          moodle_id: program.value,
+          code: programArr[0].trim(),
+        })
+        if (newprogramLocal) {
+          newProgram = newprogramLocal._id
+        }
+      }
+    }
+    return newProgram
   }
 
   /**
