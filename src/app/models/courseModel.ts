@@ -32,10 +32,10 @@ const CourseSchema = new Schema({
   //   type: Schema.Types.String,
   //   required: false,
   // },
-  // description: {
-  //   type: Schema.Types.String,
-  //   required: true,
-  // },
+  description: {
+    type: Schema.Types.String,
+    required: true,
+  },
   // courseType: {
   //   type: Schema.Types.String,
   //   required: false,
@@ -85,9 +85,9 @@ const CourseSchema = new Schema({
   //   type: Schema.Types.Number,
   //   required: false,
   // },
-  // coverUrl: {
-  //   type: Schema.Types.String
-  // },
+  coverUrl: {
+    type: Schema.Types.String
+  },
   generalities: {
     type: Schema.Types.Mixed,
     required: false,

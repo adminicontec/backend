@@ -9,7 +9,7 @@ export interface ICourse {
   // name             : string,             // Nombre del curso
   // fullname?         : string,             // Nombre Completo del curso
   // displayname?      : string,             // Nombre Para mostrar del curso
-  // description      : string,             // Descripción del curso
+  description      : string,             // Descripción del curso
   // courseType?      : string,             // Tipo de curso
   // mode?            : string,             // Modalidad
   // startDate        : string,             // fecha de inicio
@@ -22,8 +22,8 @@ export interface ICourse {
   // quota            : number,             // cantidad máxima de cupos
   // lang             : string,             // Idioma en el que se da el curso
   id?              : string              // Identificador del curso
-  // coverUrl?        : string              // URL de la imagen del curso
-  // coverFile?       : any,             // Objeto tipo file que contiene la imagen a cargar
+  coverUrl?        : string              // URL de la imagen del curso
+  coverFile?       : any,             // Objeto tipo file que contiene la imagen a cargar
   // duration?        : number,          // Numero de segundos para la duración del curso
   generalities?    : string,
   requirements?    : string,

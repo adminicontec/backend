@@ -52,7 +52,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program generalities requirements content'
+      let select = 'id schedulingMode program description coverUrl generalities requirements content'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -60,11 +60,11 @@ class CourseService {
         .select(select)
         .lean()
 
-        // for await (const register of registers) {
-        //   if (register.coverUrl) {
-        //     register.coverUrl = this.coverUrl(register)
-        //   }
-        // }
+        for await (const register of registers) {
+          if (register.coverUrl) {
+            register.coverUrl = this.coverUrl(register)
+          }
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -80,9 +80,9 @@ class CourseService {
 
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.not_found' })
 
-        // if (register.coverUrl) {
-        //   register.coverUrl = this.coverUrl(register)
-        // }
+        if (register.coverUrl) {
+          register.coverUrl = this.coverUrl(register)
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -118,7 +118,7 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id schedulingMode program generalities requirements content'
+    let select = 'id schedulingMode program description coverUrl generalities requirements content'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
@@ -150,11 +150,11 @@ class CourseService {
         .sort({ created_at: -1 })
         .lean()
 
-      // for await (const register of registers) {
-      //   if (register.coverUrl) {
-      //     register.coverUrl = this.coverUrl(register)
-      //   }
-      // }
+      for await (const register of registers) {
+        if (register.coverUrl) {
+          register.coverUrl = this.coverUrl(register)
+        }
+      }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -177,6 +177,7 @@ class CourseService {
   public insertOrUpdate = async (params: ICourse) => {
     try {
 
+      if (params.content && typeof params.content === 'string') params.content = JSON.parse(params.content)
       if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
       if (params.requirements && typeof params.requirements === 'string') params.requirements = JSON.parse(params.requirements)
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
@@ -193,12 +194,12 @@ class CourseService {
       // if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       // // @INFO: Cargando imagen al servidor
-      // if (params.coverFile) {
-      //   const defaulPath = this.default_cover_path
-      //   const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
-      //   if (response_upload.status === 'error') return response_upload
-      //   if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
-      // }
+      if (params.coverFile) {
+        const defaulPath = this.default_cover_path
+        const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
 
       if (params.id) {
         const register: any = await Course.findOne({ _id: params.id })
