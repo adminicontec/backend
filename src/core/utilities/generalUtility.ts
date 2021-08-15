@@ -488,37 +488,55 @@ class GeneralUtility {
    */
   public getDurationFormated = (seconds: number) => {
     const hours = Math.trunc(seconds / 3600)
-    const minutes = Math.trunc((seconds - (hours*3600))/60)
-    const seconds2 = Math.trunc(seconds - (hours*3600) - (minutes*60))
+    const minutes = Math.trunc((seconds - (hours * 3600)) / 60)
+    const seconds2 = Math.trunc(seconds - (hours * 3600) - (minutes * 60))
     let response: string = ''
-    if(hours){
+    if (hours) {
       response = `${response} ${hours}h`
     }
-    if(minutes){
+    if (minutes) {
       response = `${response} ${minutes}m`
     }
-    if(seconds2){
+    if (seconds2) {
       response = `${response} ${seconds2}s`
     }
     return response
   }
 
   /**
+  * @INFO Obtener duración con el formato
+  * @param seconds
+  */
+  public getDurationFormatedForCertificate = (seconds: number) => {
+    const hours = Math.trunc(seconds / 3600)
+    const minutes = Math.trunc((seconds - (hours * 3600)) / 60)
+    const seconds2 = Math.trunc(seconds - (hours * 3600) - (minutes * 60))
+    let response: string = ''
+    if (hours) {
+      if (hours == 1)
+        response = `${response} ${hours} hora`
+      else
+        response = `${response} ${hours} horas`
+    }
+    return response.trim();
+  }
+
+  /**
    * @INFO Obtener segundos de texto
    * @param inputValue
    */
-   public getSecondsFromDuration = (inputValue: string) => {
+  public getSecondsFromDuration = (inputValue: string) => {
     const auxVector = inputValue.split(' ')
     let seconds: number = 0
-    if(auxVector.length){
+    if (auxVector.length) {
       auxVector.forEach(item => {
-        if(item.includes('h')){
+        if (item.includes('h')) {
           const hours = Number(item.replace('h', ''))
-          seconds += hours*3600
-        }else if(item.includes('m')){
+          seconds += hours * 3600
+        } else if (item.includes('m')) {
           const minutes = Number(item.replace('m', ''))
-          seconds += minutes*60
-        }else if(item.includes('s')){
+          seconds += minutes * 60
+        } else if (item.includes('s')) {
           seconds += Number(item.replace('s', ''))
         }
       })

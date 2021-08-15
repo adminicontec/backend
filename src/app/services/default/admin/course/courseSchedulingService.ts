@@ -16,7 +16,7 @@ import { customs } from '@scnode_core/config/globals'
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
-import {htmlPdfUtility} from '@scnode_core/utilities/pdf/htmlPdfUtility'
+import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
@@ -31,6 +31,7 @@ import {
   ICourseSchedulingQuery,
   ICourseSchedulingReport
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
+import { masterCategoryService } from '../../moodle/course/masterCategoryService';
 // @end
 
 class CourseSchedulingService {
@@ -214,6 +215,25 @@ class CourseSchedulingService {
           await this.checkEnrollmentTeachers(response)
         }
 
+        var moodleCity = '';
+        if (response.city) { moodleCity = response.city.name; }
+        /*
+        const moodleResponse: any = await moodleCourseService.update({
+          //"id": `${response.program.code}_${service_id}`,
+          "fullName": `${response.program.name}`,
+          "masterId": `${response.program.moodle_id}`,
+          "categoryId": `${response.regional.moodle_id}`,
+          "startDate": `${response.startDate}`,
+          "endDate": `${response.endDate}`,
+          "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
+          "city": `${moodleCity}`,
+          "country": `${response.country.name}`
+        })
+
+        if (moodleResponse.status === 'success') {
+
+        }*/
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: {
@@ -278,6 +298,9 @@ class CourseSchedulingService {
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
 
+        var moodleCity = '';
+        if (response.city) { moodleCity = response.city.name; }
+
         const moodleResponse: any = await moodleCourseService.createFromMaster({
           "shortName": `${response.program.code}_${service_id}`,
           "fullName": `${response.program.name}`,
@@ -285,7 +308,9 @@ class CourseSchedulingService {
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
-          "customClassHours": `${generalUtility.getDurationFormated(params.duration).trim()}`
+          "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
+          "city": `${moodleCity}`,
+          "country": `${response.country.name}`
         })
 
         if (moodleResponse.status === 'success') {
@@ -537,12 +562,12 @@ class CourseSchedulingService {
     }
 
     if (filters.course_scheduling_code) {
-      const programs = await Program.find({code: {$regex: '.*' + filters.course_scheduling_code + '.*', $options: 'i' }}).select('id')
+      const programs = await Program.find({ code: { $regex: '.*' + filters.course_scheduling_code + '.*', $options: 'i' } }).select('id')
       const program_ids = programs.reduce((accum, element) => {
         accum.push(element._id)
         return accum
       }, [])
-      where['program'] = {$in: program_ids}
+      where['program'] = { $in: program_ids }
     }
 
     if (filters.user) {
@@ -610,19 +635,19 @@ class CourseSchedulingService {
       }
 
       const register: any = await CourseScheduling.findOne(where)
-      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
-      .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-      .populate({ path: 'modular', select: 'id name' })
-      .populate({ path: 'program', select: 'id name moodle_id code' })
-      .populate({ path: 'schedulingType', select: 'id name' })
-      .populate({ path: 'schedulingStatus', select: 'id name' })
-      .populate({ path: 'regional', select: 'id name' })
-      .populate({ path: 'city', select: 'id name' })
-      .populate({ path: 'country', select: 'id name' })
-      // .populate({path: 'course', select: 'id name'})
-      // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
-      .select(select)
-      .lean()
+        .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'modular', select: 'id name' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'schedulingType', select: 'id name' })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
+        .populate({ path: 'regional', select: 'id name' })
+        .populate({ path: 'city', select: 'id name' })
+        .populate({ path: 'country', select: 'id name' })
+        // .populate({path: 'course', select: 'id name'})
+        // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .select(select)
+        .lean()
 
       if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
 
@@ -632,12 +657,12 @@ class CourseSchedulingService {
       const detailSessions = await CourseSchedulingDetails.find({
         course_scheduling: register._id
       }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
-      .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-      .populate({ path: 'course', select: 'id name moodle_id' })
-      .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-      .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
-      .select(select)
-      .lean()
+        .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+        .populate({ path: 'course', select: 'id name moodle_id' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+        .select(select)
+        .lean()
 
       let session_count = 0
 
@@ -686,9 +711,9 @@ class CourseSchedulingService {
             }
             let item = {}
             if (first_session) {
-              item = {...item, ...row_content, ...session_data}
+              item = { ...item, ...row_content, ...session_data }
             } else {
-              item = {...item, ...session_data}
+              item = { ...item, ...session_data }
             }
             session_count++
             first_session = false
@@ -751,10 +776,12 @@ class CourseSchedulingService {
       })
 
       if (responsePdf.status === 'error') return responsePdf
-      console.log('responsePdf',responsePdf)
-      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-        path: responsePdf.path
-      }})
+      console.log('responsePdf', responsePdf)
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          path: responsePdf.path
+        }
+      })
     } catch (error) {
       console.log('error', error)
       return responseUtility.buildResponseFailed('json')
