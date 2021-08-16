@@ -12,7 +12,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { Course } from '@scnode_app/models';
+import { Course, CourseScheduling, CourseSchedulingMode } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -39,32 +39,49 @@ class CourseDataService {
 
     try {
 
-      let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content generalities requirements benefits'
+      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
 
       let where = {}
 
       if (params.id) {
         where['_id'] = params.id
       } else if (params.slug) {
-        where['name'] = params.slug
+        where['_id'] = params.slug
       } else {
         return responseUtility.buildResponseFailed('json', null, {error_key: 'course.filter_to_search_required'})
       }
 
       let register = null
       try {
-        register =  await Course.findOne(where)
+        register = await CourseScheduling.findOne(where)
         .select(select)
-        .populate({path: 'mode', select: 'name description'})
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .lean()
 
-        if (register && register.coverUrl) {
-          register.coverUrl = courseService.coverUrl(register)
+        if (register) {
+          register['enrollment_enabled'] = false
+
+          const schedulingExtraInfo: any = await Course.findOne({
+            program: register.program._id
+          })
+          .lean()
+
+          if (schedulingExtraInfo) {
+            let extra_info = schedulingExtraInfo
+            extra_info.coverUrl = courseService.coverUrl(extra_info)
+            register['extra_info'] = extra_info
+          }
+
+          const today = moment()
+          if (register.enrollmentDeadline) {
+            const enrollmentDeadline = moment(register.enrollmentDeadline)
+            if (today.format('YYYY-MM-DD') <= enrollmentDeadline.format('YYYY-MM-DD')) {
+              register['enrollment_enabled'] = true
+            }
+          }
         }
 
-        if(register && register.duration) {
-          register.duration_formated = generalUtility.convertSeconds(register.duration)
-        }
       } catch (e) {}
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -91,60 +108,81 @@ class CourseDataService {
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content generalities requirements benefits'
+      const schedulingModes = await CourseSchedulingMode.find({name: {$in: ['Virtual', 'En Línea']}})
+      if (schedulingModes.length === 0) {
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            courses: [],
+            total_register: 0,
+            pageNumber: pageNumber,
+            nPerPage: nPerPage
+          }
+        })
+      }
+
+      const schedulingModesIds = schedulingModes.reduce((accum, element) => {
+        accum.push(element._id.toString())
+        return accum
+      }, [])
+
+      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
       if (params.select) {
         select = params.select
       }
 
-      let where = {}
-
-      if (params.search) {
-        const search = params.search
-        where = {
-          ...where,
-          $or: [
-            { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-            { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-            { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-            { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-          ]
-        }
+      let where = {
+        schedulingMode: {$in: schedulingModesIds}
       }
 
-      // @INFO: Filtro para Mode
-      if (params.mode) {
-        where['mode'] = params.mode
-      }
+      // if (params.search) {
+      //   const search = params.search
+      //   where = {
+      //     ...where,
+      //     $or: [
+      //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+      //       { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
+      //       { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
+      //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+      //     ]
+      //   }
+      // }
 
-      // @Filtro para precio
-      if (params.price) {
-        if (params.price === 'free') {
-          where['hasCost'] = false
-        } else if (params.price === 'pay') {
-          where['hasCost'] = true
-        }
-      }
+      // TODO: Validar los filtros
+
+      // // @INFO: Filtro para Mode
+      // if (params.mode) {
+      //   where['mode'] = params.mode
+      // }
+
+      // // @Filtro para precio
+      // if (params.price) {
+      //   if (params.price === 'free') {
+      //     where['hasCost'] = false
+      //   } else if (params.price === 'pay') {
+      //     where['hasCost'] = true
+      //   }
+      // }
 
       // Filtro para FEcha de inicio de curso
-      if (params.startDate) {
+      if (params.startPublicationDate) {
         let direction = 'gte'
-        let date = moment.utc()
-        if (params.startDate.date !== 'today') {
-          date = moment.utc(params.startDate.date)
+        let date = moment()
+        if (params.startPublicationDate.date !== 'today') {
+          date = moment(params.startPublicationDate.date)
         }
-        if (params.startDate.direction) direction = params.startDate.direction
-        where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+        if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
+        where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
-      // if (params.endDate) {
-      //   let direction = 'lte'
-      //   let date = moment.utc()
-      //   if (params.endDate.date !== 'today') {
-      //     date = moment.utc(params.endDate.date)
-      //   }
-      //   if (params.endDate.direction) direction = params.endDate.direction
-      //   where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-      // }
+      if (params.endPublicationDate) {
+        let direction = 'lte'
+        let date = moment()
+        if (params.endPublicationDate.date !== 'today') {
+          date = moment(params.endPublicationDate.date)
+        }
+        if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
+        where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+      }
 
       let sort = null
       if (params.sort) {
@@ -153,29 +191,42 @@ class CourseDataService {
       }
 
       let registers = []
-      console.log("--------------------------");
-      console.log(where);
-
 
       try {
-        registers = await Course.find(where)
-          .select(select)
-          .populate({path: 'mode', select: 'name description'})
-          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-          .limit(paging ? nPerPage : null)
-          .sort(sort)
+        registers = await CourseScheduling.find(where)
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort(sort)
+        .lean()
+
+        const program_ids = registers.reduce((accum, element) => {
+          accum.push(element.program._id.toString())
+          return accum
+        }, [])
+
+        if (program_ids.length > 0) {
+          const schedulingExtraInfo: any = await Course.find({
+            program: {$in: program_ids}
+          })
           .lean()
 
-        for await (const register of registers) {
-          register.coverUrl = courseService.coverUrl(register)
-          if(register.duration) {
-            register.duration_formated = generalUtility.convertSeconds(register.duration)
-          }
-          if (register.name) {
-            register.slug = encodeURI(register.name)
+          const extra_info_by_program = schedulingExtraInfo.reduce((accum, element) => {
+            if (!accum[element.program]) {
+              accum[element.program.toString()] = element
+            }
+            return accum
+          }, {})
+
+          for await (const register of registers) {
+            if (extra_info_by_program[register.program._id.toString()]) {
+              let extra_info = extra_info_by_program[register.program._id.toString()]
+              extra_info.coverUrl = courseService.coverUrl(extra_info)
+              register['extra_info'] = extra_info
+            }
           }
         }
-
 
       } catch (e) { }
 
