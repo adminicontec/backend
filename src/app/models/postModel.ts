@@ -15,7 +15,6 @@ const PostSchema = new Schema({
   },
   content: {
     type: Schema.Types.Mixed,
-    required: true,
   },
   coverUrl: {
     type: Schema.Types.String
@@ -75,7 +74,16 @@ const PostSchema = new Schema({
         default: 0
       }
     }
-  ]
+  ],
+  video: {
+    url: {
+      type: Schema.Types.String
+    },
+    platform: {
+      type: Schema.Types.String,
+      enum: ['youtube', 'vimeo']
+    }
+  }
   // @end
 }, {
   collection: 'posts' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

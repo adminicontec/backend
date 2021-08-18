@@ -54,7 +54,7 @@ class PostService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Post.find(where)
         .populate({path: 'postType', select: 'id name'})
@@ -154,6 +154,14 @@ class PostService {
           })
         })
         params.locations = newLocations
+      }
+
+      // @INFO Reviso si viene video
+      if(params.platform_video && params.url_video){
+        params.video = {
+          platform: params.platform_video,
+          url: params.url_video
+        }
       }
 
       if (params.content && typeof params.content === 'string') {
@@ -297,7 +305,7 @@ class PostService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags'
+    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video'
     if (filters.select) {
       select = filters.select
     }

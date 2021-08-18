@@ -23,6 +23,12 @@ export interface IPost {
   location?: IPostLocations // Array con las ubicaciones de la publicación
   authors?: Array<string> // Array de los nombre de los autores
   id?: string // Identificador de la categoria
+  platform_video?: string // Tipo de video
+  url_video?: string  // Url del video
+  video?: {           // Objeto de video para guardar en el esquema
+    url: string
+    platform: string
+  }
 }
 
 export interface IPostLocations {
