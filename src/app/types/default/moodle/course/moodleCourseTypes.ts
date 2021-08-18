@@ -25,5 +25,7 @@ export interface IMoodleCourse{
   lang?: string,
   masterId?:number | string,
   customClassHours?: string,
+  city?: string,
+  country?: string,
 }
 //@end

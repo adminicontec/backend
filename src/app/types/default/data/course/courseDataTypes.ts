@@ -16,6 +16,15 @@ export interface IFetchCourses {
     date: 'today' | string
     direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
   } // Fecha de busqueda: finalización
+
+  startPublicationDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  }
+  endPublicationDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  }
   // courseType?: Array<string> // Lista de ubicaciones
   mode?: string
   sort?: {

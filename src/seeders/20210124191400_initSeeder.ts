@@ -620,6 +620,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:modular_delete'],
           module_permission_ids['permission:modular_list'],
 
+          module_permission_ids['permission:courses_create'],
+          module_permission_ids['permission:courses_update'],
+          module_permission_ids['permission:courses_delete'],
+          module_permission_ids['permission:courses_list'],
+
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
           // module_permission_ids['permission:forums_menu_access'],
@@ -1017,6 +1022,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const academic_resource_categories = [
       { name: 'survey', description: 'Encuesta', config: {
         has_order_of_questions: true,
+        has_course_modes: true
       }},
     ]
 
@@ -1047,6 +1053,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {
         name: 'survey', description: 'Encuestas', config: {
           has_order_of_questions: true,
+          has_course_modes: true
         }
       },
     ]

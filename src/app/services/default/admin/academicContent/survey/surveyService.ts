@@ -294,11 +294,17 @@ class SurveyService {
         .select(select)
         .populate({
           path: 'config.content',
-          select: 'id academic_resource',
-          populate: {
-            path: 'academic_resource',
-            select: 'id title description'
-          }
+          select: 'id config.course_modes academic_resource',
+          populate: [
+            {
+              path: 'config.course_modes',
+              select: 'id name description'
+            },
+            {
+              path: 'academic_resource',
+              select: 'id title description'
+            }
+          ]
         })
         .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
         .limit(paging ? nPerPage : null)

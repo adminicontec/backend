@@ -161,6 +161,10 @@ class CourseSchedulingModeService {
       }
     }
 
+    if (filters.moodle_id && (filters.moodle_id === true || filters.moodle_id === 'true')) {
+      where['moodle_id'] = {$exists: true}
+    }
+
     let registers = []
     try {
       registers =  await CourseSchedulingMode.find(where)

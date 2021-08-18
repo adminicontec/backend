@@ -86,10 +86,32 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.Boolean,
     default: false
   },
-  moodle_id: { type: Schema.Types.String }
+  moodle_id: { type: Schema.Types.String },
   // schedulingCode: {
   //   type: Schema.Types.String,
   // },
+  hasCost: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
+  priceCOP: {
+    type: Schema.Types.Number,
+  },
+  priceUSD: {
+    type: Schema.Types.Number,
+  },
+  discount: {
+    type: Schema.Types.Number,
+  },
+  startPublicationDate: {
+    type: Schema.Types.Date,
+  },
+  endPublicationDate: {
+    type: Schema.Types.Date,
+  },
+  enrollmentDeadline: {
+    type: Schema.Types.Date,
+  },
   // @end
 }, {
   collection: 'course_schedulings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

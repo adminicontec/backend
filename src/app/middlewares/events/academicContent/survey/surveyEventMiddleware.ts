@@ -7,7 +7,7 @@ import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility, ValidatorRequest } from "@scnode_core/utilities/requestUtility";
 // @end
 
-class CourseMiddleware {
+class SurveyEventMiddleware {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -23,17 +23,13 @@ class CourseMiddleware {
 
   constructor () {}
 
-  public create = async (req: Request, res: Response, next: NextFunction) => {
-
-		const fields_config: ValidatorRequest[] = [
-      // { key: 'name', label: 'Nombre del curso'}
-
-		];
-
-		await requestUtility.middlewareValidator(fields_config, req, res, next)
-  }
-
+  // public checkSurveyAvailable = async (req: Request, res: Response, next: NextFunction) => {
+  //   const fields_config: ValidatorRequest[] = [
+  //     { key: 'one_field', label: 'This is a short description'},
+  //   ]
+  //   await requestUtility.middlewareValidator(fields_config, req, res, next)
+  // }
 }
 
-export const courseMiddleware = new CourseMiddleware();
-export { CourseMiddleware as AdminCourseCourseMiddleware }
+export const surveyEventMiddleware = new SurveyEventMiddleware();
+export { SurveyEventMiddleware as EventsAcademicContentSurveySurveyEventMiddleware }

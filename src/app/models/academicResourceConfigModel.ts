@@ -24,6 +24,10 @@ const AcademicResourceConfigSchema = new Schema({
       default: 'ordered',
       enum: ['ordered', 'random']
     },
+    course_modes: {
+      type: Schema.Types.ObjectId,
+      ref: "CourseSchedulingMode",
+    }
   },
   // @end
 }, {

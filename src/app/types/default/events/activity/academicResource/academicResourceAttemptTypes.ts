@@ -12,6 +12,7 @@ export interface IAcademicResourceAttempResultsAnswers {
 }
 
 export interface IAcademicResourceAttempResults {
+  surveyRelated?: string // Identifica nodo de relacion de la enncuesta
   status?: 'started' | 'ended' | 'loop' // Estado del intento
   questionsToEvaluate?: Array<string> // Array de preguntas que seran evaluadas, es decir, las preguntas que se le genereraron y presentaron al usuario
   questionsByConfiguration?: any // Objeto con información de las preguntas

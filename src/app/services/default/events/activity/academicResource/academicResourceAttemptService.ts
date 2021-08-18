@@ -152,6 +152,7 @@ class AcademicResourceAttemptService {
 
       if (params.results.score) results.score = params.results.score
       if (params.results.status) results.status = params.results.status
+      if (params.results.surveyRelated) results.surveyRelated = params.results.surveyRelated
 
       results.time_taken += timeView
 

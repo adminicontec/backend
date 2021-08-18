@@ -35,6 +35,10 @@ export interface ICourseScheduling {
   // course?: string // Curso de la programación
   // teacher?: string // Docente de la programación
   // sessions?: Array<ICourseSchedulingSession> // Array de sesiones de clase
+  hasCost?         : boolean | string,   // Indica si el curso es de pago o no
+  priceCOP         : number,             // Precio en Pesos Colombianos
+  priceUSD         : number,             // Precio en Dólares Estadounidenses
+  discount         : number,             // Porcentaje de descuento del precio
   id?: string // Identificador de la categoria
 }
 

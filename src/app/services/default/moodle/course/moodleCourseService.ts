@@ -74,7 +74,7 @@ class MoodleCourseService {
           additional_parameters: {
             course: {
               id: respMoodleDataCourse.courses[0].id,
-              name: respMoodleDataCourse.courses[0].shortname,
+              name: respMoodleDataCourse.courses[0].fullname,
               categoryname: respMoodleDataCourse.courses[0].categoryname,
               summary: respMoodleDataCourse.courses[0].summary,
             }
@@ -146,10 +146,15 @@ class MoodleCourseService {
       wsfunction: moodle_setup.services.courses.update,
       moodlewsrestformat: moodle_setup.restformat,
       'courses[0][id]': params.id,
+      'courses[0][categoryid]': params.categoryId,
       'courses[0][startdate]': generalUtility.unixTime(params.startDate.toString()),
       'courses[0][enddate]': generalUtility.unixTime(params.endDate.toString()),
       'courses[0][customfields][0][shortname]': 'programa_horas',
       'courses[0][customfields][0][value]': params.customClassHours,
+      'courses[0][customfields][1][shortname]': 'ciudad',
+      'courses[0][customfields][1][value]': params.city,
+      'courses[0][customfields][2][shortname]': 'pais',
+      'courses[0][customfields][2][value]': params.country,
     };
 
     console.log("Moodle: Actualización de curso.");
