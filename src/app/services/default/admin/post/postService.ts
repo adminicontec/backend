@@ -54,7 +54,7 @@ class PostService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Post.find(where)
         .populate({path: 'postType', select: 'id name'})
@@ -66,6 +66,9 @@ class PostService {
         for await (const register of registers) {
           if (register.coverUrl) {
             register.coverUrl = this.coverUrl(register)
+          }
+          if (register.researchUrl) {
+            register.researchUrl = this.researchUrl(register)
           }
         }
 
@@ -84,6 +87,9 @@ class PostService {
 
         if (register.coverUrl) {
           register.coverUrl = this.coverUrl(register)
+        }
+        if (register.researchUrl) {
+          register.researchUrl = this.researchUrl(register)
         }
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           post: register
@@ -164,6 +170,14 @@ class PostService {
         }
       }
 
+      // @INFO Reviso si viene archivo de articulo
+      if(params.researchFile){
+        const defaulPath = this.default_cover_path
+        const response_upload: any = await uploadService.uploadFile(params.researchFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.researchUrl = response_upload.name
+      }
+
       if (params.content && typeof params.content === 'string') {
         params.content = JSON.parse(params.content)
       }
@@ -228,6 +242,7 @@ class PostService {
             post: {
               ...response,
               coverUrl: this.coverUrl(response),
+              researchUrl: this.researchUrl(response)
             }
           }
         })
@@ -255,6 +270,7 @@ class PostService {
             post: {
               ...response,
               coverUrl: this.coverUrl(response),
+              researchUrl: this.researchUrl(response)
             }
           }
         })
@@ -272,6 +288,16 @@ class PostService {
   public coverUrl = ({ coverUrl }) => {
     return coverUrl && coverUrl !== ''
     ? `${customs['uploads']}/${this.default_cover_path}/${coverUrl}`
+    : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de una publicación a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del AcademicComponent
+   */
+  public researchUrl = ({ researchUrl }) => {
+    return researchUrl && researchUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_path}/${researchUrl}`
     : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
   }
 
@@ -305,7 +331,7 @@ class PostService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video'
+    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video researchUrl'
     if (filters.select) {
       select = filters.select
     }
@@ -366,6 +392,9 @@ class PostService {
       for await (const register of registers) {
         if (register.coverUrl) {
           register.coverUrl = this.coverUrl(register)
+        }
+        if (register.researchUrl) {
+          register.researchUrl = this.researchUrl(register)
         }
       }
     } catch (e) {}

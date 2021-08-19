@@ -60,7 +60,7 @@ class PostDataService {
 
     try {
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl'
 
       let where = {}
 
@@ -83,6 +83,9 @@ class PostDataService {
 
         if (register && register.coverUrl) {
           register.coverUrl = postService.coverUrl(register)
+        }
+        if (register && register.researchUrl) {
+          register.researchUrl = postService.researchUrl(register)
         }
       } catch (e) {}
 
@@ -110,7 +113,7 @@ class PostDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl'
       if (params.select) {
         select = params.select
       }
@@ -190,6 +193,9 @@ class PostDataService {
         for await (const register of registers) {
           if (register.coverUrl) {
             register.coverUrl = postService.coverUrl(register)
+          }
+          if (register.researchUrl) {
+            register.researchUrl = postService.researchUrl(register)
           }
           if (register.title) {
             register.slug = encodeURI(register.title)
