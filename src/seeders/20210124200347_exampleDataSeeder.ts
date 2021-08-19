@@ -47,22 +47,22 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
     }
 
     // @INFO: Agregando Noticias
-    const news_ids = await this.addNews(post_types, post_locations)
+    // const news_ids = await this.addNews(post_types, post_locations)
 
     // @INFO: Agregando Noticias
-    const events_ids = await this.addEvents(post_types, post_locations)
+    // const events_ids = await this.addEvents(post_types, post_locations)
 
     // @INFO: Agregando Noticias
-    const research_ids = await this.addResearch(post_types, post_locations)
+    // const research_ids = await this.addResearch(post_types, post_locations)
 
     // @INFO: Agregando capsulas
-    const capsules_ids = await this.addCapsules(post_types, post_locations)
+    // const capsules_ids = await this.addCapsules(post_types, post_locations)
 
     // @INFO: Agregando webinars
-    const webinars_ids = await this.addWebinars(post_types, post_locations)
+    // const webinars_ids = await this.addWebinars(post_types, post_locations)
 
     // @INFO: Agregando webinars
-    const blogs_ids = await this.addBlogs(post_types, post_locations)
+    // const blogs_ids = await this.addBlogs(post_types, post_locations)
 
     // @INFO: Agregando usuarios
     const user_ids = await this.addUsers()

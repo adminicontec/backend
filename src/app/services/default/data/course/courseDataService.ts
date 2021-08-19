@@ -12,7 +12,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode } from '@scnode_app/models';
+import { Course, CourseScheduling, CourseSchedulingMode, Program } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -130,38 +130,48 @@ class CourseDataService {
         select = params.select
       }
 
-      let where = {
+      let where: any = {
         schedulingMode: {$in: schedulingModesIds}
       }
 
-      // if (params.search) {
-      //   const search = params.search
-      //   where = {
-      //     ...where,
-      //     $or: [
-      //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-      //       { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-      //       { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-      //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-      //     ]
-      //   }
-      // }
+      if (params.search) {
+        const search = params.search
+        // where = {
+        //   ...where,
+        //   $or: [
+        //     { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //   ]
+        // }
+        const programs = await Program.find({
+          name: { $regex: '.*' + search + '.*', $options: 'i' }
+        }).select('id')
+        const program_ids = programs.reduce((accum, element) => {
+          accum.push(element._id)
+          return accum
+        }, [])
+        where['program'] = { $in: program_ids }
+      }
 
-      // TODO: Validar los filtros
+      // @INFO: Filtro para Mode
+      if (params.mode) {
+        if (schedulingModesIds.includes(params.mode.toString())) {
+          where['schedulingMode'] = params.mode
+        } else {
+          where['schedulingMode'] = {$in: []}
+        }
+      }
 
-      // // @INFO: Filtro para Mode
-      // if (params.mode) {
-      //   where['mode'] = params.mode
-      // }
-
-      // // @Filtro para precio
-      // if (params.price) {
-      //   if (params.price === 'free') {
-      //     where['hasCost'] = false
-      //   } else if (params.price === 'pay') {
-      //     where['hasCost'] = true
-      //   }
-      // }
+      // @Filtro para precio
+      if (params.price) {
+        if (params.price === 'free') {
+          where['hasCost'] = false
+        } else if (params.price === 'pay') {
+          where['hasCost'] = true
+        }
+      }
 
       // Filtro para FEcha de inicio de curso
       if (params.startPublicationDate) {
@@ -214,6 +224,7 @@ class CourseDataService {
 
           const extra_info_by_program = schedulingExtraInfo.reduce((accum, element) => {
             if (!accum[element.program]) {
+              element.coverUrl = courseService.coverUrl(element)
               accum[element.program.toString()] = element
             }
             return accum
@@ -221,9 +232,7 @@ class CourseDataService {
 
           for await (const register of registers) {
             if (extra_info_by_program[register.program._id.toString()]) {
-              let extra_info = extra_info_by_program[register.program._id.toString()]
-              extra_info.coverUrl = courseService.coverUrl(extra_info)
-              register['extra_info'] = extra_info
+              register['extra_info'] = extra_info_by_program[register.program._id.toString()]
             }
           }
         }
