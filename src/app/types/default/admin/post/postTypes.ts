@@ -29,6 +29,8 @@ export interface IPost {
     url: string
     platform: string
   }
+  researchUrl?: string
+  researchFile?: any
 }
 
 export interface IPostLocations {

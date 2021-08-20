@@ -42,6 +42,9 @@ class PostController {
     if (files && files.hasOwnProperty('cover')) {
       params['coverFile'] = files['cover']
     }
+    if (files && files.hasOwnProperty('researchFile')) {
+      params['researchFile'] = files['researchFile']
+    }
 
     const response = await postService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
@@ -59,6 +62,9 @@ class PostController {
 
     if (files && files.hasOwnProperty('cover')) {
       params['coverFile'] = files['cover']
+    }
+    if (files && files.hasOwnProperty('researchFile')) {
+      params['researchFile'] = files['researchFile']
     }
 
 		const response = await postService.insertOrUpdate(params)
