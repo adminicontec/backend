@@ -36,6 +36,7 @@ import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } 
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import moment from 'moment';
+import { generalUtility } from 'core/utilities/generalUtility';
 // @end
 
 class EnrollmentService {
@@ -214,6 +215,7 @@ class EnrollmentService {
         if (params.email && params.courseID) {
           console.log("Inicio de Enrollment");
 
+          var isNew  = false;
           // check rolename, if not exists, guest as default in moodle, viewer in CV
           //if(params.rolename ==)
 
@@ -272,7 +274,7 @@ class EnrollmentService {
 
             respCampusDataUser = await userService.findBy({
               query: QueryValues.ONE,
-              where: [{ field: 'profile.doc_number', value: params.documentID}]
+              where: [{ field: 'profile.doc_number', value: params.documentID }]
             });
             console.log('By doc_number: ');
             console.log(respCampusDataUser);
@@ -281,7 +283,7 @@ class EnrollmentService {
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
               console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
-
+              isNew = true;
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
               var cvUserParams: IUser = {
                 username: params.user,
@@ -354,7 +356,7 @@ class EnrollmentService {
 
             //#region [ 3. Creación de la matrícula en CV (enrollment) ]
             //const exist = await Enrollment.findOne({ email: params.email, documentID: params.documentID, courseID: params.courseID })
-            const exist = await Enrollment.findOne({documentID: params.documentID, courseID: params.courseID })
+            const exist = await Enrollment.findOne({ documentID: params.documentID, courseID: params.courseID })
             if (exist) {
               // Si existe la matrícula en CV, intentar matricular en Moodle
               console.log("[  Campus  ] Matrícula ya existe: ");
@@ -402,24 +404,13 @@ class EnrollmentService {
               if (respMoodle2.user == null) {
                 // console.log("Moodle: user NO exists ");
 
-                // paramToEnrollment.user.moodleCity =
-                // paramToEnrollment.user.moodleCountry = params.country;
-                // paramToEnrollment.user.moodleCustomRegional = params.regional;
-                // paramToEnrollment.user.moodleCustomBirthDate = params.birthdate;
-                // paramToEnrollment.user.moodleCustomEmailAlt = params.emailAlt;
-                // paramToEnrollment.user.moodleCustomJob = params.job;
-                // paramToEnrollment.user.moodleCustomTitle = params.title;
-                // paramToEnrollment.user.moodleCustomEducationalLevel = params.educationalLevel;
-                // paramToEnrollment.user.moodleCustomCompany = params.company;
-                // paramToEnrollment.user.moodleCustomGenre = params.genre;
-                // paramToEnrollment.user.moodleCustomOrigin = params.origin;
-
                 var paramsMoodleUser: IMoodleUser = { //: IMoodleUser;
                   firstname: paramToEnrollment.user.moodleFirstName,
                   lastname: paramToEnrollment.user.moodleLastName,
                   password: passw,
                   email: paramToEnrollment.user.moodleEmail,
                   username: paramToEnrollment.user.moodleUserName,
+                  phonenumber: params.phoneNumber,
                   city: params.city,
                   country: params.country,
                   regional: params.regional,
@@ -460,12 +451,15 @@ class EnrollmentService {
               const timeElapsed = Date.now();
               const currentDate = new Date(timeElapsed);
 
+
+
               return responseUtility.buildResponseSuccess('json', null, {
                 additional_parameters: {
                   enrollment: {
                     email: paramToEnrollment.user.moodleEmail,
                     username: paramToEnrollment.user.moodleUserName,
-                    password: paramToEnrollment.user.moodlePassword,
+                    password: (isNew == true) ? paramToEnrollment.user.moodlePassword : null,
+                    userIsNew: isNew,
                     courseID: paramToEnrollment.course.moodleCourseID,
                     courseName: paramToEnrollment.course.moodleCourseName,
                     campusURL: campus_setup.url,
@@ -593,6 +587,9 @@ class EnrollmentService {
         }
         else {
           dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
+        }
+        if (generalUtility.stringIsNullOrEmpty(element['País'])) {
+          element['País'] = 'Colombia';
         }
 
         singleUserEnrollmentContent =
