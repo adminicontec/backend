@@ -103,6 +103,7 @@ class CourseService {
    * @returns
    */
   public list = async (filters: ICourseQuery = {}) => {
+    console.log("courseService.list() >> ")
     // let queryMoodle = await queryUtility.query({
     //   method: 'get',
     //   url: '',

@@ -544,6 +544,20 @@ class GeneralUtility {
     return seconds
   }
 
+
+  public stringIsNullOrEmpty = (value: string) => {
+    if (value === null) {
+      return true;
+    }
+    else {
+      if (value.trim().length === 0) {
+        return true;
+      }
+
+      return false;
+    }
+  }
+
 }
 
 export const generalUtility = new GeneralUtility();
