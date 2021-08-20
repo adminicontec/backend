@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import { teacherService } from 'app/services/default/admin/teacher/teacherService';
+import { teacherService } from '@scnode_app/services/default/admin/teacher/teacherService';
 // @end
 
 // @import_utilities Import utilities
