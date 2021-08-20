@@ -36,7 +36,7 @@ import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } 
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import moment from 'moment';
-import { generalUtility } from 'core/utilities/generalUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 class EnrollmentService {
