@@ -53,6 +53,10 @@ export interface ICourseSchedulingQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
   course_scheduling_code?: string // Busca por codigo
+  schedulingType?: string // Busca por tipo de programación
+  schedulingStatus?: string // Busca por estado de programación
+  schedulingMode?: string // Busca por modalidad
+  regional?: string // Busca por regional
 }
 
 export interface ICourseSchedulingReport {

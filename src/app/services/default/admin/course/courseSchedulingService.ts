@@ -570,6 +570,12 @@ class CourseSchedulingService {
       where['program'] = { $in: program_ids }
     }
 
+    if (filters.schedulingType) where['schedulingType'] = filters.schedulingType
+    if (filters.schedulingStatus) where['schedulingStatus'] = filters.schedulingStatus
+    if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
+    if (filters.regional) where['regional'] = filters.regional
+
+
     if (filters.user) {
       where['metadata.user'] = filters.user
     }
@@ -730,10 +736,15 @@ class CourseSchedulingService {
         scheduling_free = 0
       }
 
+      let path = '/admin/course/courseSchedulingReport'
+      if (['Virtual'].includes(register.schedulingMode.name)) {
+        path = '/admin/course/courseSchedulingVirtualReport'
+      }
+
       const responsePdf = await htmlPdfUtility.generatePdf({
         from: 'file',
         file: {
-          path: '/admin/course/courseSchedulingReport',
+          path,
           type: 'hbs',
           context: {
             program_name: (register.program && register.program.name) ? register.program.name : '',

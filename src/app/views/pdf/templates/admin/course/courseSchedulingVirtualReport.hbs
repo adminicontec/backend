@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Html-Pdf template</title>
+  <style>
+    .title, .observations {
+      color: #0085ca;
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      display: inline-block;
+    }
+    table, th, td {
+      border: 1px solid black;
+      font-size: 0.5rem;
+    }
+    table tr td {
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h4 class="title">CUADRO RESUMEN DE PROGRAMACION</h4>
+  </div>
+  <div>
+    <table>
+      <tr>
+        <td style="width: 15%"><b>NOMBRE DEL PROGRAMA:</b></td>
+        <td style="width: 25%">{{program_name}}</td>
+        <td style="width: 15%"><b>ID DEL SERVICIO</b></td>
+        <td style="width: 15%">{{service_id}}</td>
+        <td style="width: 15%"><b>REGIONAL</b></td>
+        <td style="width: 15%">{{regional_name}}</td>
+      </tr>
+      <tr>
+        <td style="width: 10%"><b>EMPRESA</b></td>
+        <td style="width: 10%">{{cliente_name}}</td>
+        <td style="width: 10%"><b>MODALIDAD</b></td>
+        <td style="width: 10%">{{schedule_mode}}</td>
+        <td style="width: 10%"><b>CIUDAD DEL SERVICIO</b></td>
+        <td style="width: 10%">N/A</td>
+      </tr>
+    </table>
+    <table style="width: 100%;">
+      <tr style="background-color: #0085ca; color: #FFFFFF;">
+        <td style="width: 10%">Código  del curso</td>
+        <td style="width: 30%">Nombre del curso</td>
+        <td style="width: 10%">Nro de horas del curso para el servicio</td>
+        <td style="width: 10%">Docente/Tutor</td>
+        <td style="width: 10%">Fecha</td>
+      </tr>
+      {{#each courses}}
+        <tr>
+          {{#if this.course_code}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
+          {{/if}}
+          {{#if this.course_name}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
+          {{/if}}
+          {{#if this.course_duration}}
+            <td rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
+          {{/if}}
+          <td>{{this.teacher_name}}</td>
+          <td>{{this.start_date}}</td>
+        </tr>
+      {{/each}}
+      <tr>
+        <td style="color: #0085ca;" colspan="4">Nro de Horas Programadas a la fecha</td>
+        <td>{{total_scheduling}}</td>
+      </tr>
+      <tr>
+        <td style="color: #0085ca;" colspan="4">Nro de Horas pendientes por programar</td>
+        <td>{{scheduling_free}}</td>
+      </tr>
+    </table>
+  </div>
+  <div>
+    <h4 class="observations">OBSERVACIONES DEL SERVICIO</h4>
+  </div>
+  <div style="text-align: center;">
+    <table>
+      <tr style="width: 100%; border: none;">
+        <td style="width: 100%; border: none;">{{observations}}</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>

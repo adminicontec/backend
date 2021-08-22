@@ -12,7 +12,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode, Program } from '@scnode_app/models';
+import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, Program } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -108,8 +108,8 @@ class CourseDataService {
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      const schedulingModes = await CourseSchedulingMode.find({name: {$in: ['Virtual', 'En Línea']}})
-      if (schedulingModes.length === 0) {
+      const schedulingTypes = await CourseSchedulingType.find({name: {$in: ['Abierto']}})
+      if (schedulingTypes.length === 0) {
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             courses: [],
@@ -120,7 +120,7 @@ class CourseDataService {
         })
       }
 
-      const schedulingModesIds = schedulingModes.reduce((accum, element) => {
+      const schedulingTypesIds = schedulingTypes.reduce((accum, element) => {
         accum.push(element._id.toString())
         return accum
       }, [])
@@ -131,7 +131,7 @@ class CourseDataService {
       }
 
       let where: any = {
-        schedulingMode: {$in: schedulingModesIds}
+        schedulingType: {$in: schedulingTypesIds}
       }
 
       if (params.search) {
@@ -157,11 +157,12 @@ class CourseDataService {
 
       // @INFO: Filtro para Mode
       if (params.mode) {
-        if (schedulingModesIds.includes(params.mode.toString())) {
-          where['schedulingMode'] = params.mode
-        } else {
-          where['schedulingMode'] = {$in: []}
-        }
+        where['schedulingMode'] = params.mode
+        // if (schedulingModesIds.includes(params.mode.toString())) {
+        //   where['schedulingMode'] = params.mode
+        // } else {
+        //   where['schedulingMode'] = {$in: []}
+        // }
       }
 
       // @Filtro para precio
