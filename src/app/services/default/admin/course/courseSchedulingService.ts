@@ -574,6 +574,7 @@ class CourseSchedulingService {
     if (filters.schedulingStatus) where['schedulingStatus'] = filters.schedulingStatus
     if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
     if (filters.regional) where['regional'] = filters.regional
+    if (filters.client) where['client'] = {$regex: '.*' + filters.client + '.*', $options: 'i'}
 
 
     if (filters.user) {

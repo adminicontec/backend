@@ -57,6 +57,7 @@ export interface ICourseSchedulingQuery {
   schedulingStatus?: string // Busca por estado de programación
   schedulingMode?: string // Busca por modalidad
   regional?: string // Busca por regional
+  client?: string // Busca por cliente
 }
 
 export interface ICourseSchedulingReport {
