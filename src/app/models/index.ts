@@ -1,4 +1,5 @@
 // @import_models
+import { StoreCourseModel } from "@scnode_app/models/storeCourseModel";
 import { AcademicResourceAttemptModel } from "@scnode_app/models/academicResourceAttemptModel";
 import { MailMessageLogModel } from "@scnode_app/models/mailMessageLogModel";
 import { SurveyModel } from "@scnode_app/models/surveyModel";
@@ -45,6 +46,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const StoreCourse = StoreCourseModel
 export const AcademicResourceAttempt = AcademicResourceAttemptModel
 export const MailMessageLog = MailMessageLogModel
 export const Survey = SurveyModel
