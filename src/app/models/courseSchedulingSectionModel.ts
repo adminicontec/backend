@@ -10,6 +10,10 @@ const CourseSchedulingSectionSchema = new Schema({
     type: Schema.Types.String,
     required: true
   },
+  code: {
+    type: Schema.Types.String,
+    required: true
+  },
   moodle_id: { type: Schema.Types.String }
   // @end
 }, {
