@@ -12,16 +12,16 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
-import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import models
-import { Course, CourseSchedulingMode, Program } from '@scnode_app/models'
+import { Course, CourseSchedulingMode, Program, StoreCourse } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourse, ICourseQuery, ICourseDelete } from '@scnode_app/types/default/admin/course/courseTypes'
+import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse } from '@scnode_app/types/default/admin/course/courseTypes'
 import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 // @end
@@ -55,10 +55,10 @@ class CourseService {
       let select = 'id schedulingMode program description coverUrl generalities requirements content'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .select(select)
-        .lean()
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .select(select)
+          .lean()
 
         for await (const register of registers) {
           if (register.coverUrl) {
@@ -73,10 +73,10 @@ class CourseService {
         })
       } else if (params.query === QueryValues.ONE) {
         const register: any = await Course.findOne(where)
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .select(select)
-        .lean()
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .select(select)
+          .lean()
 
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.not_found' })
 
@@ -103,17 +103,11 @@ class CourseService {
    * @returns
    */
   public list = async (filters: ICourseQuery = {}) => {
-    console.log("courseService.list() >> ")
-    // let queryMoodle = await queryUtility.query({
-    //   method: 'get',
-    //   url: '',
-    //   api: 'moodle',
-    //   params: {
-    //     wstoken: moodle_setup.wstoken,
-    //     wsfunction: moodle_setup.services.courses.get,
-    //     moodlewsrestformat: moodle_setup.restformat
-    //   } });
-    // Sincronizar búsquda en CV con datos en el Moodle.
+    console.log("List of available courses:")
+
+    let listOfCourses = []
+    //let courseToExport;
+
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -126,20 +120,79 @@ class CourseService {
     }
 
     let where = {}
+    let registers = []
+    try {
+      registers = await Course.find(where)
+        .select(select)
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        //.populate({ path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus ' })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort({ created_at: -1 })
+        .lean()
 
-    // if (filters.search) {
-    //   const search = filters.search
-    //   where = {
-    //     ...where,
-    //     $or: [
-    //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //       { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //       { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //     ]
-    //   }
-    // }
+      for await (const register of registers) {
+        console.log(register );
 
+        let courseToExport: IStoreCourse = {
+          moodleID: register.program.moodle_id,
+          name: register.program.name,
+          fullname: register.program.name,
+          displayname: register.program.name,
+          description: register.description,
+          courseType: "",
+          mode: register.schedulingMode.name,
+          startDate: "",//register.course_scheduling.startDate,
+          endDate: "",//register.course_scheduling.endDate,
+          maxEnrollmentDate: "",
+          hasCost: false,
+          priceCOP: 0,
+          priceUSD: 0,
+          discount: 0,
+          quota: 0,
+          lang: 'ES'
+        }
+        listOfCourses.push(courseToExport);
+
+      }
+    } catch (e) { }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        courses: [
+          ...listOfCourses
+        ],
+        total_register: (paging) ? await Course.find(where).count() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    })
+
+  }
+
+
+
+
+  /**
+   * Metodo que permite listar todos los registros
+   * @param [filters] Estructura de filtros para la consulta
+   * @returns
+   */
+  public listOfCourseCards = async (filters: ICourseQuery = {}) => {
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id schedulingMode program description coverUrl generalities requirements content'
+    // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {}
     let registers = []
     try {
       registers = await Course.find(where)
@@ -169,6 +222,8 @@ class CourseService {
       }
     })
   }
+
+
 
   /**
    * Metodo que permite insertar/actualizar un registro
@@ -212,7 +267,7 @@ class CourseService {
 
         // @INFO: Validando programa unico
         if (params.program) {
-          const exist = await Course.findOne({program: params.program, _id: {$ne: params.id}})
+          const exist = await Course.findOne({ program: params.program, _id: { $ne: params.id } })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists' } })
         }
 
@@ -233,7 +288,7 @@ class CourseService {
         // const categoryIdMoodle = 12;
         // @INFO: Validando programa unico
         if (params.program) {
-          const exist = await Course.findOne({program: params.program})
+          const exist = await Course.findOne({ program: params.program })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course.insertOrUpdate.already_exists' } })
         }
 
@@ -241,12 +296,12 @@ class CourseService {
         // const endDate = Math.floor(Date.parse(params.endDate) / 1000.0);
 
         // A. Creación de Curso en Campus Digital
-        const {_id} = await Course.create(params);
+        const { _id } = await Course.create(params);
 
         const response: any = await Course.findOne({ _id })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .lean()
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .lean()
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -256,48 +311,48 @@ class CourseService {
           }
         })
 
-      //   // @INFO: Parámetros para enviar al endpoint de Moodle (core_course_create_courses)
-      //   const paramsMoodleCourse: IMoodleCourse = {
-      //     shortName: params.name,
-      //     fullName: params.fullname,
-      //     summary: params.description,
-      //     startDate: startDate,
-      //     endDate: endDate,
-      //     lang: params.lang,
-      //     categoryId: categoryIdMoodle,
-      //     idNumber: respCampusCourseCreate._id.toString(),
-      //   }
-      //   const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
+        //   // @INFO: Parámetros para enviar al endpoint de Moodle (core_course_create_courses)
+        //   const paramsMoodleCourse: IMoodleCourse = {
+        //     shortName: params.name,
+        //     fullName: params.fullname,
+        //     summary: params.description,
+        //     startDate: startDate,
+        //     endDate: endDate,
+        //     lang: params.lang,
+        //     categoryId: categoryIdMoodle,
+        //     idNumber: respCampusCourseCreate._id.toString(),
+        //   }
+        //   const respMoodle: any = await moodleCourseService.insert(paramsMoodleCourse);
 
-      //   if (respMoodle.error_key) {
+        //   if (respMoodle.error_key) {
 
-      //     // @INFO: En caso de error borro el curso creado
-      //     await this.delete({id: respCampusCourseCreate._id})
+        //     // @INFO: En caso de error borro el curso creado
+        //     await this.delete({id: respCampusCourseCreate._id})
 
-      //     console.log("Error: " + respMoodle.exception + ". " + respMoodle.message);
+        //     console.log("Error: " + respMoodle.exception + ". " + respMoodle.message);
 
-      //     return responseUtility.buildResponseSuccess('json', null,{error_key: respMoodle})
-      //   }
-      //   else {
-      //     console.log("Moodle: creación de curso exitosa");
-      //     console.log(respMoodle);
+        //     return responseUtility.buildResponseSuccess('json', null,{error_key: respMoodle})
+        //   }
+        //   else {
+        //     console.log("Moodle: creación de curso exitosa");
+        //     console.log(respMoodle);
 
-      //     // @Actualizar el curso en CampusDigital con el ID de curso en Moodle.
-      //     respCampusCourseCreate.moodleID = respMoodle.course.id
-      //     respCampusCourseCreate.save()
+        //     // @Actualizar el curso en CampusDigital con el ID de curso en Moodle.
+        //     respCampusCourseCreate.moodleID = respMoodle.course.id
+        //     respCampusCourseCreate.save()
 
-      //     return responseUtility.buildResponseSuccess('json', null, {
-      //       additional_parameters: {
-      //         course: {
-      //           _id: respMoodle.course.id,
-      //           name: respMoodle.course.name,
-      //           idNumber: paramsMoodleCourse.idNumber
-      //         }
-      //       }
-      //     })
-      //   }
+        //     return responseUtility.buildResponseSuccess('json', null, {
+        //       additional_parameters: {
+        //         course: {
+        //           _id: respMoodle.course.id,
+        //           name: respMoodle.course.name,
+        //           idNumber: paramsMoodleCourse.idNumber
+        //         }
+        //       }
+        //     })
+        //   }
 
-      //   //#endregion
+        //   //#endregion
       }
 
     } catch (e) {
@@ -327,10 +382,10 @@ class CourseService {
    * Metodo que convierte el valor del cover de un curso a la URL donde se aloja el recurso
    * @param {config} Objeto con data del Course
    */
-   public coverUrl = ({ coverUrl }) => {
+  public coverUrl = ({ coverUrl }) => {
     return coverUrl && coverUrl !== ''
-    ? `${customs['uploads']}/${this.default_cover_path}/${coverUrl}`
-    : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
+      ? `${customs['uploads']}/${this.default_cover_path}/${coverUrl}`
+      : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
   }
 
 }

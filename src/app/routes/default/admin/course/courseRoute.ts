@@ -28,10 +28,15 @@ class CourseRoute {
 
     const _route = `${prefix}${this.router_prefix}`;
     const _routeGeneric = `${prefix}/course`;
+    const _routeCards = `${prefix}/courseCards`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.get(app, _routeGeneric,'/', this.instanceController.list,[], ['auth']);
     routerUtility.get(app, _routeGeneric, '/:id', this.instanceController.get, [], ['auth'])
+
+    routerUtility.get(app, _routeCards,'/', this.instanceController.listOfCourseCards,[], ['auth']);
+    routerUtility.get(app, _routeCards,'/:id', this.instanceController.listOfCourseCards,[], ['auth']);
+
     routerUtility.post(app, _route, '/create', this.instanceController.create, [], ['auth'])
     routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
     routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
