@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import config
@@ -16,7 +17,7 @@ import { courseSchedulingService } from '@scnode_app/services/default/admin/cour
 // @end
 
 // @import models
-import { Course, CourseSchedulingMode, Program, StoreCourse } from '@scnode_app/models'
+import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, CourseSchedulingType } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -24,6 +25,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse } from '@scnode_app/types/default/admin/course/courseTypes'
 import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
+import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
 // @end
 
 class CourseService {
@@ -102,72 +104,164 @@ class CourseService {
    * @param [filters] Estructura de filtros para la consulta
    * @returns
    */
-  public list = async (filters: ICourseQuery = {}) => {
-    console.log("List of available courses:")
+  public list = async (params: IFetchCourses = {}) => {
 
-    let listOfCourses = []
-    //let courseToExport;
-
-    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
-
-    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
-    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
-
-    let select = 'id schedulingMode program description coverUrl generalities requirements content'
-    // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
-    if (filters.select) {
-      select = filters.select
-    }
-
-    let where = {}
-    let registers = []
     try {
-      registers = await Course.find(where)
-        .select(select)
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        //.populate({ path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus ' })
-        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-        .limit(paging ? nPerPage : null)
-        .sort({ created_at: -1 })
-        .lean()
+      console.log("List of available courses:")
 
-      for await (const register of registers) {
-        console.log(register );
+      let listOfCourses = []
+      //let courseToExport;
 
-        let courseToExport: IStoreCourse = {
-          moodleID: register.program.moodle_id,
-          name: register.program.name,
-          fullname: register.program.name,
-          displayname: register.program.name,
-          description: register.description,
-          courseType: "",
-          mode: register.schedulingMode.name,
-          startDate: "",//register.course_scheduling.startDate,
-          endDate: "",//register.course_scheduling.endDate,
-          maxEnrollmentDate: "",
-          hasCost: false,
-          priceCOP: 0,
-          priceUSD: 0,
-          discount: 0,
-          quota: 0,
-          lang: 'ES'
+      const paging = (params.pageNumber && params.nPerPage) ? true : false
+
+      const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
+      const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
+
+      const schedulingTypes = await CourseSchedulingType.find({ name: { $in: ['Abierto'] } })
+      if (schedulingTypes.length === 0) {
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            courses: [],
+            total_register: 0,
+            pageNumber: pageNumber,
+            nPerPage: nPerPage
+          }
+        })
+      }
+
+      const schedulingTypesIds = schedulingTypes.reduce((accum, element) => {
+        accum.push(element._id.toString())
+        return accum
+      }, [])
+
+      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      if (params.select) {
+        select = params.select
+      }
+
+      let where: any = {
+        schedulingType: { $in: schedulingTypesIds }
+      }
+
+      if (params.search) {
+        const search = params.search
+        // where = {
+        //   ...where,
+        //   $or: [
+        //     { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //     { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+        //   ]
+        // }
+        const programs = await Program.find({
+          name: { $regex: '.*' + search + '.*', $options: 'i' }
+        }).select('id')
+        const program_ids = programs.reduce((accum, element) => {
+          accum.push(element._id)
+          return accum
+        }, [])
+        where['program'] = { $in: program_ids }
+      }
+
+      // @INFO: Filtro para Mode
+      if (params.mode) {
+        where['schedulingMode'] = params.mode
+        // if (schedulingModesIds.includes(params.mode.toString())) {
+        //   where['schedulingMode'] = params.mode
+        // } else {
+        //   where['schedulingMode'] = {$in: []}
+        // }
+      }
+
+      // @Filtro para precio
+      if (params.price) {
+        if (params.price === 'free') {
+          where['hasCost'] = false
+        } else if (params.price === 'pay') {
+          where['hasCost'] = true
         }
-        listOfCourses.push(courseToExport);
-
       }
-    } catch (e) { }
 
-    return responseUtility.buildResponseSuccess('json', null, {
-      additional_parameters: {
-        courses: [
-          ...listOfCourses
-        ],
-        total_register: (paging) ? await Course.find(where).count() : 0,
-        pageNumber: pageNumber,
-        nPerPage: nPerPage
+      // Filtro para FEcha de inicio de curso
+      if (params.startPublicationDate) {
+        let direction = 'gte'
+        let date = moment()
+        if (params.startPublicationDate.date !== 'today') {
+          date = moment(params.startPublicationDate.date)
+        }
+        if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
+        where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
-    })
+
+      if (params.endPublicationDate) {
+        let direction = 'lte'
+        let date = moment()
+        if (params.endPublicationDate.date !== 'today') {
+          date = moment(params.endPublicationDate.date)
+        }
+        if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
+        where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+      }
+
+      let sort = null
+      if (params.sort) {
+        sort = {}
+        sort[params.sort.field] = params.sort.direction
+      }
+
+      let registers = []
+
+      try {
+        registers = await CourseScheduling.find(where)
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          .limit(paging ? nPerPage : null)
+          .sort(sort)
+          .lean()
+
+
+        for await (const register of registers) {
+          let courseToExport: IStoreCourse = {
+            id: register._id,
+            moodleID: register.program.moodle_id,
+            name: register.program.name,
+            fullname: register.program.name,
+            displayname: register.program.name,
+            description: '',
+            courseType: 'Diplomado',
+            mode: register.schedulingMode.name,
+            startDate: register.startDate,
+            endDate: register.endDate,
+            maxEnrollmentDate: register.enrollmentDeadline,
+            hasCost: register.hasCost,
+            priceCOP: register.priceCOP,
+            priceUSD: register.priceUSD,
+            discount: register.discount,
+            quota: register.amountParticipants,
+            lang: 'ES'
+          }
+          listOfCourses.push(courseToExport);
+        }
+      } catch (e) {
+        return responseUtility.buildResponseFailed('json')
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          courses: [
+            ...listOfCourses
+          ],
+          total_register: listOfCourses.length,
+          pageNumber: pageNumber,
+          nPerPage: nPerPage
+        }
+      })
+    }
+    catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
 
   }
 
