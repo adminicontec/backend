@@ -42,8 +42,7 @@
         <td style="width: 10%">{{cliente_name}}</td>
         <td style="width: 10%"><b>MODALIDAD</b></td>
         <td style="width: 10%">{{schedule_mode}}</td>
-        <td style="width: 10%"><b>CIUDAD DEL SERVICIO</b></td>
-        <td style="width: 10%">N/A</td>
+        <td style="width: 10%" colspan="2"></td>
       </tr>
     </table>
     <table style="width: 100%;">
@@ -52,7 +51,8 @@
         <td style="width: 30%">Nombre del curso</td>
         <td style="width: 10%">Nro de horas del curso para el servicio</td>
         <td style="width: 10%">Docente/Tutor</td>
-        <td style="width: 10%">Fecha</td>
+        <td style="width: 10%">Fecha de inicio</td>
+        <td style="width: 10%">Fecha finalización</td>
       </tr>
       {{#each courses}}
         <tr>
@@ -67,14 +67,15 @@
           {{/if}}
           <td>{{this.teacher_name}}</td>
           <td>{{this.start_date}}</td>
+          <td>{{this.end_date}}</td>
         </tr>
       {{/each}}
       <tr>
-        <td style="color: #0085ca;" colspan="4">Nro de Horas Programadas a la fecha</td>
+        <td style="color: #0085ca;" colspan="5">Nro de Horas Programadas a la fecha</td>
         <td>{{total_scheduling}}</td>
       </tr>
       <tr>
-        <td style="color: #0085ca;" colspan="4">Nro de Horas pendientes por programar</td>
+        <td style="color: #0085ca;" colspan="5">Nro de Horas pendientes por programar</td>
         <td>{{scheduling_free}}</td>
       </tr>
     </table>

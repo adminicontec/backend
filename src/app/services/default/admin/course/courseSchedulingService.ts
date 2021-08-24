@@ -688,6 +688,7 @@ class CourseSchedulingService {
             consecutive: index + 1,
             teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
             start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
+            end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
             duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
             schedule: '-',
           }
@@ -788,14 +789,13 @@ class CourseSchedulingService {
       })
 
       if (responsePdf.status === 'error') return responsePdf
-      console.log('responsePdf', responsePdf)
+
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           path: responsePdf.path
         }
       })
     } catch (error) {
-      console.log('error', error)
       return responseUtility.buildResponseFailed('json')
     }
   }
