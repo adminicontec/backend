@@ -54,7 +54,7 @@ class CourseSchedulingDetailsService {
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseSchedulingDetails.find(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-          .populate({ path: 'course', select: 'id name moodle_id' })
+          .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
           .select(select)
@@ -68,7 +68,7 @@ class CourseSchedulingDetailsService {
       } else if (params.query === QueryValues.ONE) {
         const register: any = await CourseSchedulingDetails.findOne(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-          .populate({ path: 'course', select: 'id name moodle_id' })
+          .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
           .select(select)
@@ -99,18 +99,23 @@ class CourseSchedulingDetailsService {
     try {
 
       if (params.course && typeof params.course !== "string" && params.course.hasOwnProperty('value')) {
-        const courseLocal = await CourseSchedulingSection.findOne({
-          moodle_id: params.course.value
-        }).select('id').lean()
-        if (courseLocal) {
-          params.course = courseLocal._id
-        } else {
-          const newCourseLocal = await CourseSchedulingSection.create({
-            name: params.course.label,
+
+        const courseArr = params.course.label.toString().split('|')
+        if (courseArr[0] && courseArr[1]) {
+          const courseLocal = await CourseSchedulingSection.findOne({
             moodle_id: params.course.value
-          })
-          if (newCourseLocal) {
-            params.course = newCourseLocal._id
+          }).select('id').lean()
+          if (courseLocal) {
+            params.course = courseLocal._id
+          } else {
+            const newCourseLocal = await CourseSchedulingSection.create({
+              name: courseArr[1].trim(),
+              moodle_id: params.course.value,
+              code: courseArr[0].trim(),
+            })
+            if (newCourseLocal) {
+              params.course = newCourseLocal._id
+            }
           }
         }
       }
@@ -277,7 +282,7 @@ class CourseSchedulingDetailsService {
       registers = await CourseSchedulingDetails.find(where)
         .select(select)
         .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-        .populate({ path: 'course', select: 'id name moodle_id' })
+        .populate({ path: 'course', select: 'id name code moodle_id' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)

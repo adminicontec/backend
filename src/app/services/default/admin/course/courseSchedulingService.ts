@@ -665,7 +665,7 @@ class CourseSchedulingService {
         course_scheduling: register._id
       }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
         .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-        .populate({ path: 'course', select: 'id name moodle_id' })
+        .populate({ path: 'course', select: 'id name code moodle_id' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .select(select)
@@ -681,7 +681,7 @@ class CourseSchedulingService {
           total_scheduling += parseInt(element.duration)
 
           let item = {
-            course_code: 'xxx',
+            course_code: (element.course && element.course.code) ? element.course.code : '',
             course_name: (element.course && element.course.name) ? element.course.name : '',
             course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
             course_row_span: 0,
@@ -699,7 +699,7 @@ class CourseSchedulingService {
             total_scheduling += parseInt(session.duration)
 
             let row_content = {
-              course_code: 'xxx',
+              course_code: (element.course && element.course.code) ? element.course.code : '',
               course_name: (element.course && element.course.name) ? element.course.name : '',
               course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
               course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
