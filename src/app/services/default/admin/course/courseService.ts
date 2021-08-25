@@ -240,7 +240,9 @@ class CourseService {
             priceUSD: register.priceUSD,
             discount: register.discount,
             quota: register.amountParticipants,
-            lang: 'ES'
+            lang: 'ES',
+            duration: register.duration,
+            isActive: true
           }
           listOfCourses.push(courseToExport);
         }
