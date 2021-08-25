@@ -223,9 +223,12 @@ class CourseService {
 
 
         for await (const register of registers) {
+          console.log("------------ORIGINAL ---------------");
+          console.log(register);
+
           let courseToExport: IStoreCourse = {
             id: register._id,
-            moodleID: register.program.moodle_id,
+            moodleID: register.moodle_id,
             name: register.program.name,
             fullname: register.program.name,
             displayname: register.program.name,
@@ -244,6 +247,8 @@ class CourseService {
             duration: register.duration,
             isActive: true
           }
+          console.log("-------------EXPORT------------------");
+          console.log(courseToExport);
           listOfCourses.push(courseToExport);
         }
       } catch (e) {
