@@ -114,8 +114,7 @@ class PostService {
       let postType = null
 
       // @INFO: Cargando imagen al servidor
-
-      if (params.coverFile) {
+      if (params.coverFile && params.coverFile !== '{}') {
         const defaulPath = this.default_cover_path
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
@@ -171,7 +170,7 @@ class PostService {
       }
 
       // @INFO Reviso si viene archivo de articulo
-      if(params.researchFile){
+      if(params.researchFile && params.researchFile !== '{}'){
         const defaulPath = this.default_cover_path
         const response_upload: any = await uploadService.uploadFile(params.researchFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
@@ -277,6 +276,7 @@ class PostService {
       }
 
     } catch (e) {
+      console.log('e',e )
       return responseUtility.buildResponseFailed('json')
     }
   }
