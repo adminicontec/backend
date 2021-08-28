@@ -58,6 +58,7 @@ export interface ICourseSchedulingQuery {
   schedulingMode?: string // Busca por modalidad
   regional?: string // Busca por regional
   client?: string // Busca por cliente
+  service_id?: string
 }
 
 export interface ICourseSchedulingReport {

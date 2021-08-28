@@ -29,6 +29,8 @@ class CityRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
+    routerUtility.get(app, _route, '/external/', this.instanceController.list, [], [])
+
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'city', method: 'create', dir: 'admin/city' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])

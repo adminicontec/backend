@@ -195,6 +195,16 @@ class CourseDataService {
         where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
+      // @INFO: Filtro según ciudad
+      if (params.city) {
+        where['city'] = params.city
+      }
+
+      // @INFO: Filtro según regional
+      if (params.regional) {
+        where['regional'] = params.regional
+      }
+
       let sort = null
       if (params.sort) {
         sort = {}

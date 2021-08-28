@@ -561,6 +561,10 @@ class CourseSchedulingService {
       }
     }
 
+    if (filters.service_id) {
+      where['metadata.service_id'] = {$regex: '.*' + filters.service_id + '.*', $options: 'i'}
+    }
+
     if (filters.course_scheduling_code) {
       const programs = await Program.find({ code: { $regex: '.*' + filters.course_scheduling_code + '.*', $options: 'i' } }).select('id')
       const program_ids = programs.reduce((accum, element) => {

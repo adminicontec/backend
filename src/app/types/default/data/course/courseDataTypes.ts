@@ -32,6 +32,8 @@ export interface IFetchCourses {
     direction: string
   },
   price?: 'free' | 'pay'
+  city?: string
+  regional?: string
 }
 
 export interface IFetchCourse {
