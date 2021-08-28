@@ -37,6 +37,22 @@
         "token_expired": "El token ya no es valido"
       }
     },
+    "landing": {
+      "not_found": "La landing no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una landing configurada como :slug"
+      },
+      "trainings": {
+        "delete": {
+          "not_found": "La capacitación no existe"
+        }
+      },
+      "scheduling": {
+        "delete": {
+          "not_found": "La programación no existe"
+        }
+      }
+    },
     "home": {
       "not_found": "El home no ha sido encontrado",
       "insertOrUpdate": {
