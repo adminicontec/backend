@@ -109,6 +109,38 @@ class ErrorResponse {
           }
         },
       },
+      "landing": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.landing.not_found"),
+          "status_code": "landing_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.landing.insertOrUpdate.already_exists"),
+            "status_code": "landing_insertOrUpdate_already_exists",
+            "code": 400
+          }
+        },
+        "trainings": {
+          "delete": {
+            "not_found": {
+              "message": i18nUtility.__("app_error_messages.landing.trainings.delete.not_found"),
+              "status_code": "landing_trainings_delete_not_found",
+              "code": 400
+            }
+          }
+        },
+        "scheduling": {
+          "delete": {
+            "not_found": {
+              "message": i18nUtility.__("app_error_messages.landing.scheduling.delete.not_found"),
+              "status_code": "landing_scheduling_delete_not_found",
+              "code": 400
+            }
+          }
+        }
+      },
       "home": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.home.not_found"),
