@@ -451,8 +451,6 @@ class EnrollmentService {
               const timeElapsed = Date.now();
               const currentDate = new Date(timeElapsed);
 
-
-
               return responseUtility.buildResponseSuccess('json', null, {
                 additional_parameters: {
                   enrollment: {
