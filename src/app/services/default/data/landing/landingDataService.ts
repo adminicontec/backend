@@ -10,11 +10,11 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
+import { Landing } from '@scnode_app/models';
 // @end
 
 // @import types
 import {IFetchLandingData} from '@scnode_app/types/default/data/landing/landingDataTypes'
-import { Landing } from 'app/models';
 // @end
 
 class LandingDataService {
