@@ -17,7 +17,7 @@ const LandingSchema = new Schema({
   trainings: [
     {
       unique: {type: Schema.Types.String, require: true},
-      status: {type: Schema.Types.String, default: 'enabled', enum: ['disabled', 'enabled']},
+      status: {type: Schema.Types.Boolean, default: true},
       title: {type: Schema.Types.String},
       description: {type: Schema.Types.String},
       attachedUrl: {type: Schema.Types.String},
@@ -28,7 +28,7 @@ const LandingSchema = new Schema({
     {
       unique: {type: Schema.Types.String, require: true},
       title: {type: Schema.Types.String},
-      attached: {type: Schema.Types.String},
+      attachedUrl: {type: Schema.Types.String},
     }
   ]
   // @end

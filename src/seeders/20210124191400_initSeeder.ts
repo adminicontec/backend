@@ -519,6 +519,17 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:survey_update', description: 'Actualizar contenido'},
         {name: 'permission:survey_delete', description: 'Eliminar contenido'},
         {name: 'permission:survey_menu_access', description: 'Menu de encuesta'}
+      ]},
+      {name: 'module:landings', description: 'Modulo que permite la administración de secciones publicas', permissions: [
+        {name: 'permission:landings_teacher', description: 'Landing de docentes'},
+        {name: 'permission:landings_teacher_general_info', description: 'Landing de docentes'},
+        {name: 'permission:landings_teacher_article', description: 'Landing de docentes'},
+        {name: 'permission:landings_teacher_training', description: 'Landing de docentes'},
+        {name: 'permission:landings_teacher_scheduling', description: 'Landing de docentes'},
+
+        // {name: 'permission:survey_update', description: 'Actualizar contenido'},
+        // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
+        {name: 'permission:landings_menu_access', description: 'Menu de configuración de landings'}
       ]}
     ]
 
@@ -640,6 +651,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:survey_create'],
           module_permission_ids['permission:survey_update'],
           module_permission_ids['permission:survey_delete'],
+
+          // @INFO Permisos para el modulo landings
+          module_permission_ids['permission:landings_menu_access'],
+          module_permission_ids['permission:landings_teacher'],
+          module_permission_ids['permission:landings_teacher_general_info'],
+          module_permission_ids['permission:landings_teacher_article'],
+          module_permission_ids['permission:landings_teacher_training'],
+          module_permission_ids['permission:landings_teacher_scheduling'],
         ],
         homes: [
           home_ids['admin']
