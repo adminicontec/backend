@@ -8,6 +8,7 @@ import { customs, moodle_setup } from '@scnode_core/config/globals'
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
@@ -26,6 +27,7 @@ import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse } from '@scnode_app/
 import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { utils } from 'xlsx/types';
 // @end
 
 class CourseService {
@@ -182,27 +184,27 @@ class CourseService {
           where['hasCost'] = true
         }
       }
+      /*
+            // Filtro para FEcha de inicio de curso
+            if (params.startPublicationDate) {
+              let direction = 'gte'
+              let date = moment()
+              if (params.startPublicationDate.date !== 'today') {
+                date = moment(params.startPublicationDate.date)
+              }
+              if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
+              where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+            }
 
-      // Filtro para FEcha de inicio de curso
-      if (params.startPublicationDate) {
-        let direction = 'gte'
-        let date = moment()
-        if (params.startPublicationDate.date !== 'today') {
-          date = moment(params.startPublicationDate.date)
-        }
-        if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
-        where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-      }
-
-      if (params.endPublicationDate) {
-        let direction = 'lte'
-        let date = moment()
-        if (params.endPublicationDate.date !== 'today') {
-          date = moment(params.endPublicationDate.date)
-        }
-        if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
-        where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-      }
+            if (params.endPublicationDate) {
+              let direction = 'lte'
+              let date = moment()
+              if (params.endPublicationDate.date !== 'today') {
+                date = moment(params.endPublicationDate.date)
+              }
+              if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
+              where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+            }*/
 
       let sort = null
       if (params.sort) {
@@ -223,8 +225,19 @@ class CourseService {
 
 
         for await (const register of registers) {
+          let isActive = false;
           console.log("------------ORIGINAL ---------------");
           console.log(register);
+
+          // course Is Active given end date
+          let current = moment();
+          console.log(current);
+          console.log(register.endDate);
+          if (current.isAfter(register.endDate))
+            isActive = false;
+          else
+            isActive = true;
+          console.log(isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -244,11 +257,9 @@ class CourseService {
             discount: register.discount,
             quota: register.amountParticipants,
             lang: 'ES',
-            duration: register.duration,
-            isActive: true
+            duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
+            isActive: isActive
           }
-          console.log("-------------EXPORT------------------");
-          console.log(courseToExport);
           listOfCourses.push(courseToExport);
         }
       } catch (e) {

@@ -521,6 +521,16 @@ class GeneralUtility {
     return response.trim();
   }
 
+
+  /**
+  * @INFO Obtener duración con el formato
+  * @param seconds
+  */
+  public getDurationFormatedForVirtualStore = (seconds: number) => {
+    const hours = Math.trunc(seconds / 3600)
+    return hours;
+  }
+
   /**
    * @INFO Obtener segundos de texto
    * @param inputValue
