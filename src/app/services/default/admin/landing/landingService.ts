@@ -5,6 +5,10 @@
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
+// @import config
+import { customs } from '@scnode_core/config/globals'
+// @end
+
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
@@ -388,6 +392,36 @@ class LandingService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+  public articleCoverUrl = ({ coverUrl }) => {
+    return coverUrl && coverUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_article_path}/${coverUrl}`
+    : null
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public trainingAttachedUrl = ({ attachedUrl }) => {
+    return attachedUrl && attachedUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_training_path}/${attachedUrl}`
+    : null
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public schedulingAttachedUrl = ({ attachedUrl }) => {
+    return attachedUrl && attachedUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_scheduling_path}/${attachedUrl}`
+    : null
   }
 
 }

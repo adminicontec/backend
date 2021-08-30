@@ -1,4 +1,5 @@
 // @import_routes
+import { landingDataRoute } from "@scnode_app/routes/default/data/landing/landingDataRoute";
 import { landingRoute } from "@scnode_app/routes/default/admin/landing//landingRoute";
 import { teacherRoute } from "@scnode_app/routes/default/admin/teacher/teacherRoute";
 import { surveyEventRoute } from "@scnode_app/routes/default/events/academicContent/survey/surveyEventRoute";
@@ -61,6 +62,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    landingDataRoute,
     landingRoute,
     teacherRoute,
     surveyEventRoute,
