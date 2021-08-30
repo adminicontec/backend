@@ -572,7 +572,7 @@ class EnrollmentService {
     // console.log("Begin file process for courseID: " + params.courseID)
     let content = params.contentFile;
 
-    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
+    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0);
     if (dataFromWorksheet != null) {
       console.log("Sheet content:")
 

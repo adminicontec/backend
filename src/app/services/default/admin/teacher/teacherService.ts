@@ -46,13 +46,13 @@ class TeacherService {
       let content = params.contentFile;
 
       // 1. Extracción de información de Docentes
-      //let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0 );
+      let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0 );
 
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
 
       //#region   dataWSDocentes
-      /*
+
       if (dataWSTeachersBase != null) {
         console.log("Sheet content:")
 
@@ -101,7 +101,7 @@ class TeacherService {
       else {
         // Return Error
         // console.log("Worksheet not found");
-      }*/
+      }
       //#endregion dataWSDocentes
 
       //#region     dataWSProfessionals
