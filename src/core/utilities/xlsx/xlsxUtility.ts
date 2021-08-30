@@ -104,7 +104,7 @@ class XlsxUtility {
   }
 
 
-  public extractXLSX = async (buffer_data: Buffer, sheetName: string) => {
+  public extractXLSX = async (buffer_data: Buffer, sheetName: string, firstRow: number) => {
     try {
       let buffer = Buffer.from(buffer_data);
       const workbook = XLSX.read(buffer, { type: "buffer" });
@@ -116,12 +116,17 @@ class XlsxUtility {
       console.log("Sheet location: " + location);
 
       if (location != -1) {
+
+        let sheet = workbook.Sheets[sheet_name_list[location]];
+        let range = XLSX.utils.decode_range(sheet['!ref']);  // find size of the sheet
+        range.s.r = firstRow;
+        var new_range = XLSX.utils.encode_range(range);
+        console.log(new_range);
+
+        //console.log(workbook.Sheets[sheet_name_list[location]]);
         const xlData: any = XLSX.utils.sheet_to_json(
-          workbook.Sheets[sheet_name_list[location]]
+          sheet, { range: new_range, raw: false }
         );
-        // console.log("-------------------------");
-        // console.log(xlData);
-        // console.log("-------------------------");
         return xlData;
       }
       else
@@ -133,6 +138,8 @@ class XlsxUtility {
     }
 
   }
+
+
 }
 
 export const xlsxUtility = new XlsxUtility();

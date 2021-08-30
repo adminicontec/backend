@@ -20,7 +20,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMassiveLoad, ITeacher } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IMassiveLoad, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 
 // @end
@@ -42,17 +42,23 @@ class TeacherService {
       console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
       let userLoadResponse = [];
       let singleUserLoadContent: ITeacher;
+      let singleProfessionalLoadContent: IQualifiedProfessional;
       let content = params.contentFile;
 
-      // 1. Extracció de información de Docentes
-      let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Docentes');
-      if (dataFromWorksheet != null) {
+      // 1. Extracción de información de Docentes
+      //let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0 );
+
+      let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
+
+
+      //#region   dataWSDocentes
+      /*
+      if (dataWSTeachersBase != null) {
         console.log("Sheet content:")
 
-        for await (const element of dataFromWorksheet) {
+        for await (const element of dataWSTeachersBase) {
 
-          singleUserLoadContent =
-          {
+          singleUserLoadContent ={
             documentType: element['Tipo Documento'],
             documentID: element['Documento de Identidad'],
             user: element['Documento de Identidad'].toString(),
@@ -62,7 +68,7 @@ class TeacherService {
             lastname: element['Apellidos'],
             phoneNumber: element['N° Celular'].toString(),
             city: element['Ubicación'],
-            country: 'CO',
+            country: 'Colombia',
             regional: element['Regional'],
             contractType: {
               type: element['Tipo de Vinculación'],
@@ -95,7 +101,40 @@ class TeacherService {
       else {
         // Return Error
         // console.log("Worksheet not found");
+      }*/
+      //#endregion dataWSDocentes
+
+      //#region     dataWSProfessionals
+      if (dataWSProfessionals != null) {
+        console.log("Documentos Profesionales calificados");
+        console.log(dataWSProfessionals);
+
+        for await (const element of dataWSProfessionals) {
+
+          singleProfessionalLoadContent ={
+            documentID: element['Documento de Identidad'],
+            email: element['Correo Electrónico'],
+            modular: element['Modular'],
+            courseCode: element['Código / Versión del Curso'],
+            versionStatus: element['Estado de la Versión'],
+            courseName: element['Nombre Curso'],
+            qualifiedDate: element['Fecha Calificación'],
+            qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
+            qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
+            observations: element['Observaciones'],
+            specializations:  (element['Especializaciones'] != null) ? element['Especializaciones']  : "",
+          }
+
+         console.log("-----------------------------------");
+         console.log(singleProfessionalLoadContent);
+
+        }
       }
+      else{
+
+      }
+      //#endregion  dataWSProfessionals
+
     }
     catch (e) {
       return responseUtility.buildResponseFailed('json')
@@ -126,7 +165,7 @@ class TeacherService {
 
       //#region  Insert
       else {
-        console.log("Inicio de Insercióón de usuario: ");
+        console.log("1. Inicio de Inserción de Docente: ");
 
         // Insertar nuevo Usuario con Rol de Docente (pendiente getRoleIdByName)
         var cvUserParams: IUser = {

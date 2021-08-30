@@ -27,6 +27,20 @@ export interface ITeacher{
   id?: string             // Identificador del Enrollment
 }
 
+export interface IQualifiedProfessional{
+  documentID?: string,     // Documento de identidad
+  email: string,          // email de estudiante
+  modular: string,
+  courseCode: string,
+  versionStatus: string,
+  courseName: string,
+  qualifiedDate: string,
+  qualifiedDocumentationDate: string,
+  qualifiedFormalizationDate: string,
+  observations: string,
+  specializations: string
+}
+
 export interface IMassiveLoad{
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
   contentFile     :           // contento of file to be processed.

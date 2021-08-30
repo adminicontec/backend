@@ -115,7 +115,8 @@ class UserService {
       // 3. securityStamp
       // 4. concurrencyStamp
 
-      console.log("UserService.insertOrUpdate()--> ");
+      console.log("====================== USER SERVICE ====================== ");
+      console.log("1.1. UserService.insertOrUpdate()--> ");
       console.log(params);
 
       if (!params.profile) {
@@ -140,9 +141,7 @@ class UserService {
         params.roles = params.roles.split(",");
       }
 
-      // TODO: Guardar los siguientes campos, debo proporcionar un usuario
-      // createdBy
-      // lastModifiedBy
+      // TODO: Guardar los siguientes campos, debe proporcionarse un usuario
 
       if (params.id) {
         console.log("User ID --> ");
@@ -214,14 +213,14 @@ class UserService {
         })
 
       } else {
-        console.log("User.findOne --> ");
+        console.log("* * User.findOne * *");
         const exist = await User.findOne({
           $or: [
             { username: params.username },
             { email: params.email },
           ]
         })
-        console.log("If user Exists --> ");
+        console.log("If user Exists --> [" + params.username + "]");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
         console.log("If Password --> ");
@@ -254,6 +253,7 @@ class UserService {
             email: params.email
           }
           let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+          console.log("moodleUserService()  resp:");
           console.log(respMoodle2);
           if (respMoodle2.status == "success") {
             if (respMoodle2.user == null) {
