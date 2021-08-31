@@ -3,7 +3,8 @@
 
 // @import services
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
-import { userService } from '../user/userService';
+import { userService } from '@scnode_app/services/default/admin/user/userService';
+import { modularService } from '@scnode_app/services/default/admin/modular/modularService';
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 // @end
 
@@ -16,12 +17,17 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
+import { Modular } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
+import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
 import { IMassiveLoad, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
+import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
+import { create } from 'domain';
+import { Console } from 'console';
 
 // @end
 
@@ -38,6 +44,10 @@ class TeacherService {
 
   public massive = async (params: IMassiveLoad) => {
 
+    let processResult: IFileProcessResult;
+    let processResultLog = [];
+
+
     try {
       console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
       let userLoadResponse = [];
@@ -46,63 +56,102 @@ class TeacherService {
       let content = params.contentFile;
 
       // 1. Extracción de información de Docentes
-      let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0 );
+      let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
 
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
 
       //#region   dataWSDocentes
 
-      if (dataWSTeachersBase != null) {
-        console.log("Sheet content:")
+      try {
+        if (dataWSTeachersBase != null) {
+          console.log("Sheet content for: " + dataWSTeachersBase.length + " teachers")
+          let index = 1;
+          for await (const element of dataWSTeachersBase) {
+            console.log("Process: # " + index);
+            //console.log(element);
 
-        for await (const element of dataWSTeachersBase) {
+            if (element['Documento de Identidad'] != null) {
+              singleUserLoadContent = {
+                documentType: element['Tipo Documento'] ? element['Tipo Documento'] : 'CC',
+                documentID: element['Documento de Identidad'],
+                user: element['Documento de Identidad'].toString(),
+                password: element['Documento de Identidad'].toString(),  // <-- Contraseña provisional
+                email: element['Correo Electrónico'],
+                firstname: element['Nombres'],
+                lastname: element['Apellidos'],
+                phoneNumber: element['N° Celular'].toString(),
+                city: element['Ubicación'],
+                country: 'Colombia',
+                regional: element['Regional'],
+                contractType: {
+                  type: element['Tipo de Vinculación'],
+                  isTeacher: element['DOCENTE'] ? true : false,
+                  isTutor: element['TUTOR'] ? true : false,
+                },
+                rolename: 'teacher',
+                sendEmail: params.sendEmail
+              }
 
-          singleUserLoadContent ={
-            documentType: element['Tipo Documento'],
-            documentID: element['Documento de Identidad'],
-            user: element['Documento de Identidad'].toString(),
-            password: element['Documento de Identidad'].toString(),  // <-- Contraseña provisional
-            email: element['Correo Electrónico'],
-            firstname: element['Nombres'],
-            lastname: element['Apellidos'],
-            phoneNumber: element['N° Celular'].toString(),
-            city: element['Ubicación'],
-            country: 'Colombia',
-            regional: element['Regional'],
-            contractType: {
-              type: element['Tipo de Vinculación'],
-              isTeacher: element['DOCENTE'] ? true : false,
-              isTutor: element['TUTOR'] ? true : false,
-            },
-            rolename: 'teacher',
-            sendEmail: params.sendEmail
+              // Creacin de Usuario en CD y en Moodle.
+              //console.log(singleUserLoadContent);
+              // console.log('Tipo: ' + element['Tipo Documento']);
+              //console.log('Doc:' + element['Documento de Identidad']);
+
+              //const resp = await this.insertOrUpdate(singleUserLoadContent);
+
+              // build process Response
+              //userLoadResponse.push(resp);
+              processResult = {
+                ID: index,
+                status: 'OK',
+                messageProcess: '',
+                details: {
+                  user: singleUserLoadContent.user,
+                  fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
+                }
+              }
+              console.log(processResult)
+              processResultLog.push(processResult);
+
+            }
+            else {
+              //console.log("Error at line: " + index);
+
+              processResult = {
+                ID: index,
+                status: 'ERROR',
+                messageProcess: 'DocumentID is empty',
+                details: {
+                  user: 'Empty',
+                  fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
+                }
+              }
+              console.log(processResult)
+              processResultLog.push(processResult);
+            }
+            index++
           }
 
-          // Creacin de Usuario en CD y en Moodle.
-          console.log(singleUserLoadContent);
-          console.log('Tipo: ' + element['Tipo Documento']);
-          console.log('Doc:' + element['Documento de Identidad']);
+          //console.log(processResultLog);
 
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              ...userLoadResponse
+            }
+          })
 
-          const resp = await this.insertOrUpdate(singleUserLoadContent);
-
-          // build process Response
-          userLoadResponse.push(resp);
         }
-
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            ...userLoadResponse
-          }
-        })
+        else {
+          // Return Error
+          // console.log("Worksheet not found");
+        }
+        //#endregion dataWSDocentes
 
       }
-      else {
-        // Return Error
-        // console.log("Worksheet not found");
+      catch (e) {
+        return responseUtility.buildResponseFailed('json', e)
       }
-      //#endregion dataWSDocentes
 
       //#region     dataWSProfessionals
       if (dataWSProfessionals != null) {
@@ -111,7 +160,7 @@ class TeacherService {
 
         for await (const element of dataWSProfessionals) {
 
-          singleProfessionalLoadContent ={
+          singleProfessionalLoadContent = {
             documentID: element['Documento de Identidad'],
             email: element['Correo Electrónico'],
             modular: element['Modular'],
@@ -122,15 +171,29 @@ class TeacherService {
             qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
             qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
             observations: element['Observaciones'],
-            specializations:  (element['Especializaciones'] != null) ? element['Especializaciones']  : "",
+            specializations: (element['Especializaciones'] != null) ? element['Especializaciones'] : "",
           }
 
-         console.log("-----------------------------------");
-         console.log(singleProfessionalLoadContent);
+          console.log("-----------------------------------");
+          console.log(singleProfessionalLoadContent);
+
+          // Insert Modular: singleProfessionalLoadContent.modular
+
+          if (singleProfessionalLoadContent.modular != null || singleProfessionalLoadContent.modular === '#N/D') {
+
+            const respModular = await modularService.insertOrUpdate({
+              name: singleProfessionalLoadContent.modular,
+              description: singleProfessionalLoadContent.modular
+            });
+
+            console.log("<<<<<<<<<<<<<<< Modular Insertion: >>>>>>>>>>>>>>>>>>>>><<");
+            console.log(respModular);
+          }
+
 
         }
       }
-      else{
+      else {
 
       }
       //#endregion  dataWSProfessionals
