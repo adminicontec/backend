@@ -31,7 +31,6 @@ import {
   ICourseSchedulingQuery,
   ICourseSchedulingReport
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
-import { masterCategoryService } from '../../moodle/course/masterCategoryService';
 // @end
 
 class CourseSchedulingService {
