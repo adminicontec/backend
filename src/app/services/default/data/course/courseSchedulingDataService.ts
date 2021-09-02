@@ -3,6 +3,7 @@ import moment from 'moment'
 // @end
 
 // @import services
+import { courseService } from '@scnode_app/services/default/admin/course/courseService'
 // @end
 
 // @import utilities
@@ -11,7 +12,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { CourseScheduling, CourseSchedulingDetails } from '@scnode_app/models'
+import { CourseScheduling, CourseSchedulingDetails, Course } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -60,7 +61,19 @@ class CourseSchedulingDataService {
 
       if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
 
+      const schedulingExtraInfo: any = await Course.findOne({
+        program: register.program._id
+      })
+      .lean()
+
+      if (schedulingExtraInfo) {
+        let extra_info = schedulingExtraInfo
+        extra_info.coverUrl = courseService.coverUrl(extra_info)
+        register['extra_info'] = extra_info
+      }
+
       let total_scheduling = 0
+      let scheduling = []
       let courses = []
 
       let selectDetails = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
@@ -103,6 +116,14 @@ class CourseSchedulingDataService {
         let duration_scheduling = parseInt(element.duration)
         let first_session = true
 
+        let course = {
+          course_code: (element.course && element.course.code) ? element.course.code : '',
+          course_name: (element.course && element.course.name) ? element.course.name : '',
+          course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+        }
+
+        courses.push(course)
+
         if (element.sessions.length === 0) {
           total_scheduling += parseInt(element.duration)
 
@@ -122,7 +143,7 @@ class CourseSchedulingDataService {
             schedule: '-',
           }
 
-          courses.push(item)
+          scheduling.push(item)
         } else {
           element.sessions.map((session) => {
             total_scheduling += parseInt(session.duration)
@@ -157,7 +178,7 @@ class CourseSchedulingDataService {
             // }
             session_count++
             first_session = false
-            courses.push(item)
+            scheduling.push(item)
           })
         }
 
@@ -166,8 +187,10 @@ class CourseSchedulingDataService {
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         program: {
           name: (register.program && register.program.name) ? register.program.name : '',
+          extra_info: (register.extra_info) ? register.extra_info : null
         },
-        scheduling: courses,
+        courses,
+        scheduling,
       }})
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
