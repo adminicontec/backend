@@ -18,6 +18,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 
 // @import models
 import { Modular } from '@scnode_app/models'
+import { TeacherProfile } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -57,19 +58,17 @@ class TeacherService {
 
       // 1. Extracción de información de Docentes
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
-
+      // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
 
-      //#region   dataWSDocentes
-
+      //#region  dataWSDocentes
       try {
         if (dataWSTeachersBase != null) {
           console.log("Sheet content for: " + dataWSTeachersBase.length + " teachers")
           let index = 1;
           for await (const element of dataWSTeachersBase) {
-            console.log("Process: # " + index);
-            //console.log(element);
+            //console.log("Process: # " + index);
 
             if (element['Documento de Identidad'] != null) {
               singleUserLoadContent = {
@@ -93,15 +92,16 @@ class TeacherService {
                 sendEmail: params.sendEmail
               }
 
-              // Creacin de Usuario en CD y en Moodle.
-              //console.log(singleUserLoadContent);
-              // console.log('Tipo: ' + element['Tipo Documento']);
-              //console.log('Doc:' + element['Documento de Identidad']);
-
-              //const resp = await this.insertOrUpdate(singleUserLoadContent);
+              // Creación de Usuario en CD y en Moodle.
+              //console.log('Username:' + element['Documento de Identidad']);
 
               // build process Response
+              //#region   Insert User in Campus Digital and Moodle
+              //const resp = await this.insertOrUpdate(singleUserLoadContent);
               //userLoadResponse.push(resp);
+              //#endregion   Insert User in Campus Digital and Moodle
+
+              //#region  result after processing record
               processResult = {
                 ID: index,
                 status: 'OK',
@@ -111,9 +111,9 @@ class TeacherService {
                   fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
                 }
               }
-              console.log(processResult)
+              //console.log(processResult)
               processResultLog.push(processResult);
-
+              //#endregion  result after processing record
             }
             else {
               //console.log("Error at line: " + index);
@@ -127,24 +127,27 @@ class TeacherService {
                   fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
                 }
               }
-              console.log(processResult)
+              //console.log(processResult)
               processResultLog.push(processResult);
             }
             index++
           }
 
-          //console.log(processResultLog);
-
+          let extError = processResultLog.filter(e => e.status === 'ERROR');
+          console.log("Log de Errores: ");
+          console.log(extError);
+          _
+          /*
           return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
               ...userLoadResponse
             }
-          })
+          })*/
 
         }
         else {
           // Return Error
-          // console.log("Worksheet not found");
+          console.log('Empty Doc:  "base docentes y tutores"');
         }
         //#endregion dataWSDocentes
 
@@ -152,49 +155,62 @@ class TeacherService {
       catch (e) {
         return responseUtility.buildResponseFailed('json', e)
       }
+      //#endregion   dataWSDocente
 
       //#region     dataWSProfessionals
-      if (dataWSProfessionals != null) {
-        console.log("Documentos Profesionales calificados");
-        console.log(dataWSProfessionals);
+      try {
+        if (dataWSProfessionals != null) {
+          console.log("Documentos Profesionales calificados");
+          console.log(dataWSProfessionals);
 
-        for await (const element of dataWSProfessionals) {
+          let indexP = 1;
+          for await (const element of dataWSProfessionals) {
 
-          singleProfessionalLoadContent = {
-            documentID: element['Documento de Identidad'],
-            email: element['Correo Electrónico'],
-            modular: element['Modular'],
-            courseCode: element['Código / Versión del Curso'],
-            versionStatus: element['Estado de la Versión'],
-            courseName: element['Nombre Curso'],
-            qualifiedDate: element['Fecha Calificación'],
-            qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
-            qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
-            observations: element['Observaciones'],
-            specializations: (element['Especializaciones'] != null) ? element['Especializaciones'] : "",
-          }
+            singleProfessionalLoadContent = {
+              documentID: element['Documento de Identidad'],
+              email: element['Correo Electrónico'],
+              modular: element['Modular'],
+              courseCode: element['Código / Versión del Curso'],
+              versionStatus: element['Estado de la Versión'],
+              courseName: element['Nombre Curso'],
+              qualifiedDate: element['Fecha Calificación'],
+              qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
+              qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
+              observations: element['Observaciones'],
+              specializations: (element['Especializaciones'] != null) ? element['Especializaciones'] : "",
+            }
 
-          console.log("-----------------------------------");
-          console.log(singleProfessionalLoadContent);
+            console.log("-----------ROW: [" + indexP + "] --------------");
+            console.log(singleProfessionalLoadContent);
 
-          // Insert Modular: singleProfessionalLoadContent.modular
+            //#region   ------------- MODULAR -------------
+            // 2. Insert Modular: singleProfessionalLoadContent.modular
 
-          if (singleProfessionalLoadContent.modular != null || singleProfessionalLoadContent.modular === '#N/D') {
+            if (singleProfessionalLoadContent.modular == null || singleProfessionalLoadContent.modular === '#N/D') {
+              // error en modular
+            }
 
-            const respModular = await modularService.insertOrUpdate({
+
+            const respModular: any = await modularService.insertOrUpdate({
               name: singleProfessionalLoadContent.modular,
               description: singleProfessionalLoadContent.modular
             });
 
             console.log("<<<<<<<<<<<<<<< Modular Insertion: >>>>>>>>>>>>>>>>>>>>><<");
-            console.log(respModular);
+            console.log(respModular.modular._id + " - " + respModular.modular.name);
+            //#endregion
+
+
+
+
           }
-
-
+        }
+        else {
+          console.log('Empty Doc:  "Profesionales calificados"');
         }
       }
-      else {
-
+      catch (e) {
+        return responseUtility.buildResponseFailed('json', e)
       }
       //#endregion  dataWSProfessionals
 

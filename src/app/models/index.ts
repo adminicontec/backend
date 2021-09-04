@@ -1,4 +1,5 @@
 // @import_models
+import { TeacherProfileModel } from "@scnode_app/models/teacherProfileModel";
 import { LandingModel } from "@scnode_app/models/landingModel";
 import { StoreCourseModel } from "@scnode_app/models/storeCourseModel";
 import { AcademicResourceAttemptModel } from "@scnode_app/models/academicResourceAttemptModel";
@@ -47,6 +48,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const TeacherProfile = TeacherProfileModel
 export const Landing = LandingModel
 export const StoreCourse = StoreCourseModel
 export const AcademicResourceAttempt = AcademicResourceAttemptModel
