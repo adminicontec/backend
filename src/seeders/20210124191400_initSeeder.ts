@@ -692,6 +692,58 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         moodle_id: 4
       },
       {
+        name: 'scheduling_coordinator',
+        description: 'Coordinador de programación',
+        app_module_permissions: [
+          module_permission_ids['permission:course_scheduling_list'],
+          module_permission_ids['permission:course_scheduling_create'],
+          module_permission_ids['permission:course_scheduling_update'],
+          module_permission_ids['permission:course_scheduling_delete'],
+          module_permission_ids['permission:course_scheduling_enrollment_list'],
+          module_permission_ids['permission:course_scheduling_enrollment_create'],
+          module_permission_ids['permission:course_scheduling_enrollment_update'],
+          module_permission_ids['permission:course_scheduling_enrollment_delete'],
+
+          module_permission_ids['permission:courses_create'],
+          module_permission_ids['permission:courses_update'],
+          module_permission_ids['permission:courses_delete'],
+          module_permission_ids['permission:courses_list'],
+
+          module_permission_ids['permission:courses_menu_access'],
+          module_permission_ids['permission:course_scheduling_menu_access'],
+        ],
+        homes: [
+          home_ids['admin']
+        ],
+        moodle_id: 1
+      },
+      {
+        name: 'logistics_assistant',
+        description: 'Auxiliar logistico',
+        app_module_permissions: [
+          module_permission_ids['permission:course_scheduling_list'],
+          module_permission_ids['permission:course_scheduling_create'],
+          module_permission_ids['permission:course_scheduling_update'],
+          module_permission_ids['permission:course_scheduling_delete'],
+          module_permission_ids['permission:course_scheduling_enrollment_list'],
+          module_permission_ids['permission:course_scheduling_enrollment_create'],
+          module_permission_ids['permission:course_scheduling_enrollment_update'],
+          module_permission_ids['permission:course_scheduling_enrollment_delete'],
+
+          module_permission_ids['permission:courses_create'],
+          module_permission_ids['permission:courses_update'],
+          module_permission_ids['permission:courses_delete'],
+          module_permission_ids['permission:courses_list'],
+
+          module_permission_ids['permission:courses_menu_access'],
+          module_permission_ids['permission:course_scheduling_menu_access'],
+        ],
+        homes: [
+          home_ids['admin']
+        ],
+        moodle_id: 1
+      },
+      {
         name: 'Tutor',
         description: 'Encargado de crear y modificar la programación de servicios educativos.',
         app_module_permissions: [
@@ -798,6 +850,30 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         },
         roles: [
           role_ids['viewer']
+        ]
+      },
+      {
+        username: 'userschedulingcoordinator',
+        password: '123456',
+        email: 'userschedulingcoordinator@example.com',
+        profile: {
+          first_name: 'User',
+          last_name: 'Scheduling Coordinator'
+        },
+        roles: [
+          role_ids['scheduling_coordinator']
+        ]
+      },
+      {
+        username: 'userlogisticsassistant',
+        password: '123456',
+        email: 'userlogisticsassistant@example.com',
+        profile: {
+          first_name: 'User',
+          last_name: 'Logistics Assistant'
+        },
+        roles: [
+          role_ids['logistics_assistant']
         ]
       }
     ]

@@ -88,11 +88,11 @@ const CourseSchema = new Schema({
   coverUrl: {
     type: Schema.Types.String
   },
-  generalities: {
+  competencies: {
     type: Schema.Types.Mixed,
     required: false,
   },
-  requirements: {
+  objectives: {
     type: Schema.Types.Mixed,
     required: false,
   },
@@ -100,7 +100,27 @@ const CourseSchema = new Schema({
     uuid: {type: Schema.Types.String},
     category: {type: Schema.Types.String, default: 'Tema'},
     data: {type: Schema.Types.String}
-  },]
+  },],
+  focus: {
+    type: Schema.Types.Mixed,
+    required: false,
+  },
+  materials: {
+    type: Schema.Types.Mixed,
+    required: false,
+  },
+  important_info: {
+    type: Schema.Types.Mixed,
+    required: false,
+  },
+  methodology: {
+    type: Schema.Types.Mixed,
+    required: false,
+  },
+  generalities: {
+    type: Schema.Types.Mixed,
+    required: false,
+  }
   // benefits: {
   //   type: Schema.Types.Mixed,
   //   required: false,

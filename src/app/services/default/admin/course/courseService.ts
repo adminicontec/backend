@@ -56,7 +56,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program description coverUrl generalities requirements content'
+      let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -298,7 +298,7 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id schedulingMode program description coverUrl generalities requirements content'
+    let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
@@ -344,12 +344,16 @@ class CourseService {
    */
   public insertOrUpdate = async (params: ICourse) => {
     try {
-
-      if (params.content && typeof params.content === 'string') params.content = JSON.parse(params.content)
-      if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
-      if (params.requirements && typeof params.requirements === 'string') params.requirements = JSON.parse(params.requirements)
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
       if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
+      if (params.competencies && typeof params.competencies === 'string') params.competencies = JSON.parse(params.competencies)
+      if (params.objectives && typeof params.objectives === 'string') params.objectives = JSON.parse(params.objectives)
+      if (params.content && typeof params.content === 'string') params.content = JSON.parse(params.content)
+      if (params.focus && typeof params.focus === 'string') params.focus = JSON.parse(params.focus)
+      if (params.materials && typeof params.materials === 'string') params.materials = JSON.parse(params.materials)
+      if (params.important_info && typeof params.important_info === 'string') params.important_info = JSON.parse(params.important_info)
+      if (params.methodology && typeof params.methodology === 'string') params.methodology = JSON.parse(params.methodology)
+      if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
         params.schedulingMode = await courseSchedulingService.saveLocalSchedulingMode(params.schedulingMode)
