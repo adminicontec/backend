@@ -574,7 +574,7 @@ class EnrollmentService {
 
     let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
     if (dataFromWorksheet != null) {
-      console.log("Sheet content:")
+      console.log("Sheet content:" + dataFromWorksheet.length + " records" );
 
       for await (const element of dataFromWorksheet) {
 
@@ -599,7 +599,7 @@ class EnrollmentService {
           email: element['Correo Electrónico'],
           firstname: element['Nombres'],
           lastname: element['Apellidos'],
-          phoneNumber: element['N° Celular'].toString(),
+          phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString() : '',
           city: element['Ciudad'],
           country: element['País'],
           emailAlt: element['Correo Alt'],
