@@ -748,8 +748,8 @@ class CourseSchedulingService {
           total_scheduling += parseInt(element.duration)
 
           let item = {
-            course_code: (element.course && element.course.code) ? element.course.code : '',
-            course_name: (element.course && element.course.name) ? element.course.name : '',
+            course_code: (element.course && element.course.code) ? element.course.code : '-',
+            course_name: (element.course && element.course.name) ? element.course.name : '-',
             course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
             course_row_span: 0,
             consecutive: index + 1,
@@ -766,8 +766,8 @@ class CourseSchedulingService {
             total_scheduling += parseInt(session.duration)
 
             let row_content = {
-              course_code: (element.course && element.course.code) ? element.course.code : '',
-              course_name: (element.course && element.course.name) ? element.course.name : '',
+              course_code: (element.course && element.course.code) ? element.course.code : '-',
+              course_name: (element.course && element.course.name) ? element.course.name : '-',
               course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
               course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
             }
