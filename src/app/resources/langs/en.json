@@ -383,6 +383,9 @@
     },
     "unenrollment_user": {
       "subject": "Retiro del curso"
+    },
+    "scheduling_notification": {
+      "subject": "Programación confirmada"
     }
   }
 }
