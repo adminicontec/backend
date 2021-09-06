@@ -20,7 +20,7 @@ import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
-import { City, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, User } from '@scnode_app/models'
+import { City, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -206,12 +206,14 @@ class CourseSchedulingService {
         await Regional.populate(response, { path: 'regional', select: 'id name' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
+        await User.populate(response, {path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
           await this.checkEnrollmentUsers(response)
           await this.checkEnrollmentTeachers(response)
+          await this.serviceSchedulingNotification(response)
         }
 
         var moodleCity = '';
@@ -293,6 +295,7 @@ class CourseSchedulingService {
           .populate({ path: 'regional', select: 'id name moodle_id' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
+          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
@@ -323,6 +326,7 @@ class CourseSchedulingService {
             if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
               await this.checkEnrollmentUsers(response)
               await this.checkEnrollmentTeachers(response)
+              await this.serviceSchedulingNotification(response)
             }
           } else {
             await this.delete({ id: _id })
@@ -448,6 +452,34 @@ class CourseSchedulingService {
     }
   }
 
+  private serviceSchedulingNotification = async (courseScheduling) => {
+    let email_to_notificate = []
+    const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
+    if (serviceScheduler) {
+      email_to_notificate.push(serviceScheduler.email)
+    }
+
+    const role = await Role.findOne({name: 'logistics_assistant'}).select('id')
+    if (role) {
+      const users = await User.find({roles: {$in: [role._id]}}).select('id email')
+      if (users.length > 0) {
+        users.map((user: any) => email_to_notificate.push(user.email))
+      }
+    }
+
+    if (email_to_notificate.length > 0) {
+      await this.sendSchedulingNotificationEmail(email_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        today: moment().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_${courseScheduling._id}`,
+        amount_notifications: 1
+      })
+
+    }
+  }
+
   /**
    * Metodo que permite enviar emails de bienvenida a los usuarios
    * @param emails Emails a los que se va a enviar
@@ -496,6 +528,38 @@ class CourseSchedulingService {
         emails: [email],
         mailOptions: {
           subject: i18nUtility.__('mailer.unenrollment_user.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  /**
+   * Metodo que permite enviar emails de bienvenida a los usuarios
+   * @param emails Emails a los que se va a enviar
+   * @param paramsTemplate Parametros para construir el email
+   * @returns
+   */
+   public sendSchedulingNotificationEmail = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+      const path_template = 'course/schedulingNotification'
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_notification.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
@@ -684,8 +748,8 @@ class CourseSchedulingService {
           total_scheduling += parseInt(element.duration)
 
           let item = {
-            course_code: (element.course && element.course.code) ? element.course.code : '',
-            course_name: (element.course && element.course.name) ? element.course.name : '',
+            course_code: (element.course && element.course.code) ? element.course.code : '-',
+            course_name: (element.course && element.course.name) ? element.course.name : '-',
             course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
             course_row_span: 0,
             consecutive: index + 1,
@@ -702,8 +766,8 @@ class CourseSchedulingService {
             total_scheduling += parseInt(session.duration)
 
             let row_content = {
-              course_code: (element.course && element.course.code) ? element.course.code : '',
-              course_name: (element.course && element.course.name) ? element.course.name : '',
+              course_code: (element.course && element.course.code) ? element.course.code : '-',
+              course_name: (element.course && element.course.name) ? element.course.name : '-',
               course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
               course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
             }
