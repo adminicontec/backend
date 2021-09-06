@@ -212,10 +212,13 @@ class EnrollmentService {
       } else {
 
         // @INFO: Validando matrícula única: email y courseID
-        if (params.email && params.courseID) {
+        if (params.documentID && params.email && params.courseID) {
           console.log("Inicio de Enrollment");
 
-          var isNew  = false;
+          // If the usename (document ID) has uppercase letters or spaces, must be replace to avoid mooodle's username wrong format
+          var newUserID = params.documentID.toLowerCase().replace(/ /g, "_");
+
+          var isNew = false;
           // check rolename, if not exists, guest as default in moodle, viewer in CV
           //if(params.rolename ==)
 
@@ -286,7 +289,7 @@ class EnrollmentService {
               isNew = true;
               // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
               var cvUserParams: IUser = {
-                username: params.user,
+                username: newUserID,//params.user,
                 email: params.email,
                 password: passw,
                 roles: [roles['student']], // Id de ROL sujeto a verificación en CV
@@ -312,7 +315,7 @@ class EnrollmentService {
               }
               paramToEnrollment.user.moodleFirstName = params.firstname;
               paramToEnrollment.user.moodleLastName = params.lastname;
-              paramToEnrollment.user.moodleUserName = params.documentID;  // docId as UserName
+              paramToEnrollment.user.moodleUserName = newUserID;  // docId as UserName
               paramToEnrollment.user.moodleEmail = params.email;
               paramToEnrollment.user.moodlePassword = passw;
 
@@ -572,9 +575,9 @@ class EnrollmentService {
     // console.log("Begin file process for courseID: " + params.courseID)
     let content = params.contentFile;
 
-    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes');
+    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0);
     if (dataFromWorksheet != null) {
-      console.log("Sheet content:")
+      console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
       for await (const element of dataFromWorksheet) {
 
@@ -586,48 +589,58 @@ class EnrollmentService {
         else {
           dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
         }
-        if (generalUtility.stringIsNullOrEmpty(element['País'])) {
+
+        if (element['País']) {
           element['País'] = 'Colombia';
         }
 
-        singleUserEnrollmentContent =
-        {
-          documentType: element['Tipo Documento'],
-          documentID: element['Documento de Identidad'],
-          user: element['Documento de Identidad'],
-          password: element['Documento de Identidad'],  // <-- Contraseña provisional
-          email: element['Correo Electrónico'],
-          firstname: element['Nombres'],
-          lastname: element['Apellidos'],
-          phoneNumber: element['N° Celular'].toString(),
-          city: element['Ciudad'],
-          country: element['País'],
-          emailAlt: element['Correo Alt'],
-          regional: element['Regional'],
-          birthdate: dob,
-          job: element['Cargo'],
-          title: element['Profesión'],
-          educationalLevel: element['Nivel Educativo'],
-          company: element['Empresa'],
-          genre: element['Género'],
-          origin: element['Origen'],
+        //#region   Revisión Documento de identidad para Casos especiales
+        if (element['Documento de Identidad']) {
+          var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_");
 
-          courseID: params.courseID,
-          rolename: 'student',
-          courseScheduling: params.courseScheduling,
-          sendEmail: params.sendEmail
+          singleUserEnrollmentContent =
+          {
+            documentType: element['Tipo Documento'],
+            documentID: element['Documento de Identidad'],
+            user: element['Documento de Identidad'],
+            password: element['Documento de Identidad'], // <-- Contraseña provisional
+            email: element['Correo Electrónico'],
+            firstname: element['Nombres'],
+            lastname: element['Apellidos'],
+            phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString() : '',
+            city: element['Ciudad'],
+            country: element['País'],
+            emailAlt: element['Correo Alt'],
+            regional: element['Regional'],
+            birthdate: dob,
+            job: element['Cargo'],
+            title: element['Profesión'],
+            educationalLevel: element['Nivel Educativo'],
+            company: element['Empresa'],
+            genre: element['Género'],
+            origin: element['Origen'],
+
+            courseID: params.courseID,
+            rolename: 'student',
+            courseScheduling: params.courseScheduling,
+            sendEmail: params.sendEmail
+          }
+
+          console.log(singleUserEnrollmentContent);
+          console.log('Tipo: ' + element['Tipo Documento']);
+          console.log('Doc:' + element['Documento de Identidad']);
+
+
+          console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
+          const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
+
+          // build process Response
+          userEnrollmentResponse.push(resp);
         }
-
-        console.log(singleUserEnrollmentContent);
-        console.log('Tipo: ' + element['Tipo Documento']);
-        console.log('Doc:' + element['Documento de Identidad']);
-
-
-        console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
-        const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
-
-        // build process Response
-        userEnrollmentResponse.push(resp);
+        else {
+          // Log the Error
+        }
+        //#endregion
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
