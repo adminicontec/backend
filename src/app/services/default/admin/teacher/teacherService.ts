@@ -45,7 +45,7 @@ class TeacherService {
       let content = params.contentFile;
 
       // 1. Extracció de información de Docentes
-      let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Docentes');
+      let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Docentes', 3);
       if (dataFromWorksheet != null) {
         console.log("Sheet content:")
 
