@@ -52,6 +52,7 @@ class FileUtility {
       fs.unlinkSync(file_path);
       return true;
     } catch (err) {
+      console.log('removeFileSync err', err)
       return false;
     }
   }

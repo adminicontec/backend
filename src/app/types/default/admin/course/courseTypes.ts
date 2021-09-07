@@ -25,8 +25,13 @@ export interface ICourse {
   coverUrl?: string              // URL de la imagen del curso
   coverFile?: any,             // Objeto tipo file que contiene la imagen a cargar
   // duration?        : number,          // Numero de segundos para la duración del curso
-  generalities?: string,
-  requirements?: string,
+  competencies?: string
+  objectives?: string
+  focus?: string
+  materials?: string
+  important_info?: string
+  methodology?: string
+  generalities?: string
   content?: Array<{ category?: string, data: string }>,   // Contenido del curso
   // benefits?        : Array<string>,   // Beneficios
 }

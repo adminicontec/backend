@@ -38,7 +38,7 @@ class SurveyEventService {
    */
   public checkSurveyAvailable = async (params: ICheckSurveyAvailable) => {
     try {
-      const today = moment.utc()
+      const today = moment()
 
       // @INFO: Validando el usuario
       const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
@@ -68,6 +68,7 @@ class SurveyEventService {
 
       console.log('survey_related', survey_related)
 
+      console.log('today', today)
       let surveyAvailable = false
       let surveyRelated = null
       // TODO: Consultar la programación
@@ -78,7 +79,7 @@ class SurveyEventService {
         // TODO: Fechas de los cursos
         let whereDetailScheduling = {
           course_scheduling: enrollment.course_scheduling._id,
-          endDate: {$lt: today}
+          endDate: {$lt: today.format('YYYY-MM-DD')}
         }
         if (survey_related.length > 0) {
           whereDetailScheduling['_id'] = {$nin: survey_related}

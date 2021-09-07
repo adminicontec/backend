@@ -287,7 +287,7 @@ class CourseSchedulingDetailsService {
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        .sort({ created_at: -1 })
+        // .sort({ created_at: -1 })
         .lean()
 
       for await (const register of registers) {

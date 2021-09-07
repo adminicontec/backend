@@ -91,8 +91,10 @@ class HtmlPdfUtility {
         const public_path_file = `${host}/uploads/${path_upload}${config.to_file.file.name}`;
 
         const fileExists = await fileUtility.fileExists(full_path_file)
+        console.log('fileExists', fileExists)
         if (fileExists) {
-          await fileUtility.removeFileSync(full_path_file)
+          const remove = await fileUtility.removeFileSync(full_path_file)
+          console.log('remove', remove)
         }
 
         const pdfGenerated: {file: any} | null = await new Promise((resolve, reject) => {
