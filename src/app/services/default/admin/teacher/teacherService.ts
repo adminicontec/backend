@@ -136,7 +136,7 @@ class TeacherService {
           let extError = processResultLog.filter(e => e.status === 'ERROR');
           console.log("Log de Errores: ");
           console.log(extError);
-          _
+
           /*
           return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
