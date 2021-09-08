@@ -453,7 +453,8 @@ class CourseSchedulingService {
             _id: courseScheduling.program._id,
             name: courseScheduling.program.name,
           },
-          courses: []
+          courses: [],
+          has_sessions: (course.sessions.length > 0) ? true : false,
         }
       }
 
@@ -505,6 +506,7 @@ class CourseSchedulingService {
           teacher: teacherData.teacher,
           program: teacherData.program,
           courses: teacherData.courses,
+          has_sessions: teacherData.has_sessions,
           type: 'teacher',
           notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program._id}`,
           amount_notifications: 1

@@ -26,6 +26,11 @@
     Lo invitamos a ingresar por la siguiente dirección:
     <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
 
+    {{#if params.has_sessions}}
+    <br><br>
+    Recuerde crear las sesiones de Webex según la programación anterior
+    {{/if}}
+
     <br><br>
     En caso de cualquier inquietud comunicarse al correo de soporte {{params.mailer.email_technical_support}}, líneas de atención {{params.mailer.phone_technical_support}} o accede a la <a href="{{params.mailer.help_desk}}">ayuda en línea</a>.
     <br><br>

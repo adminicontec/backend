@@ -47,9 +47,14 @@ class SurveyEventService {
       // @INFO: Validando el programa
       const enrollment = await Enrollment.findOne({user: params.user, courseID: params.moodle_id})
       .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id schedulingMode startDate endDate', populate: {
-        path: 'schedulingMode', select: 'id name'
-      }})
+      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate', populate: [
+        {
+          path: 'schedulingMode', select: 'id name'
+        },
+        {
+          path: 'program', select: 'id name code'
+        }
+      ]})
       .lean()
       console.log('enrollment', enrollment)
 
@@ -71,6 +76,7 @@ class SurveyEventService {
       console.log('today', today)
       let surveyAvailable = false
       let surveyRelated = null
+      let surveyRelatedContent = null
       // TODO: Consultar la programación
       // En virtual va dirigido al programa y en online y presencial a cada curso
       const schedulingMode = enrollment.course_scheduling.schedulingMode.name
@@ -85,7 +91,8 @@ class SurveyEventService {
           whereDetailScheduling['_id'] = {$nin: survey_related}
         }
         const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
-        .select('id startDate endDate')
+        .select('id course startDate endDate')
+        .populate({path: 'course', select: 'id name code'})
         .lean()
         .sort({startDate: 1})
 
@@ -95,6 +102,10 @@ class SurveyEventService {
 
         surveyAvailable = true
         surveyRelated = detailScheduling[0]._id
+        surveyRelatedContent = {
+          name: detailScheduling[0].course.name,
+          endDate: detailScheduling[0].endDate,
+        }
       } else if (schedulingMode === 'Virtual') {
         // TODO: Fechas del programa
         const endDate = moment.utc(enrollment.course_scheduling.endDate)
@@ -106,6 +117,10 @@ class SurveyEventService {
           if (today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD')) {
             surveyAvailable = true
             surveyRelated = enrollment.course_scheduling._id
+            surveyRelatedContent = {
+              name: enrollment.course_scheduling.program.name,
+              endDate: enrollment.course_scheduling.endDate,
+            }
           } else {
             console.log('entro a virtual false')
             return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -151,6 +166,7 @@ class SurveyEventService {
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         survey: data[0].survey,
         surveyRelated,
+        surveyRelatedContent,
         academic_resource_config: data[0].academic_resource_config,
       }})
     } catch (error) {
