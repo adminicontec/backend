@@ -6,19 +6,36 @@
 
   <h2>Inicio del curso</h2>
   <p>
-    Estimado (a) {{params.first_name}}
+    Estimado (a) {{params.teacher.first_name}}
 
-    Usted ha sido inscrito al curso de {{params.course_name}} como docente.
+    Usted ha sido inscrito al programa {{params.program.name}} como docente con la siguiente programación.
+
+    {{#each params.courses}}
+      <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
+        <p><b>Cliente: </b>{{this.client}}</p>
+        <p><b>Código: </b>{{this.course_code}}</p>
+        <p><b>Curso: </b>{{this.course_name}}</p>
+        <p><b>Modalidad: </b>{{this.scheduling_mode}}</p>
+        <p><b>Ciudad: </b>{{this.city}}</p>
+        <p><b>Fecha de inicio: </b>{{this.start_date}}</p>
+        <p><b>Duración: </b>{{this.duration}}</p>
+        <p><b>Horario: </b>{{this.schedule}}</p>
+      </div>
+    {{/each}}
 
     Lo invitamos a ingresar por la siguiente dirección:
     <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
 
-    La fecha para el curso va desde
-    {{params.course_start}} hasta {{params.course_end}}
+    {{#if params.has_sessions}}
+    <br><br>
+    Recuerde crear las sesiones de Webex según la programación anterior
+    {{/if}}
 
+    <br><br>
     En caso de cualquier inquietud comunicarse al correo de soporte {{params.mailer.email_technical_support}}, líneas de atención {{params.mailer.phone_technical_support}} o accede a la <a href="{{params.mailer.help_desk}}">ayuda en línea</a>.
-
+    <br><br>
     Cordialmente
+    <br>
     Equipo Unidad Técnica de Educación
   </p>
   <img src="{{params.mailer.footer_icon}}">

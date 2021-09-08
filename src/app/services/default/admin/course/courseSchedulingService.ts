@@ -434,21 +434,84 @@ class CourseSchedulingService {
   private checkEnrollmentTeachers = async (courseScheduling) => {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
-    }).select('id teacher')
+    }).select('id startDate endDate duration course sessions teacher')
+      .populate({ path: 'course', select: 'id name code' })
       .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
       .lean()
 
+    let notificationsByTeacher = {}
+
     for await (const course of courses) {
-      await this.sendEnrollmentUserEmail([course.teacher.email], {
-        mailer: customs['mailer'],
-        first_name: course.teacher.profile.first_name,
-        course_name: courseScheduling.program.name,
-        course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-        course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
-        type: 'teacher',
-        notification_source: `course_start_${course.teacher._id}_${course._id}`,
-        amount_notifications: 1
-      })
+      if (!notificationsByTeacher[course.teacher._id]) {
+        notificationsByTeacher[course.teacher._id] = {
+          teacher: {
+            _id: course.teacher._id,
+            email: course.teacher.email,
+            first_name: course.teacher.profile.first_name,
+          },
+          program: {
+            _id: courseScheduling.program._id,
+            name: courseScheduling.program.name,
+          },
+          courses: [],
+          has_sessions: (course.sessions.length > 0) ? true : false,
+        }
+      }
+
+      if (course.sessions.length === 0) {
+
+        let item = {
+          client: (courseScheduling.client) ? courseScheduling.client : '-',
+          city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+          scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+          course_code: (course.course && course.course.code) ? course.course.code : '',
+          course_name: (course.course && course.course.name) ? course.course.name : '',
+          start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
+          end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
+          duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
+          schedule: '-',
+        }
+
+        notificationsByTeacher[course.teacher._id].courses.push(item)
+      } else {
+        course.sessions.map((session) => {
+          let row_content = {
+            client: (courseScheduling.client) ? courseScheduling.client : '',
+            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
+            scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
+            course_code: (course.course && course.course.code) ? course.course.code : '',
+            course_name: (course.course && course.course.name) ? course.course.name : '',
+          }
+
+          let schedule = ''
+          if (session.startDate && session.duration) {
+            let endDate = moment(session.startDate).add(session.duration, 'seconds')
+            schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+          }
+          let session_data = {
+            start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+            duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+            schedule: schedule,
+          }
+          notificationsByTeacher[course.teacher._id].courses.push({ ...row_content, ...session_data })
+        })
+      }
+    }
+
+    for (const key in notificationsByTeacher) {
+      if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {
+        const teacherData = notificationsByTeacher[key];
+        await this.sendEnrollmentUserEmail([teacherData.teacher.email], {
+          mailer: customs['mailer'],
+          teacher: teacherData.teacher,
+          program: teacherData.program,
+          courses: teacherData.courses,
+          has_sessions: teacherData.has_sessions,
+          type: 'teacher',
+          notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program._id}`,
+          amount_notifications: 1
+        })
+      }
     }
   }
 
@@ -507,7 +570,6 @@ class CourseSchedulingService {
         },
         notification_source: paramsTemplate.notification_source
       })
-
       return mail
 
     } catch (e) {
