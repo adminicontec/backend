@@ -274,50 +274,48 @@ class EnrollmentService {
 
             // Si username === email --> TIENDA VIRTUAL
             // Si username === documentID --> Carga Masiva
+            // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
+            var cvUserParams: IUser = {
+              username: newUserID,//params.user,
+              email: params.email,
+              password: passw,
+              roles: [roles['student']], // Id de ROL sujeto a verificación en CV
+              phoneNumber: params.phoneNumber,
+              profile: {
+                first_name: params.firstname,
+                last_name: params.lastname,
+                doc_type: params.documentType,
+                doc_number: params.documentID,
+                city: params.city,
+                country: params.country,
+                birthDate: params.birthdate,
+                alternativeEmail: params.emailAlt,
+                genre: params.genre,
+                regional: params.regional,
+                company: params.company,
+                carreer: params.title,
+                currentPosition: params.job,
+                educationalLevel: params.educationalLevel,
+                origen: params.origin,
+              },
+              sendEmail: true
+            }
+            paramToEnrollment.user.moodleFirstName = params.firstname;
+            paramToEnrollment.user.moodleLastName = params.lastname;
+            paramToEnrollment.user.moodleUserName = newUserID;  // docId as UserName
+            paramToEnrollment.user.moodleEmail = params.email;
+            paramToEnrollment.user.moodlePassword = passw;
 
             respCampusDataUser = await userService.findBy({
               query: QueryValues.ONE,
               where: [{ field: 'profile.doc_number', value: params.documentID }]
             });
-            console.log('By doc_number: ');
-            console.log(respCampusDataUser);
-
+            console.log('Search by doc_number: ');
 
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
               console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
               isNew = true;
-              // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
-              var cvUserParams: IUser = {
-                username: newUserID,//params.user,
-                email: params.email,
-                password: passw,
-                roles: [roles['student']], // Id de ROL sujeto a verificación en CV
-                phoneNumber: params.phoneNumber,
-                profile: {
-                  first_name: params.firstname,
-                  last_name: params.lastname,
-                  doc_type: params.documentType,
-                  doc_number: params.documentID,
-                  city: params.city,
-                  country: params.country,
-                  birthDate: params.birthdate,
-                  alternativeEmail: params.emailAlt,
-                  genre: params.genre,
-                  regional: params.regional,
-                  company: params.company,
-                  carreer: params.title,
-                  currentPosition: params.job,
-                  educationalLevel: params.educationalLevel,
-                  origen: params.origin,
-                },
-                sendEmail: true
-              }
-              paramToEnrollment.user.moodleFirstName = params.firstname;
-              paramToEnrollment.user.moodleLastName = params.lastname;
-              paramToEnrollment.user.moodleUserName = newUserID;  // docId as UserName
-              paramToEnrollment.user.moodleEmail = params.email;
-              paramToEnrollment.user.moodlePassword = passw;
 
               // Insertar nuevo Usuario si no existe
               const respoUser = await userService.insertOrUpdate(cvUserParams);
@@ -331,11 +329,26 @@ class EnrollmentService {
               }
               else {
                 // Retornar ERROR: revisar con equipo
-                // console.log(respoUser);
+
+                // const respoUser = await userService.insertOrUpdate(cvUserParams);
+                // if (respoUser.status == "success") {
+                // }
               }
             }
             else {
               console.log(">>[CampusVirtual]: El usuario existe.");
+              console.log("User exists in Campus, update!");
+              console.log(respCampusDataUser.user._id);
+              console.log(">>>>>>>>>>>>>>>>>>>>");
+
+              cvUserParams.id = respCampusDataUser.user._id;
+              console.log(cvUserParams);
+              try {
+                const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
+              }
+              catch (e) {
+                return responseUtility.buildResponseFailed('json')
+              }
 
 
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
@@ -625,13 +638,10 @@ class EnrollmentService {
             courseScheduling: params.courseScheduling,
             sendEmail: params.sendEmail
           }
-
-          console.log(singleUserEnrollmentContent);
+          //console.log(singleUserEnrollmentContent);
           console.log('Tipo: ' + element['Tipo Documento']);
           console.log('Doc:' + element['Documento de Identidad']);
-
-
-          console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
+          //console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
           const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
 
           // build process Response
