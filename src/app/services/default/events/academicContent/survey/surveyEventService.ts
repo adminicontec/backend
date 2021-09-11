@@ -85,13 +85,13 @@ class SurveyEventService {
         // TODO: Fechas de los cursos
         let whereDetailScheduling = {
           course_scheduling: enrollment.course_scheduling._id,
-          endDate: {$lt: today.format('YYYY-MM-DD')}
+          // endDate: {$lt: today.format('YYYY-MM-DD')}
         }
         if (survey_related.length > 0) {
           whereDetailScheduling['_id'] = {$nin: survey_related}
         }
         const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
-        .select('id course startDate endDate')
+        .select('id course startDate endDate sessions')
         .populate({path: 'course', select: 'id name code'})
         .lean()
         .sort({startDate: 1})
@@ -100,12 +100,38 @@ class SurveyEventService {
 
         if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
 
-        surveyAvailable = true
-        surveyRelated = detailScheduling[0]._id
-        surveyRelatedContent = {
-          name: detailScheduling[0].course.name,
-          endDate: detailScheduling[0].endDate,
-        }
+        let anySessionExpiredToday = false
+        detailScheduling.map((course) => {
+          console.log('course',course._id)
+          if (!anySessionExpiredToday) {
+            if (course.sessions && course.sessions.length > 0) {
+              let sessions = course.sessions.reduce((accum, element) => {
+                if (element.startDate && element.duration) {
+                  element.endDate = moment(element.startDate).add(element.duration, 'seconds')
+                  accum.push(element)
+                }
+                return accum
+              }, [])
+              sessions.sort((a, b) => moment(a.startDate).diff(moment(b.startDate)))
+              console.log('sessions', sessions)
+              if (sessions.length > 0)  {
+                const lastSession = sessions[sessions.length-1]
+                console.log('lastSession', lastSession)
+                // if (today.format('YYYY-MM-DD ') >= endDate.format('YYYY-MM-DD')) {
+                  if (today.isAfter(lastSession.endDate.subtract(30, 'minutes'))) {
+                    console.log('session selected', lastSession)
+                    anySessionExpiredToday = true
+                    surveyAvailable = true
+                    surveyRelated = course._id
+                    surveyRelatedContent = {
+                      name: course.course.name,
+                      endDate: lastSession.endDate,
+                    }
+                  }
+              }
+            }
+          }
+        })
       } else if (schedulingMode === 'Virtual') {
         // TODO: Fechas del programa
         const endDate = moment.utc(enrollment.course_scheduling.endDate)
@@ -114,7 +140,7 @@ class SurveyEventService {
         console.log('compare', today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD'))
         console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
         if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
-          if (today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD')) {
+          if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
             surveyAvailable = true
             surveyRelated = enrollment.course_scheduling._id
             surveyRelatedContent = {
