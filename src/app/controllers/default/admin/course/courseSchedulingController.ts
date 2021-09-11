@@ -103,8 +103,8 @@ class CourseSchedulingController {
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
-	public generatePdfReport = async (req: Request, res: Response) => {
-		const response = await courseSchedulingService.generatePdfReport(req.getParameters.all())
+	public generateReport = async (req: Request, res: Response) => {
+		const response = await courseSchedulingService.generateReport(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 }
