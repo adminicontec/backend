@@ -527,6 +527,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_teacher_training', description: 'Landing de docentes'},
         {name: 'permission:landings_teacher_scheduling', description: 'Landing de docentes'},
 
+        {name: 'permission:landings_business', description: 'Landing de empresas'},
+        {name: 'permission:landings_business_general_info', description: 'Landing de empresas'},
+        {name: 'permission:landings_business_article', description: 'Landing de empresas'},
+        {name: 'permission:landings_business_training', description: 'Landing de empresas'},
+        {name: 'permission:landings_business_scheduling', description: 'Landing de empresas'},
+
+        {name: 'permission:landings_officials', description: 'Landing de funcionarios'},
+        {name: 'permission:landings_officials_general_info', description: 'Landing de funcionarios'},
+        {name: 'permission:landings_officials_article', description: 'Landing de funcionarios'},
+        {name: 'permission:landings_officials_training', description: 'Landing de funcionarios'},
+        {name: 'permission:landings_officials_scheduling', description: 'Landing de funcionarios'},
+
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
         {name: 'permission:landings_menu_access', description: 'Menu de configuración de landings'}
@@ -659,6 +671,16 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:landings_teacher_article'],
           module_permission_ids['permission:landings_teacher_training'],
           module_permission_ids['permission:landings_teacher_scheduling'],
+          module_permission_ids['permission:landings_business'],
+          module_permission_ids['permission:landings_business_general_info'],
+          module_permission_ids['permission:landings_business_article'],
+          module_permission_ids['permission:landings_business_training'],
+          module_permission_ids['permission:landings_business_scheduling'],
+          module_permission_ids['permission:landings_officials'],
+          module_permission_ids['permission:landings_officials_general_info'],
+          module_permission_ids['permission:landings_officials_article'],
+          module_permission_ids['permission:landings_officials_training'],
+          module_permission_ids['permission:landings_officials_scheduling'],
         ],
         homes: [
           home_ids['admin']
