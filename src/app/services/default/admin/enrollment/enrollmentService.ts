@@ -6,6 +6,7 @@ import { roleService } from '@scnode_app/services/default/admin/secure/roleServi
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 import { userService } from '../user/userService';
+import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { moodleUserService } from '../../moodle/user/moodleUserService';
@@ -191,6 +192,28 @@ class EnrollmentService {
       }
     }
 
+    //#region Process Country; send ISO-2
+    var countryCode = '';
+    var countryID = '';
+    if (params.country) {
+      console.log("==> " + params.country);
+      const responseCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.country }] })
+      if (responseCountry.status === 'success') {
+        countryID =  responseCountry.country.id;
+        countryCode = responseCountry.country.iso2;
+      }
+      else {
+        countryID = '60e67d097d68fc1910feff7a';
+        countryCode = "CO";  // by default
+      }
+    }
+    else {
+      countryID = '60e67d097d68fc1910feff7a';
+      countryCode = "CO";  // by default
+    }
+      //#endregion
+
+
     try {
       if (params.id) {
 
@@ -256,11 +279,8 @@ class EnrollmentService {
           const respMoodle: any = await moodleCourseService.findBy(params);
           // console.log('respMoodle', respMoodle);
 
-          if (respMoodle.status == "error") {
-            console.log('Curso ' + params.courseID + ' en Moodle NO existe.');
-            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
-          }
-          else {
+          if (respMoodle.status !== "error")
+          {
             // Info del curso existe!
             paramToEnrollment.course.moodleCourseID = respMoodle.course.id;
             paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
@@ -270,12 +290,12 @@ class EnrollmentService {
 
             let userEnrollment = null;
             let respCampusDataUser: any = null;
-            console.log(">>>>>>>>>>>>>> [CampusVirtual]: reponse");
 
             // Si username === email --> TIENDA VIRTUAL
             // Si username === documentID --> Carga Masiva
             // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
             var cvUserParams: IUser = {
+              id:'',
               username: newUserID,//params.user,
               email: params.email,
               password: passw,
@@ -287,7 +307,7 @@ class EnrollmentService {
                 doc_type: params.documentType,
                 doc_number: params.documentID,
                 city: params.city,
-                country: params.country,
+                country: countryID,
                 birthDate: params.birthdate,
                 alternativeEmail: params.emailAlt,
                 genre: params.genre,
@@ -336,15 +356,21 @@ class EnrollmentService {
               }
             }
             else {
-              console.log(">>[CampusVirtual]: El usuario existe.");
-              console.log("User exists in Campus, update!");
-              console.log(respCampusDataUser.user._id);
+              console.log(">>[CampusVirtual]: El usuario existe: " + respCampusDataUser.user._id);
               console.log(">>>>>>>>>>>>>>>>>>>>");
 
-              cvUserParams.id = respCampusDataUser.user._id;
+              cvUserParams.id = respCampusDataUser.user._id.toString();
               console.log(cvUserParams);
               try {
                 const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
+
+                if (respoExistingUser.status == "success") {
+                  console.log("---------------- SUCESS ----------------------- ");
+                }
+                else{
+                  console.log(respoExistingUser);
+                }
+
               }
               catch (e) {
                 return responseUtility.buildResponseFailed('json')
@@ -428,7 +454,7 @@ class EnrollmentService {
                   username: paramToEnrollment.user.moodleUserName,
                   phonenumber: params.phoneNumber,
                   city: params.city,
-                  country: params.country,
+                  country: countryCode,
                   regional: params.regional,
                   fecha_nacimiento: params.birthdate,
                   cargo: params.job,
@@ -495,8 +521,13 @@ class EnrollmentService {
             //#endregion
 
           }
+          else
+          {
+            // No hay curso para hacer matrícula
+            console.log('Curso ' + params.courseID + ' en Moodle NO existe.');
+            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
+          }
           //#endregion
-
         }
         else {
           // console.log("ERROR en Enrolamiento");
@@ -603,10 +634,6 @@ class EnrollmentService {
           dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
         }
 
-        if (element['País']) {
-          element['País'] = 'Colombia';
-        }
-
         //#region   Revisión Documento de identidad para Casos especiales
         if (element['Documento de Identidad']) {
           var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_");
@@ -638,12 +665,8 @@ class EnrollmentService {
             courseScheduling: params.courseScheduling,
             sendEmail: params.sendEmail
           }
-          //console.log(singleUserEnrollmentContent);
-          console.log('Tipo: ' + element['Tipo Documento']);
-          console.log('Doc:' + element['Documento de Identidad']);
-          //console.log(">>>>>>>>>>>>>>>>>>>>  " + singleUserEnrollmentContent.country)
+          console.log('Tipo: ' + element['Tipo Documento'] + ' Doc:' + element['Documento de Identidad']);
           const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
-
           // build process Response
           userEnrollmentResponse.push(resp);
         }

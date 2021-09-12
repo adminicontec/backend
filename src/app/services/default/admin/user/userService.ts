@@ -142,25 +142,16 @@ class UserService {
       // TODO: Guardar los siguientes campos, debo proporcionar un usuario
       // createdBy
       // lastModifiedBy
-/*  */
       if (params.id) {
-        console.log("update User ID --> " + params.id);
+        console.log(":: :: Update User ID --> " + params.id);
         let register: any = await User.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
 
         // @INFO: Validando campos unicos
-        if (params.username && params.email) {
-          const exist = await User.findOne({
-            $or: [
-              { username: params.username }
-            ],
-            _id: { $ne: params.id }
-          })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
-        } else if (params.username) {
-          const exist = await User.findOne({ username: params.username, _id: { $ne: params.id } })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.username } } })
+        if (params.username) {
+          const exist = await User.findOne({ name: params.username, _id: {$ne: params.id}})
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}` } } })
         }
         // else if (params.email) {
         //   const exist = await User.findOne({ email: params.email, _id: { $ne: params.id } })
@@ -191,6 +182,8 @@ class UserService {
           }
         }
 
+        console.log("Ready to update");
+        console.log(params)
         const response: any = await User.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
           new: true,
