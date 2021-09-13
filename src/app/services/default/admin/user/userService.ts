@@ -124,7 +124,6 @@ class UserService {
         params.profile = JSON.parse(params.profile);
       }
 
-      console.log("Avatar --> ");
       // @INFO: Almacenando en servidor la imagen adjunta
       if (params.avatar) {
         console.log("--> avatar");
@@ -143,30 +142,21 @@ class UserService {
       // TODO: Guardar los siguientes campos, debo proporcionar un usuario
       // createdBy
       // lastModifiedBy
-
       if (params.id) {
-        console.log("User ID --> ");
+        console.log(":: :: Update User ID --> " + params.id);
         let register: any = await User.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
 
         // @INFO: Validando campos unicos
-        if (params.username && params.email) {
-          const exist = await User.findOne({
-            $or: [
-              { username: params.username },
-              { email: params.email },
-            ],
-            _id: { $ne: params.id }
-          })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
-        } else if (params.username) {
-          const exist = await User.findOne({ username: params.username, _id: { $ne: params.id } })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.username } } })
-        } else if (params.email) {
-          const exist = await User.findOne({ email: params.email, _id: { $ne: params.id } })
-          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.email } } })
+        if (params.username) {
+          const exist = await User.findOne({ name: params.username, _id: {$ne: params.id}})
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}` } } })
         }
+        // else if (params.email) {
+        //   const exist = await User.findOne({ email: params.email, _id: { $ne: params.id } })
+        //   if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.email } } })
+        // }
 
         // @INFO: Si se proporciona la contraseña actual la verificamos para establecer si es correcta
         if (params.current_password) {
@@ -192,6 +182,8 @@ class UserService {
           }
         }
 
+        console.log("Ready to update");
+        console.log(params)
         const response: any = await User.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
           new: true,

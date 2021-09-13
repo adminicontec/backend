@@ -369,6 +369,12 @@
       "insertOrUpdate": {
         "failed": "Ya existe un usuario en Moodle :username"
       }
+    },
+    "moodle_events": {
+      "message": {
+        "invalid": "Los parámetros son obligatorios"
+      },
+      "not_found": "Los eventos del curso en Moodle no han sido encontrados"
     }
   },
   "passwordRecover": {
