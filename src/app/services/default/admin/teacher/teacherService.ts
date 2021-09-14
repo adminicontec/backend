@@ -93,12 +93,12 @@ class TeacherService {
               }
 
               // Creación de Usuario en CD y en Moodle.
-              //console.log('Username:' + element['Documento de Identidad']);
+              console.log('Carga >>> Username:' + element['Documento de Identidad']);
 
               // build process Response
               //#region   Insert User in Campus Digital and Moodle
-              //const resp = await this.insertOrUpdate(singleUserLoadContent);
-              //userLoadResponse.push(resp);
+              const resp = await this.insertOrUpdate(singleUserLoadContent);
+              userLoadResponse.push(resp);
               //#endregion   Insert User in Campus Digital and Moodle
 
               //#region  result after processing record
@@ -134,15 +134,20 @@ class TeacherService {
           }
 
           let extError = processResultLog.filter(e => e.status === 'ERROR');
+          if(extError){
           console.log("Log de Errores: ");
           console.log(extError);
+          }
+          else{
+            console.log("Carga sin Errores.");
+          }
 
-          /*
+
           return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
               ...userLoadResponse
             }
-          })*/
+          })
 
         }
         else {
@@ -161,7 +166,7 @@ class TeacherService {
       try {
         if (dataWSProfessionals != null) {
           console.log("Documentos Profesionales calificados");
-          console.log(dataWSProfessionals);
+          //console.log(dataWSProfessionals);
 
           let indexP = 1;
           for await (const element of dataWSProfessionals) {
@@ -273,7 +278,7 @@ class TeacherService {
         }
         else {
           // Retornar ERROR: revisar con equipo
-          // console.log(respoUser);
+           console.log("Error cargando a " + cvUserParams.username);
         }
 
       }
