@@ -3,7 +3,8 @@
 
 // @import services
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
-import { userService } from '../user/userService';
+import { userService } from '@scnode_app/services/default/admin/user/userService';
+import { modularService } from '@scnode_app/services/default/admin/modular/modularService';
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 // @end
 
@@ -16,12 +17,18 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
+import { Modular } from '@scnode_app/models'
+import { TeacherProfile } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMassiveLoad, ITeacher } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
+import { IMassiveLoad, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
+import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
+import { create } from 'domain';
+import { Console } from 'console';
 
 // @end
 
@@ -38,64 +45,180 @@ class TeacherService {
 
   public massive = async (params: IMassiveLoad) => {
 
+    let processResult: IFileProcessResult;
+    let processResultLog = [];
+
+
     try {
       console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
       let userLoadResponse = [];
       let singleUserLoadContent: ITeacher;
+      let singleProfessionalLoadContent: IQualifiedProfessional;
       let content = params.contentFile;
 
-      // 1. Extracció de información de Docentes
-      let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Docentes', 3);
-      if (dataFromWorksheet != null) {
-        console.log("Sheet content:")
+      // 1. Extracción de información de Docentes
+      let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
+      // 2. Extracción de Cursos y Docentes calificados
+      let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
-        for await (const element of dataFromWorksheet) {
 
-          singleUserLoadContent =
-          {
-            documentType: element['Tipo Documento'],
-            documentID: element['Documento de Identidad'],
-            user: element['Documento de Identidad'].toString(),
-            password: element['Documento de Identidad'].toString(),  // <-- Contraseña provisional
-            email: element['Correo Electrónico'],
-            firstname: element['Nombres'],
-            lastname: element['Apellidos'],
-            phoneNumber: element['N° Celular'].toString(),
-            city: element['Ubicación'],
-            country: 'CO',
-            regional: element['Regional'],
-            contractType: {
-              type: element['Tipo de Vinculación'],
-              isTeacher: element['DOCENTE'] ? true : false,
-              isTutor: element['TUTOR'] ? true : false,
-            },
-            rolename: 'teacher',
-            sendEmail: params.sendEmail
+      //#region  dataWSDocentes
+      try {
+        if (dataWSTeachersBase != null) {
+          console.log("Sheet content for: " + dataWSTeachersBase.length + " teachers")
+          let index = 1;
+          for await (const element of dataWSTeachersBase) {
+            //console.log("Process: # " + index);
+
+            if (element['Documento de Identidad'] != null) {
+              singleUserLoadContent = {
+                documentType: element['Tipo Documento'] ? element['Tipo Documento'] : 'CC',
+                documentID: element['Documento de Identidad'],
+                user: element['Documento de Identidad'].toString(),
+                password: element['Documento de Identidad'].toString(),  // <-- Contraseña provisional
+                email: element['Correo Electrónico'],
+                firstname: element['Nombres'],
+                lastname: element['Apellidos'],
+                phoneNumber: element['N° Celular'].toString(),
+                city: element['Ubicación'],
+                country: 'Colombia',
+                regional: element['Regional'],
+                contractType: {
+                  type: element['Tipo de Vinculación'],
+                  isTeacher: element['DOCENTE'] ? true : false,
+                  isTutor: element['TUTOR'] ? true : false,
+                },
+                rolename: 'teacher',
+                sendEmail: params.sendEmail
+              }
+
+              // Creación de Usuario en CD y en Moodle.
+              console.log('Carga >>> Username:' + element['Documento de Identidad']);
+
+              // build process Response
+              //#region   Insert User in Campus Digital and Moodle
+              const resp = await this.insertOrUpdate(singleUserLoadContent);
+              userLoadResponse.push(resp);
+              //#endregion   Insert User in Campus Digital and Moodle
+
+              //#region  result after processing record
+              processResult = {
+                ID: index,
+                status: 'OK',
+                messageProcess: '',
+                details: {
+                  user: singleUserLoadContent.user,
+                  fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
+                }
+              }
+              //console.log(processResult)
+              processResultLog.push(processResult);
+              //#endregion  result after processing record
+            }
+            else {
+              //console.log("Error at line: " + index);
+
+              processResult = {
+                ID: index,
+                status: 'ERROR',
+                messageProcess: 'DocumentID is empty',
+                details: {
+                  user: 'Empty',
+                  fullname: singleUserLoadContent.firstname + " " + singleUserLoadContent.lastname
+                }
+              }
+              //console.log(processResult)
+              processResultLog.push(processResult);
+            }
+            index++
           }
 
-          // Creacin de Usuario en CD y en Moodle.
-          console.log(singleUserLoadContent);
-          console.log('Tipo: ' + element['Tipo Documento']);
-          console.log('Doc:' + element['Documento de Identidad']);
+          let extError = processResultLog.filter(e => e.status === 'ERROR');
+          if(extError){
+          console.log("Log de Errores: ");
+          console.log(extError);
+          }
+          else{
+            console.log("Carga sin Errores.");
+          }
 
 
-          const resp = await this.insertOrUpdate(singleUserLoadContent);
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              ...userLoadResponse
+            }
+          })
 
-          // build process Response
-          userLoadResponse.push(resp);
         }
+        else {
+          // Return Error
+          console.log('Empty Doc:  "base docentes y tutores"');
+        }
+        //#endregion dataWSDocentes
 
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            ...userLoadResponse
+      }
+      catch (e) {
+        return responseUtility.buildResponseFailed('json', e)
+      }
+      //#endregion   dataWSDocente
+
+      //#region     dataWSProfessionals
+      try {
+        if (dataWSProfessionals != null) {
+          console.log("Documentos Profesionales calificados");
+          //console.log(dataWSProfessionals);
+
+          let indexP = 1;
+          for await (const element of dataWSProfessionals) {
+
+            singleProfessionalLoadContent = {
+              documentID: element['Documento de Identidad'],
+              email: element['Correo Electrónico'],
+              modular: element['Modular'],
+              courseCode: element['Código / Versión del Curso'],
+              versionStatus: element['Estado de la Versión'],
+              courseName: element['Nombre Curso'],
+              qualifiedDate: element['Fecha Calificación'],
+              qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
+              qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
+              observations: element['Observaciones'],
+              specializations: (element['Especializaciones'] != null) ? element['Especializaciones'] : "",
+            }
+
+            console.log("-----------ROW: [" + indexP + "] --------------");
+            console.log(singleProfessionalLoadContent);
+
+            //#region   ------------- MODULAR -------------
+            // 2. Insert Modular: singleProfessionalLoadContent.modular
+
+            if (singleProfessionalLoadContent.modular == null || singleProfessionalLoadContent.modular === '#N/D') {
+              // error en modular
+            }
+
+
+            const respModular: any = await modularService.insertOrUpdate({
+              name: singleProfessionalLoadContent.modular,
+              description: singleProfessionalLoadContent.modular
+            });
+
+            console.log("<<<<<<<<<<<<<<< Modular Insertion: >>>>>>>>>>>>>>>>>>>>><<");
+            console.log(respModular.modular._id + " - " + respModular.modular.name);
+            //#endregion
+
+
+
+
           }
-        })
+        }
+        else {
+          console.log('Empty Doc:  "Profesionales calificados"');
+        }
+      }
+      catch (e) {
+        return responseUtility.buildResponseFailed('json', e)
+      }
+      //#endregion  dataWSProfessionals
 
-      }
-      else {
-        // Return Error
-        // console.log("Worksheet not found");
-      }
     }
     catch (e) {
       return responseUtility.buildResponseFailed('json')
@@ -126,7 +249,7 @@ class TeacherService {
 
       //#region  Insert
       else {
-        console.log("Inicio de Insercióón de usuario: ");
+        console.log("1. Inicio de Inserción de Docente: ");
 
         // Insertar nuevo Usuario con Rol de Docente (pendiente getRoleIdByName)
         var cvUserParams: IUser = {
@@ -155,7 +278,7 @@ class TeacherService {
         }
         else {
           // Retornar ERROR: revisar con equipo
-          // console.log(respoUser);
+           console.log("Error cargando a " + cvUserParams.username);
         }
 
       }

@@ -1,7 +1,6 @@
 // @import types
 // @end
 
-import { bool } from "aws-sdk/clients/signer";
 
 // @add your types
 export interface ITeacher{
@@ -20,11 +19,25 @@ export interface ITeacher{
   country?:string,
   contractType?:{
     type?:string,
-    isTeacher?:bool,
-    isTutor?:bool
+    isTeacher?:boolean,
+    isTutor?:boolean
   }
 
   id?: string             // Identificador del Enrollment
+}
+
+export interface IQualifiedProfessional{
+  documentID?: string,     // Documento de identidad
+  email: string,          // email de estudiante
+  modular: string,
+  courseCode: string,
+  versionStatus: string,
+  courseName: string,
+  qualifiedDate: string,
+  qualifiedDocumentationDate: string,
+  qualifiedFormalizationDate: string,
+  observations: string,
+  specializations: string
 }
 
 export interface IMassiveLoad{

@@ -162,6 +162,8 @@ class XlsxUtility {
     }
 
   }
+
+
 }
 
 export const xlsxUtility = new XlsxUtility();
