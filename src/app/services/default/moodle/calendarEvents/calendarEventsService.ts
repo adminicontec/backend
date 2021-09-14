@@ -48,24 +48,23 @@ class CalendarEventsService {
       }
 
       var courseID;
-      var timeStart;
-      var timeEnd;
+      let startDate;
+      let endDate;
 
       // take any of params as Moodle query filter
-      if (params.courseID) {
+      if (params.courseID && params.timeStart && params.timeEnd) {
         courseID = params.courseID;
+        startDate =  generalUtility.unixTime(params.timeStart);
+        endDate = generalUtility.unixTime(params.timeEnd);
       }
-      if (params.timeStart) {
-        timeStart = params.timeStart;
+      else{
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: {
+              key: 'moodle_events.message.invalid'
+            }
+          });
       }
-      if (params.timeEnd) {
-        timeEnd = params.timeEnd;
-      }
-
-      var startDate = Math.floor(Date.parse(timeStart) / 1000.0);
-      var endDate = Math.floor(Date.parse(timeEnd) / 1000.0);
-
-      console.log("MoodleCalendarEventsService() => courseID: " + courseID + " -  timeStart: " + timeStart + " - timeEnd: " + timeEnd);
       // 2. Validación si Existe Usuario en Moodle
       let moodleParams = {
         wstoken: moodle_setup.wstoken,
@@ -79,6 +78,13 @@ class CalendarEventsService {
       let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
       if (respMoodle.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: {
+              key: 'moodle_events.not_found',
+              params: { respMoodle }
+            }
+          });
       }
 
       else {
@@ -89,6 +95,9 @@ class CalendarEventsService {
           eventTime.timestart = evTime;
           var modTime = new Date(eventTime.timemodified * 1000).toISOString();
           eventTime.timemodified = modTime;
+
+          console.log("--> from Moodle: ");
+          console.log(eventTime);
 
           // Ignore every event named "attendance"
           if (eventTime.modulename != "attendance" ) {

@@ -124,7 +124,7 @@ class MoodleUserService {
     var customFieldValue = '';
 
     //#region Process Country; send ISO-2
-    var countryCode = "";
+    /*var countryCode = "";
     if (params.country) {
       var country = params.country;
       const response: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: country }] })
@@ -136,7 +136,7 @@ class MoodleUserService {
         countryCode = "CO";  // by default
         console.log("==> " + "NO country");
       }
-    }
+    }*/
     //#endregion
 
     let moodleParams = {
@@ -150,7 +150,7 @@ class MoodleUserService {
       'users[0][lastname]': params.lastname,
       'users[0][idnumber]': params.documentNumber,
       'users[0][city]': params.city,
-      'users[0][country]': countryCode,
+      'users[0][country]': params.country,
       'users[0][phone1]': params.phonenumber,
     };
 
