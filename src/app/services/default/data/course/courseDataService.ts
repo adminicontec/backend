@@ -80,6 +80,9 @@ class CourseDataService {
               register['enrollment_enabled'] = true
             }
           }
+          if (register.endDiscountDate) {
+            register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
+          }
         }
 
       } catch (e) {}
@@ -244,6 +247,9 @@ class CourseDataService {
           for await (const register of registers) {
             if (extra_info_by_program[register.program._id.toString()]) {
               register['extra_info'] = extra_info_by_program[register.program._id.toString()]
+            }
+            if (register.endDiscountDate) {
+              register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
             }
           }
         }
