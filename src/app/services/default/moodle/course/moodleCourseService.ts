@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
@@ -141,20 +142,22 @@ class MoodleCourseService {
 
   public update = async (params: IMoodleCourse) => {
 
+    console.log("Start Date " +params.startDate);
+
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
       wsfunction: moodle_setup.services.courses.update,
       moodlewsrestformat: moodle_setup.restformat,
       'courses[0][id]': params.id,
       'courses[0][categoryid]': params.categoryId,
-      'courses[0][startdate]': generalUtility.unixTime(params.startDate.toString()),
-      'courses[0][enddate]': generalUtility.unixTime(params.endDate.toString()),
+      'courses[0][startdate]': generalUtility.unixTime(moment(params.startDate).format()),
+      'courses[0][enddate]': generalUtility.unixTime(moment(params.endDate).format()),
       'courses[0][customfields][0][shortname]': 'programa_horas',
       'courses[0][customfields][0][value]': params.customClassHours,
       'courses[0][customfields][1][shortname]': 'ciudad',
       'courses[0][customfields][1][value]': params.city,
       'courses[0][customfields][2][shortname]': 'pais',
-      'courses[0][customfields][2][value]': params.country,
+      'courses[0][customfields][2][value]': '(' + params.country + ')',
     };
 
     console.log("Moodle: Actualización de curso.");

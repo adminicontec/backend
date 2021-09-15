@@ -2,16 +2,16 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultAdminCourseCourseSchedulingController as Controller } from "@scnode_app/controllers/default/admin/course/courseSchedulingController";
+import { DefaultAdminTeacherProfileTeacherProfileController as Controller } from "@scnode_app/controllers/default/admin/teacherProfile/teacherProfileController";
 // @end
 
 // @import_utilities Import utilities
 import { routerUtility } from "@scnode_core/utilities/routerUtility";
 // @end
 
-class CourseSchedulingRoute {
+class TeacherProfileRoute {
 
-  private router_prefix: string = '/admin/course-scheduling'; //Ej: /user
+  private router_prefix: string = '/admin/teacherProfile'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -29,18 +29,14 @@ class CourseSchedulingRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.get(app, _route, '/generate-report', this.instanceController.generateReport, [], ['auth'])
-
-
-    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'course-scheduling', method: 'create', dir: 'admin/course' }], ['auth'])
+    routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'program', method: 'create', dir: 'admin/program' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
-    routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
 
     // @end
   }
 }
 
-export const courseSchedulingRoute = new CourseSchedulingRoute();
-export { CourseSchedulingRoute as DefaultAdminCourseCourseSchedulingRoute };
+export const teacherProfileRoute = new TeacherProfileRoute();
+export { TeacherProfileRoute as DefaultAdminTeacherProfileTeacherProfileRoute };

@@ -369,6 +369,9 @@
       "insertOrUpdate": {
         "failed": "Ya existe un usuario en Moodle :username"
       }
+    },
+    "moodle_events": {
+      "not_found": "Los eventos del curso en Moodle no han sido encontrados"
     }
   },
   "passwordRecover": {

@@ -8,7 +8,7 @@
   <p>
     Estimado (a) {{params.teacher.first_name}}
 
-    Usted ha sido inscrito al programa {{params.program.name}} como docente con la siguiente programación.
+    Usted ha sido inscrito al programa {{params.program.name}} con identificador de servicio {{params.service.service_id}} como docente con la siguiente programación.
 
     {{#each params.courses}}
       <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
@@ -32,7 +32,7 @@
     {{/if}}
 
     <br><br>
-    En caso de cualquier inquietud comunicarse al correo de soporte {{params.mailer.email_technical_support}}, líneas de atención {{params.mailer.phone_technical_support}} o accede a la <a href="{{params.mailer.help_desk}}">ayuda en línea</a>.
+    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
     <br><br>
     Cordialmente
     <br>

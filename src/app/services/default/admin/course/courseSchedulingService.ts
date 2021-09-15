@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import * as XLSX from "xlsx";
 const ObjectID = require('mongodb').ObjectID
 import moment from 'moment'
 // @end
@@ -17,6 +18,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
+import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility'
 // @end
 
 // @import models
@@ -29,7 +31,8 @@ import {
   ICourseScheduling,
   ICourseSchedulingDelete,
   ICourseSchedulingQuery,
-  ICourseSchedulingReport
+  ICourseSchedulingReport,
+  ICourseSchedulingReportData
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 // @end
 
@@ -57,7 +60,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -192,6 +195,7 @@ class CourseSchedulingService {
           params.priceCOP = 0
           params.priceUSD = 0
         }
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -203,7 +207,7 @@ class CourseSchedulingService {
         await Program.populate(response, { path: 'program', select: 'id name moodle_id code' })
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
-        await Regional.populate(response, { path: 'regional', select: 'id name' })
+        await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, {path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
@@ -218,22 +222,23 @@ class CourseSchedulingService {
 
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
-        /*
+        console.log("update Programa on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
-          //"id": `${response.program.code}_${service_id}`,
-          "fullName": `${response.program.name}`,
-          "masterId": `${response.program.moodle_id}`,
+          "id": `${response.program.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
           "country": `${response.country.name}`
-        })
+        });
 
         if (moodleResponse.status === 'success') {
-
-        }*/
+          console.log("update Programa Success!");
+        }
+        else{
+          console.log("Error!");
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -255,6 +260,7 @@ class CourseSchedulingService {
           params.priceCOP = 0
           params.priceUSD = 0
         }
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         let service_id = ''
 
@@ -453,6 +459,9 @@ class CourseSchedulingService {
             _id: courseScheduling.program._id,
             name: courseScheduling.program.name,
           },
+          service: {
+            service_id: courseScheduling.metadata.service_id,
+          },
           courses: [],
           has_sessions: (course.sessions.length > 0) ? true : false,
         }
@@ -505,6 +514,7 @@ class CourseSchedulingService {
           mailer: customs['mailer'],
           teacher: teacherData.teacher,
           program: teacherData.program,
+          service: teacherData.service,
           courses: teacherData.courses,
           has_sessions: teacherData.has_sessions,
           type: 'teacher',
@@ -669,7 +679,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
     if (filters.select) {
       select = filters.select
     }
@@ -727,7 +737,7 @@ class CourseSchedulingService {
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        // .sort({ created_at: -1 })
+        .sort({ startDate: -1 })
         .lean()
 
       for await (const register of registers) {
@@ -761,174 +771,284 @@ class CourseSchedulingService {
    * @param params
    * @returns
    */
-  public generatePdfReport = async (params: ICourseSchedulingReport) => {
+  public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
       let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
 
-      let where = {
-        _id: params.course_scheduling
-      }
+      let where = {}
 
-      const register: any = await CourseScheduling.findOne(where)
-        .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'modular', select: 'id name' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .populate({ path: 'schedulingType', select: 'id name' })
-        .populate({ path: 'schedulingStatus', select: 'id name' })
-        .populate({ path: 'regional', select: 'id name' })
-        .populate({ path: 'city', select: 'id name' })
-        .populate({ path: 'country', select: 'id name' })
-        // .populate({path: 'course', select: 'id name'})
-        // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
-        .select(select)
-        .lean()
+      if (params.type === 'single') {
 
-      if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
+        if (params.course_scheduling) {
+          where['_id'] = params.course_scheduling
+        }
 
-      let total_scheduling = 0
-      let courses = []
+        const register: any = await CourseScheduling.findOne(where)
+          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'modular', select: 'id name' })
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingType', select: 'id name' })
+          .populate({ path: 'schedulingStatus', select: 'id name' })
+          .populate({ path: 'regional', select: 'id name' })
+          .populate({ path: 'city', select: 'id name' })
+          .populate({ path: 'country', select: 'id name' })
+          // .populate({path: 'course', select: 'id name'})
+          // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .select(select)
+          .lean()
 
-      const detailSessions = await CourseSchedulingDetails.find({
-        course_scheduling: register._id
-      }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
-        .populate({ path: 'course_scheduling', select: 'id moodle_id' })
-        .populate({ path: 'course', select: 'id name code moodle_id' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
-        .select(select)
-        .lean()
+        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
 
-      let session_count = 0
+        let total_scheduling = 0
+        let courses = []
 
-      detailSessions.map((element, index) => {
-        let duration_scheduling = parseInt(element.duration)
-        let first_session = true
+        const detailSessions = await CourseSchedulingDetails.find({
+          course_scheduling: register._id
+        }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
+          .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+          .populate({ path: 'course', select: 'id name code moodle_id' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+          .select(select)
+          .lean()
 
-        if (element.sessions.length === 0) {
-          total_scheduling += parseInt(element.duration)
+        let session_count = 0
 
-          let item = {
-            course_code: (element.course && element.course.code) ? element.course.code : '-',
-            course_name: (element.course && element.course.name) ? element.course.name : '-',
-            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-            course_row_span: 0,
-            consecutive: index + 1,
-            teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-            start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
-            end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
-            duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
-            schedule: '-',
-          }
+        detailSessions.map((element, index) => {
+          let duration_scheduling = parseInt(element.duration)
+          let first_session = true
 
-          courses.push(item)
-        } else {
-          element.sessions.map((session) => {
-            total_scheduling += parseInt(session.duration)
+          if (element.sessions.length === 0) {
+            total_scheduling += parseInt(element.duration)
 
-            let row_content = {
+            let item = {
               course_code: (element.course && element.course.code) ? element.course.code : '-',
               course_name: (element.course && element.course.name) ? element.course.name : '-',
               course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-              course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
-            }
-
-            let schedule = ''
-            if (session.startDate && session.duration) {
-              let endDate = moment(session.startDate).add(session.duration, 'seconds')
-              schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
-            }
-            let session_data = {
-              consecutive: session_count + 1,
+              course_row_span: 0,
+              consecutive: index + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-              start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
-              duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
-              schedule: schedule,
+              start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
+              end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
+              duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
+              schedule: '-',
             }
-            let item = {}
-            if (first_session) {
-              item = { ...item, ...row_content, ...session_data }
-            } else {
-              item = { ...item, ...session_data }
-            }
-            session_count++
-            first_session = false
+
             courses.push(item)
+          } else {
+            element.sessions.map((session) => {
+              total_scheduling += parseInt(session.duration)
+
+              let row_content = {
+                course_code: (element.course && element.course.code) ? element.course.code : '-',
+                course_name: (element.course && element.course.name) ? element.course.name : '-',
+                course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+                course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
+              }
+
+              let schedule = ''
+              if (session.startDate && session.duration) {
+                let endDate = moment(session.startDate).add(session.duration, 'seconds')
+                schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+              }
+              let session_data = {
+                consecutive: session_count + 1,
+                teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+                start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+                duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+                schedule: schedule,
+              }
+              let item = {}
+              if (first_session) {
+                item = { ...item, ...row_content, ...session_data }
+              } else {
+                item = { ...item, ...session_data }
+              }
+              session_count++
+              first_session = false
+              courses.push(item)
+            })
+          }
+
+        })
+
+        let scheduling_free = register.duration
+        if (total_scheduling < register.duration) {
+          scheduling_free = register.duration - total_scheduling
+        } else if (total_scheduling >= register.duration) {
+          scheduling_free = 0
+        }
+
+        if (params.format === 'pdf') {
+          return await this.generatePDFReport(register, {
+            courses,
+            total_scheduling,
+            scheduling_free
           })
+        } else if (params.format === 'xlsx') {
+          return await this.generateXLSXReport(register)
         }
+      } else {
+        let courses = []
 
-      })
+        const detailSessions = await CourseSchedulingDetails.find()
+          .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
+          .populate({ path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id', populate: [
+            { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
+            { path: 'schedulingMode', select: 'id name moodle_id' },
+            // { path: 'modular', select: 'id name' },
+            { path: 'program', select: 'id name moodle_id code' },
+            // { path: 'schedulingType', select: 'id name' },
+            // { path: 'schedulingStatus', select: 'id name' },
+            { path: 'regional', select: 'id name' },
+            // { path: 'city', select: 'id name' },
+            // { path: 'country', select: 'id name' },
+          ] })
+          .populate({ path: 'course', select: 'id name code moodle_id' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+          .select(select)
+          .lean()
 
-      let scheduling_free = register.duration
-      if (total_scheduling < register.duration) {
-        scheduling_free = register.duration - total_scheduling
-      } else if (total_scheduling >= register.duration) {
-        scheduling_free = 0
-      }
-
-      let path = '/admin/course/courseSchedulingReport'
-      if (['Virtual'].includes(register.schedulingMode.name)) {
-        path = '/admin/course/courseSchedulingVirtualReport'
-      }
-
-      const responsePdf = await htmlPdfUtility.generatePdf({
-        from: 'file',
-        file: {
-          path,
-          type: 'hbs',
-          context: {
-            program_name: (register.program && register.program.name) ? register.program.name : '',
-            service_id: (register.metadata && register.metadata.service_id) ? register.metadata.service_id : '',
-            regional_name: (register.regional && register.regional.name) ? register.regional.name : '',
-            cliente_name: (register.client) ? register.client : '',
-            schedule_mode: (register.schedulingMode && register.schedulingMode.name) ? register.schedulingMode.name : '',
-            service_city: (register.city && register.city.name) ? register.city.name : '',
-            courses: courses,
-            total_scheduling: (total_scheduling) ? generalUtility.getDurationFormated(total_scheduling) : '0h',
-            scheduling_free: (scheduling_free) ? generalUtility.getDurationFormated(scheduling_free) : '0h',
-            observations: (register.observations) ? register.observations : '',
+        detailSessions.map((course, index) => {
+          let duration_scheduling = parseInt(course.duration)
+          let item = {
+            service_id: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.service_id) ? course.course_scheduling.metadata.service_id : '-',
+            service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
+            program_code: (course.course_scheduling && course.course_scheduling.program && course.course_scheduling.program.code) ? course.course_scheduling.program.code : '-',
+            program_name: (course.course_scheduling && course.course_scheduling.program && course.course_scheduling.program.name) ? course.course_scheduling.program.name : '-',
+            course_code: (course.course && course.course.code) ? course.course.code : '-',
+            course_name: (course.course && course.course.name) ? course.course.name : '-',
+            teacher_name: (course.teacher && course.teacher.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
+            client: (course.course_scheduling && course.course_scheduling.client) ? course.course_scheduling.client : '-',
+            scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
+            regional: (course.course_scheduling && course.course_scheduling.regional && course.course_scheduling.regional.name) ? course.course_scheduling.regional.name : '-',
+            executive: '-',
+            start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
+            end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
+            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
           }
-        },
-        to_file: {
-          file: {
-            name: `${register.metadata.service_id}_${register.program.code}.pdf`,
-          },
-          path: 'admin/course/courseSchedulingReport'
-        },
-        options: {
-          // orientation: "landscape",
-          format: "Tabloid",
-          border: {
-            top: "15mm",            // default is 0, units: mm, cm, in, px
-            right: "15mm",
-            bottom: "12mm",
-            left: "15mm"
-          },
-          "footer": {
-            "height": "10mm",
-            "contents": {
-              // first: 'Cover page',
-              // 2: 'Second page', // Any page number is working. 1-based index
-              default: '<div style="font-size:0.8rem"><span >{{page}}</span>/<span>{{pages}}</span></div>', // fallback value
-              // last: 'Last Page'
-            }
-          }
-        },
-      })
 
-      if (responsePdf.status === 'error') return responsePdf
+          courses.push(item)
+        })
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          path: responsePdf.path
+        if (params.format === 'pdf') {
+        } else if (params.format === 'xlsx') {
+          return await this.generateXLSXReport(courses)
         }
-      })
+      }
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
     }
   }
 
+  private generatePDFReport = async (courseScheduling: any, reportData: ICourseSchedulingReportData) => {
+    let path = '/admin/course/courseSchedulingReport'
+    if (['Virtual'].includes(courseScheduling.schedulingMode.name)) {
+      path = '/admin/course/courseSchedulingVirtualReport'
+    }
+
+    const responsePdf = await htmlPdfUtility.generatePdf({
+      from: 'file',
+      file: {
+        path,
+        type: 'hbs',
+        context: {
+          program_name: (courseScheduling.program && courseScheduling.program.name) ? courseScheduling.program.name : '',
+          service_id: (courseScheduling.metadata && courseScheduling.metadata.service_id) ? courseScheduling.metadata.service_id : '',
+          regional_name: (courseScheduling.regional && courseScheduling.regional.name) ? courseScheduling.regional.name : '',
+          cliente_name: (courseScheduling.client) ? courseScheduling.client : '',
+          schedule_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
+          service_city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
+          courses: reportData.courses,
+          total_scheduling: (reportData.total_scheduling) ? generalUtility.getDurationFormated(reportData.total_scheduling) : '0h',
+          scheduling_free: (reportData.scheduling_free) ? generalUtility.getDurationFormated(reportData.scheduling_free) : '0h',
+          observations: (courseScheduling.observations) ? courseScheduling.observations : '',
+        }
+      },
+      to_file: {
+        file: {
+          name: `${courseScheduling.metadata.service_id}_${courseScheduling.program.code}.pdf`,
+        },
+        path: 'admin/course/courseSchedulingReport'
+      },
+      options: {
+        // orientation: "landscape",
+        format: "Tabloid",
+        border: {
+          top: "15mm",            // default is 0, units: mm, cm, in, px
+          right: "15mm",
+          bottom: "12mm",
+          left: "15mm"
+        },
+        "footer": {
+          "height": "10mm",
+          "contents": {
+            // first: 'Cover page',
+            // 2: 'Second page', // Any page number is working. 1-based index
+            default: '<div style="font-size:0.8rem"><span >{{page}}</span>/<span>{{pages}}</span></div>', // fallback value
+            // last: 'Last Page'
+          }
+        }
+      },
+    })
+
+    if (responsePdf.status === 'error') return responsePdf
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        path: responsePdf.path
+      }
+    })
+  }
+
+  private generateXLSXReport = async (courses: Array<any>) => {
+    // @INFO: Se genera la hoja de calculo para el reporte
+    let cols = []
+    let reportData = courses.reduce((accum, element) => {
+      accum.push({
+        'ID del servicio': element.service_id,
+        'Coordinador Servicio': element.service_user,
+        'Código del programa': element.program_code,
+        'Nombre del programa': element.program_name,
+        'Código del curso': element.course_code,
+        'Nombre del curso': element.course_name,
+        'Docente': element.teacher_name,
+        'Cliente': element.client,
+        'Modalidad': element.scheduling_mode,
+        'Regional': element.regional,
+        'Ejecutivo': element.executive,
+        'Fecha de inicio del curso': element.start_date,
+        'Fecha de finalización del curso': element.end_date,
+        'Nº de horas del curso':element.course_duration,
+      })
+      cols.push({width: 20})
+      return accum
+    }, [])
+
+    // @INFO: Inicializamos el nuevo libro de excel
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(reportData, { header: [], skipHeader: false })
+
+    ws["!cols"] = cols
+
+    // @INFO: Se agrega la hoja de calculos al libro de excel
+    XLSX.utils.book_append_sheet(wb, ws, 'reporte_general')
+
+    // @INFO Se carga el archivo al servidor S3
+    const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `reporte_general.xlsx` } } }, {workbook: wb})
+
+    if (!send) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_upload_xlsx' })
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        path: send
+      }
+    })
+  }
 }
 
 export const courseSchedulingService = new CourseSchedulingService();

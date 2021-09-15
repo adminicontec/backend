@@ -15,7 +15,7 @@ export interface IMoodleCourseQuery {
 export interface IMoodleCourse{
   id?: string             // Identificador del curso en Moodle
   idNumber?: string,      // optional ID Course
-  shortName: string,      // Nombre corto de curso (listado de cursos en Moodle)
+  shortName?: string,      // Nombre corto de curso (listado de cursos en Moodle)
   fullName?: string,       // Nombre completo de curso (listado de cursos en Moodle)
   displayName?: string,   // Nombre para mostrar de curso (listado de cursos en Moodle)
   categoryId?: number | string,

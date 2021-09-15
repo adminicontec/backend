@@ -1,12 +1,14 @@
 // @import_dependencies_node Import libraries
 import * as XLSX from "xlsx";
+import path from "path";
 // @end
 
 // @import config
-import { xlsx_config } from '@scnode_core/config/globals'
+import { xlsx_config, host, public_dir, attached } from '@scnode_core/config/globals'
 // @end
 
 // @import_utilities Import utilities
+import {fileUtility} from '@scnode_core/utilities/fileUtility'
 import { attachedUtility } from '@scnode_core/utilities/attached/attachedUtility'
 // @end
 
@@ -51,7 +53,7 @@ class XlsxUtility {
    * @param config
    * @param buffer
    */
-  public uploadXLSX = async (config: IGenerateXLSXConfig, buffer: string) => {
+  public uploadXLSX = async (config: IGenerateXLSXConfig, {buffer, workbook}: {buffer?: string, workbook?: XLSX.WorkBook}) => {
     try {
 
       let filePath = null
@@ -78,27 +80,49 @@ class XlsxUtility {
           }
         }
 
-        const files_status_upload = await attachedUtility.uploadFiles({
-          name: config.attached.file.name,    // Nombre original del archivo adjunto (Ex: car.jpg)
-          mv: () => { },       // Una función para mover el archivo a otro lugar en su servidor
-          mimetype: 'application/xlsx',    // El mimetype del archivo
-          data: buffer,       // Una representación del búfer de su archivo, devuelve el búfer vacío en caso de que la opción useTempFiles se haya establecido en verdadero.
-          tempFilePath: null,       // Una ruta al archivo temporal en caso de que la opción useTempFiles se configurara como verdadera.
-          truncated: false,   // Un valor booleano que representa si el archivo está por encima del límite de tamaño.
-          size: 10,    // Tamaño cargado en bytes
-          md5: '',    // MD5 del archivo cargado
-        }, uploadConfig);
+        if (buffer) {
+          const files_status_upload = await attachedUtility.uploadFiles({
+            name: config.attached.file.name,    // Nombre original del archivo adjunto (Ex: car.jpg)
+            mv: () => { console.log('hola') },       // Una función para mover el archivo a otro lugar en su servidor
+            mimetype: 'application/xlsx',    // El mimetype del archivo
+            data: buffer,       // Una representación del búfer de su archivo, devuelve el búfer vacío en caso de que la opción useTempFiles se haya establecido en verdadero.
+            tempFilePath: null,       // Una ruta al archivo temporal en caso de que la opción useTempFiles se configurara como verdadera.
+            truncated: false,   // Un valor booleano que representa si el archivo está por encima del límite de tamaño.
+            size: 10,    // Tamaño cargado en bytes
+            md5: '',    // MD5 del archivo cargado
+          }, uploadConfig);
 
-        if (Array.isArray(files_status_upload) && files_status_upload.length > 0) {
-          if (files_status_upload[0].status === 'success') {
-            filePath = files_status_upload[0].path
+          if (Array.isArray(files_status_upload) && files_status_upload.length > 0) {
+            if (files_status_upload[0].status === 'success') {
+              filePath = files_status_upload[0].path
+            }
           }
+        } else if (workbook) {
+          let driver = attached['driver'];
+          let attached_config = attached[driver];
+
+          const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+          let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+          if (attached_config.base_path_type === "absolute") {
+            base_path = upload_config_base_path
+          }
+
+          const full_path_file = `${base_path}/${uploadConfig.path_upload}/${config.attached.file.name}`;
+          const public_path_file = `${host}/uploads/${uploadConfig.path_upload}/${config.attached.file.name}`;
+
+          const fileExists = await fileUtility.fileExists(full_path_file)
+          if (fileExists) {
+            const remove = await fileUtility.removeFileSync(full_path_file)
+          }
+
+          await XLSX.writeFile(workbook, full_path_file)
+
+          filePath = public_path_file
         }
       }
 
       return filePath
     } catch (e) {
-      console.log('e', e.message)
       return null
     }
   }
@@ -110,6 +134,8 @@ class XlsxUtility {
       const workbook = XLSX.read(buffer, { type: "buffer" });
 
       const sheet_name_list = workbook.SheetNames;
+      console.log("Available sheets: " + sheet_name_list.length);
+      console.log(sheet_name_list);
 
       // Lee la primer hoja del archivo
       let location = sheet_name_list.findIndex(m => m === sheetName)
@@ -138,6 +164,8 @@ class XlsxUtility {
     }
 
   }
+
+
 }
 
 export const xlsxUtility = new XlsxUtility();

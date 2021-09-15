@@ -39,6 +39,7 @@ export interface ICourseScheduling {
   priceCOP         : number,             // Precio en Pesos Colombianos
   priceUSD         : number,             // Precio en Dólares Estadounidenses
   discount         : number,             // Porcentaje de descuento del precio
+  endDiscountDate?: string | null
   id?: string // Identificador de la categoria
 }
 
@@ -62,6 +63,14 @@ export interface ICourseSchedulingQuery {
 }
 
 export interface ICourseSchedulingReport {
-  course_scheduling: string // Identificador del programa
+  course_scheduling?: string // Identificador del programa
+  type: 'single' | 'multiple'
+  format: 'xlsx' | 'pdf'
+}
+
+export interface ICourseSchedulingReportData {
+  courses: Array<any>,
+  total_scheduling: number
+  scheduling_free: number
 }
 //@end
