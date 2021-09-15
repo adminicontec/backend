@@ -206,7 +206,7 @@ class CourseSchedulingService {
         await Program.populate(response, { path: 'program', select: 'id name moodle_id code' })
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
-        await Regional.populate(response, { path: 'regional', select: 'id name' })
+        await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, {path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
@@ -221,22 +221,23 @@ class CourseSchedulingService {
 
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
-        /*
+        console.log("update Programa on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
-          //"id": `${response.program.code}_${service_id}`,
-          "fullName": `${response.program.name}`,
-          "masterId": `${response.program.moodle_id}`,
+          "id": `${response.program.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
           "country": `${response.country.name}`
-        })
+        });
 
         if (moodleResponse.status === 'success') {
-
-        }*/
+          console.log("update Programa Success!");
+        }
+        else{
+          console.log("Error!");
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
