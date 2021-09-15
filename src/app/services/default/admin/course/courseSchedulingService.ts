@@ -60,7 +60,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -195,6 +195,7 @@ class CourseSchedulingService {
           params.priceCOP = 0
           params.priceUSD = 0
         }
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -258,6 +259,7 @@ class CourseSchedulingService {
           params.priceCOP = 0
           params.priceUSD = 0
         }
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         let service_id = ''
 
@@ -676,7 +678,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
     if (filters.select) {
       select = filters.select
     }

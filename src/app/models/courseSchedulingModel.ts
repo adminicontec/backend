@@ -103,6 +103,10 @@ const CourseSchedulingSchema = new Schema({
   discount: {
     type: Schema.Types.Number,
   },
+  endDiscountDate: {
+    type: Schema.Types.Date,
+    required: false,
+  },
   startPublicationDate: {
     type: Schema.Types.Date,
   },
