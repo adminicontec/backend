@@ -190,6 +190,63 @@ class LandingController {
 		const response = await landingService.deleteScheduling(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public insertOrUpdateOurClient = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+    if (files && files.hasOwnProperty('attached')) {
+      params['attachedFile'] = files['attached']
+    }
+
+		const response = await landingService.insertOrUpdateOurClient(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public deleteOurClient = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+		const response = await landingService.deleteOurClient(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public insertOrUpdateDescriptiveTraining = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+    if (files && files.hasOwnProperty('attachedFile')) {
+      params['attachedFile'] = files['attachedFile']
+    }
+
+		const response = await landingService.insertOrUpdateDescriptiveTraining(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const landingController = new LandingController();

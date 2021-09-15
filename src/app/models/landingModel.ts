@@ -30,7 +30,17 @@ const LandingSchema = new Schema({
       title: {type: Schema.Types.String},
       attachedUrl: {type: Schema.Types.String},
     }
-  ]
+  ],
+  descriptive_training: {
+    image: {type: Schema.Types.String},
+    title: {type: Schema.Types.String},
+    content: {type: Schema.Types.Mixed}
+  },
+  our_clients: [{
+    unique: {type: Schema.Types.String, require: true},
+    title: {type: Schema.Types.String},
+    url: {type: Schema.Types.String}
+  }]
   // @end
 }, {
   collection: 'landings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

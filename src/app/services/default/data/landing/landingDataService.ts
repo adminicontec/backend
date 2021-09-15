@@ -39,7 +39,7 @@ class LandingDataService {
     try {
 
       const landing = await Landing.findOne({slug: params.slug})
-      .select('id title_page article trainings scheduling')
+      .select('id title_page article trainings scheduling descriptive_training our_clients')
       .lean()
 
       if (landing) {
@@ -61,6 +61,18 @@ class LandingDataService {
               scheduling.attachedFile = landingService.schedulingAttachedUrl(scheduling)
             }
           }
+        }
+
+        if (landing.our_clients) {
+          for (const client of landing.our_clients) {
+            if (client.url) {
+              client.url = landingService.ourClientsImageUrl(client.url)
+            }
+          }
+        }
+
+        if (landing.descriptive_training && landing.descriptive_training.image) {
+          landing.descriptive_training.image = landingService.descriptiveTrainingImageUrl(landing.descriptive_training.image)
         }
       }
 

@@ -41,12 +41,36 @@ export interface ILandingScheduling {
   attachedFile?: any // Objeto tipo file que contiene el adjunto a cargar
 }
 
+export interface ILandingOurClients{
+  slug?: string
+  unique?: string
+  title: string
+  url?: string
+  attached?: any
+  attachedFile?: any // Objeto tipo file que contiene el adjunto a cargar
+}
+
+export interface ILandingOurClientDelete{
+  slug: string
+  unique: string
+}
+
+export interface ILandingDescriptiveTraining{
+  slug?: string
+  image?: string
+  title?: string
+  content?: any
+  attachedFile?: any // Objeto tipo file que contiene el adjunto a cargar
+}
+
 export interface ILanding {
   slug: string
   title_page?: string
   article?: ILandingArticle
   trainings?: Array<ILandingTrainings>
   scheduling?: Array<ILandingScheduling>
+  our_clients?: Array<ILandingOurClients>
+  descriptive_training?: ILandingDescriptiveTraining
   id?: string // Identificador de la categoria
 }
 

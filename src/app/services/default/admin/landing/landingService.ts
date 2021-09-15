@@ -27,7 +27,10 @@ import {
   ILandingTrainings,
   ILandingTrainingsDelete,
   ILandingSchedulingDelete,
-  ILandingScheduling
+  ILandingScheduling,
+  ILandingDescriptiveTraining,
+  ILandingOurClientDelete,
+  ILandingOurClients
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -36,6 +39,8 @@ class LandingService {
   private default_cover_article_path = 'landings/article'
   private default_cover_training_path = 'landings/training'
   private default_cover_scheduling_path = 'landings/scheduling'
+  private default_cover_descriptive_training_path = 'landings/descriptiveTraining'
+  private default_cover_our_clients_path = 'landings/ourClients'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -101,7 +106,6 @@ class LandingService {
     const exist = await Landing.findOne({ slug: params.slug }).select('id')
     if (exist) params.id = exist._id
 
-    console.log('params', params)
     try {
       if (params.id) {
         const register: any = await Landing.findOne({ _id: params.id }).lean()
@@ -313,6 +317,119 @@ class LandingService {
   }
 
   /**
+   * Metodo que permite insertar/actualizar un cliente
+   * @param params
+   * @returns
+   */
+  public insertOrUpdateOurClient = async (params: ILandingOurClients) => {
+
+    try {
+      let ourClients: Array<ILandingOurClients> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id our_clients').lean()
+      if (exists && exists.our_clients) {
+        ourClients = exists.our_clients
+      }else{
+        ourClients = []
+      }
+
+      // @INFO: Cargando imagen al servidor
+      if (params.attachedFile && params.attachedFile !== '{}' && typeof params.attachedFile !== 'string') {
+        const defaulPath = this.default_cover_our_clients_path
+        const response_upload: any = await uploadService.uploadFile(params.attachedFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.url = response_upload.name
+      }
+
+      let ourClientsExists = ourClients.findIndex((t) => t.unique === params.unique)
+      if (ourClientsExists !== -1) {
+        ourClients[ourClientsExists] = {...ourClients[ourClientsExists], ...params}
+      } else {
+        ourClients.push({
+          ...params
+        })
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        our_clients: ourClients
+      })
+    } catch (e) {
+      console.log(e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite eliminar un cliente
+   * @param params
+   * @returns
+   */
+   public deleteOurClient = async (params: ILandingOurClientDelete) => {
+
+    try {
+      let ourClients: Array<ILandingOurClients> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id our_clients').lean()
+      if (exists && exists.our_clients) {
+        ourClients = exists.our_clients
+      }else{
+        ourClients = []
+      }
+
+      let ourClientsExists = ourClients.findIndex((t) => t.unique === params.unique)
+      if (ourClientsExists === -1) {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'landing.scheduling.delete.not_found'})
+      } else {
+        ourClients.splice(ourClientsExists, 1)
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        our_clients: ourClients
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar la formación descriptiva dentro de un landing
+   * @param params
+   * @returns
+   */
+  public insertOrUpdateDescriptiveTraining = async (params: ILandingDescriptiveTraining) => {
+
+    try {
+      let descriptiveTraining: ILandingDescriptiveTraining = {}
+      let landingId: string | undefined = undefined
+      const exists = await Landing.findOne({ slug: params.slug }).select('id descriptive_training').lean()
+      if (exists) {
+        descriptiveTraining = exists.descriptive_training
+        landingId = exists._id
+      }
+
+
+      // @INFO: Cargando imagen al servidor
+      if (params.attachedFile && params.attachedFile !== '{}' && typeof params.attachedFile !== 'string') {
+        const defaulPath = this.default_cover_descriptive_training_path
+        const response_upload: any = await uploadService.uploadFile(params.attachedFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.image = response_upload.name
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        descriptive_training: {
+          ...descriptiveTraining,
+          ...params
+        },
+        id: landingId
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
    * Metodo que permite hacer borrar un registro
    * @param params Filtros para eliminar
    * @returns
@@ -421,6 +538,26 @@ class LandingService {
    public schedulingAttachedUrl = ({ attachedUrl }) => {
     return attachedUrl && attachedUrl !== ''
     ? `${customs['uploads']}/${this.default_cover_scheduling_path}/${attachedUrl}`
+    : null
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public descriptiveTrainingImageUrl = (img: string) => {
+    return img
+    ? `${customs['uploads']}/${this.default_cover_descriptive_training_path}/${img}`
+    : null
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public ourClientsImageUrl = (img: string) => {
+    return img
+    ? `${customs['uploads']}/${this.default_cover_our_clients_path}/${img}`
     : null
   }
 

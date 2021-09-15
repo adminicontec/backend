@@ -41,6 +41,11 @@ class LandingRoute {
 
     routerUtility.post(app, _route, '/insert-or-update-scheduling', this.instanceController.insertOrUpdateScheduling, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     routerUtility.delete(app, _route, '/delete-scheduling/:slug/:unique', this.instanceController.deleteScheduling, [], ['auth'])
+
+    routerUtility.post(app, _route, '/insert-or-update-descriptive-training', this.instanceController.insertOrUpdateDescriptiveTraining, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
+
+    routerUtility.post(app, _route, '/insert-or-update-our-clients', this.instanceController.insertOrUpdateOurClient, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
+    routerUtility.delete(app, _route, '/delete-our-client/:slug/:unique', this.instanceController.deleteOurClient, [], ['auth'])
     // @end
   }
 }
