@@ -456,6 +456,9 @@ class CourseSchedulingService {
             _id: courseScheduling.program._id,
             name: courseScheduling.program.name,
           },
+          service: {
+            service_id: courseScheduling.metadata.service_id,
+          },
           courses: [],
           has_sessions: (course.sessions.length > 0) ? true : false,
         }
@@ -508,6 +511,7 @@ class CourseSchedulingService {
           mailer: customs['mailer'],
           teacher: teacherData.teacher,
           program: teacherData.program,
+          service: teacherData.service,
           courses: teacherData.courses,
           has_sessions: teacherData.has_sessions,
           type: 'teacher',

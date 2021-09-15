@@ -45,7 +45,7 @@ class SurveyEventService {
       if (userResponse.status === 'error') return userResponse
 
       // @INFO: Validando el programa
-      const enrollment = await Enrollment.findOne({user: params.user, courseID: params.moodle_id})
+      const enrollments = await Enrollment.find({user: params.user})
       .select('id course_scheduling')
       .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate', populate: [
         {
@@ -56,9 +56,11 @@ class SurveyEventService {
         }
       ]})
       .lean()
-      console.log('enrollment', enrollment)
+      // console.log('enrollment', enrollment)
 
-      if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
+      if (enrollments.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
+
+      // if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
       const surveyAnswered = await AcademicResourceAttempt.find({
         user: params.user,
@@ -77,82 +79,88 @@ class SurveyEventService {
       let surveyAvailable = false
       let surveyRelated = null
       let surveyRelatedContent = null
-      // TODO: Consultar la programación
-      // En virtual va dirigido al programa y en online y presencial a cada curso
-      const schedulingMode = enrollment.course_scheduling.schedulingMode.name
-      console.log('schedulingMode', schedulingMode)
-      if (schedulingMode === 'Presencial' || schedulingMode === 'En linea' || schedulingMode === 'En Línea') {
-        // TODO: Fechas de los cursos
-        let whereDetailScheduling = {
-          course_scheduling: enrollment.course_scheduling._id,
-          // endDate: {$lt: today.format('YYYY-MM-DD')}
-        }
-        if (survey_related.length > 0) {
-          whereDetailScheduling['_id'] = {$nin: survey_related}
-        }
-        const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
-        .select('id course startDate endDate sessions')
-        .populate({path: 'course', select: 'id name code'})
-        .lean()
-        .sort({startDate: 1})
 
-        console.log('detailScheduling', detailScheduling)
+      for (const enrollment of enrollments) {
+        if (!surveyAvailable) {
+          // En virtual va dirigido al programa y en online y presencial a cada curso
+          const schedulingMode = enrollment.course_scheduling.schedulingMode.name
+          console.log('schedulingMode', schedulingMode)
+          if (schedulingMode === 'Presencial' || schedulingMode === 'En linea' || schedulingMode === 'En Línea') {
+            // TODO: Fechas de los cursos
+            let whereDetailScheduling = {
+              course_scheduling: enrollment.course_scheduling._id,
+              // endDate: {$lt: today.format('YYYY-MM-DD')}
+            }
+            if (survey_related.length > 0) {
+              whereDetailScheduling['_id'] = {$nin: survey_related}
+            }
+            const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
+            .select('id course startDate endDate sessions')
+            .populate({path: 'course', select: 'id name code'})
+            .lean()
+            .sort({startDate: 1})
 
-        if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+            console.log('detailScheduling', detailScheduling)
 
-        let anySessionExpiredToday = false
-        detailScheduling.map((course) => {
-          console.log('course',course._id)
-          if (!anySessionExpiredToday) {
-            if (course.sessions && course.sessions.length > 0) {
-              let sessions = course.sessions.reduce((accum, element) => {
-                if (element.startDate && element.duration) {
-                  element.endDate = moment(element.startDate).add(element.duration, 'seconds')
-                  accum.push(element)
-                }
-                return accum
-              }, [])
-              sessions.sort((a, b) => moment(a.startDate).diff(moment(b.startDate)))
-              console.log('sessions', sessions)
-              if (sessions.length > 0)  {
-                const lastSession = sessions[sessions.length-1]
-                console.log('lastSession', lastSession)
-                // if (today.format('YYYY-MM-DD ') >= endDate.format('YYYY-MM-DD')) {
-                  if (today.isAfter(lastSession.endDate.subtract(30, 'minutes'))) {
-                    console.log('session selected', lastSession)
-                    anySessionExpiredToday = true
-                    surveyAvailable = true
-                    surveyRelated = course._id
-                    surveyRelatedContent = {
-                      name: course.course.name,
-                      endDate: lastSession.endDate,
+            // if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+
+            let anySessionExpiredToday = false
+            detailScheduling.map((course) => {
+              console.log('course',course._id)
+              if (!anySessionExpiredToday) {
+                if (course.sessions && course.sessions.length > 0) {
+                  let sessions = course.sessions.reduce((accum, element) => {
+                    if (element.startDate && element.duration) {
+                      element.endDate = moment(element.startDate).add(element.duration, 'seconds')
+                      accum.push(element)
                     }
+                    return accum
+                  }, [])
+                  sessions.sort((a, b) => moment(a.startDate).diff(moment(b.startDate)))
+                  console.log('sessions', sessions)
+                  if (sessions.length > 0)  {
+                    const lastSession = sessions[sessions.length-1]
+                    console.log('lastSession', lastSession)
+                    // if (today.format('YYYY-MM-DD ') >= endDate.format('YYYY-MM-DD')) {
+                      if (today.isAfter(lastSession.endDate.subtract(30, 'minutes'))) {
+                        console.log('session selected', lastSession)
+                        anySessionExpiredToday = true
+                        surveyAvailable = true
+                        surveyRelated = course._id
+                        surveyRelatedContent = {
+                          name: course.course.name,
+                          endDate: lastSession.endDate,
+                          mode_id: enrollment.course_scheduling.schedulingMode._id
+                        }
+                      }
                   }
+                }
+              }
+            })
+          } else if (schedulingMode === 'Virtual') {
+            // TODO: Fechas del programa
+            const endDate = moment.utc(enrollment.course_scheduling.endDate)
+            console.log('endDate', endDate)
+            console.log('today', today)
+            console.log('compare', today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD'))
+            console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
+            if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
+              if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
+                surveyAvailable = true
+                surveyRelated = enrollment.course_scheduling._id
+                surveyRelatedContent = {
+                  name: enrollment.course_scheduling.program.name,
+                  endDate: enrollment.course_scheduling.endDate,
+                  mode_id: enrollment.course_scheduling.schedulingMode._id
+                }
+              } else {
+                console.log('entro a virtual false')
+                // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
               }
             }
-          }
-        })
-      } else if (schedulingMode === 'Virtual') {
-        // TODO: Fechas del programa
-        const endDate = moment.utc(enrollment.course_scheduling.endDate)
-        console.log('endDate', endDate)
-        console.log('today', today)
-        console.log('compare', today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD'))
-        console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
-        if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
-          if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
-            surveyAvailable = true
-            surveyRelated = enrollment.course_scheduling._id
-            surveyRelatedContent = {
-              name: enrollment.course_scheduling.program.name,
-              endDate: enrollment.course_scheduling.endDate,
-            }
-          } else {
-            console.log('entro a virtual false')
-            return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+
           }
         }
-
       }
 
       console.log('surveyAvailable', surveyAvailable)
@@ -171,7 +179,7 @@ class SurveyEventService {
         { $unwind: '$config.content' },
         {
           $match: {
-            'config.content.config.course_modes': ObjectID(enrollment.course_scheduling.schedulingMode._id),
+            'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
             'deleted': false
           }
         },
