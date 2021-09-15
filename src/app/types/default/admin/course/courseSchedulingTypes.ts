@@ -39,6 +39,7 @@ export interface ICourseScheduling {
   priceCOP         : number,             // Precio en Pesos Colombianos
   priceUSD         : number,             // Precio en Dólares Estadounidenses
   discount         : number,             // Porcentaje de descuento del precio
+  endDiscountDate?: string | null
   id?: string // Identificador de la categoria
 }
 
