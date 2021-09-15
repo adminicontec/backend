@@ -39,7 +39,7 @@ class CourseDataService {
 
     try {
 
-      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
 
       let where = {}
 
@@ -125,7 +125,7 @@ class CourseDataService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.select) {
         select = params.select
       }
