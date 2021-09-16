@@ -110,7 +110,7 @@ class MoodleUserService {
     }
   }
 
-  public insertOrUpdate = async (params: IMoodleUser) => {
+  public insert = async (params: IMoodleUser) => {
     const customFieldNamesArray = ["regional", "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
     var posArray = 0;
     const prefix = 'users[0][customfields][';
@@ -122,22 +122,6 @@ class MoodleUserService {
 
     var jsonPropertyValue = 'users[0][customfields][0][value]';
     var customFieldValue = '';
-
-    //#region Process Country; send ISO-2
-    /*var countryCode = "";
-    if (params.country) {
-      var country = params.country;
-      const response: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: country }] })
-      if (response.status === 'success') {
-        countryCode = response.country.iso2;
-        console.log("==> " + countryCode);
-      }
-      else {
-        countryCode = "CO";  // by default
-        console.log("==> " + "NO country");
-      }
-    }*/
-    //#endregion
 
     let moodleParams = {
       wstoken: moodle_setup.wstoken,

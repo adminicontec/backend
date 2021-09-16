@@ -568,6 +568,16 @@ class GeneralUtility {
     }
   }
 
+public checkHexadecimalCode = (toCheck: string) => {
+  var re = /\b[0-9A-Fa-f]{8,24}/;
+  if(re.test(toCheck)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
 }
 
 export const generalUtility = new GeneralUtility();
