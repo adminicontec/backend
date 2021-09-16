@@ -41,7 +41,7 @@ class PostTypeService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id name description'
       if (params.query === QueryValues.ALL) {
         const registers = await PostType.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -141,7 +141,7 @@ class PostTypeService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name'
+    let select = 'id name description'
     if (filters.select) {
       select = filters.select
     }

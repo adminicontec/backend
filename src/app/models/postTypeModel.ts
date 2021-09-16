@@ -9,6 +9,9 @@ const PostTypeSchema = new Schema({
   name: {
     type: Schema.Types.String,
     required: true
+  },
+  description: {
+    type: Schema.Types.String,
   }
   // @end
 }, {

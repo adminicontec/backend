@@ -922,7 +922,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     let post_type_ids = {}
     const post_types = [
-      {name: 'news'},{name: 'events'},{name: 'research'}, {name: 'blog'}, {name: 'capsules'}, {name: 'webinar'}
+      {name: 'news', description: 'Noticias'},
+      {name: 'events', description: 'Eventos'},
+      {name: 'research', description: 'Investigaciones'},
+      {name: 'blog', description: 'Blogs'},
+      {name: 'capsules', description: 'Capsulas'},
+      {name: 'webinar', description: 'Webinars'}
     ]
     for await (const postType of post_types) {
       const exists: any = await postTypeService.findBy({
