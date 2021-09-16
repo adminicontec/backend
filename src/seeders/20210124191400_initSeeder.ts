@@ -927,7 +927,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'research', description: 'Investigaciones'},
       {name: 'blog', description: 'Blogs'},
       {name: 'capsules', description: 'Capsulas'},
-      {name: 'webinar', description: 'Webinars'}
+      {name: 'webinar', description: 'Webinars'},
+      {name: 'podcast', description: 'Podcast'}
     ]
     for await (const postType of post_types) {
       const exists: any = await postTypeService.findBy({
