@@ -242,6 +242,7 @@ class MoodleCourseService {
       }
 
     }
+    console.log("Resultados de copia: ");
     console.log(respMoodle);
     console.log("============");
 
@@ -250,6 +251,9 @@ class MoodleCourseService {
     let respMoodleUpdate: any = await this.update(params);
     if (respMoodleUpdate.status === 'success') {
 
+      console.log("Resultados de udpate: ");
+      console.log(respMoodleUpdate);
+      console.log("============");
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           course: {

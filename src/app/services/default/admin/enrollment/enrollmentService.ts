@@ -192,27 +192,6 @@ class EnrollmentService {
       }
     }
 
-    //#region Process Country; send ISO-2
-    var countryCode = '';
-    var countryID = '';
-    if (params.country) {
-      console.log("==> " + params.country);
-      const responseCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.country }] })
-      if (responseCountry.status === 'success') {
-        countryID =  responseCountry.country.id;
-        countryCode = responseCountry.country.iso2;
-      }
-      else {
-        countryID = '60e67d097d68fc1910feff7a';
-        countryCode = "CO";  // by default
-      }
-    }
-    else {
-      countryID = '60e67d097d68fc1910feff7a';
-      countryCode = "CO";  // by default
-    }
-      //#endregion
-
 
     try {
       if (params.id) {
@@ -307,7 +286,7 @@ class EnrollmentService {
                 doc_type: params.documentType,
                 doc_number: params.documentID,
                 city: params.city,
-                country: countryID,
+                country: params.country,
                 birthDate: params.birthdate,
                 alternativeEmail: params.emailAlt,
                 genre: params.genre,
@@ -342,10 +321,6 @@ class EnrollmentService {
               if (respoUser.status == "success") {
                 params.user = respoUser.user._id
                 userEnrollment = respoUser.user
-
-                // Usuario creado en Campus y en moodle:
-
-                // console.log("[  Campus  ] Usuario creado con éxito: " + respoUser.user.username + " : " + passw);
               }
               else {
                 // Retornar ERROR: revisar con equipo
@@ -360,6 +335,7 @@ class EnrollmentService {
               console.log(">>>>>>>>>>>>>>>>>>>>");
 
               cvUserParams.id = respCampusDataUser.user._id.toString();
+            //  cvUserParams.profile.country = countryID;
               console.log(cvUserParams);
               try {
                 const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
@@ -454,7 +430,7 @@ class EnrollmentService {
                   username: paramToEnrollment.user.moodleUserName,
                   phonenumber: params.phoneNumber,
                   city: params.city,
-                  country: countryCode,
+                 // country: countryCode,
                   regional: params.regional,
                   fecha_nacimiento: params.birthdate,
                   cargo: params.job,
@@ -468,9 +444,9 @@ class EnrollmentService {
                 console.log("Antes de carga en moodle. ");
                 console.log(paramsMoodleUser);
 
-                // crear nuevo uusario en MOODLE
-                let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
-                paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
+                // crear nuevo uusario en MOODLE >REVISION<
+                // let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
+                // paramToEnrollment.user.moodleUserID = respMoodle2.user.id;
               }
               else {
                 // console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));

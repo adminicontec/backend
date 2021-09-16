@@ -34,6 +34,7 @@ import {
   ICourseSchedulingReport,
   ICourseSchedulingReportData
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
+import { Console } from "console";
 // @end
 
 class CourseSchedulingService {
@@ -224,7 +225,7 @@ class CourseSchedulingService {
         if (response.city) { moodleCity = response.city.name; }
         console.log("update Programa on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
-          "id": `${response.program.moodle_id}`,
+          "id": `${response.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,

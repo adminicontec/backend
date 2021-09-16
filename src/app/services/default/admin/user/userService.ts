@@ -18,6 +18,7 @@ import { customs } from '@scnode_core/config/globals'
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
@@ -28,6 +29,7 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IUser, IUserDelete, IUserQuery, IUserDateTimezone } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
+import { utils } from "xlsx/types";
 // @end
 class UserService {
 
@@ -119,6 +121,8 @@ class UserService {
       console.log("1.1. UserService.insertOrUpdate()--> ");
       console.log(params);
 
+      let countryCode = '';
+
       if (!params.profile) {
         params.profile = {}
       } else if (params.profile && typeof params.profile === "string") {
@@ -151,7 +155,7 @@ class UserService {
 
         // @INFO: Validando campos unicos
         if (params.username) {
-          const exist = await User.findOne({ name: params.username, _id: {$ne: params.id}})
+          const exist = await User.findOne({ name: params.username, _id: { $ne: params.id } })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}` } } })
         }
         // else if (params.email) {
@@ -183,6 +187,25 @@ class UserService {
           }
         }
 
+        if (params.profile.country) {
+          // Si el valor de Country no es hexadecimal, se consulta para modificar el Profile y UserMoodle
+          if (!generalUtility.checkHexadecimalCode(params.profile.country)) {
+            console.log("nombre de país:")
+            const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
+            params.profile.country = respCountry.country._id;
+            countryCode = respCountry.country.iso2;
+          }
+          else {
+            console.log("código de país:" + params.profile.country)
+            const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'id', value: params.profile.country.toString() }] })
+            if (respCountry.status != 'error') {
+              console.log(respCountry)
+              params.profile.country = respCountry.country._id;
+              countryCode = respCountry.country.iso2;
+            }
+          }
+        }
+
         console.log("Ready to update");
         console.log(params)
         const response: any = await User.findByIdAndUpdate(params.id, params, {
@@ -206,14 +229,12 @@ class UserService {
           }
         })
 
-      } else {
+      }
+      else {
+        //#region INSERT NEW USER
         console.log("* * User.findOne * *");
-        const exist = await User.findOne({
-          $or: [
-            { username: params.username },
-            { email: params.email },
-          ]
-        })
+        const exist = await User.findOne({ name: params.username })
+
         console.log("If user Exists --> [" + params.username + "]");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
@@ -228,7 +249,9 @@ class UserService {
           if (params.profile.country) {
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
             userParams.profile.country = respCountry.country._id;
+            countryCode = respCountry.country.iso2;
           }
+
           const { _id } = await User.create(userParams)
 
           console.log("Get created  User --> ");
@@ -244,7 +267,7 @@ class UserService {
 
           console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
           var paramUserMoodle = {
-            email: params.email
+            username: params.username
           }
           let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
           console.log("moodleUserService()  resp:");
@@ -255,7 +278,7 @@ class UserService {
               // [revisión[]
               var paramsMoodleUser: IMoodleUser = {
                 city: params.profile.city,
-                country: params.profile.country,
+                country: countryCode,
                 documentNumber: params.profile.doc_number,
                 email: params.email,
                 username: params.username,
@@ -276,7 +299,7 @@ class UserService {
               console.log(paramsMoodleUser);
 
               // crear nuevo uusario en MOODLE
-              let respMoodle2: any = await moodleUserService.insertOrUpdate(paramsMoodleUser);
+              let respMoodle2: any = await moodleUserService.insert(paramsMoodleUser);
               console.log("Moodle: Usuario creado con Éxito.");
               console.log(respMoodle2);
 
@@ -333,8 +356,8 @@ class UserService {
         catch (error) {
           console.log(error);
         }
+        //#endregion
       }
-
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
