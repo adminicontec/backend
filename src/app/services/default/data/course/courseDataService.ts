@@ -39,7 +39,7 @@ class CourseDataService {
 
     try {
 
-      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration'
 
       let where = {}
 
@@ -57,6 +57,7 @@ class CourseDataService {
         .select(select)
         .populate({ path: 'program', select: 'id name moodle_id code' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'city', select: 'id name' })
         .lean()
 
         if (register) {
@@ -128,7 +129,7 @@ class CourseDataService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration'
       if (params.select) {
         select = params.select
       }
@@ -220,6 +221,7 @@ class CourseDataService {
         registers = await CourseScheduling.find(where)
         .populate({ path: 'program', select: 'id name moodle_id code' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'city', select: 'id name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort(sort)
