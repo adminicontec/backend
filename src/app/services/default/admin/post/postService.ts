@@ -54,7 +54,7 @@ class PostService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl authors cover_caption additional_info'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Post.find(where)
         .populate({path: 'postType', select: 'id name'})
@@ -111,6 +111,8 @@ class PostService {
 
     try {
 
+      console.log('params', params)
+
       let postType = null
 
       // @INFO: Cargando imagen al servidor
@@ -120,6 +122,8 @@ class PostService {
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
       }
+
+      if (params.additional_info && typeof params.additional_info === 'string' && params.additional_info !== '') params.additional_info = JSON.parse(params.additional_info);
 
       if (params.tags && typeof params.tags === 'string') params.tags = params.tags.split(',')
       if (params.tags && Array.isArray(params.tags)) {
@@ -147,6 +151,10 @@ class PostService {
 
       if (params.tags && typeof params.tags === 'string') {
         params.tags = params.tags.split(',')
+      }
+      if (params.authors && typeof params.authors === 'string') params.authors = params.authors.split(',')
+      if (!params.authors) {
+        params.authors = []
       }
 
       if (params.locations && typeof params.locations === 'string') {
@@ -331,7 +339,7 @@ class PostService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video researchUrl'
+    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video researchUrl authors cover_caption additional_info'
     if (filters.select) {
       select = filters.select
     }
@@ -396,6 +404,10 @@ class PostService {
         if (register.researchUrl) {
           register.researchUrl = this.researchUrl(register)
         }
+
+        // if (register.eventDate) {
+        //   register.eventDate = register.eventDate.toISOString().replace('T00:00:00.000Z', '')
+        // }
       }
     } catch (e) {}
 

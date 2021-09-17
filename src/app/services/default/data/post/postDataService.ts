@@ -60,7 +60,7 @@ class PostDataService {
 
     try {
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl authors cover_caption additional_info'
 
       let where = {}
 
@@ -86,6 +86,9 @@ class PostDataService {
         }
         if (register && register.researchUrl) {
           register.researchUrl = postService.researchUrl(register)
+        }
+        if (register.eventDate) {
+          register.eventDate = register.eventDate.toISOString().replace('T00:00:00.000Z', '')
         }
       } catch (e) {}
 
@@ -113,7 +116,7 @@ class PostDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl'
+      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags authors video researchUrl authors cover_caption additional_info'
       if (params.select) {
         select = params.select
       }
@@ -199,6 +202,10 @@ class PostDataService {
           }
           if (register.title) {
             register.slug = encodeURI(register.title)
+          }
+
+          if (register.eventDate) {
+            register.eventDate = register.eventDate.toISOString().replace('T00:00:00.000Z', '')
           }
         }
       } catch (e) {}

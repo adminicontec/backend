@@ -19,6 +19,9 @@ const PostSchema = new Schema({
   coverUrl: {
     type: Schema.Types.String
   },
+  cover_caption: {
+    type: Schema.Types.String
+  },
   postDate: {
     type: Schema.Types.Date,
   },
@@ -86,6 +89,20 @@ const PostSchema = new Schema({
   },
   researchUrl: {
     type: Schema.Types.String
+  },
+  additional_info: {
+    country: {
+      type: Schema.Types.String
+    },
+    location: {
+      type: Schema.Types.String
+    },
+    schedule: {
+      type: Schema.Types.String
+    },
+    modality: {
+      type: Schema.Types.String
+    }
   }
   // @end
 }, {

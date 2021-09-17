@@ -21,7 +21,7 @@ export interface IPost {
   coverFile?: any // Objeto tipo file que contiene la imagen a cargar
   locations?: IPostLocations[] | string // Array con las ubicaciones de la publicación
   location?: IPostLocations // Array con las ubicaciones de la publicación
-  authors?: Array<string> // Array de los nombre de los autores
+  authors?: Array<string> | string// Array de los nombre de los autores
   id?: string // Identificador de la categoria
   platform_video?: string // Tipo de video
   url_video?: string  // Url del video
@@ -30,7 +30,13 @@ export interface IPost {
     platform: string
   }
   researchUrl?: string
-  researchFile?: any
+  researchFile?: any,
+  additional_info?: {
+    country?: string;
+    location?: string;
+    schedule?: string;
+    modality?: string;
+  }
 }
 
 export interface IPostLocations {
