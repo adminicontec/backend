@@ -941,6 +941,7 @@ class CourseSchedulingService {
         }
       }
     } catch (error) {
+      console.log('generateReport error', error)
       return responseUtility.buildResponseFailed('json')
     }
   }
