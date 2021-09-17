@@ -533,11 +533,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_business_training', description: 'Landing de empresas'},
         {name: 'permission:landings_business_scheduling', description: 'Landing de empresas'},
 
-        {name: 'permission:landings_officials', description: 'Landing de funcionarios'},
-        {name: 'permission:landings_officials_general_info', description: 'Landing de funcionarios'},
-        {name: 'permission:landings_officials_article', description: 'Landing de funcionarios'},
-        {name: 'permission:landings_officials_training', description: 'Landing de funcionarios'},
-        {name: 'permission:landings_officials_scheduling', description: 'Landing de funcionarios'},
+        {name: 'permission:landings_officials', description: 'Landing de colaboradores'},
+        {name: 'permission:landings_officials_general_info', description: 'Landing de colaboradores'},
+        {name: 'permission:landings_officials_article', description: 'Landing de colaboradores'},
+        {name: 'permission:landings_officials_training', description: 'Landing de colaboradores'},
+        {name: 'permission:landings_officials_scheduling', description: 'Landing de colaboradores'},
 
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
