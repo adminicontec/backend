@@ -924,7 +924,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const post_types = [
       {name: 'news', description: 'Noticias'},
       {name: 'events', description: 'Eventos'},
-      {name: 'research', description: 'Investigaciones'},
+      {name: 'research', description: 'Artículos'},
       {name: 'blog', description: 'Blogs'},
       {name: 'capsules', description: 'Capsulas'},
       {name: 'webinar', description: 'Webinars'},
