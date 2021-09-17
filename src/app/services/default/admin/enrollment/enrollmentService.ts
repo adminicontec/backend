@@ -533,8 +533,9 @@ class EnrollmentService {
         .populate({ path: 'schedulingStatus', select: 'id name' })
 
       // Search UserId on Moodle
+      var username = find.documentID.toLowerCase().replace(/ /g, "_");
       const paramUserMoodle = {
-        email: find.email
+        username: username
       }
       const respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
       if (respMoodle2.status == "success") {
