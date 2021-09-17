@@ -57,7 +57,7 @@ class PostService {
       let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl authors cover_caption additional_info'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Post.find(where)
-        .populate({path: 'postType', select: 'id name'})
+        .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
         .populate({path: 'locations.postLocation', select: 'id name'})
         .select(select)
@@ -77,7 +77,7 @@ class PostService {
         }})
       } else if (params.query === QueryValues.ONE) {
         const register: any = await Post.findOne(where)
-        .populate({path: 'postType', select: 'id name'})
+        .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
         .populate({path: 'locations.postLocation', select: 'id name'})
         .select(select)
@@ -240,7 +240,7 @@ class PostService {
           new: true,
           lean: true,
         })
-        await PostType.populate(response, {path: 'postType', select: 'id name'})
+        await PostType.populate(response, {path: 'postType', select: 'id name description'})
         await PostCategory.populate(response, {path: 'tags', select: 'id name'})
         await PostLocation.populate(response, {path: 'locations.postLocation', select: 'id name'})
 
@@ -267,7 +267,7 @@ class PostService {
 
         const {_id} = await Post.create(params)
         const response: any = await Post.findOne({_id})
-        .populate({path: 'postType', select: 'id name'})
+        .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
         .populate({path: 'locations.postLocation', select: 'id name'})
         .lean()
@@ -389,7 +389,7 @@ class PostService {
     try {
       registers =  await Post.find(where)
       .select(select)
-      .populate({path: 'postType', select: 'id name'})
+      .populate({path: 'postType', select: 'id name description'})
       .populate({path: 'tags', select: 'id name'})
       .populate({path: 'locations.postLocation', select: 'id name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
