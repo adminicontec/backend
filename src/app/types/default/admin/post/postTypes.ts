@@ -36,7 +36,9 @@ export interface IPost {
     location?: string;
     schedule?: string;
     modality?: string;
-  }
+  },
+  brochureUrl?: string // URL de la imagen de la publicación
+  brochureFile?: any // Objeto tipo file que contiene la imagen a cargar
 }
 
 export interface IPostLocations {

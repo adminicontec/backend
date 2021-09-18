@@ -54,12 +54,12 @@ class PostService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl authors cover_caption additional_info'
+      let select = 'id title subtitle content coverUrl brochureUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags locations video researchUrl authors cover_caption additional_info'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Post.find(where)
         .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
-        .populate({path: 'locations.postLocation', select: 'id name'})
+        .populate({path: 'locations.postLocation', select: 'id name description'})
         .select(select)
         .lean()
 
@@ -70,6 +70,9 @@ class PostService {
           if (register.researchUrl) {
             register.researchUrl = this.researchUrl(register)
           }
+          if (register.brochureUrl) {
+            register.brochureUrl = this.brochureUrl(register)
+          }
         }
 
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -79,7 +82,7 @@ class PostService {
         const register: any = await Post.findOne(where)
         .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
-        .populate({path: 'locations.postLocation', select: 'id name'})
+        .populate({path: 'locations.postLocation', select: 'id name description'})
         .select(select)
         .lean()
 
@@ -90,6 +93,9 @@ class PostService {
         }
         if (register.researchUrl) {
           register.researchUrl = this.researchUrl(register)
+        }
+        if (register.brochureUrl) {
+          register.brochureUrl = this.brochureUrl(register)
         }
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           post: register
@@ -121,6 +127,14 @@ class PostService {
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+
+      // @INFO: Cargando imagen al servidor
+      if (params.brochureFile && params.brochureFile !== '{}') {
+        const defaulPath = this.default_cover_path
+        const response_upload: any = await uploadService.uploadFile(params.brochureFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.brochureUrl = response_upload.name
       }
 
       if (params.additional_info && typeof params.additional_info === 'string' && params.additional_info !== '') params.additional_info = JSON.parse(params.additional_info);
@@ -242,14 +256,15 @@ class PostService {
         })
         await PostType.populate(response, {path: 'postType', select: 'id name description'})
         await PostCategory.populate(response, {path: 'tags', select: 'id name'})
-        await PostLocation.populate(response, {path: 'locations.postLocation', select: 'id name'})
+        await PostLocation.populate(response, {path: 'locations.postLocation', select: 'id name description'})
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             post: {
               ...response,
               coverUrl: this.coverUrl(response),
-              researchUrl: this.researchUrl(response)
+              researchUrl: this.researchUrl(response),
+              brochureUrl: this.brochureUrl(response)
             }
           }
         })
@@ -269,7 +284,7 @@ class PostService {
         const response: any = await Post.findOne({_id})
         .populate({path: 'postType', select: 'id name description'})
         .populate({path: 'tags', select: 'id name'})
-        .populate({path: 'locations.postLocation', select: 'id name'})
+        .populate({path: 'locations.postLocation', select: 'id name description'})
         .lean()
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -277,7 +292,8 @@ class PostService {
             post: {
               ...response,
               coverUrl: this.coverUrl(response),
-              researchUrl: this.researchUrl(response)
+              researchUrl: this.researchUrl(response),
+              brochureUrl: this.brochureUrl(response)
             }
           }
         })
@@ -306,6 +322,16 @@ class PostService {
   public researchUrl = ({ researchUrl }) => {
     return researchUrl && researchUrl !== ''
     ? `${customs['uploads']}/${this.default_cover_path}/${researchUrl}`
+    : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de una publicación a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del AcademicComponent
+   */
+   public brochureUrl = ({ brochureUrl }) => {
+    return brochureUrl && brochureUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_path}/${brochureUrl}`
     : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
   }
 
@@ -339,7 +365,7 @@ class PostService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title subtitle content coverUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video researchUrl authors cover_caption additional_info'
+    let select = 'id title subtitle content coverUrl brochureUrl postDate eventDate lifeSpan highlighted isActive startDate endDate externUrl user postType tags video researchUrl authors cover_caption additional_info'
     if (filters.select) {
       select = filters.select
     }
@@ -391,7 +417,7 @@ class PostService {
       .select(select)
       .populate({path: 'postType', select: 'id name description'})
       .populate({path: 'tags', select: 'id name'})
-      .populate({path: 'locations.postLocation', select: 'id name'})
+      .populate({path: 'locations.postLocation', select: 'id name description'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
       .sort({created_at: -1})
@@ -403,6 +429,9 @@ class PostService {
         }
         if (register.researchUrl) {
           register.researchUrl = this.researchUrl(register)
+        }
+        if (register.brochureUrl) {
+          register.brochureUrl = this.brochureUrl(register)
         }
 
         // if (register.eventDate) {

@@ -22,7 +22,9 @@ export interface IFetchPosts {
   sort?: {
     field: string,
     direction: string
-  }
+  },
+  onlyImportant: boolean,
+  exclude?: Array<string>
 }
 
 export interface IFetchPost {

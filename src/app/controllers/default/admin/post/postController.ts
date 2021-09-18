@@ -42,6 +42,9 @@ class PostController {
     if (files && files.hasOwnProperty('cover')) {
       params['coverFile'] = files['cover']
     }
+    if (files && files.hasOwnProperty('brochure')) {
+      params['brochureFile'] = files['brochure']
+    }
     if (files && files.hasOwnProperty('researchFile')) {
       params['researchFile'] = files['researchFile']
     }
@@ -62,6 +65,9 @@ class PostController {
 
     if (files && files.hasOwnProperty('cover')) {
       params['coverFile'] = files['cover']
+    }
+    if (files && files.hasOwnProperty('brochure')) {
+      params['brochureFile'] = files['brochure']
     }
     if (files && files.hasOwnProperty('researchFile')) {
       params['researchFile'] = files['researchFile']

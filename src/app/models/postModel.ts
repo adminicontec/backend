@@ -103,7 +103,10 @@ const PostSchema = new Schema({
     modality: {
       type: Schema.Types.String
     }
-  }
+  },
+  brochureUrl: {
+    type: Schema.Types.String
+  },
   // @end
 }, {
   collection: 'posts' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

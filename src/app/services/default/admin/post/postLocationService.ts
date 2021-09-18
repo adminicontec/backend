@@ -42,7 +42,7 @@ class PostLocationService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id name description'
       if (params.query === QueryValues.ALL) {
         const registers = await PostLocation.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -87,6 +87,7 @@ class PostLocationService {
             postLocation: {
               _id: response._id,
               name: response.name,
+              description: response.description
             }
           }
         })
@@ -101,7 +102,8 @@ class PostLocationService {
           additional_parameters: {
             postLocation: {
               _id: response._id,
-              name: response.name
+              name: response.name,
+              description: response.description
             }
           }
         })
@@ -142,7 +144,7 @@ class PostLocationService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name'
+    let select = 'id name description'
     if (filters.select) {
       select = filters.select
     }
