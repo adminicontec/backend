@@ -254,8 +254,8 @@ class CourseService {
             hasCost: register.hasCost,
             priceCOP: register.priceCOP,
             priceUSD: register.priceUSD,
-            discount: register.discount,
-            quota: register.amountParticipants,
+            discount: register.discount == null ? 0 : register.discount,
+            endDiscountDate: register.endDiscountDate == null ? null: register.endDiscountDate,            quota: register.amountParticipants,
             lang: 'ES',
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
             isActive: isActive
