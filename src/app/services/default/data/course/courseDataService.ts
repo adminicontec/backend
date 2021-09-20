@@ -209,6 +209,10 @@ class CourseDataService {
         where['regional'] = params.regional
       }
 
+      if (params.modular) {
+        where['modular'] = params.modular
+      }
+
       let sort = null
       if (params.sort) {
         sort = {}

@@ -34,6 +34,7 @@ export interface IFetchCourses {
   price?: 'free' | 'pay'
   city?: string
   regional?: string
+  modular?: string
 }
 
 export interface IFetchCourse {
