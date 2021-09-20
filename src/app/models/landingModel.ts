@@ -14,6 +14,7 @@ const LandingSchema = new Schema({
     title: {type: Schema.Types.String},
     content: {type: Schema.Types.Mixed},
   },
+  title_training: {type: Schema.Types.String},
   trainings: [
     {
       unique: {type: Schema.Types.String, require: true},
@@ -22,6 +23,19 @@ const LandingSchema = new Schema({
       description: {type: Schema.Types.String},
       attachedUrl: {type: Schema.Types.String},
       publication_date: {type: Schema.Types.Date},
+      modality: {type: Schema.Types.String},
+      city: {type: Schema.Types.String},
+      start_date: {type: Schema.Types.Date},
+      price: {
+        type: Schema.Types.Number,
+      },
+      url_video: {
+        type: Schema.Types.String
+      },
+      platform_video: {
+        type: Schema.Types.String,
+        enum: ['youtube', 'vimeo']
+      }
     }
   ],
   scheduling: [
