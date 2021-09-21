@@ -38,6 +38,7 @@ import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import moment from 'moment';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 // @end
 
 class EnrollmentService {
@@ -110,7 +111,7 @@ class EnrollmentService {
         enrollment: [
           ...registers
         ],
-        total_register: (paging) ? await Enrollment.find(where).count() : 0,
+        total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
@@ -258,8 +259,7 @@ class EnrollmentService {
           const respMoodle: any = await moodleCourseService.findBy(params);
           // console.log('respMoodle', respMoodle);
 
-          if (respMoodle.status !== "error")
-          {
+          if (respMoodle.status !== "error") {
             // Info del curso existe!
             paramToEnrollment.course.moodleCourseID = respMoodle.course.id;
             paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
@@ -274,7 +274,7 @@ class EnrollmentService {
             // Si username === documentID --> Carga Masiva
             // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
             var cvUserParams: IUser = {
-              id:'',
+              id: '',
               username: newUserID,//params.user,
               email: params.email,
               password: passw,
@@ -335,7 +335,7 @@ class EnrollmentService {
               console.log(">>>>>>>>>>>>>>>>>>>>");
 
               cvUserParams.id = respCampusDataUser.user._id.toString();
-            //  cvUserParams.profile.country = countryID;
+              //  cvUserParams.profile.country = countryID;
               console.log(cvUserParams);
               try {
                 const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
@@ -343,7 +343,7 @@ class EnrollmentService {
                 if (respoExistingUser.status == "success") {
                   console.log("---------------- SUCESS ----------------------- ");
                 }
-                else{
+                else {
                   console.log(respoExistingUser);
                 }
 
@@ -430,7 +430,7 @@ class EnrollmentService {
                   username: paramToEnrollment.user.moodleUserName,
                   phonenumber: params.phoneNumber,
                   city: params.city,
-                 // country: countryCode,
+                  // country: countryCode,
                   regional: params.regional,
                   fecha_nacimiento: params.birthdate,
                   cargo: params.job,
@@ -497,8 +497,7 @@ class EnrollmentService {
             //#endregion
 
           }
-          else
-          {
+          else {
             // No hay curso para hacer matrícula
             console.log('Curso ' + params.courseID + ' en Moodle NO existe.');
             return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
@@ -589,6 +588,8 @@ class EnrollmentService {
 
   public massive = async (params: IMassiveEnrollment) => {
 
+    let processResult: IFileProcessResult;
+    let processResultLog = [];
 
     console.log(">>>>>>>>>>> Begin Massive Enrollment")
     let userEnrollmentResponse = [];
@@ -600,9 +601,10 @@ class EnrollmentService {
     if (dataFromWorksheet != null) {
       console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
+      let index = 1;
       for await (const element of dataFromWorksheet) {
 
-        let dob;
+        let dob = '';
         // check for element['Fecha Nacimiento']
         if (element['Fecha Nacimiento']) {
           dob = moment.utc(element['Fecha Nacimiento'].toString()).format('YYYY-MM-DD');
@@ -614,48 +616,120 @@ class EnrollmentService {
         //#region   Revisión Documento de identidad para Casos especiales
         if (element['Documento de Identidad']) {
           var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_");
+          console.log(">>> Insert Username " + newUserID);
+          let checkEmail = element['Correo Electrónico'];
+          if (checkEmail != null) {
+            checkEmail = checkEmail.trim().toLowerCase();
+            if (generalUtility.validateEmailFormat(checkEmail)) {
 
-          singleUserEnrollmentContent =
-          {
-            documentType: element['Tipo Documento'],
-            documentID: element['Documento de Identidad'],
-            user: element['Documento de Identidad'],
-            password: element['Documento de Identidad'], // <-- Contraseña provisional
-            email: element['Correo Electrónico'],
-            firstname: element['Nombres'],
-            lastname: element['Apellidos'],
-            phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString() : '',
-            city: element['Ciudad'],
-            country: element['País'],
-            emailAlt: element['Correo Alt'],
-            regional: element['Regional'],
-            birthdate: dob,
-            job: element['Cargo'],
-            title: element['Profesión'],
-            educationalLevel: element['Nivel Educativo'],
-            company: element['Empresa'],
-            genre: element['Género'],
-            origin: element['Origen'],
+              singleUserEnrollmentContent =
+              {
+                documentType: element['Tipo Documento'],
+                documentID: element['Documento de Identidad'],
+                user: element['Documento de Identidad'],
+                password: element['Documento de Identidad'], // <-- Contraseña provisional
+                email: checkEmail,
+                firstname: element['Nombres'],
+                lastname: element['Apellidos'],
+                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString() : '',
+                city: element['Ciudad'],
+                country: element['País'],
+                emailAlt: element['Correo Alt'],
+                regional: element['Regional'],
+                birthdate: dob,
+                job: element['Cargo'],
+                title: element['Profesión'],
+                educationalLevel: element['Nivel Educativo'],
+                company: element['Empresa'],
+                genre: element['Género'],
+                origin: element['Origen'],
 
-            courseID: params.courseID,
-            rolename: 'student',
-            courseScheduling: params.courseScheduling,
-            sendEmail: params.sendEmail
+                courseID: params.courseID,
+                rolename: 'student',
+                courseScheduling: params.courseScheduling,
+                sendEmail: params.sendEmail
+              }
+              const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
+              if(resp.status == 'success'){
+                processResult = {
+                  ID: index,
+                  status: 'OK',
+                  messageProcess: '',
+                  details: {
+                    user: singleUserEnrollmentContent.user,
+                    fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                  }
+                }
+              }
+              else{
+                processResult = {
+                  ID: index,
+                  status: 'ERROR',
+                  messageProcess: "resp.enrollment",
+                  details: {
+                    user: singleUserEnrollmentContent.user,
+                    fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                  }
+                }
+
+              }
+              // build process Response
+              userEnrollmentResponse.push(resp);
+            }
+            else {
+              processResult = {
+                ID: index,
+                status: 'ERROR',
+                messageProcess: 'Campo email no tiene formato adecuado.',
+                details: {
+                  user: 'Empty',
+                  fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                }
+              }
+            }
           }
-          console.log('Tipo: ' + element['Tipo Documento'] + ' Doc:' + element['Documento de Identidad']);
-          const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
-          // build process Response
-          userEnrollmentResponse.push(resp);
+          else {
+            // error por email vacío
+            processResult = {
+              ID: index,
+              status: 'ERROR',
+              messageProcess: 'Campo email está vacío.',
+              details: {
+                user: 'Empty',
+                fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+              }
+            }
+          }
+          console.log("<<<<<<<<< Resultado individual >>>>>>>>>>>>>>>>>>><<<<");
+          console.log(processResult);
+          processResultLog.push(processResult);
         }
         else {
           // Log the Error
+          processResult = {
+            ID: index,
+            status: 'ERROR',
+            messageProcess: 'El campo Documento de Identidad está vacío.',
+            details: {
+              user: 'Empty',
+              fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+            }
+          }
+          //console.log(processResult)
+          processResultLog.push(processResult);
+
         }
+        index++;
         //#endregion
       }
+      console.log("--------------------------------------------------------");
+      console.log("Resultados de carga de archivo:");
+      //console.log(processResultLog);
+      console.log("--------------------------------------------------------");
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          ...userEnrollmentResponse
+          ...processResultLog
         }
       })
 
@@ -665,6 +739,7 @@ class EnrollmentService {
       // console.log("Worksheet not found");
     }
   }
+
 }
 
 export const enrollmentService = new EnrollmentService();
