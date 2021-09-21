@@ -96,8 +96,8 @@ class CalendarEventsService {
           var modTime = new Date(eventTime.timemodified * 1000).toISOString();
           eventTime.timemodified = modTime;
 
-          console.log("--> from Moodle: ");
-          console.log(eventTime);
+          // console.log("--> from Moodle: ");
+          // console.log(eventTime);
 
           // Ignore every event named "attendance"
           if (eventTime.modulename != "attendance" ) {
