@@ -31,7 +31,7 @@ export interface IFetchCourses {
     field: string,
     direction: string
   },
-  price?: 'free' | 'pay'
+  price?: 'free' | 'pay' | 'discount'
   city?: string
   regional?: string
   modular?: string

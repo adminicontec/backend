@@ -192,6 +192,10 @@ class CourseDataService {
           where['hasCost'] = false
         } else if (params.price === 'pay') {
           where['hasCost'] = true
+        } else if (params.price === 'discount') {
+          let date = moment()
+          where['discount'] = {$gt: 0}
+          where['endDiscountDate'] = {$gte: date.format('YYYY-MM-DD')}
         }
       }
 
