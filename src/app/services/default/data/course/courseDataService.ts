@@ -9,6 +9,7 @@ import { courseService } from '@scnode_app/services/default/admin/course/courseS
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { mapUtility } from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
@@ -159,6 +160,22 @@ class CourseDataService {
         where['program'] = { $in: program_ids }
       }
 
+      if (params.highlighted) {
+        const coursesHighlighted: any = await Course.find({highlighted: true}).select('id program').lean()
+        const programsHighlighted = coursesHighlighted.reduce((accum, element) => {
+          accum.push(element.program)
+          return accum;
+        }, [])
+
+        if (!where['program']) {
+          where['program'] = { $in: programsHighlighted }
+        } else if (!where['program']['$in']) {
+          where['program']['$in'] = programsHighlighted
+        } else {
+          where['program']['$in'] = where['program']['$in'].concat(programsHighlighted)
+        }
+      }
+
       // @INFO: Filtro para Mode
       if (params.mode) {
         where['schedulingMode'] = params.mode
@@ -230,6 +247,10 @@ class CourseDataService {
         .limit(paging ? nPerPage : null)
         .sort(sort)
         .lean()
+
+        if (params.random && params.random.size) {
+          registers = mapUtility.shuffle(registers).slice(0, params.random.size)
+        }
 
         const program_ids = registers.reduce((accum, element) => {
           accum.push(element.program._id.toString())

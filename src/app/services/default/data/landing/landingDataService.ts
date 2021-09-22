@@ -39,7 +39,7 @@ class LandingDataService {
     try {
 
       const landing = await Landing.findOne({slug: params.slug})
-      .select('id title_page title_training article trainings scheduling descriptive_training our_clients')
+      .select('id title_page title_training title_references article trainings scheduling descriptive_training our_clients references')
       .lean()
 
       if (landing) {
@@ -67,6 +67,14 @@ class LandingDataService {
           for (const client of landing.our_clients) {
             if (client.url) {
               client.url = landingService.ourClientsImageUrl(client.url)
+            }
+          }
+        }
+
+        if (landing.references) {
+          for (const reference of landing.references) {
+            if (reference.url) {
+              reference.url = landingService.referenceImageUrl(reference.url)
             }
           }
         }

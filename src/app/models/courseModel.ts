@@ -12,11 +12,14 @@ const CourseSchema = new Schema({
     required: true
   },
   program: {
-      type: Schema.Types.ObjectId,
-      ref: "Program",
-      required: true
-    },
+    type: Schema.Types.ObjectId,
+    ref: "Program",
+    required: true
+  },
 
+  highlighted: {
+    type: Schema.Types.Boolean
+  },
   // moodleID: {
   //   type: Schema.Types.String,
   // },

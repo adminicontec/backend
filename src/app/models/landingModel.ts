@@ -54,6 +54,14 @@ const LandingSchema = new Schema({
     unique: {type: Schema.Types.String, require: true},
     title: {type: Schema.Types.String},
     url: {type: Schema.Types.String}
+  }],
+  title_references: {type: Schema.Types.String},
+  references: [{
+    unique: {type: Schema.Types.String, require: true},
+    title: {type: Schema.Types.String},
+    description: {type: Schema.Types.String},
+    url: {type: Schema.Types.String},
+    qualification: {type: Schema.Types.String},
   }]
   // @end
 }, {

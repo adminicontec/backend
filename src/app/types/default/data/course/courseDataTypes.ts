@@ -35,6 +35,10 @@ export interface IFetchCourses {
   city?: string
   regional?: string
   modular?: string
+  highlighted?: boolean
+  random?: {
+    size?: number
+  }
 }
 
 export interface IFetchCourse {

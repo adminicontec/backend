@@ -56,7 +56,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities'
+      let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -298,7 +298,7 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities'
+    let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
@@ -344,6 +344,7 @@ class CourseService {
    */
   public insertOrUpdate = async (params: ICourse) => {
     try {
+      console.log('params', params)
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
       if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
       if (params.competencies && typeof params.competencies === 'string') params.competencies = JSON.parse(params.competencies)

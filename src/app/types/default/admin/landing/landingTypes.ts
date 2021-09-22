@@ -50,6 +50,22 @@ export interface ILandingOurClients{
   attachedFile?: any // Objeto tipo file que contiene el adjunto a cargar
 }
 
+export interface ILandingReference{
+  slug?: string
+  unique?: string
+  title: string
+  description: string
+  qualification: string
+  url?: string
+  attached?: any
+  coverFile?: any // Objeto tipo file que contiene el adjunto a cargar
+}
+
+export interface ILandingReferenceDelete{
+  slug: string
+  unique: string
+}
+
 export interface ILandingOurClientDelete{
   slug: string
   unique: string
@@ -70,6 +86,7 @@ export interface ILanding {
   trainings?: Array<ILandingTrainings>
   scheduling?: Array<ILandingScheduling>
   our_clients?: Array<ILandingOurClients>
+  references?: Array<ILandingReference>
   descriptive_training?: ILandingDescriptiveTraining
   id?: string // Identificador de la categoria
 }

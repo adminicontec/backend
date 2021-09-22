@@ -30,7 +30,9 @@ import {
   ILandingScheduling,
   ILandingDescriptiveTraining,
   ILandingOurClientDelete,
-  ILandingOurClients
+  ILandingOurClients,
+  ILandingReference,
+  ILandingReferenceDelete
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -41,6 +43,7 @@ class LandingService {
   private default_cover_scheduling_path = 'landings/scheduling'
   private default_cover_descriptive_training_path = 'landings/descriptiveTraining'
   private default_cover_our_clients_path = 'landings/ourClients'
+  private default_cover_references_path = 'landings/references'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -64,7 +67,7 @@ class LandingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id slug title_page title_training article trainings scheduling'
+      let select = 'id slug title_page title_training title_references article trainings scheduling'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Landing.find(where)
           .select(select)
@@ -459,7 +462,7 @@ class LandingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id slug title_page title_training article trainings scheduling'
+    let select = 'id slug title_page title_training title_references article trainings scheduling'
     if (filters.select) {
       select = filters.select
     }
@@ -560,6 +563,93 @@ class LandingService {
     ? `${customs['uploads']}/${this.default_cover_our_clients_path}/${img}`
     : null
   }
+
+  /**
+   * Metodo que permite insertar/actualizar un cliente
+   * @param params
+   * @returns
+   */
+   public insertOrUpdateReference = async (params: ILandingReference) => {
+
+    try {
+      let references: Array<ILandingReference> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id references').lean()
+      if (exists && exists.references) {
+        references = exists.references
+      }else{
+        references = []
+      }
+
+      // @INFO: Cargando imagen al servidor
+      if (params.coverFile && params.coverFile !== '{}' && typeof params.coverFile !== 'string') {
+        const defaulPath = this.default_cover_references_path
+        const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.url = response_upload.name
+      }
+
+      let referencesExists = references.findIndex((t) => t.unique === params.unique)
+      if (referencesExists !== -1) {
+        references[referencesExists] = {...references[referencesExists], ...params}
+      } else {
+        references.push({
+          ...params
+        })
+      }
+
+      console.log('references', references)
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        references: references
+      })
+    } catch (e) {
+      console.log(e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite eliminar un cliente
+   * @param params
+   * @returns
+   */
+   public deleteReference = async (params: ILandingReferenceDelete) => {
+
+    try {
+      let references: Array<ILandingReference> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id references').lean()
+      if (exists && exists.references) {
+        references = exists.references
+      }else{
+        references = []
+      }
+
+      let referencesExists = references.findIndex((t) => t.unique === params.unique)
+      if (referencesExists === -1) {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'landing.scheduling.delete.not_found'})
+      } else {
+        references.splice(referencesExists, 1)
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        references: references
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+   /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+    public referenceImageUrl = (img: string) => {
+      return img
+      ? `${customs['uploads']}/${this.default_cover_references_path}/${img}`
+      : null
+    }
 
 }
 
