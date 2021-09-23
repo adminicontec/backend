@@ -11,6 +11,11 @@ export interface IMoodleCourseQuery {
   categoryId?: number,
   id?: string             // Identificador del curso en Moodle
 }
+export interface IMoodleCourseModuleQuery {
+  courseID?: string,       // ID de curso (listado de cursos en Moodle)
+  moduleType?: Array<string>,
+  id?: string             // Identificador del curso en Moodle
+}
 
 export interface IMoodleCourse{
   id?: string             // Identificador del curso en Moodle

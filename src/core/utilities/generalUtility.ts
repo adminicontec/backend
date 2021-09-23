@@ -500,7 +500,7 @@ class GeneralUtility {
     if (seconds2) {
       response = `${response} ${seconds2}s`
     }
-    return response
+    return response.trim();
   }
 
   /**

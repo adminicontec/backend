@@ -15,7 +15,8 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { IMoodleCourse, IMoodleCourseQuery, IMoodleCourseModuleQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { modularMiddleware } from 'app/middlewares/admin/modular/modularMiddleware';
 // @end
 
 class CourseContentService {
@@ -80,6 +81,70 @@ class CourseContentService {
 
   }
 
+
+  public moduleList = async (params: IMoodleCourseModuleQuery = {}) => {
+
+    let responseCourseModules = [];
+    let singleModuleCourseContent = {
+      id: 0,
+      sectionname: '',
+      instance: 0,
+      modname: '',
+      name: '',
+      visible: '',
+      uservisible: ''
+    }
+
+    // Params for Moodle, fetch the complete list. Filtering only from results.
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.courses.getContent,
+      moodlewsrestformat: moodle_setup.restformat,
+      "courseid": params.courseID
+    };
+
+    let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+    if (respMoodle.exception) {
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: {
+            key: 'moodle_course.not_found',
+            params: { respMoodle }
+          }
+        });
+    }
+
+    respMoodle.forEach(element => {
+      if (element.section != 0) {
+        element.modules.forEach(module => {
+
+          const moduleSearch = params.moduleType.find(field => field == module.modname);
+
+          if (moduleSearch != null) {
+            singleModuleCourseContent = {
+              id: module.id,
+              sectionname: element.name,
+              name: module.name,
+              modname: module.modname,
+              instance: module.instance,
+              visible: module.visible,
+              uservisible: module.uservisible
+            };
+            responseCourseModules.push(singleModuleCourseContent);
+          }
+        });
+
+      }
+    })
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        courseModules: responseCourseModules
+      }
+    })
+
+  }
 }
 
 export const courseContentService = new CourseContentService();
