@@ -2,6 +2,7 @@
 // @end
 
 // @import services
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService'
 // @end
 
 // @import utilities
@@ -44,7 +45,9 @@ class CalendarEventsService {
         instance: 0,
         eventtype: "",
         timestart: "",
-        timemodified: ""
+        duration: 0,
+        durationFormated: "",
+        //timemodified: ""
       }
 
       var courseID;
@@ -54,10 +57,10 @@ class CalendarEventsService {
       // take any of params as Moodle query filter
       if (params.courseID && params.timeStart && params.timeEnd) {
         courseID = params.courseID;
-        startDate =  generalUtility.unixTime(params.timeStart);
+        startDate = generalUtility.unixTime(params.timeStart);
         endDate = generalUtility.unixTime(params.timeEnd);
       }
-      else{
+      else {
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: {
@@ -65,7 +68,7 @@ class CalendarEventsService {
             }
           });
       }
-      // 2. Validación si Existe Usuario en Moodle
+      // 2. Validación si hay eventos asociados al curso en moodle
       let moodleParams = {
         wstoken: moodle_setup.wstoken,
         wsfunction: moodle_setup.services.calendarEvents.get,
@@ -87,42 +90,77 @@ class CalendarEventsService {
           });
       }
 
-      else {
+      var select = ['assign', 'attendance', 'quiz'];
+      let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
 
-        // time convertion from EPOCH time to UTC time
-        respMoodle.events.forEach(eventTime => {
-          var evTime = new Date(eventTime.timestart * 1000).toISOString();
-          eventTime.timestart = evTime;
-          var modTime = new Date(eventTime.timemodified * 1000).toISOString();
-          eventTime.timemodified = modTime;
+      console.log("Course Modules by type:");
 
-          // console.log("--> from Moodle: ");
-          // console.log(eventTime);
+      // time convertion from EPOCH time to UTC time
+      respMoodle.events.forEach(moodleEvent => {
+        var evTime = new Date(moodleEvent.timestart * 1000).toISOString();
+        //moodleEvent.timestart = evTime;
+        // var modTime = new Date(moodleEvent.timemodified * 1000).toISOString();
+        // moodleEvent.timemodified = modTime;
 
-          // Ignore every event named "attendance"
-          if (eventTime.modulename != "attendance" ) {
+        // console.log("--> from Moodle: ");
+        // console.log(eventTime);
 
-            singleEvent = {
-              id: eventTime.id,
-              name: eventTime.name,
-              description: eventTime.description,
-              courseid: eventTime.courseid,
-              modulename: eventTime.modulename,
-              instance: eventTime.instance,
-              eventtype: eventTime.eventype,
-              timestart: evTime,
-              timemodified: modTime
-            };
-            responseEvents.push(singleEvent);
-          }
+        // Ignore every event named "attendance"
+        // if (eventTime.modulename != "attendance" ) {
+        var moduleName = moodleEvent.modulename;
+        var description = moodleEvent.description;
+
+        if (moodleEvent.modulename == null && moodleEvent.description.includes('webex')) {
+          moduleName = 'webex';
+
+          var regex = /( |<([^>]+)>)/ig;
+          description = moodleEvent.description.replace(regex, "").replace('\n', "");
+        }
+
+        singleEvent = {
+          id: moodleEvent.id,
+          name: moodleEvent.name,
+          description: description,
+          courseid: moodleEvent.courseid,
+          modulename: moduleName,
+          eventtype: moodleEvent.eventype,
+          instance: moodleEvent.instance,
+          timestart: evTime,
+          duration: moodleEvent.timeduration / 3600,
+          durationFormated: generalUtility.getDurationFormated(moodleEvent.timeduration)
+          //timemodified: modTime
+        };
+        responseEvents.push(singleEvent);
+      });
+
+      if (respMoodleCourseModules.status == 'success') {
+        //console.log(respMoodleCourseModules.courseModules);
+
+          respMoodleCourseModules.courseModules.forEach(element => {
+
+          singleEvent = {
+            id: element.id,
+            name: element.name,
+            description: '',
+            courseid: courseID,
+            modulename: element.modname,
+            eventtype: '',
+            instance: element.instance,
+            timestart: '',
+            duration: 0,
+            durationFormated: ''
+          };
+          responseEvents.push(singleEvent);
         });
 
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            events: responseEvents, //respMoodle.events,
-          }
-        })
       }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          events: responseEvents, //respMoodle.events,
+        }
+      })
+
 
 
     } catch (e) {
