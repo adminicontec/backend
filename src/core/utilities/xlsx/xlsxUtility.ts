@@ -8,7 +8,7 @@ import { xlsx_config, host, public_dir, attached } from '@scnode_core/config/glo
 // @end
 
 // @import_utilities Import utilities
-import {fileUtility} from '@scnode_core/utilities/fileUtility'
+import { fileUtility } from '@scnode_core/utilities/fileUtility'
 import { attachedUtility } from '@scnode_core/utilities/attached/attachedUtility'
 // @end
 
@@ -53,7 +53,7 @@ class XlsxUtility {
    * @param config
    * @param buffer
    */
-  public uploadXLSX = async (config: IGenerateXLSXConfig, {buffer, workbook}: {buffer?: string, workbook?: XLSX.WorkBook}) => {
+  public uploadXLSX = async (config: IGenerateXLSXConfig, { buffer, workbook }: { buffer?: string, workbook?: XLSX.WorkBook }) => {
     try {
 
       let filePath = null
@@ -128,7 +128,7 @@ class XlsxUtility {
   }
 
 
-  public extractXLSX = async (buffer_data: Buffer, sheetName: string, firstRow: number) => {
+  public extractXLSX = async (buffer_data: Buffer, sheetName: string, firstRow: number, maxNrRows: number = null) => {
     try {
       let buffer = Buffer.from(buffer_data);
       const workbook = XLSX.read(buffer, { type: "buffer" });
@@ -146,6 +146,10 @@ class XlsxUtility {
         let sheet = workbook.Sheets[sheet_name_list[location]];
         let range = XLSX.utils.decode_range(sheet['!ref']);  // find size of the sheet
         range.s.r = firstRow;
+
+        if (maxNrRows != null)
+          range.e.r = maxNrRows;
+
         var new_range = XLSX.utils.encode_range(range);
         console.log(new_range);
 
