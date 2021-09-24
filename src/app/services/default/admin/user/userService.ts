@@ -269,11 +269,11 @@ class UserService {
           var paramUserMoodle = {
             username: params.username
           }
-          let respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+          let respMoodleSearch: any = await moodleUserService.findBy(paramUserMoodle);
           console.log("moodleUserService()  resp:");
-          console.log(respMoodle2);
-          if (respMoodle2.status == "success") {
-            if (respMoodle2.user == null) {
+          console.log(respMoodleSearch);
+          if (respMoodleSearch.status == "success") {
+            if (respMoodleSearch.user == null) {
               console.log("Moodle: user NO exists ");
               // [revisión[]
               var paramsMoodleUser: IMoodleUser = {
@@ -299,22 +299,19 @@ class UserService {
               console.log(paramsMoodleUser);
 
               // crear nuevo uusario en MOODLE
-              let respMoodle2: any = await moodleUserService.insert(paramsMoodleUser);
+              let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
               console.log("Moodle: Usuario creado con Éxito.");
-              console.log(respMoodle2);
-
+              console.log(respMoodleInsert);
               //respMoodle2.user.id;
 
-              if (respMoodle2.status === 'success') {
-                if (respMoodle2.user.id && respMoodle2.user.username) {
-
-                  await User.findByIdAndUpdate(_id, { moodle_id: respMoodle2.user.id }, {
+              if (respMoodleInsert.status === 'success') {
+                if (respMoodleInsert.user.id && respMoodleInsert.user.username) {
+                  await User.findByIdAndUpdate(_id, { moodle_id: respMoodleInsert.user.id }, {
                     useFindAndModify: false,
                     new: true,
                     lean: true,
                   })
-
-
+                  response.moodle_id = respMoodleInsert.user.id;
                 }
                 else {
                   await this.delete({ id: _id })
@@ -327,7 +324,7 @@ class UserService {
               }
             }
             else {
-              console.log("Moodle: user exists with name: " + JSON.stringify(respMoodle2.user.fullname));
+              console.log("Moodle: user exists with name: " + JSON.stringify(respMoodleSearch.user.fullname));
             }
           }
 
