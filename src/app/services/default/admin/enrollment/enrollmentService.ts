@@ -451,6 +451,11 @@ class EnrollmentService {
     }
   }
 
+  /**
+   * Metodo que permite retirar la matrícula de un estudiante en un curso.
+   * @param params ID de estudiante enrolado y notificación de envío de correo (true/false)
+   * @returns
+   */
   public delete = async (params: IEnrollmentDelete) => {
 
     try {
@@ -521,6 +526,11 @@ class EnrollmentService {
     }
   }
 
+  /**
+   * Metodo que permite cargar de forma masiva un listado de estudiantes para matrícula.
+   * @param params Archivo XLXS y curso para matricular
+   * @returns
+   */
   public massive = async (params: IMassiveEnrollment) => {
 
     let processResult: IFileProcessResult;
