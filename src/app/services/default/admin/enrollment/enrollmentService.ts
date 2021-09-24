@@ -339,6 +339,7 @@ class EnrollmentService {
             console.log(">>[CampusVirtual]: El usuario existe: " + respCampusDataUser.user._id);
             console.log(">>>>>>>>>>>>>>>>>>>>");
 
+            paramToEnrollment.user.moodleUserID = respCampusDataUser.user.moodle_id;
             cvUserParams.id = respCampusDataUser.user._id.toString();
             //  cvUserParams.profile.country = countryID;
             console.log(cvUserParams);
@@ -346,7 +347,7 @@ class EnrollmentService {
               const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
 
               if (respoExistingUser.status == "success") {
-                console.log("---------------- SUCESS ----------------------- ");
+                console.log("---------------- SUCCESS ----------------------- ");
               }
               else {
                 console.log(respoExistingUser);
@@ -569,15 +570,15 @@ class EnrollmentService {
 
               singleUserEnrollmentContent =
               {
-                documentType: element['Tipo Documento'],
-                documentID: element['Documento de Identidad'],
-                user: element['Documento de Identidad'],
-                password: element['Documento de Identidad'], // <-- Contraseña provisional
+                documentType: element['Tipo Documento'].trim().toUpperCase(),
+                documentID: element['Documento de Identidad'].trim(),
+                user: element['Documento de Identidad'].trim(),
+                password: element['Documento de Identidad'].trim(), // <-- Contraseña provisional
                 email: checkEmail,
-                firstname: element['Nombres'],
-                lastname: element['Apellidos'],
-                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString() : '',
-                city: element['Ciudad'],
+                firstname: element['Nombres'].trim(),
+                lastname: element['Apellidos'].trim(),
+                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().trim() : '',
+                city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
                 country: element['País'],
                 emailAlt: element['Correo Alt'],
                 regional: element['Regional'],
