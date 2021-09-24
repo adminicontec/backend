@@ -221,6 +221,34 @@ class UserService {
           response.profile.avatar = response.profile.avatarImageUrl
         }
 
+        // update usario existente en MOODLE
+        console.log("Moodle: Actualizando Usuario --> " + response.moodle_id);
+
+        var paramsMoodleUser: IMoodleUser = {
+          id: response.moodle_id,
+          city: params.profile.city,
+          country: countryCode,
+          documentNumber: params.profile.doc_number,
+          email: params.email,
+          username: params.username,
+          password: params.password,
+          phonenumber: params.phoneNumber,
+          firstname: params.profile.first_name,
+          lastname: params.profile.last_name,
+          fecha_nacimiento: params.profile.birthDate,
+          genero: params.profile.genre,
+          email_2: params.profile.alternativeEmail,
+          origen: params.profile.origen,
+          regional: params.profile.regional,
+          cargo: params.profile.currentPosition,
+          profesion: params.profile.carreer,
+          nivel_educativo: params.profile.educationalLevel,
+          empresa: params.profile.company,
+        }
+
+        let respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
+        console.log(respMoodleUpdate);
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             user: {
@@ -302,7 +330,6 @@ class UserService {
               let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
               console.log("Moodle: Usuario creado con Éxito.");
               console.log(respMoodleInsert);
-              //respMoodle2.user.id;
 
               if (respMoodleInsert.status === 'success') {
                 if (respMoodleInsert.user.id && respMoodleInsert.user.username) {
