@@ -344,7 +344,7 @@ class CourseService {
    */
   public insertOrUpdate = async (params: ICourse) => {
     try {
-      console.log('params', params)
+
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
       if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
       if (params.competencies && typeof params.competencies === 'string') params.competencies = JSON.parse(params.competencies)
@@ -355,7 +355,14 @@ class CourseService {
       if (params.important_info && typeof params.important_info === 'string') params.important_info = JSON.parse(params.important_info)
       if (params.methodology && typeof params.methodology === 'string') params.methodology = JSON.parse(params.methodology)
       if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
-
+      if (Array.isArray(params.content)) {
+        params.content = params.content.map((c) => {
+          try {
+            if (c.data && typeof c.data === 'string') c.data = JSON.parse(c.data)
+          } catch(e) {}
+          return c;
+        }, [])
+      }
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
         params.schedulingMode = await courseSchedulingService.saveLocalSchedulingMode(params.schedulingMode)
       }

@@ -102,7 +102,10 @@ const CourseSchema = new Schema({
   content: [{
     uuid: {type: Schema.Types.String},
     category: {type: Schema.Types.String, default: 'Tema'},
-    data: {type: Schema.Types.String},
+    data: {
+      type: Schema.Types.Mixed,
+      required: false,
+    },
     name: {type: Schema.Types.String}
   },],
   focus: {
