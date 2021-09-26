@@ -180,9 +180,11 @@ class CourseSchedulingService {
       if (params.country === '') delete params.country
 
       if (params.id) {
-        const register: any = await CourseScheduling.findOne({ _id: params.id }).lean()
+        const register: any = await CourseScheduling.findOne({ _id: params.id })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
+        .lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
-
+        const prevSchedulingStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
 
         if (params.hasCost) {
           let hasParamsCost = false
@@ -215,10 +217,15 @@ class CourseSchedulingService {
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-          await this.checkEnrollmentUsers(response)
-          await this.checkEnrollmentTeachers(response)
-          await this.serviceSchedulingNotification(response)
+        if (params.sendEmail === true || params.sendEmail === 'true') {
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado') {
+            await this.checkEnrollmentUsers(response)
+            await this.checkEnrollmentTeachers(response)
+            await this.serviceSchedulingNotification(response)
+          }
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
+            await this.serviceSchedulingCancelled(response)
+          }
         }
 
         var moodleCity = '';
@@ -554,6 +561,46 @@ class CourseSchedulingService {
     }
   }
 
+  private serviceSchedulingCancelled = async (courseScheduling) => {
+    let email_to_notificate = []
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+      .lean()
+
+    for await (const enrolled of userEnrolled) {
+      email_to_notificate.push(enrolled.user.email.toString())
+    }
+
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id startDate endDate duration course sessions teacher')
+    .populate({ path: 'course', select: 'id name code' })
+    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const course of courses) {
+      if (!email_to_notificate.includes(course.teacher.email.toString())) {
+        email_to_notificate.push(course.teacher.email.toString())
+      }
+    }
+
+    console.log('email_to_notificate', email_to_notificate)
+
+    if (email_to_notificate.length > 0) {
+      await this.sendServiceSchedulingCancelled(email_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        today: moment().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_cancelled_${courseScheduling._id}`,
+        amount_notifications: 1
+      })
+
+    }
+  }
+
   /**
    * Metodo que permite enviar emails de bienvenida a los usuarios
    * @param emails Emails a los que se va a enviar
@@ -633,6 +680,32 @@ class CourseSchedulingService {
         emails,
         mailOptions: {
           subject: i18nUtility.__('mailer.scheduling_notification.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  public sendServiceSchedulingCancelled = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+      const path_template = 'course/programCancelled'
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_cancelled_notification.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,

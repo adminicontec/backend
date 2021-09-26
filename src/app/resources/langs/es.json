@@ -389,6 +389,9 @@
     },
     "scheduling_notification": {
       "subject": "Programación confirmada"
+    },
+    "scheduling_cancelled_notification": {
+      "subject": "Programación cancelada"
     }
   }
 }
