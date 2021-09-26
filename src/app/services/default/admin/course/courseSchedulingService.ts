@@ -952,6 +952,8 @@ class CourseSchedulingService {
       path = '/admin/course/courseSchedulingVirtualReport'
     }
 
+    const time = new Date().getTime()
+
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
@@ -972,7 +974,7 @@ class CourseSchedulingService {
       },
       to_file: {
         file: {
-          name: `${courseScheduling.metadata.service_id}_${courseScheduling.program.code}.pdf`,
+          name: `${courseScheduling.metadata.service_id}_${courseScheduling.program.code}_${time}.pdf`,
         },
         path: 'admin/course/courseSchedulingReport'
       },

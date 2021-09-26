@@ -36,7 +36,7 @@ const CourseSchema = new Schema({
   //   required: false,
   // },
   description: {
-    type: Schema.Types.String,
+    type: Schema.Types.Mixed,
     required: true,
   },
   // courseType: {

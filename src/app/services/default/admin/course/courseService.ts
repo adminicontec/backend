@@ -347,6 +347,7 @@ class CourseService {
 
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
       if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
+      if (params.description && typeof params.description === 'string') params.description = JSON.parse(params.description)
       if (params.competencies && typeof params.competencies === 'string') params.competencies = JSON.parse(params.competencies)
       if (params.objectives && typeof params.objectives === 'string') params.objectives = JSON.parse(params.objectives)
       if (params.content && typeof params.content === 'string') params.content = JSON.parse(params.content)
