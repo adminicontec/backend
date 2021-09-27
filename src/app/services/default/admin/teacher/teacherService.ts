@@ -61,7 +61,6 @@ class TeacherService {
       // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
-
       //#region  dataWSDocentes
       try {
         if (dataWSTeachersBase != null) {
