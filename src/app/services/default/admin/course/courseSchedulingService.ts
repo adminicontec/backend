@@ -230,7 +230,7 @@ class CourseSchedulingService {
 
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
-        console.log("update Programa on moodle:");
+        console.log("update Program on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
           "id": `${response.moodle_id}`,
           "categoryId": `${response.regional.moodle_id}`,

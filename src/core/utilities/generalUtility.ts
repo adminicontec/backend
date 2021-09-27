@@ -269,6 +269,13 @@ class GeneralUtility {
     return Math.floor(Date.parse(dateToChange) / 1000.0)
   }
 
+  public unixTimeOffset = (dateToChange: string, hours: number, endOfDay: boolean = false) => {
+    let interval = 0;
+    if(endOfDay){
+      interval = 60 * 60 * 24 - 1;
+    }
+    return Math.floor(Date.parse(dateToChange) / 1000.0) + hours * 3600 + interval
+  }
 
   // public timeUnix = (date: string) => {
   //   return Math.floor(Date.parse(date) / 1000.0);
