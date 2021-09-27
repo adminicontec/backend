@@ -5,6 +5,7 @@
 export interface ICourseSchedulingDetailSession {
   startDate: string // Fecha de inicio
   duration: number // Duración
+  hasChanges?: 'on' | 'off'
 }
 
 export interface ICourseSchedulingDetail {

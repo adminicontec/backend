@@ -223,6 +223,18 @@ class CourseSchedulingService {
             await this.checkEnrollmentTeachers(response)
             await this.serviceSchedulingNotification(response)
           }
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
+            // await this.serviceSchedulingUpdated(
+            //   [response.teacher.email],
+            //   {
+            //     mailer: customs['mailer'],
+            //     service_id: response.course_scheduling.metadata.service_id,
+            //     program_name: response.course_scheduling.program.name,
+            //     notification_source: `course_updated_${response._id}`,
+            //     changes
+            //   }
+            // )
+          }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
             await this.serviceSchedulingCancelled(response)
           }
@@ -586,8 +598,6 @@ class CourseSchedulingService {
       }
     }
 
-    console.log('email_to_notificate', email_to_notificate)
-
     if (email_to_notificate.length > 0) {
       await this.sendServiceSchedulingCancelled(email_to_notificate, {
         mailer: customs['mailer'],
@@ -598,6 +608,30 @@ class CourseSchedulingService {
         amount_notifications: 1
       })
 
+    }
+  }
+
+  public serviceSchedulingUpdated = async (emails: Array<string>, paramsTemplate: any) => {
+    try {
+      let path_template = 'course/schedulingUpdate'
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_update.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 

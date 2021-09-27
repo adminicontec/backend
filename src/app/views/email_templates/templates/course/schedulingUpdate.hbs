@@ -1,0 +1,23 @@
+<div class="img_icontec">
+  <img src="https://icontecpre.poligran.edu.co/uploads/banners/jXItKBAcgWyntclE8S2j.jpg">
+</div>
+
+<div class="txt_icontec">
+
+  <h2>Programación modificada</h2>
+  <div>
+    El servicio con código {{params.service_id}} correspondiente al programa {{params.program_name}} ha sido modificado
+
+    {{#each params.changes}}
+      {{{this.message}}}
+    {{/each}}
+
+    <br><br>
+    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
+    <br><br>
+    Cordialmente
+    <br>
+    Equipo Unidad Técnica de Educación
+  </div>
+  <img src="{{params.mailer.footer_icon}}">
+</div>
