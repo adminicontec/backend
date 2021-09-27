@@ -21,6 +21,20 @@
     table tr td {
       padding: 5px;
     }
+
+    .table-cell {
+    position: relative;
+    }
+
+    .table-cell:before {
+    position: absolute;
+    content: "";
+    top: 0;
+    left: -1px;
+    background-color: black!important;
+    width: 1px;
+    height: 100%;
+    }
   </style>
 </head>
 <body>
@@ -60,19 +74,19 @@
       {{#each courses}}
         <tr>
           {{#if this.course_code}}
-            <td rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
+            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
           {{/if}}
           {{#if this.course_name}}
-            <td rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
+            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
           {{/if}}
           {{#if this.course_duration}}
-            <td rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
+            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
           {{/if}}
-          <td>{{this.consecutive}}</td>
-          <td>{{this.teacher_name}}</td>
-          <td>{{this.start_date}}</td>
-          <td>{{this.duration}}</td>
-          <td>{{this.schedule}}</td>
+          <td class="table-cell">{{this.consecutive}}</td>
+          <td class="table-cell">{{this.teacher_name}}</td>
+          <td class="table-cell">{{this.start_date}}</td>
+          <td class="table-cell">{{this.duration}}</td>
+          <td class="table-cell">{{this.schedule}}</td>
         </tr>
       {{/each}}
       <tr>
