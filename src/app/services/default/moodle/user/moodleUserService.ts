@@ -210,11 +210,9 @@ class MoodleUserService {
       moodlewsrestformat: moodle_setup.restformat,
       'users[0][id]': params.id,
       'users[0][email]': params.email,
-      //'users[0][username]': params.username,
       //'users[0][password]': params.password,
       'users[0][firstname]': params.firstname,
       'users[0][lastname]': params.lastname,
-      //'users[0][idnumber]': params.documentNumber,
       'users[0][city]': params.city,
       'users[0][country]': params.country,
       'users[0][phone1]': params.phonenumber,
@@ -254,14 +252,14 @@ class MoodleUserService {
       else {
         // Usuario en moodle CREADO con éxito
         console.log("Moodle update USER OK: ");
-        console.log("Moodle UserID: " + respMoodle[0].id);
-        console.log("Moodle UserName: " + respMoodle[0].username);
+        console.log("Moodle UserID: " + params.id);
+        console.log("Moodle UserName: " + params.username);
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             user: {
-              id: respMoodle[0].id,
-              username: respMoodle[0].username,
+              id: params.id,
+              username: params.username,
             }
           }
         });
