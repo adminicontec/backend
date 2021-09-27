@@ -213,6 +213,7 @@ class CourseSchedulingDetailsService {
         }
 
         let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+        console.log('respMoodle3', respMoodle3)
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
@@ -237,6 +238,7 @@ class CourseSchedulingDetailsService {
       }
 
     } catch (e) {
+      console.log('error', e)
       return responseUtility.buildResponseFailed('json')
     }
   }
