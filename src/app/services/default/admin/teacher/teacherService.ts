@@ -206,8 +206,6 @@ class TeacherService {
             //#endregion
 
 
-
-
           }
         }
         else {
@@ -267,7 +265,7 @@ class TeacherService {
             country: params.country,
             regional: params.regional,
           },
-          sendEmail: false
+          sendEmail: true
         }
 
         // Insertar nuevo Usuario si no existe
