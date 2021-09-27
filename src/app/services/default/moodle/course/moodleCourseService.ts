@@ -141,17 +141,14 @@ class MoodleCourseService {
 
 
   public update = async (params: IMoodleCourse) => {
-
-    console.log("Start Date " +params.startDate);
-
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
       wsfunction: moodle_setup.services.courses.update,
       moodlewsrestformat: moodle_setup.restformat,
       'courses[0][id]': params.id,
       'courses[0][categoryid]': params.categoryId,
-      'courses[0][startdate]': generalUtility.unixTime(moment(params.startDate).format()),
-      'courses[0][enddate]': generalUtility.unixTime(moment(params.endDate).format()),
+      'courses[0][startdate]': generalUtility.unixTimeOffset( new Date(params.startDate).toISOString(), 5),
+      'courses[0][enddate]': generalUtility.unixTimeOffset( new Date(params.endDate).toISOString(), 5, true),
       'courses[0][customfields][0][shortname]': 'programa_horas',
       'courses[0][customfields][0][value]': params.customClassHours,
       'courses[0][customfields][1][shortname]': 'ciudad',
