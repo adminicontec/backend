@@ -15,9 +15,9 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMoodleEnrollment } from '@scnode_app/types/default/moodle/enrollment/moodleEnrollmentTypes'
+import { IMoodleEnrollment, IMoodleUpdateEnrollment } from '@scnode_app/types/default/moodle/enrollment/moodleEnrollmentTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { Z_PARTIAL_FLUSH } from 'zlib';
+
 
 // @end
 
@@ -70,6 +70,34 @@ class MoodleEnrollmentService {
     }
   }
 
+  public update = async (params: IMoodleUpdateEnrollment) => {
+
+    // Eliminar enrollment de usuario antiguo
+    let respMoodle = await this.delete({
+      roleid: params.roleid,
+      courseid: params.courseid,
+      userid: params.olduserid
+    });
+    // Creación de enrollment de nuevo usuario
+    respMoodle = await this.insert({
+      roleid: params.roleid,
+      courseid: params.courseid,
+      userid: params.newuserid
+    });
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        update: {
+          insert: params.newuserid,
+          remove: params.olduserid,
+          courseId: params.courseid,
+        }
+      }
+    });
+
+  }
+
+
   public delete = async (params: IMoodleEnrollment) => {
 
     let moodleParams = {
@@ -101,7 +129,6 @@ class MoodleEnrollmentService {
           }
         }
       });
-
     }
 
   }

@@ -7,4 +7,11 @@ export interface IMoodleEnrollment{
   courseid: number,
   userid: number
 }
+
+export interface IMoodleUpdateEnrollment{
+  roleid?: number,
+  courseid: number,
+  olduserid: number,
+  newuserid: number,
+}
 //@end

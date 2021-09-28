@@ -139,6 +139,7 @@ class CourseSchedulingDetailsService {
 
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
+        .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
         const changes = this.validateChanges(params, register)
@@ -156,6 +157,15 @@ class CourseSchedulingDetailsService {
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+
+        if (register.teacher.moodle_id !== response.teacher.moodle_id) {
+          let respMoodle3: any = await moodleEnrollmentService.update({
+            roleid: 4,
+            courseid: response.course_scheduling.moodle_id,
+            olduserid: register.teacher.moodle_id,
+            newuserid: response.teacher.moodle_id
+          });
+        }
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
@@ -205,14 +215,11 @@ class CourseSchedulingDetailsService {
           .lean()
 
         // asignación del rol: Teacher en Moodle (sin permisos)
-        //paramToEnrollment.
-        var enrollment = {
+        let respMoodle3: any = await moodleEnrollmentService.insert({
           roleid: 4,
           courseid: response.course_scheduling.moodle_id,
           userid: response.teacher.moodle_id
-        }
-
-        let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+        });
         console.log('respMoodle3', respMoodle3)
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
