@@ -10,7 +10,7 @@ import { mailerUtility } from "@scnode_core/utilities/mailer/mailerUtility";
 // @end
 
 // @import models
-import {MailMessageLog} from '@scnode_app/models'
+import { MailMessageLog } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -26,6 +26,7 @@ interface IMailMessageData {
   emails: Array<string>
   mailOptions: Partial<MailOptions>
   notification_source: string
+  resend_notification?: boolean
 }
 
 class MailService {
@@ -58,7 +59,7 @@ class MailService {
       }
 
       if (mailMessageData.mailOptions && mailMessageData.mailOptions.amount_notifications) {
-        const amountNotifications = await MailMessageLog.find({notification_source: mailMessageData.notification_source}).count()
+        const amountNotifications = await MailMessageLog.find({ notification_source: mailMessageData.notification_source }).count()
         if (amountNotifications >= mailMessageData.mailOptions.amount_notifications) {
           return responseUtility.buildResponseFailed('json')
         }
@@ -67,6 +68,17 @@ class MailService {
       // @INFO: Enviando mensaje
       const mail_message_response: any = await mailerUtility.sendMail(mailOptions);
       if (mail_message_response.status === 'error') return mail_message_response
+
+      // Revisa si debe enviar de nuevo correo si ya existía (cambio de email, pej)
+      if (mailMessageData.resend_notification) {
+        console.log('Delete MailMessageLog...');
+
+        const find: any = await MailMessageLog.findOne({ notification_source: mailMessageData.notification_source })
+        if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'MailMessageLog.not_found' })
+        await find.delete();
+        console.log('Deleted!');
+      }
+
 
       await this.generateMailLog(mailMessageData.emails, mailOptions, mailMessageData.notification_source)
 

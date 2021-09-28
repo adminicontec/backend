@@ -5,7 +5,7 @@ import moment from 'moment'
 
 // @import services
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
-import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import config
@@ -139,7 +139,12 @@ class CourseSchedulingDetailsService {
 
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
+        .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
+
+        console.log("Search: ");
+        console.log(register);
 
         const response: any = await CourseSchedulingDetails.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -148,14 +153,25 @@ class CourseSchedulingDetailsService {
         })
         await CourseScheduling.populate(response, {
           path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
-            {path: 'schedulingStatus', select: 'id name'},
-            {path: 'program', select: 'id name'}
-          ]})
+            { path: 'schedulingStatus', select: 'id name' },
+            { path: 'program', select: 'id name' }
+          ]
+        })
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+
+        if (register.teacher.moodle_id !== response.teacher.moodle_id) {
+          let respMoodle3: any = await moodleEnrollmentService.update({
+            roleid: 4,
+            courseid: response.course_scheduling.moodle_id,
+            olduserid: register.teacher.moodle_id,
+            newuserid: response.teacher.moodle_id
+          });
+        }
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
             mailer: customs['mailer'],
             first_name: response.teacher.profile.first_name,
@@ -180,26 +196,26 @@ class CourseSchedulingDetailsService {
 
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
-          .populate({ path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
-            {path: 'schedulingStatus', select: 'id name'},
-            {path: 'program', select: 'id name'}
-          ] })
+          .populate({
+            path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
+              { path: 'schedulingStatus', select: 'id name' },
+              { path: 'program', select: 'id name' }
+            ]
+          })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email'})
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
           .lean()
 
         // asignación del rol: Teacher en Moodle (sin permisos)
-        //paramToEnrollment.
-        var enrollment = {
+
+        let respMoodle3: any = await moodleEnrollmentService.insert({
           roleid: 4,
           courseid: response.course_scheduling.moodle_id,
           userid: response.teacher.moodle_id
-        }
+        });
 
-        let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
-
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
             mailer: customs['mailer'],
             first_name: response.teacher.profile.first_name,

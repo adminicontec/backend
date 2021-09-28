@@ -259,7 +259,7 @@ class UserService {
 
         // @INFO: Se envia email de bienvenida
         if (params.sendEmail === true && sendWelcomEmail === true) {
-          console.log("Sending email...")
+          console.log("Sending email to " + paramsMoodleUser.email)
           await this.sendRegisterUserEmail([paramsMoodleUser.email], {
             mailer: customs['mailer'],
             fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
@@ -268,7 +268,8 @@ class UserService {
             username: paramsMoodleUser.username,
             password: paramsMoodleUser.password,
             notification_source: `user_register_${response._id}`,
-            amount_notifications: 1
+            amount_notifications: 1,
+            sendWelcomEmail
           })
         }
 
@@ -419,7 +420,7 @@ class UserService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any, resend = false) => {
 
     try {
 
@@ -434,7 +435,8 @@ class UserService {
           },
           amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
         },
-        notification_source: paramsTemplate.notification_source
+        notification_source: paramsTemplate.notification_source,
+        resend_notification: resend
       })
 
       return mail
