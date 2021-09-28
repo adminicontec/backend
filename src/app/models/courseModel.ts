@@ -39,10 +39,10 @@ const CourseSchema = new Schema({
     type: Schema.Types.Mixed,
     required: true,
   },
-  // courseType: {
-  //   type: Schema.Types.String,
-  //   required: false,
-  // },
+  courseType: {
+    type: Schema.Types.String,
+    required: false,
+  },
   // mode: {
   //   type: Schema.Types.ObjectId,
   //   ref: "CourseModeCategory",

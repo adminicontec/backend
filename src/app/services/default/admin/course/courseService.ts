@@ -56,7 +56,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
+      let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -136,7 +136,7 @@ class CourseService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program courseType schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
       if (params.select) {
         select = params.select
       }
@@ -229,6 +229,18 @@ class CourseService {
           console.log("------------ORIGINAL ---------------");
           console.log(register);
 
+          const schedulingExtraInfo: any = await Course.findOne({
+            program: register.program._id
+          })
+          .lean()
+
+          let courseType = ''
+
+          if (schedulingExtraInfo) {
+            let extra_info = schedulingExtraInfo
+            courseType = extra_info.courseType
+          }
+
           // course Is Active given end date
           let current = moment();
           console.log(current);
@@ -246,7 +258,7 @@ class CourseService {
             fullname: register.program.name,
             displayname: register.program.name,
             description: '',
-            courseType: 'Diplomado',
+            courseType: courseType,
             mode: register.schedulingMode.name,
             startDate: register.startDate,
             endDate: register.endDate,
@@ -298,7 +310,7 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id schedulingMode program description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
+    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
