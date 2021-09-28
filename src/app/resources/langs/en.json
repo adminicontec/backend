@@ -395,6 +395,9 @@
     },
     "scheduling_cancelled_notification": {
       "subject": "Programación cancelada"
+    },
+    "scheduling_update": {
+      "subject": "Programación modificada"
     }
   }
 }

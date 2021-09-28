@@ -4,16 +4,20 @@
 
 <div class="txt_icontec">
 
-  <h2>Retiro del curso</h2>
-  <p>
-    Estimado (a) {{params.first_name}}
+  <h2>Programación modificada</h2>
+  <div>
+    El servicio con código {{params.service_id}} correspondiente al programa {{params.program_name}} ha sido modificado
 
-    Usted ha sido des matriculado del curso de {{params.course_name}}.
+    {{#each params.changes}}
+      {{{this.message}}}
+    {{/each}}
 
+    <br><br>
     En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-
+    <br><br>
     Cordialmente
+    <br>
     Equipo Unidad Técnica de Educación
-  </p>
+  </div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

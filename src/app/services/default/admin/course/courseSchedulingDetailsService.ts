@@ -143,6 +143,8 @@ class CourseSchedulingDetailsService {
 
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
+        const changes = this.validateChanges(params, register)
+
         console.log("Search: ");
         console.log(register);
 
@@ -152,11 +154,11 @@ class CourseSchedulingDetailsService {
           lean: true,
         })
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id program startDate endDate schedulingStatus moodle_id', populate: [
-            { path: 'schedulingStatus', select: 'id name' },
-            { path: 'program', select: 'id name' }
-          ]
         })
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id', populate: [
+            {path: 'schedulingStatus', select: 'id name'},
+            {path: 'program', select: 'id name'}
+          ]})
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
@@ -182,6 +184,19 @@ class CourseSchedulingDetailsService {
             notification_source: `course_start_${response.teacher._id}_${response._id}`,
             amount_notifications: 1
           })
+
+          if (changes.length > 0) {
+            await courseSchedulingService.serviceSchedulingUpdated(
+              [response.teacher.email],
+              {
+                mailer: customs['mailer'],
+                service_id: response.course_scheduling.metadata.service_id,
+                program_name: response.course_scheduling.program.name,
+                notification_source: `course_updated_${response._id}`,
+                changes
+              }
+            )
+          }
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -215,7 +230,10 @@ class CourseSchedulingDetailsService {
           userid: response.teacher.moodle_id
         });
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+        let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+        console.log('respMoodle3', respMoodle3)
+
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
             mailer: customs['mailer'],
             first_name: response.teacher.profile.first_name,
@@ -238,8 +256,46 @@ class CourseSchedulingDetailsService {
       }
 
     } catch (e) {
+      console.log('error', e)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  private validateChanges = (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
+    const changes = []
+    if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
+      changes.push({
+        message: `La fecha de inicio del curso ha cambiado a ${params.startDate}`
+      })
+    }
+    if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
+      changes.push({
+        message: `La fecha de fin del curso ha cambiado a ${params.endDate}`
+      })
+    }
+    if ((register.duration && params.duration) && params.duration !== register.duration) {
+      changes.push({
+        message: `La duración del curso ha cambiado a ${generalUtility.getDurationFormated(register.duration)}`
+      })
+    }
+
+    const sessionsChange =  params.sessions.filter((session) => session.hasChanges === 'on')
+
+    if (
+      ((register.number_of_sessions && params.number_of_sessions) && params.number_of_sessions.toString() !== register.number_of_sessions.toString()) ||
+      sessionsChange.length > 0
+    ) {
+      let message = `Las sesiones han cambiado:<ul>`
+      params.sessions.map((session) => {
+        message += `<li>Fecha de inicio: ${moment(session.startDate).format('DD/MM/YYYY hh:mm a')}<br>Duración: ${generalUtility.getDurationFormated(session.duration)}</li>`
+      })
+      message += `</ul>`
+      changes.push({
+        message
+      })
+    }
+
+    return changes
   }
 
   /**
