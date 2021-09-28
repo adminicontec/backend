@@ -235,12 +235,21 @@ class CourseSchedulingService {
           }
         }
 
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
+        }
+
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         console.log("update Program on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
           "id": `${response.moodle_id}`,
-          "categoryId": `${response.regional.moodle_id}`,
+          "categoryId": `${regional}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
