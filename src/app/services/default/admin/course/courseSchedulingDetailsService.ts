@@ -273,7 +273,10 @@ class CourseSchedulingDetailsService {
       })
     }
 
-    const sessionsChange =  params.sessions.filter((session) => session.hasChanges === 'on')
+    let sessionsChange =  []
+    if (params.sessions) {
+      sessionsChange = params.sessions.filter((session) => session.hasChanges === 'on')
+    }
 
     if (
       ((register.number_of_sessions && params.number_of_sessions) && params.number_of_sessions.toString() !== register.number_of_sessions.toString()) ||
