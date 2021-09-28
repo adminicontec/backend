@@ -68,7 +68,11 @@ class MailerSmtpUtility {
       auth  : {
         user: config.user,
         pass: config.password
-      }
+      },
+      pool: true, // use pooled connection
+      rateLimit: true, // enable to make sure we are limiting
+      maxConnections: 20, // set limit to 1 connection only
+      maxMessages: 100, // send 3 emails per second
     });
 
     return responseUtility.buildResponseSuccess('json',null,{additional_parameters: {transporter: transporter}});
@@ -95,6 +99,8 @@ class MailerSmtpUtility {
       return responseUtility.buildResponseSuccess('json');
 
     } catch (e) {
+      // TODO: Validar error 550 5.7.0 Requested action not taken: too many emails per second
+      console.log('error senmail', e)
       return responseUtility.buildResponseFailed('json')
     }
   }

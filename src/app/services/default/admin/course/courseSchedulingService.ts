@@ -185,6 +185,7 @@ class CourseSchedulingService {
         .lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
         const prevSchedulingStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
+        const changes = this.validateChanges(params, register)
 
         if (params.hasCost) {
           let hasParamsCost = false
@@ -219,21 +220,15 @@ class CourseSchedulingService {
 
         if (params.sendEmail === true || params.sendEmail === 'true') {
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado') {
+          // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
             await this.serviceSchedulingNotification(response)
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
-            // await this.serviceSchedulingUpdated(
-            //   [response.teacher.email],
-            //   {
-            //     mailer: customs['mailer'],
-            //     service_id: response.course_scheduling.metadata.service_id,
-            //     program_name: response.course_scheduling.program.name,
-            //     notification_source: `course_updated_${response._id}`,
-            //     changes
-            //   }
-            // )
+            if (changes.length > 0) {
+              await this.sendServiceSchedulingUpdated(response, changes);
+            }
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
             await this.serviceSchedulingCancelled(response)
@@ -457,7 +452,7 @@ class CourseSchedulingService {
     }
   }
 
-  private checkEnrollmentTeachers = async (courseScheduling) => {
+  public checkEnrollmentTeachers = async (courseScheduling, teacher?: string, amount_notifications: number | null = 1) => {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
     }).select('id startDate endDate duration course sessions teacher')
@@ -468,7 +463,7 @@ class CourseSchedulingService {
     let notificationsByTeacher = {}
 
     for await (const course of courses) {
-      if (!notificationsByTeacher[course.teacher._id]) {
+      if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
         notificationsByTeacher[course.teacher._id] = {
           teacher: {
             _id: course.teacher._id,
@@ -539,7 +534,7 @@ class CourseSchedulingService {
           has_sessions: teacherData.has_sessions,
           type: 'teacher',
           notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program._id}`,
-          amount_notifications: 1
+          amount_notifications: amount_notifications ? amount_notifications : null
         })
       }
     }
@@ -559,7 +554,6 @@ class CourseSchedulingService {
         users.map((user: any) => email_to_notificate.push(user.email))
       }
     }
-
     if (email_to_notificate.length > 0) {
       await this.sendSchedulingNotificationEmail(email_to_notificate, {
         mailer: customs['mailer'],
@@ -606,6 +600,63 @@ class CourseSchedulingService {
         today: moment().format('YYYY-MM-DD'),
         notification_source: `scheduling_notification_cancelled_${courseScheduling._id}`,
         amount_notifications: 1
+      })
+
+    }
+  }
+
+  private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling) => {
+    const changes = []
+    if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
+      changes.push({
+        message: `La fecha de inicio del programa ha cambiado a ${params.startDate}`
+      })
+    }
+    if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
+      changes.push({
+        message: `La fecha de fin del programa ha cambiado a ${params.endDate}`
+      })
+    }
+    // if ((register.duration && params.duration) && params.duration !== register.duration) {
+    //   changes.push({
+    //     message: `La duración del curso ha cambiado a ${generalUtility.getDurationFormated(register.duration)}`
+    //   })
+    // }
+    return changes
+  }
+
+  private sendServiceSchedulingUpdated = async (courseScheduling, changes) => {
+    let email_to_notificate = []
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+    .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const enrolled of userEnrolled) {
+      email_to_notificate.push(enrolled.user.email.toString())
+    }
+
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id startDate endDate duration course sessions teacher')
+    .populate({ path: 'course', select: 'id name code' })
+    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const course of courses) {
+      if (!email_to_notificate.includes(course.teacher.email.toString())) {
+        email_to_notificate.push(course.teacher.email.toString())
+      }
+    }
+
+    if (email_to_notificate.length > 0) {
+      await this.serviceSchedulingUpdated(email_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        notification_source: `course_updated_${courseScheduling._id}`,
+        changes
       })
 
     }
@@ -677,6 +728,9 @@ class CourseSchedulingService {
   public sendUnenrollmentUserEmail = async (email: string, paramsTemplate: any) => {
     try {
       let path_template = 'user/unenrollmentUser'
+      if (paramsTemplate.type && paramsTemplate.type === 'teacher') {
+        path_template = 'user/unenrollmentTeacher'
+      }
 
       const mail = await mailService.sendMail({
         emails: [email],
@@ -723,7 +777,6 @@ class CourseSchedulingService {
         },
         notification_source: paramsTemplate.notification_source
       })
-
       return mail
 
     } catch (e) {

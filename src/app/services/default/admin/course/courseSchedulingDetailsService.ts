@@ -150,8 +150,10 @@ class CourseSchedulingDetailsService {
           lean: true,
         })
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode', populate: [
+            {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
+            {path: 'schedulingMode', select: 'id name'},
             {path: 'program', select: 'id name'}
           ]})
         await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
@@ -168,16 +170,19 @@ class CourseSchedulingDetailsService {
         }
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
-          await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
-            mailer: customs['mailer'],
-            first_name: response.teacher.profile.first_name,
-            course_name: response.course_scheduling.program.name,
-            course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
-            course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
-            type: 'teacher',
-            notification_source: `course_start_${response.teacher._id}_${response._id}`,
-            amount_notifications: 1
-          })
+          if ((register.teacher && register.teacher._id && params.teacher) && register.teacher._id.toString() !== params.teacher.toString()) {
+            // @INFO: Notificación al docente asignado
+            await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, null)
+            // @INFO: Notificación al docente cuando este fue cambiado
+            await courseSchedulingService.sendUnenrollmentUserEmail(register.teacher.email, {
+              mailer: customs['mailer'],
+              first_name: register.teacher.profile.first_name,
+              course_name: response.course_scheduling.program.name,
+              type: 'teacher',
+              notification_source: `course_teacher_remove_${register.teacher._id}_${response._id}`,
+              // amount_notifications: 1
+            })
+          }
 
           if (changes.length > 0) {
             await courseSchedulingService.serviceSchedulingUpdated(
