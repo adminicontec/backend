@@ -32,75 +32,82 @@ class MasterCategoryService {
 
   public list = async (params: IMoodleCourseQuery = {}) => {
 
-    let responseCategories = [];
-    let singleCategory = {
-      id: 0,
-      name: "",
-      description: ""
-    }
+    try {
+      let responseCategories = [];
+      let singleCategory = {
+        id: 0,
+        name: "",
+        description: ""
+      }
 
-    // Params for Moodle, fetch the complete list. Filtering only from results.
-    let moodleParams = {
-      wstoken: moodle_setup.wstoken,
-      wsfunction: moodle_setup.services.courses.getCategory,
-      moodlewsrestformat: moodle_setup.restformat,
-      "criteria[0][key]": "idnumber",
-      "criteria[0][value]": "master",
-    };
+      // Params for Moodle, fetch the complete list. Filtering only from results.
+      let moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.courses.getCategory,
+        moodlewsrestformat: moodle_setup.restformat,
+        "criteria[0][key]": "idnumber",
+        "criteria[0][value]": "master",
+      };
 
 
-    console.log("--------------- Fetch categories in Moodle : ---------------------------");
+      console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
-    let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
-    console.log(respMoodle);
-    if (respMoodle.exception) {
-      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-      return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: { key: 'moodle.exception', params: { error: respMoodle.message } }
-        }
-      )
-    }
+      let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+      console.log('respMoodle', respMoodle);
+      if (respMoodle.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: { key: 'moodle.exception', params: { error: respMoodle.message } }
+          }
+        )
+      }
 
-    if (respMoodle.status === 'error') {
-      // ERROR al consultar las categorías de curso en Moodle
-      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-      return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: { key: 'moodle.error', params: { error: respMoodle.message } }
-        }
-      )
-    }
+      if (respMoodle.status === 'error') {
+        // ERROR al consultar las categorías de curso en Moodle
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: { key: 'moodle.error', params: { error: respMoodle.message } }
+          }
+        )
+      }
 
-    //console.log(respMoodle);
+      //console.log(respMoodle);
 
-    let masterCategory = respMoodle.filter(m => m.idnumber === "master")
+      let masterCategory = respMoodle.filter(m => m.idnumber === "master")
 
-    if (masterCategory != null) {
-      let childCategory = respMoodle.filter(c => c.parent === masterCategory[0].id);
+      if (masterCategory != null) {
+        let childCategory = respMoodle.filter(c => c.parent === masterCategory[0].id);
 
-      console.log(masterCategory);
-      console.log("Filter by parent category: " + masterCategory[0].id);
-      console.log(childCategory);
+        console.log(masterCategory);
+        console.log("Filter by parent category: " + masterCategory[0].id);
+        console.log(childCategory);
 
-      childCategory.forEach(element => {
-        singleCategory = {
-          id: element.id,
-          name: element.name,
-          description: element.description
-        }
-        responseCategories.push(singleCategory);
-      })
+        childCategory.forEach(element => {
+          singleCategory = {
+            id: element.id,
+            name: element.name,
+            description: element.description
+          }
+          responseCategories.push(singleCategory);
+        })
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          categories: responseCategories, //respMoodle.events,
-        }
-      })
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            categories: responseCategories, //respMoodle.events,
+          }
+        })
 
-    }
-    else {
-      // error if there's no master Category and its children
+      }
+      else {
+        console.log('else')
+        // error if there's no master Category and its children
+      }
+
+    } catch (e) {
+      console.log('err', e)
+      return responseUtility.buildResponseFailed('json')
     }
 
 
