@@ -23,6 +23,7 @@ export interface ICourseScheduling {
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
   regional?: string // Regional de la programación
+  regional_transversal?: string // Regional de la programación
   city?: string // Identificador de la ciudad
   country?: string
   amountParticipants?: string // Cantidad de participantes

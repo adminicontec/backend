@@ -61,7 +61,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -235,12 +235,21 @@ class CourseSchedulingService {
           }
         }
 
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
+        }
+
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         console.log("update Program on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
           "id": `${response.moodle_id}`,
-          "categoryId": `${response.regional.moodle_id}`,
+          "categoryId": `${regional}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
@@ -324,11 +333,20 @@ class CourseSchedulingService {
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
 
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
+        }
+
         const moodleResponse: any = await moodleCourseService.createFromMaster({
           "shortName": `${response.program.code}_${service_id}`,
           "fullName": `${response.program.name}`,
           "masterId": `${response.program.moodle_id}`,
-          "categoryId": `${response.regional.moodle_id}`,
+          "categoryId": `${regional}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
@@ -840,7 +858,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
     if (filters.select) {
       select = filters.select
     }
@@ -935,7 +953,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
 
       let where = {}
 

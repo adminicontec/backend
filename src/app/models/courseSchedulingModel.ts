@@ -60,7 +60,11 @@ const CourseSchedulingSchema = new Schema({
   regional: {
     type: Schema.Types.ObjectId,
     ref: "Regional",
-    required: true
+    required: false
+  },
+  regional_transversal: {
+    type: Schema.Types.String,
+    required: false
   },
   city: {
     type: Schema.Types.ObjectId,

@@ -30,7 +30,7 @@ class CourseSchedulingMiddleware {
       { key: 'startDate', label: 'Fecha de inicio'},
       { key: 'endDate', label: 'Fecha de finalización'},
       // { key: 'teacher', label: 'Docente'},
-      { key: 'regional', label: 'Regional'},
+      // { key: 'regional', label: 'Regional'},
 		];
 
 		await requestUtility.middlewareValidator(fields_config, req, res, next)
