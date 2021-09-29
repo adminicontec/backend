@@ -88,7 +88,7 @@ class MasterCategoryService {
           singleCategory = {
             id: element.id,
             name: element.name,
-            description: element.description
+            description: element.description,
           }
           responseCategories.push(singleCategory);
         })
