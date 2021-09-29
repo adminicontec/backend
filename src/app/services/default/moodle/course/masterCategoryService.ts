@@ -52,43 +52,57 @@ class MasterCategoryService {
     console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
     let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+    console.log(respMoodle);
     if (respMoodle.exception) {
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: { key: 'moodle.exception', params: { error: respMoodle.message } }
+        }
+      )
+    }
+
+    if (respMoodle.status === 'error') {
       // ERROR al consultar las categorías de curso en Moodle
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: { key: 'moodle.error', params: { error: respMoodle.message } }
+        }
+      )
+    }
+
+    //console.log(respMoodle);
+
+    let masterCategory = respMoodle.filter(m => m.idnumber === "master")
+
+    if (masterCategory != null) {
+      let childCategory = respMoodle.filter(c => c.parent === masterCategory[0].id);
+
+      console.log(masterCategory);
+      console.log("Filter by parent category: " + masterCategory[0].id);
+      console.log(childCategory);
+
+      childCategory.forEach(element => {
+        singleCategory = {
+          id: element.id,
+          name: element.name,
+          description: element.description
+        }
+        responseCategories.push(singleCategory);
+      })
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          categories: responseCategories, //respMoodle.events,
+        }
+      })
+
     }
     else {
-      //console.log(respMoodle);
-
-      let masterCategory = respMoodle.filter(m => m.idnumber === "master")
-
-      if (masterCategory != null) {
-        let childCategory = respMoodle.filter(c => c.parent === masterCategory[0].id);
-
-        console.log( masterCategory);
-        console.log("Filter by parent category: " + masterCategory[0].id);
-        console.log(childCategory);
-
-
-        childCategory.forEach(element => {
-          singleCategory = {
-            id: element.id,
-            name: element.name,
-            description: element.description
-          }
-          responseCategories.push(singleCategory);
-        })
-
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            categories: responseCategories, //respMoodle.events,
-          }
-        })
-
-      }
-      else {
-        // error if there's no master Category and its children
-      }
+      // error if there's no master Category and its children
     }
+
 
   }
 

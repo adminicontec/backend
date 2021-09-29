@@ -382,32 +382,32 @@ class ErrorResponse {
         },
         "resources": {
           "questions_invalid": {
-              "message": i18nUtility.__("app_error_messages.academicResource.resources.questions_invalid"),
-              "status_code": "academicResource_resources_questions_invalid",
-              "code": 400
+            "message": i18nUtility.__("app_error_messages.academicResource.resources.questions_invalid"),
+            "status_code": "academicResource_resources_questions_invalid",
+            "code": 400
           },
           "duration_invalid": {
-              "message": i18nUtility.__("app_error_messages.academicResource.resources.duration_invalid"),
-              "status_code": "academicResource_resources_duration_invalid",
-              "code": 400
+            "message": i18nUtility.__("app_error_messages.academicResource.resources.duration_invalid"),
+            "status_code": "academicResource_resources_duration_invalid",
+            "code": 400
           },
           "survey_resource": {
             "config_invalid": {
-                "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.config_invalid"),
-                "status_code": "academicResource_resources_survey_resource_config_invalid",
-                "code": 400
+              "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.config_invalid"),
+              "status_code": "academicResource_resources_survey_resource_config_invalid",
+              "code": 400
             },
             "question_bank_invalid": {
-                "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_bank_invalid"),
-                "status_code": "academicResource_resources_survey_resource_question_bank_invalid",
-                "code": 400
+              "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_bank_invalid"),
+              "status_code": "academicResource_resources_survey_resource_question_bank_invalid",
+              "code": 400
             },
             "question_configuration": {
-                "invalid": {
-                    "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_configuration.invalid"),
-                    "status_code": "academicResource_resources_survey_resource_question_configuration_invalid",
-                    "code": 400
-                }
+              "invalid": {
+                "message": i18nUtility.__("app_error_messages.academicResource.resources.survey_resource.question_configuration.invalid"),
+                "status_code": "academicResource_resources_survey_resource_question_configuration_invalid",
+                "code": 400
+              }
             }
           },
         },
@@ -548,7 +548,7 @@ class ErrorResponse {
             "code": 400
           }
         }
-    },
+      },
 
       "country": {
         "not_found": {
@@ -893,6 +893,25 @@ class ErrorResponse {
             }
           }
         },
+      },
+      "moodle": {
+        "exception": {
+          "message": i18nUtility.__("app_error_messages.moodle.exception"),
+          "status_code": "moodle_exception",
+          "code": 400
+        },
+        "error": {
+          "message": i18nUtility.__("app_error_messages.moodle.error"),
+          "status_code": "moodle_error",
+          "code": 400
+        }
+      },
+      "moodle_category": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.moodle_category.not_found"),
+          "status_code": "moodle_category_not_found",
+          "code": 400
+        }
       },
       "moodle_course": {
         "not_found": {
