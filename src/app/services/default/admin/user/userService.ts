@@ -148,6 +148,7 @@ class UserService {
       // createdBy
       // lastModifiedBy
       if (params.id) {
+        let sendWelcomEmail = false;
         console.log(":: :: Update User ID --> " + params.id);
         let register: any = await User.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
@@ -206,6 +207,9 @@ class UserService {
           }
         }
 
+        if (register.email !== params.email)
+          sendWelcomEmail = true;
+
         console.log("Ready to update");
         console.log(params)
         const response: any = await User.findByIdAndUpdate(params.id, params, {
@@ -220,6 +224,57 @@ class UserService {
           response.profile.avatarImageUrl = this.avatarUrl(response)
           response.profile.avatar = response.profile.avatarImageUrl
         }
+
+        console.log("Current data from user:" + params.id);
+        console.log("check if " + response.email + " must be updated." + "["+ sendWelcomEmail +"]");
+
+        // update usario existente en MOODLE
+        console.log("Moodle: Actualizando Usuario --> " + response.moodle_id);
+
+        var paramsMoodleUser: IMoodleUser = {
+          id: response.moodle_id,
+          city: params.profile.city,
+          country: countryCode,
+          documentNumber: params.profile.doc_number,
+          email: params.email,
+          username: params.username,
+          password: params.password,
+          phonenumber: params.phoneNumber,
+          firstname: params.profile.first_name,
+          lastname: params.profile.last_name,
+          fecha_nacimiento: params.profile.birthDate,
+          genero: params.profile.genre,
+          email_2: params.profile.alternativeEmail,
+          origen: params.profile.origen,
+          regional: params.profile.regional,
+          cargo: params.profile.currentPosition,
+          profesion: params.profile.carreer,
+          nivel_educativo: params.profile.educationalLevel,
+          empresa: params.profile.company,
+        }
+
+        let respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
+        console.log(respMoodleUpdate);
+
+
+        // @INFO: Se envia email de bienvenida
+        if (params.sendEmail === true && sendWelcomEmail === true) {
+          console.log("Sending email to " + paramsMoodleUser.email)
+          await this.sendRegisterUserEmail([paramsMoodleUser.email], {
+            mailer: customs['mailer'],
+            fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
+            first_name: paramsMoodleUser.firstname,
+            last_name: paramsMoodleUser.lastname,
+            username: paramsMoodleUser.username,
+            password: paramsMoodleUser.password,
+            notification_source: `user_register_${response._id}`,
+            amount_notifications: 1,
+            sendWelcomEmail
+          })
+        }
+
+
+
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -302,7 +357,6 @@ class UserService {
               let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
               console.log("Moodle: Usuario creado con Éxito.");
               console.log(respMoodleInsert);
-              //respMoodle2.user.id;
 
               if (respMoodleInsert.status === 'success') {
                 if (respMoodleInsert.user.id && respMoodleInsert.user.username) {
@@ -366,7 +420,7 @@ class UserService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any, resend = false) => {
 
     try {
 
@@ -381,7 +435,8 @@ class UserService {
           },
           amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
         },
-        notification_source: paramsTemplate.notification_source
+        notification_source: paramsTemplate.notification_source,
+        resend_notification: resend
       })
 
       return mail

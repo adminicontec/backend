@@ -1,5 +1,5 @@
 // @import_dependencies_node Import libraries
-import { Request, Response } from 'express';
+import { Request, Response  } from 'express';
 // @end
 
 // @import_models Import models

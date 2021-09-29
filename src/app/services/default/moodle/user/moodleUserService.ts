@@ -151,6 +151,162 @@ class MoodleUserService {
           customFieldValue = generalUtility.unixTime(params[p]).toString();
         }
         else
+          customFieldValue = params[p].trim();
+
+        moodleParams[jsonPropertyName] = customFieldType;
+        moodleParams[jsonPropertyValue] = customFieldValue;
+        posArray++;
+      }
+    }
+
+
+    console.log("--------------- Create user in Moodle with: ---------------------------");
+    console.log(moodleParams);
+
+    let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+    if (respMoodle.exception) {
+      // ERROR al crear el usuario en Moodle
+      console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+
+      //return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+
+      // return
+    }
+    else {
+      // Usuario en moodle CREADO con éxito
+      console.log("Moodle create USER OK: ");
+      console.log("Moodle UserID: " + respMoodle[0].id);
+      console.log("Moodle UserName: " + respMoodle[0].username);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          user: {
+            id: respMoodle[0].id,
+            username: respMoodle[0].username,
+          }
+        }
+      });
+
+    }
+  }
+
+
+  public update = async (params: IMoodleUser) => {
+    const customFieldNamesArray = ["regional", "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
+    var posArray = 0;
+    const prefix = 'users[0][customfields][';
+    const sufixType = '][type]';
+    const sufixValue = '][value]';
+
+    var jsonPropertyName = 'users[0][customfields][0][type]';
+    var customFieldType = '';
+
+    var jsonPropertyValue = 'users[0][customfields][0][value]';
+    var customFieldValue = '';
+
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.users.update,
+      moodlewsrestformat: moodle_setup.restformat,
+      'users[0][id]': params.id,
+      'users[0][email]': params.email,
+      //'users[0][password]': params.password,
+      'users[0][firstname]': params.firstname,
+      'users[0][lastname]': params.lastname,
+      'users[0][city]': params.city,
+      'users[0][country]': params.country,
+      'users[0][phone1]': params.phonenumber,
+    };
+
+    for (let p in params) {
+
+      var cf = customFieldNamesArray.find(field => field == p);
+      if (cf != null && params[p] != null) {
+        jsonPropertyName = prefix + posArray + sufixType;
+        customFieldType = p;
+
+        jsonPropertyValue = prefix + posArray + sufixValue;
+
+        if (cf == 'fechaNacimiento') {
+          customFieldValue = generalUtility.unixTime(params[p]).toString();
+        }
+        else
+          customFieldValue = params[p].trim();
+
+        moodleParams[jsonPropertyName] = customFieldType;
+        moodleParams[jsonPropertyValue] = customFieldValue;
+        posArray++;
+      }
+    }
+
+    console.log("-------------- Update user in Moodle with: --------------");
+    console.log(moodleParams);
+
+    try {
+      let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+      if (respMoodle != null) {
+        // ERROR al crear el usuario en Moodle
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        //return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+      }
+      else {
+        // Usuario en moodle CREADO con éxito
+        console.log("Moodle update USER OK: ");
+        console.log("Moodle UserID: " + params.id);
+        console.log("Moodle UserName: " + params.username);
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            user: {
+              id: params.id,
+              username: params.username,
+            }
+          }
+        });
+
+      }
+    }
+    catch (err) {
+      console.log("*****" + err);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+
+  public updatePassword = async (params: IMoodleUser) => {
+    const customFieldNamesArray = ["regional", "fecha_nacimiento", "email_2", "cargo", "profesion", "nivel_educativo", "empresa", "origen", "genero"];
+    var posArray = 0;
+    const prefix = 'users[0][customfields][';
+    const sufixType = '][type]';
+    const sufixValue = '][value]';
+
+    var jsonPropertyName = 'users[0][customfields][0][type]';
+    var customFieldType = '';
+
+    var jsonPropertyValue = 'users[0][customfields][0][value]';
+    var customFieldValue = '';
+
+    let moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.users.update,
+      moodlewsrestformat: moodle_setup.restformat,
+      'users[0][id]': params.id,
+      'users[0][password]': params.password,
+    };
+
+    for (let p in params) {
+
+      var cf = customFieldNamesArray.find(field => field == p);
+      if (cf != null && params[p] != null) {
+        jsonPropertyName = prefix + posArray + sufixType;
+        customFieldType = p;
+
+        jsonPropertyValue = prefix + posArray + sufixValue;
+
+        if (cf == 'fechaNacimiento') {
+          customFieldValue = generalUtility.unixTime(params[p]).toString();
+        }
+        else
           customFieldValue = params[p];
 
         moodleParams[jsonPropertyName] = customFieldType;
@@ -189,6 +345,7 @@ class MoodleUserService {
 
     }
   }
+
 }
 
 export const moodleUserService = new MoodleUserService();

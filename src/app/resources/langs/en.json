@@ -68,43 +68,43 @@
       "current_password_invalid": "La contraseña actual es incorrecta"
     },
     "questionCategory": {
-			"not_found": "La categoría no ha sido encontrada",
-			"insertOrUpdate": {
-				"already_exists": "Ya existe una categoría con el nombre :name",
-				"fail_action": "Ha ocurrido un error al generar el registro"
-			},
-			"delete": {
-				"fail_action": "Se ha presentado un error al borrar el registro"
-			}
+      "not_found": "La categoría no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una categoría con el nombre :name",
+        "fail_action": "Ha ocurrido un error al generar el registro"
+      },
+      "delete": {
+        "fail_action": "Se ha presentado un error al borrar el registro"
+      }
     },
     "question": {
-			"category_invalid": "Categoria invalida",
-			"value_required": "El valor de la pregunta es obligatorio",
-			"answers": {
-				"required": "Las respuestas son obligatorias",
-				"invalid": "Las respuestas no tienen un formato valido",
-				"limit": "Solo se permite :number opcion(es) de respuesta(s)",
-				"answers_value_invalid": "El valor de la pregunta y la suma de las respuestas no coincide, verifique para continuar",
-				"answer_corrected_required": "Se requiere al menos :number respuesta(s) correcta(s)",
-				"answer_corrected_limit": "Solo es posible tener :number respuesta(s) correcta(s)",
-				"relate_item": {
-					"relation_required": "La relación entre las opciones es obligatoria",
-					"relation_invalid": "La configuración de la relación es invalida"
-				},
-				"fill_in_spaces": {
-					"words_required": "Debes tener al menos 1 palabra para reemplazar",
-					"words_data_invalid": "No se han configurado correctamente las palabras que se desean reemplazar",
-					"config_invalid": "La configuración de la respuesta es invalida"
-				}
-			},
-			"not_found": "La pregunta no ha sido encontrada",
-			"insertOrUpdate": {
+      "category_invalid": "Categoria invalida",
+      "value_required": "El valor de la pregunta es obligatorio",
+      "answers": {
+        "required": "Las respuestas son obligatorias",
+        "invalid": "Las respuestas no tienen un formato valido",
+        "limit": "Solo se permite :number opcion(es) de respuesta(s)",
+        "answers_value_invalid": "El valor de la pregunta y la suma de las respuestas no coincide, verifique para continuar",
+        "answer_corrected_required": "Se requiere al menos :number respuesta(s) correcta(s)",
+        "answer_corrected_limit": "Solo es posible tener :number respuesta(s) correcta(s)",
+        "relate_item": {
+          "relation_required": "La relación entre las opciones es obligatoria",
+          "relation_invalid": "La configuración de la relación es invalida"
+        },
+        "fill_in_spaces": {
+          "words_required": "Debes tener al menos 1 palabra para reemplazar",
+          "words_data_invalid": "No se han configurado correctamente las palabras que se desean reemplazar",
+          "config_invalid": "La configuración de la respuesta es invalida"
+        }
+      },
+      "not_found": "La pregunta no ha sido encontrada",
+      "insertOrUpdate": {
         "fail_action": "Ha ocurrido un error al generar el registro",
         "tag_duplicated": "No pueden existir dos o mas tags iguales"
-			},
-			"delete": {
-				"fail_action": "Se ha presentado un error al borrar el registro"
-			},
+      },
+      "delete": {
+        "fail_action": "Se ha presentado un error al borrar el registro"
+      },
       "qualification": {
         "answers_required": "Las opciones de respuesta de la pregunta son obligatorias",
         "answer_format_invalid": "El formato de la respuesta proporcionada por el usuario no es valida",
@@ -112,28 +112,28 @@
       }
     },
     "academicResourceCategory": {
-			"not_found": "La categoría no ha sido encontrada",
-			"insertOrUpdate": {
-				"already_exists": "Ya existe una categoría con el nombre :name",
-				"fail_action": "Ha ocurrido un error al generar el registro"
-			},
-			"delete": {
-				"fail_action": "Se ha presentado un error al borrar el registro"
-			}
-		},
+      "not_found": "La categoría no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una categoría con el nombre :name",
+        "fail_action": "Ha ocurrido un error al generar el registro"
+      },
+      "delete": {
+        "fail_action": "Se ha presentado un error al borrar el registro"
+      }
+    },
     "academicResource": {
-			"category_invalid": "Categoria invalida",
-			"not_found": "El recurso académico no ha sido encontrada",
-			"insertOrUpdate": {
-				"fail_action": "Ha ocurrido un error al generar el registro"
-			},
-			"delete": {
+      "category_invalid": "Categoria invalida",
+      "not_found": "El recurso académico no ha sido encontrada",
+      "insertOrUpdate": {
+        "fail_action": "Ha ocurrido un error al generar el registro"
+      },
+      "delete": {
         "node_invalid": "Solo un recurso sin hijos puede ser eliminado",
         "fail_action": "Se ha presentado un error al borrar el registro"
-			},
-			"resources": {
+      },
+      "resources": {
         "questions_invalid": "Las preguntas tienen un formato invalido",
-				"duration_invalid": "La duración del recurso no es valida",
+        "duration_invalid": "La duración del recurso no es valida",
         "survey_resource": {
           "config_invalid": "La configuración del recurso es invalido",
           "question_bank_invalid": "El banco de preguntas no es valido",
@@ -141,7 +141,7 @@
             "invalid": "La configuración de preguntas no es valida"
           }
         }
-			},
+      },
       "qualification": {
         "questions_to_evaluate_required": "Las preguntas que se van a evaluar son obligatorias"
       },
@@ -173,25 +173,25 @@
       }
     },
     "academicResourceConfigCategory": {
-			"not_found": "La categoría no ha sido encontrada",
-			"insertOrUpdate": {
-				"already_exists": "Ya existe una categoría con el nombre :name",
-				"fail_action": "Ha ocurrido un error al generar el registro"
-			},
-			"delete": {
-				"fail_action": "Se ha presentado un error al borrar el registro"
-			}
-		},
+      "not_found": "La categoría no ha sido encontrada",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe una categoría con el nombre :name",
+        "fail_action": "Ha ocurrido un error al generar el registro"
+      },
+      "delete": {
+        "fail_action": "Se ha presentado un error al borrar el registro"
+      }
+    },
     "academicResourceConfig": {
-			"category_invalid": "Categoria invalida",
-			"not_found": "La configuración del recurso no existe",
-			"insertOrUpdate": {
-				"fail_action": "Ha ocurrido un error al generar el registro"
-			},
-			"delete": {
-				"fail_action": "Se ha presentado un error al borrar el registro"
-			}
-		},
+      "category_invalid": "Categoria invalida",
+      "not_found": "La configuración del recurso no existe",
+      "insertOrUpdate": {
+        "fail_action": "Ha ocurrido un error al generar el registro"
+      },
+      "delete": {
+        "fail_action": "Se ha presentado un error al borrar el registro"
+      }
+    },
     "survey": {
       "not_found": "La encuesta no ha sido encontrada",
       "insertOrUpdate": {
@@ -343,6 +343,13 @@
         }
       }
     },
+    "moodle": {
+      "exception": "Error con petición de Moodle: :error",
+      "error": "Error con petición de Moodle: :error"
+    },
+    "moodle_category": {
+      "not_found": "Categorías no encontradas."
+    },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",
       "insertOrUpdate": {
@@ -392,6 +399,12 @@
     },
     "scheduling_notification": {
       "subject": "Programación confirmada"
+    },
+    "scheduling_cancelled_notification": {
+      "subject": "Programación cancelada"
+    },
+    "scheduling_update": {
+      "subject": "Programación modificada"
     }
   }
 }

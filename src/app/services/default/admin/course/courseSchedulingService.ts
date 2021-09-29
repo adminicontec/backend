@@ -61,7 +61,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -180,9 +180,12 @@ class CourseSchedulingService {
       if (params.country === '') delete params.country
 
       if (params.id) {
-        const register: any = await CourseScheduling.findOne({ _id: params.id }).lean()
+        const register: any = await CourseScheduling.findOne({ _id: params.id })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
+        .lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
-
+        const prevSchedulingStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
+        const changes = this.validateChanges(params, register)
 
         if (params.hasCost) {
           let hasParamsCost = false
@@ -215,18 +218,38 @@ class CourseSchedulingService {
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-          await this.checkEnrollmentUsers(response)
-          await this.checkEnrollmentTeachers(response)
-          await this.serviceSchedulingNotification(response)
+        if (params.sendEmail === true || params.sendEmail === 'true') {
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado') {
+          // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
+            await this.checkEnrollmentUsers(response)
+            await this.checkEnrollmentTeachers(response)
+            await this.serviceSchedulingNotification(response)
+          }
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
+            if (changes.length > 0) {
+              await this.sendServiceSchedulingUpdated(response, changes);
+            }
+          }
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
+            await this.serviceSchedulingCancelled(response)
+          }
+        }
+
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
         }
 
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
-        console.log("update Programa on moodle:");
+        console.log("update Program on moodle:");
         const moodleResponse: any = await moodleCourseService.update({
           "id": `${response.moodle_id}`,
-          "categoryId": `${response.regional.moodle_id}`,
+          "categoryId": `${regional}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
@@ -310,11 +333,20 @@ class CourseSchedulingService {
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
 
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
+        }
+
         const moodleResponse: any = await moodleCourseService.createFromMaster({
           "shortName": `${response.program.code}_${service_id}`,
           "fullName": `${response.program.name}`,
           "masterId": `${response.program.moodle_id}`,
-          "categoryId": `${response.regional.moodle_id}`,
+          "categoryId": `${regional}`,
           "startDate": `${response.startDate}`,
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
@@ -438,7 +470,7 @@ class CourseSchedulingService {
     }
   }
 
-  private checkEnrollmentTeachers = async (courseScheduling) => {
+  public checkEnrollmentTeachers = async (courseScheduling, teacher?: string, amount_notifications: number | null = 1) => {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
     }).select('id startDate endDate duration course sessions teacher')
@@ -449,7 +481,7 @@ class CourseSchedulingService {
     let notificationsByTeacher = {}
 
     for await (const course of courses) {
-      if (!notificationsByTeacher[course.teacher._id]) {
+      if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
         notificationsByTeacher[course.teacher._id] = {
           teacher: {
             _id: course.teacher._id,
@@ -520,7 +552,7 @@ class CourseSchedulingService {
           has_sessions: teacherData.has_sessions,
           type: 'teacher',
           notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program._id}`,
-          amount_notifications: 1
+          amount_notifications: amount_notifications ? amount_notifications : null
         })
       }
     }
@@ -540,7 +572,6 @@ class CourseSchedulingService {
         users.map((user: any) => email_to_notificate.push(user.email))
       }
     }
-
     if (email_to_notificate.length > 0) {
       await this.sendSchedulingNotificationEmail(email_to_notificate, {
         mailer: customs['mailer'],
@@ -551,6 +582,125 @@ class CourseSchedulingService {
         amount_notifications: 1
       })
 
+    }
+  }
+
+  private serviceSchedulingCancelled = async (courseScheduling) => {
+    let email_to_notificate = []
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+      .lean()
+
+    for await (const enrolled of userEnrolled) {
+      email_to_notificate.push(enrolled.user.email.toString())
+    }
+
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id startDate endDate duration course sessions teacher')
+    .populate({ path: 'course', select: 'id name code' })
+    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const course of courses) {
+      if (!email_to_notificate.includes(course.teacher.email.toString())) {
+        email_to_notificate.push(course.teacher.email.toString())
+      }
+    }
+
+    if (email_to_notificate.length > 0) {
+      await this.sendServiceSchedulingCancelled(email_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        today: moment().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_cancelled_${courseScheduling._id}`,
+        amount_notifications: 1
+      })
+
+    }
+  }
+
+  private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling) => {
+    const changes = []
+    if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
+      changes.push({
+        message: `La fecha de inicio del programa ha cambiado a ${params.startDate}`
+      })
+    }
+    if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
+      changes.push({
+        message: `La fecha de fin del programa ha cambiado a ${params.endDate}`
+      })
+    }
+    // if ((register.duration && params.duration) && params.duration !== register.duration) {
+    //   changes.push({
+    //     message: `La duración del curso ha cambiado a ${generalUtility.getDurationFormated(register.duration)}`
+    //   })
+    // }
+    return changes
+  }
+
+  private sendServiceSchedulingUpdated = async (courseScheduling, changes) => {
+    let email_to_notificate = []
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+    .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const enrolled of userEnrolled) {
+      email_to_notificate.push(enrolled.user.email.toString())
+    }
+
+    const courses = await CourseSchedulingDetails.find({
+      course_scheduling: courseScheduling._id
+    }).select('id startDate endDate duration course sessions teacher')
+    .populate({ path: 'course', select: 'id name code' })
+    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+    .lean()
+
+    for await (const course of courses) {
+      if (!email_to_notificate.includes(course.teacher.email.toString())) {
+        email_to_notificate.push(course.teacher.email.toString())
+      }
+    }
+
+    if (email_to_notificate.length > 0) {
+      await this.serviceSchedulingUpdated(email_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        notification_source: `course_updated_${courseScheduling._id}`,
+        changes
+      })
+
+    }
+  }
+
+  public serviceSchedulingUpdated = async (emails: Array<string>, paramsTemplate: any) => {
+    try {
+      let path_template = 'course/schedulingUpdate'
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_update.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 
@@ -596,6 +746,9 @@ class CourseSchedulingService {
   public sendUnenrollmentUserEmail = async (email: string, paramsTemplate: any) => {
     try {
       let path_template = 'user/unenrollmentUser'
+      if (paramsTemplate.type && paramsTemplate.type === 'teacher') {
+        path_template = 'user/unenrollmentTeacher'
+      }
 
       const mail = await mailService.sendMail({
         emails: [email],
@@ -633,6 +786,31 @@ class CourseSchedulingService {
         emails,
         mailOptions: {
           subject: i18nUtility.__('mailer.scheduling_notification.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+      return mail
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  public sendServiceSchedulingCancelled = async (emails: Array<string>, paramsTemplate: any) => {
+
+    try {
+      const path_template = 'course/programCancelled'
+
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_cancelled_notification.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
@@ -680,7 +858,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
     if (filters.select) {
       select = filters.select
     }
@@ -775,7 +953,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
 
       let where = {}
 
@@ -952,6 +1130,8 @@ class CourseSchedulingService {
       path = '/admin/course/courseSchedulingVirtualReport'
     }
 
+    const time = new Date().getTime()
+
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
@@ -972,7 +1152,7 @@ class CourseSchedulingService {
       },
       to_file: {
         file: {
-          name: `${courseScheduling.metadata.service_id}_${courseScheduling.program.code}.pdf`,
+          name: `${courseScheduling.metadata.service_id}_${courseScheduling.program.code}_${time}.pdf`,
         },
         path: 'admin/course/courseSchedulingReport'
       },

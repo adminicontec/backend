@@ -343,6 +343,13 @@
         }
       }
     },
+    "moodle": {
+      "exception": "Error con petición de Moodle: :error",
+      "error": "Error con petición de Moodle: :error"
+    },
+    "moodle_category": {
+      "not_found": "Categorías no encontradas."
+    },
     "moodle_course": {
       "not_found": "El curso :name en Moodle no ha sido encontrado",
       "insertOrUpdate": {
@@ -389,6 +396,12 @@
     },
     "scheduling_notification": {
       "subject": "Programación confirmada"
+    },
+    "scheduling_cancelled_notification": {
+      "subject": "Programación cancelada"
+    },
+    "scheduling_update": {
+      "subject": "Programación modificada"
     }
   }
 }

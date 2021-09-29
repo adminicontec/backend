@@ -36,13 +36,13 @@ const CourseSchema = new Schema({
   //   required: false,
   // },
   description: {
-    type: Schema.Types.String,
+    type: Schema.Types.Mixed,
     required: true,
   },
-  // courseType: {
-  //   type: Schema.Types.String,
-  //   required: false,
-  // },
+  courseType: {
+    type: Schema.Types.String,
+    required: false,
+  },
   // mode: {
   //   type: Schema.Types.ObjectId,
   //   ref: "CourseModeCategory",
@@ -102,7 +102,10 @@ const CourseSchema = new Schema({
   content: [{
     uuid: {type: Schema.Types.String},
     category: {type: Schema.Types.String, default: 'Tema'},
-    data: {type: Schema.Types.String},
+    data: {
+      type: Schema.Types.Mixed,
+      required: false,
+    },
     name: {type: Schema.Types.String}
   },],
   focus: {
