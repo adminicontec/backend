@@ -1788,6 +1788,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     ]
 
+
     for await (const courseScheduling of courseSchedulings) {
       const exists: any = await courseSchedulingService.findBy({
         query: QueryValues.ONE,
