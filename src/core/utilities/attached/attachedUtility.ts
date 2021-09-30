@@ -92,6 +92,8 @@ class AttachedUtility {
       files_to_upload = files;
     }
 
+    console.log('files_to_upload', files_to_upload)
+
     for (let i = 0 ; i < files_to_upload.length; i++) {
       const file = files_to_upload[i];
       let file_name = file.name;
@@ -127,6 +129,7 @@ class AttachedUtility {
       }
 
       const upload = await attached_utility['upload'](file,file_name,this.config);
+      console.log('upload', upload)
       if (upload.status === 'error') {
         files_status_upload[i].reason = upload['reason'];
         continue;
