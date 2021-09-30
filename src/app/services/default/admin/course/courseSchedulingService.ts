@@ -247,22 +247,23 @@ class CourseSchedulingService {
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         console.log("update Program on moodle:");
-        const moodleResponse: any = await moodleCourseService.update({
-          "id": `${response.moodle_id}`,
-          "categoryId": `${regional}`,
-          "startDate": `${response.startDate}`,
-          "endDate": `${response.endDate}`,
-          "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
-          "city": `${moodleCity}`,
-          "country": `${response.country.name}`
-        });
+        // TODO: Comentado temporalmente mientras se soluciona problema en servidor
+        // const moodleResponse: any = await moodleCourseService.update({
+        //   "id": `${response.moodle_id}`,
+        //   "categoryId": `${regional}`,
+        //   "startDate": `${response.startDate}`,
+        //   "endDate": `${response.endDate}`,
+        //   "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
+        //   "city": `${moodleCity}`,
+        //   "country": `${response.country.name}`
+        // });
 
-        if (moodleResponse.status === 'success') {
-          console.log("update Programa Success!");
-        }
-        else{
-          console.log("Error!");
-        }
+        // if (moodleResponse.status === 'success') {
+        //   console.log("update Programa Success!");
+        // }
+        // else{
+        //   console.log("Error!");
+        // }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -342,39 +343,40 @@ class CourseSchedulingService {
           }
         }
 
-        const moodleResponse: any = await moodleCourseService.createFromMaster({
-          "shortName": `${response.program.code}_${service_id}`,
-          "fullName": `${response.program.name}`,
-          "masterId": `${response.program.moodle_id}`,
-          "categoryId": `${regional}`,
-          "startDate": `${response.startDate}`,
-          "endDate": `${response.endDate}`,
-          "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
-          "city": `${moodleCity}`,
-          "country": `${response.country.name}`
-        })
+        // TODO: Comentado temporalmente mientras se soluciona problema en servidor
+        // const moodleResponse: any = await moodleCourseService.createFromMaster({
+        //   "shortName": `${response.program.code}_${service_id}`,
+        //   "fullName": `${response.program.name}`,
+        //   "masterId": `${response.program.moodle_id}`,
+        //   "categoryId": `${regional}`,
+        //   "startDate": `${response.startDate}`,
+        //   "endDate": `${response.endDate}`,
+        //   "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
+        //   "city": `${moodleCity}`,
+        //   "country": `${response.country.name}`
+        // })
 
-        if (moodleResponse.status === 'success') {
-          if (moodleResponse.course && moodleResponse.course.id) {
-            await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
-              useFindAndModify: false,
-              new: true,
-              lean: true,
-            })
+        // if (moodleResponse.status === 'success') {
+        //   if (moodleResponse.course && moodleResponse.course.id) {
+        //     await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
+        //       useFindAndModify: false,
+        //       new: true,
+        //       lean: true,
+        //     })
 
-            if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-              await this.checkEnrollmentUsers(response)
-              await this.checkEnrollmentTeachers(response)
-              await this.serviceSchedulingNotification(response)
-            }
-          } else {
-            await this.delete({ id: _id })
-            return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
-          }
-        } else {
-          await this.delete({ id: _id })
-          return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
-        }
+        //     if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+        //       await this.checkEnrollmentUsers(response)
+        //       await this.checkEnrollmentTeachers(response)
+        //       await this.serviceSchedulingNotification(response)
+        //     }
+        //   } else {
+        //     await this.delete({ id: _id })
+        //     return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
+        //   }
+        // } else {
+        //   await this.delete({ id: _id })
+        //   return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
+        // }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
