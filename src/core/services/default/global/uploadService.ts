@@ -40,7 +40,7 @@ class UploadService {
       // mimes: ['image/png', 'image/jpeg', 'image/x-icon'],
       ...config
     }
-
+    console.log('in uploadFile' ,defaultConfig)
     const files_status_upload = await attachedUtility.uploadFiles(file, {
       path_upload: path_upload,
       rename: defaultConfig.rename,
