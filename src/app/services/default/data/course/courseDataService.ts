@@ -234,6 +234,10 @@ class CourseDataService {
         where['modular'] = params.modular
       }
 
+      if (params.exclude) {
+        where['_id'] = {$nin: params.exclude}
+      }
+
       let sort = null
       if (params.sort) {
         sort = {}

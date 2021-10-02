@@ -67,7 +67,7 @@ class LandingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id slug title_page title_training title_references article trainings scheduling'
+      let select = 'id slug title_page title_training title_references title_posts article trainings scheduling'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Landing.find(where)
           .select(select)
@@ -462,7 +462,7 @@ class LandingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id slug title_page title_training title_references article trainings scheduling'
+    let select = 'id slug title_page title_training title_references title_posts article trainings scheduling'
     if (filters.select) {
       select = filters.select
     }

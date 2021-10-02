@@ -38,7 +38,8 @@ export interface IFetchCourses {
   highlighted?: boolean
   random?: {
     size?: number
-  }
+  },
+  exclude?: Array<string>
 }
 
 export interface IFetchCourse {
