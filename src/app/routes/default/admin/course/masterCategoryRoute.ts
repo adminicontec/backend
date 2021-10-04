@@ -12,6 +12,7 @@ import { routerUtility } from "@scnode_core/utilities/routerUtility";
 class MasterCategoryRoute {
 
   private router_prefix: string = '/admin/mastercategories'; //Ej: /user
+  private router_prefix_reg: string = '/admin/regionalcategories'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -27,9 +28,12 @@ class MasterCategoryRoute {
   public routes(app, prefix: string = '/'): void {
 
     const _route = `${prefix}${this.router_prefix}`;
+    const _route_reg = `${prefix}${this.router_prefix_reg}`;
+
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
+    routerUtility.get(app, _route_reg, '/', this.instanceController.regionals, [], ['auth'])
     // @end
   }
 }

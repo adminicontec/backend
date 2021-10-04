@@ -39,7 +39,7 @@ class LandingDataService {
     try {
 
       const landing = await Landing.findOne({slug: params.slug})
-      .select('id title_page title_training title_references article trainings scheduling descriptive_training our_clients references')
+      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references')
       .lean()
 
       if (landing) {

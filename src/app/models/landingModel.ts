@@ -62,7 +62,8 @@ const LandingSchema = new Schema({
     description: {type: Schema.Types.String},
     url: {type: Schema.Types.String},
     qualification: {type: Schema.Types.String},
-  }]
+  }],
+  title_posts: {type: Schema.Types.String},
   // @end
 }, {
   collection: 'landings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
