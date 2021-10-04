@@ -566,8 +566,8 @@ class EnrollmentService {
           let checkEmail = element['Correo Electrónico'];
           if (checkEmail != null) {
             checkEmail = checkEmail.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
-            if (generalUtility.validateEmailFormat(checkEmail)) {
 
+            if (generalUtility.validateEmailFormat(checkEmail)) {
               singleUserEnrollmentContent =
               {
                 documentType: element['Tipo Documento'].trim().toUpperCase(),
