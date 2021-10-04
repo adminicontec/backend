@@ -33,6 +33,11 @@ class MasterCategoryController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public regionals = async (req: Request, res: Response) => {
+		const response = await masterCategoryService.regionals(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const masterCategoryController = new MasterCategoryController();
