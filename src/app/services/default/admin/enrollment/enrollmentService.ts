@@ -561,23 +561,23 @@ class EnrollmentService {
 
         //#region   Revisión Documento de identidad para Casos especiales
         if (element['Documento de Identidad']) {
-          var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_");
+          var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_").replace(/\./g, "");
           console.log(">>> Insert Username " + newUserID);
           let checkEmail = element['Correo Electrónico'];
           if (checkEmail != null) {
-            checkEmail = checkEmail.trim().toLowerCase();
+            checkEmail = checkEmail.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
             if (generalUtility.validateEmailFormat(checkEmail)) {
 
               singleUserEnrollmentContent =
               {
                 documentType: element['Tipo Documento'].trim().toUpperCase(),
-                documentID: element['Documento de Identidad'].trim(),
+                documentID: element['Documento de Identidad'].trim().replace(/\./g, ""),
                 user: element['Documento de Identidad'].trim(),
-                password: element['Documento de Identidad'].trim(), // <-- Contraseña provisional
+                password: element['Documento de Identidad'].trim().replace(/\./g, ""), // <-- Contraseña provisional
                 email: checkEmail,
                 firstname: element['Nombres'].trim(),
                 lastname: element['Apellidos'].trim(),
-                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().trim() : '',
+                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
                 city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
                 country: element['País'],
                 emailAlt: element['Correo Alt'],
