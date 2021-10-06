@@ -296,7 +296,7 @@ class CourseDataService {
           courses: [
             ...registers
           ],
-          total_register: (paging) ? await Course.find(where).count() : 0,
+          total_register: (paging) ? await CourseScheduling.find(where).count() : 0,
           pageNumber: pageNumber,
           nPerPage: nPerPage
         }
