@@ -59,7 +59,7 @@ class CalendarEventsService {
       // take any of params as Moodle query filter
       if (params.courseID) {
         courseID = params.courseID;
-        userID = params.userID;
+        // userID = params.userID;
         console.log("Eventos para el curso " + courseID + " y usuario " + userID);
       }
       else {
