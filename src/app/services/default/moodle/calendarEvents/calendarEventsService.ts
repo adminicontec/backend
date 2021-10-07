@@ -45,20 +45,22 @@ class CalendarEventsService {
         instance: 0,
         eventtype: "",
         timestart: "",
+        timefinish: "",
         duration: 0,
         durationFormated: "",
         //timemodified: ""
       }
 
-      var courseID;
+      let courseID;
       let startDate;
       let endDate;
+      let userID;
 
       // take any of params as Moodle query filter
-      if (params.courseID && params.timeStart && params.timeEnd) {
+      if (params.courseID) {
         courseID = params.courseID;
-        startDate = generalUtility.unixTime(params.timeStart);
-        endDate = generalUtility.unixTime(params.timeEnd);
+        userID = params.userID;
+        console.log("Eventos para el curso " + courseID + " y usuario " + userID);
       }
       else {
         return responseUtility.buildResponseFailed('json', null,
@@ -68,96 +70,133 @@ class CalendarEventsService {
             }
           });
       }
+
+      // 1. módulos asociados al curso en moodle
+      console.log("Course Modules by type:");
+      var select = ['assign', 'attendance', 'quiz', 'forum'];
+      let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
+
       // 2. Validación si hay eventos asociados al curso en moodle
       let moodleParams = {
         wstoken: moodle_setup.wstoken,
         wsfunction: moodle_setup.services.calendarEvents.get,
         moodlewsrestformat: moodle_setup.restformat,
-        'events[courseids][0]': courseID,
-        'options[timestart]': startDate,
-        'options[timeend]': endDate,
+        'events[courseids][0]': courseID
       };
 
-      let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
-      if (respMoodle.exception) {
-        console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+      let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+      if (respMoodleEvents.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: {
               key: 'moodle_events.not_found',
-              params: { respMoodle }
+              params: { respMoodleEvents }
             }
           });
       }
 
-      var select = ['assign', 'attendance', 'quiz'];
-      let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
-
-      console.log("Course Modules by type:");
-
-      // time convertion from EPOCH time to UTC time
-      respMoodle.events.forEach(moodleEvent => {
-        var evTime = new Date(moodleEvent.timestart * 1000).toISOString();
-        //moodleEvent.timestart = evTime;
-        // var modTime = new Date(moodleEvent.timemodified * 1000).toISOString();
-        // moodleEvent.timemodified = modTime;
-
-        // console.log("--> from Moodle: ");
-        // console.log(eventTime);
-
-        // Ignore every event named "attendance"
-        // if (eventTime.modulename != "attendance" ) {
-        var moduleName = moodleEvent.modulename;
-        var description = moodleEvent.description;
-
-        if (moodleEvent.modulename == null && moodleEvent.description.includes('webex')) {
-          moduleName = 'webex';
-
-          var regex = /( |<([^>]+)>)/ig;
-          description = moodleEvent.description.replace(regex, "").replace('\n', "");
-        }
-
-        singleEvent = {
-          id: moodleEvent.id,
-          name: moodleEvent.name,
-          description: description,
-          courseid: moodleEvent.courseid,
-          modulename: moduleName,
-          eventtype: moodleEvent.eventype,
-          instance: moodleEvent.instance,
-          timestart: evTime,
-          duration: moodleEvent.timeduration / 3600,
-          durationFormated: generalUtility.getDurationFormated(moodleEvent.timeduration)
-          //timemodified: modTime
-        };
-        responseEvents.push(singleEvent);
-      });
-
+      // 3. group the events by Instance
       if (respMoodleCourseModules.status == 'success') {
-        //console.log(respMoodleCourseModules.courseModules);
 
-          respMoodleCourseModules.courseModules.forEach(element => {
+        // Group by Instance
+        respMoodleCourseModules.courseModules.forEach(module => {
+          let eventTime;
+          let timeDue;
+          let timeStart;
+          let timeEnd;
+          console.log("---------" + module.instance + "------------");
+          const groupByInstance = respMoodleEvents.events.filter(e => e.instance == module.instance);
+          console.log(groupByInstance);
 
+          if (groupByInstance[0].modulename === 'assign') {
+            eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
+            console.log("timeDue: ");
+            console.log(eventTime);
+          }
+          if (groupByInstance[0].modulename === 'forum') {
+            eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
+            console.log("timeDue: ");
+            console.log(eventTime);
+          }
+          if (groupByInstance[0].modulename === 'quiz') {
+            timeStart = groupByInstance.filter(g => g.eventtype == 'open');
+            timeEnd = groupByInstance.filter(g => g.eventtype == 'close');
+
+            eventTime = new Date(timeStart[0].timestart * 1000).toISOString();
+            console.log("timeStart: ");
+            console.log(eventTime);
+
+            eventTime = new Date(timeEnd[0].timestart * 1000).toISOString();
+            console.log("timeEnd: ");
+            console.log(eventTime);
+          }
+          console.log("=============================================");
+
+          // Build the answer
           singleEvent = {
-            id: element.id,
-            name: element.name,
+            id: module.id,
+            name: module.name,
             description: '',
             courseid: courseID,
-            modulename: element.modname,
+            modulename: groupByInstance[0].modulename,
             eventtype: '',
-            instance: element.instance,
-            timestart: '',
+            instance: groupByInstance[0].instance,
+            timestart: eventTime,
+            timefinish: '',
             duration: 0,
             durationFormated: ''
           };
           responseEvents.push(singleEvent);
-        });
 
+        });
       }
+
+
+      // // time convertion from EPOCH time to UTC time
+      // respMoodleEvents.events.forEach(moodleEvent => {
+      //   var evTime = new Date(moodleEvent.timestart * 1000).toISOString();
+      //   //moodleEvent.timestart = evTime;
+      //   // var modTime = new Date(moodleEvent.timemodified * 1000).toISOString();
+      //   // moodleEvent.timemodified = modTime;
+
+      //   // console.log("--> from Moodle: ");
+      //   // console.log(eventTime);
+
+      //   // Ignore every event named "attendance"
+      //   // if (eventTime.modulename != "attendance" ) {
+      //   var moduleName = moodleEvent.modulename;
+      //   var description = moodleEvent.description;
+
+      //   if (moodleEvent.modulename == null && moodleEvent.description.includes('webex')) {
+      //     moduleName = 'webex';
+
+      //     var regex = /( |<([^>]+)>)/ig;
+      //     description = moodleEvent.description.replace(regex, "").replace('\n', "");
+      //   }
+
+      //   singleEvent = {
+      //     id: moodleEvent.id,
+      //     name: moodleEvent.name,
+      //     description: description,
+      //     courseid: moodleEvent.courseid,
+      //     modulename: moduleName,
+      //     eventtype: moodleEvent.eventype,
+      //     instance: moodleEvent.instance,
+      //     timestart: evTime,
+      //     timefinish: '',
+      //     duration: moodleEvent.timeduration / 3600,
+      //     durationFormated: generalUtility.getDurationFormated(moodleEvent.timeduration)
+      //     //timemodified: modTime
+      //   };
+      //   //responseEvents.push(singleEvent);
+      // });
+
+
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          events: responseEvents, //respMoodle.events,
+          events: responseEvents, //respMoodleEvents.events,
         }
       })
 
