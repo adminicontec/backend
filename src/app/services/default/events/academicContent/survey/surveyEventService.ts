@@ -180,7 +180,8 @@ class SurveyEventService {
         {
           $match: {
             'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
-            'deleted': false
+            'deleted': false,
+            'status': 'enabled'
           }
         },
         {
