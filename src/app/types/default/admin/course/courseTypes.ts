@@ -67,6 +67,8 @@ export interface ICourseQuery {
   startDate?: string // Fecha de inicio,
   courseType?: Array<string>,             // Tipo de curso
   mode?: Array<string>,             // Modalidad
+  course_scheduling_code?: string // Busca por codigo
+  schedulingMode?: string // Busca por modalidad
 }
 
 export interface ICourseDelete {
