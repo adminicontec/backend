@@ -6,6 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
+import {enrolledCourseService} from '@scnode_app/services/default/data/enrolledCourse/enrolledCourseService'
 import {moodleEnrollmentService} from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService'
 // @end
 
@@ -35,8 +36,11 @@ class EnrolledCourseController {
    * @returns
    */
    public enrolledCourses = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
     let params = req.getParameters.all()
-    const response = await moodleEnrollmentService.fetchEnrolledCoursesByUser(params)
+    params['user'] = user_id
+    // const response = await moodleEnrollmentService.fetchEnrolledCoursesByUser(params)
+    const response = await enrolledCourseService.fetchEnrollmentByUser(params)
     return responseUtility.sendResponseFromObject(res,response);
   }
 }
