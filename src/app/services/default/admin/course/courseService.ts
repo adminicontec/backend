@@ -310,13 +310,25 @@ class CourseService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
+    let where = {}
     let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
     }
 
-    let where = {}
+    if (filters.course_scheduling_code) {
+      const programs = await Program.find({ code: { $regex: '.*' + filters.course_scheduling_code + '.*', $options: 'i' } }).select('id')
+      const program_ids = programs.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+      where['program'] = { $in: program_ids }
+    }
+
+    if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
+
+
     let registers = []
     try {
       registers = await Course.find(where)

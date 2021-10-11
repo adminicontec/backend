@@ -138,7 +138,8 @@ class MoodleEnrollmentService {
     let responseCourses = [];
     let singleCourse = {
       _id: '',
-      name: ''
+      name: '',
+      startDate: 0
     }
     let singleHistoryCourse = {
       _id: '',
@@ -157,14 +158,25 @@ class MoodleEnrollmentService {
     let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle) {
       // List of Current courses
-
+      // console.log('respMoodle', respMoodle)
       respMoodle.forEach(element => {
         singleCourse = {
           _id: element.id,
-          name: element.fullname
+          name: element.fullname,
+          startDate: element.startdate
         };
         responseCourses.push(singleCourse);
       });
+
+      responseCourses.sort((a: any, b: any) => {
+        if (parseInt(a.startDate) > parseInt(b.startDate)) {
+          return -1
+        }
+        if (parseInt(b.startDate) >parseInt(a.startDate)) {
+          return 1
+        }
+        return 0
+      })
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
