@@ -6,7 +6,7 @@
   "scripts": {
     "init": "npm i -g",
     "start": "node ./src/app/server.js",
-    "pm2_stop": "pm2 stop",
+    "pm2_stop": "pm2 stop all",
     "compiler-tsc": "tsc",
     "start-prod": "npm run build-prod && npm run start",
     "build-prod": "npm run pre-compiler && npm run compiler-tsc",
