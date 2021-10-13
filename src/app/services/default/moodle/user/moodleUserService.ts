@@ -231,7 +231,7 @@ class MoodleUserService {
           customFieldValue = generalUtility.unixTime(params[p]).toString();
         }
         else
-          customFieldValue = params[p].trim();
+          customFieldValue = params[p].toString().trim();
 
         moodleParams[jsonPropertyName] = customFieldType;
         moodleParams[jsonPropertyValue] = customFieldValue;

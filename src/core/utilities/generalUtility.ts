@@ -236,7 +236,7 @@ class GeneralUtility {
    */
   public validateEmailFormat = (email) => {
     let isValid = false;
-    const reg = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+    const reg = /^(([^<>()[\]\.,;:ñÑ\s@\"]+(\.[^<>()[\]\.,;:ñÑ\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
     if (reg.test(email) == true) isValid = true;
 
     return isValid;
@@ -271,10 +271,39 @@ class GeneralUtility {
 
   public unixTimeOffset = (dateToChange: string, hours: number, endOfDay: boolean = false) => {
     let interval = 0;
-    if(endOfDay){
+    if (endOfDay) {
       interval = 60 * 60 * 24 - 1;
     }
     return Math.floor(Date.parse(dateToChange) / 1000.0) + hours * 3600 + interval
+  }
+
+  /*
+    * Método que normaliza el nombre de un usuario a formato Moodle-CampusDigital:
+    * todos los caracteres deben ir en minúsculas
+    * si existen espacios, se reemplazan por '_'
+    * si existen puntos, se eliminan
+  */
+  public normalizeUsername = (username: string) => {
+    return username.trim().toLowerCase().replace(/ /g, "_").replace(/\./g, "");
+  }
+
+  /*
+    * Método que normaliza el número de documento de identidad a formato Moodle-CampusDigital:
+    * si existen puntos, se eliminan
+  */
+
+  public normalizeDocumentID = (username: string) => {
+    return username.trim().replace(/\./g, "");
+  }
+
+    /*
+    * Método que normaliza el email de un usuario :
+    * todos los caracteres deben ir en minúsculas
+    * se eliminan los espacios iniciales o finales
+    * se eliminan los posibles saltos de línea
+  */
+  public normalizeEmail = (email: string) => {
+    return email.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
   }
 
   // public timeUnix = (date: string) => {
@@ -575,15 +604,15 @@ class GeneralUtility {
     }
   }
 
-public checkHexadecimalCode = (toCheck: string) => {
-  var re = /\b[0-9A-Fa-f]{8,24}/;
-  if(re.test(toCheck)){
-    return true;
+  public checkHexadecimalCode = (toCheck: string) => {
+    var re = /\b[0-9A-Fa-f]{8,24}/;
+    if (re.test(toCheck)) {
+      return true;
+    }
+    else {
+      return false;
+    }
   }
-  else{
-    return false;
-  }
-}
 
 }
 

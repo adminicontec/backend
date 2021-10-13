@@ -3,8 +3,8 @@
 
 // @add your types
 export interface IFileProcessResult{
-  ID?: number,     // Documento de identidad
-  status?: string,          // email de estudiante
+  row?: number,    // Nro de registro a cargar
+  status?: string, // status de carga
   messageProcess?: string,
   details?: object
 }
