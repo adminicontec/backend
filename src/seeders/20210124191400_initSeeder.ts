@@ -102,7 +102,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     let forum_location_ids = await this.addForumLocations()
 
     // @INFO: Agregando programaciones
-    let course_scheduling_ids = await this.addCourseScheduling()
+    // let course_scheduling_ids = await this.addCourseScheduling()
 
     return false; // Always return true | false
   }
