@@ -102,7 +102,7 @@ class TeacherService {
 
               //#region  result after processing record
               processResult = {
-                ID: index,
+                row: index,
                 status: 'OK',
                 messageProcess: '',
                 details: {
@@ -118,7 +118,7 @@ class TeacherService {
               //console.log("Error at line: " + index);
 
               processResult = {
-                ID: index,
+                row: index,
                 status: 'ERROR',
                 messageProcess: 'DocumentID is empty',
                 details: {

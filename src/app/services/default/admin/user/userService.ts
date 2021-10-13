@@ -109,6 +109,8 @@ class UserService {
    */
   public insertOrUpdate = async (params: IUser) => {
 
+    const defaultCountryCode= '6058e1f00520a25777a0eb4d';
+    const defaultCountryISO = 'CO';
     try {
 
       // TODO: Que va en los siguientes campos
@@ -159,10 +161,6 @@ class UserService {
           const exist = await User.findOne({ name: params.username, _id: { $ne: params.id } })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}` } } })
         }
-        // else if (params.email) {
-        //   const exist = await User.findOne({ email: params.email, _id: { $ne: params.id } })
-        //   if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: params.email } } })
-        // }
 
         // @INFO: Si se proporciona la contraseña actual la verificamos para establecer si es correcta
         if (params.current_password) {
@@ -191,18 +189,30 @@ class UserService {
         if (params.profile.country) {
           // Si el valor de Country no es hexadecimal, se consulta para modificar el Profile y UserMoodle
           if (!generalUtility.checkHexadecimalCode(params.profile.country)) {
-            console.log("nombre de país:")
+            console.log("nombre de país: " + params.profile.country)
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
-            params.profile.country = respCountry.country._id;
-            countryCode = respCountry.country.iso2;
+            if (respCountry.status != 'error') {
+              params.profile.country = respCountry.country._id;
+              countryCode = respCountry.country.iso2;
+            }
+            else {
+              // valores predeterminados
+              params.profile.country = defaultCountryCode;
+              countryCode = defaultCountryISO;
+            }
           }
           else {
-            console.log("código de país:" + params.profile.country)
+            console.log("código de país: " + params.profile.country)
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'id', value: params.profile.country.toString() }] })
             if (respCountry.status != 'error') {
               console.log(respCountry)
               params.profile.country = respCountry.country._id;
               countryCode = respCountry.country.iso2;
+            }
+            else {
+              // valores predeterminados
+              params.profile.country = defaultCountryCode;
+              countryCode = defaultCountryISO;
             }
           }
         }
@@ -212,77 +222,80 @@ class UserService {
 
         console.log("Ready to update");
         console.log(params)
-        const response: any = await User.findByIdAndUpdate(params.id, params, {
-          useFindAndModify: false,
-          new: true,
-          lean: true,
-        })
-        await Role.populate(response, { path: 'roles', select: 'id name description' })
-        await Country.populate(response, { path: 'profile.country', select: 'id name iso2 iso3' })
+        try {
+          const response: any = await User.findByIdAndUpdate(params.id, params, {
+            useFindAndModify: false,
+            new: true,
+            lean: true,
+          });
 
-        if (response.profile) {
-          response.profile.avatarImageUrl = this.avatarUrl(response)
-          response.profile.avatar = response.profile.avatarImageUrl
-        }
+          await Role.populate(response, { path: 'roles', select: 'id name description' })
+          await Country.populate(response, { path: 'profile.country', select: 'id name iso2 iso3' })
+          if (response.profile) {
+            response.profile.avatarImageUrl = this.avatarUrl(response)
+            response.profile.avatar = response.profile.avatarImageUrl
+          }
 
-        console.log("Current data from user:" + params.id);
-        console.log("check if " + response.email + " must be updated." + "["+ sendWelcomEmail +"]");
+          // update usario existente en MOODLE
+          console.log("Moodle: Actualizando Usuario --> " + response.moodle_id);
 
-        // update usario existente en MOODLE
-        console.log("Moodle: Actualizando Usuario --> " + response.moodle_id);
+          var paramsMoodleUser: IMoodleUser = {
+            id: response.moodle_id,
+            city: params.profile.city,
+            country: countryCode,
+            documentNumber: params.profile.doc_number,
+            email: params.email,
+            username: params.username,
+            password: params.password,
+            phonenumber: params.phoneNumber,
+            firstname: params.profile.first_name,
+            lastname: params.profile.last_name,
+            fecha_nacimiento: params.profile.birthDate,
+            genero: params.profile.genre,
+            email_2: params.profile.alternativeEmail,
+            origen: params.profile.origen,
+            regional: params.profile.regional,
+            cargo: params.profile.currentPosition,
+            profesion: params.profile.carreer,
+            nivel_educativo: params.profile.educationalLevel,
+            empresa: params.profile.company,
+          }
 
-        var paramsMoodleUser: IMoodleUser = {
-          id: response.moodle_id,
-          city: params.profile.city,
-          country: countryCode,
-          documentNumber: params.profile.doc_number,
-          email: params.email,
-          username: params.username,
-          password: params.password,
-          phonenumber: params.phoneNumber,
-          firstname: params.profile.first_name,
-          lastname: params.profile.last_name,
-          fecha_nacimiento: params.profile.birthDate,
-          genero: params.profile.genre,
-          email_2: params.profile.alternativeEmail,
-          origen: params.profile.origen,
-          regional: params.profile.regional,
-          cargo: params.profile.currentPosition,
-          profesion: params.profile.carreer,
-          nivel_educativo: params.profile.educationalLevel,
-          empresa: params.profile.company,
-        }
-
-        let respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
-        console.log(respMoodleUpdate);
+          let respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
+          console.log("------> update from Moodle: ");
+          console.log(respMoodleUpdate);
 
 
-        // @INFO: Se envia email de bienvenida
-        if (params.sendEmail === true && sendWelcomEmail === true) {
-          console.log("Sending email to " + paramsMoodleUser.email)
-          await this.sendRegisterUserEmail([paramsMoodleUser.email], {
-            mailer: customs['mailer'],
-            fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
-            first_name: paramsMoodleUser.firstname,
-            last_name: paramsMoodleUser.lastname,
-            username: paramsMoodleUser.username,
-            password: paramsMoodleUser.password,
-            notification_source: `user_register_${response._id}`,
-            amount_notifications: 1,
-            sendWelcomEmail
+
+          // @INFO: Se envia email de bienvenida
+          if (params.sendEmail === true && sendWelcomEmail === true) {
+            console.log("Sending email to " + paramsMoodleUser.email)
+            await this.sendRegisterUserEmail([paramsMoodleUser.email], {
+              mailer: customs['mailer'],
+              fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
+              first_name: paramsMoodleUser.firstname,
+              last_name: paramsMoodleUser.lastname,
+              username: paramsMoodleUser.username,
+              password: paramsMoodleUser.password,
+              notification_source: `user_register_${response._id}`,
+              amount_notifications: 1,
+              sendWelcomEmail
+            })
+          }
+
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              user: {
+                ...response,
+              }
+            }
           })
         }
-
-
-
-
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            user: {
-              ...response,
-            }
-          }
-        })
+        catch (e) {
+          console.log("error on update");
+          console.log(e);
+          return responseUtility.buildResponseFailed('json')
+        }
 
       }
       else {
@@ -303,6 +316,10 @@ class UserService {
           let userParams = params;
           if (params.profile.country) {
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
+
+            console.log("Resultados de País:");
+            console.log(respCountry);
+
             userParams.profile.country = respCountry.country._id;
             countryCode = respCountry.country.iso2;
           }

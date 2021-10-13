@@ -535,7 +535,7 @@ class EnrollmentService {
   public massive = async (params: IMassiveEnrollment) => {
 
     let processResult: IFileProcessResult;
-    let processResultLog = [];
+    let errors = [];
 
     console.log(">>>>>>>>>>> Begin Massive Enrollment")
     let userEnrollmentResponse = [];
@@ -544,6 +544,7 @@ class EnrollmentService {
     let content = params.contentFile;
 
     let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0, 100);
+
     if (dataFromWorksheet != null) {
       console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
@@ -560,12 +561,14 @@ class EnrollmentService {
         }
 
         //#region   Revisión Documento de identidad para Casos especiales
-        if (element['Documento de Identidad']) {
-          var newUserID = element['Documento de Identidad'].toLowerCase().replace(/ /g, "_").replace(/\./g, "");
+        if (element['Documento de Identidad'])
+        {
+
+          var newUserID =  generalUtility.normalizeUsername(element['Documento de Identidad']);
           console.log(">>> Insert Username " + newUserID);
           let checkEmail = element['Correo Electrónico'];
           if (checkEmail != null) {
-            checkEmail = checkEmail.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
+            checkEmail = generalUtility.normalizeEmail(checkEmail);
 
             if (generalUtility.validateEmailFormat(checkEmail)) {
               singleUserEnrollmentContent =
@@ -598,7 +601,7 @@ class EnrollmentService {
               const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
               if (resp.status == 'success') {
                 processResult = {
-                  ID: index,
+                  row: index,
                   status: 'OK',
                   messageProcess: '',
                   details: {
@@ -609,7 +612,7 @@ class EnrollmentService {
               }
               else {
                 processResult = {
-                  ID: index,
+                  row: index,
                   status: 'ERROR',
                   messageProcess: "resp.enrollment",
                   details: {
@@ -624,66 +627,73 @@ class EnrollmentService {
             }
             else {
               processResult = {
-                ID: index,
+                row: index,
                 status: 'ERROR',
-                messageProcess: 'Campo email no tiene formato adecuado.',
-                details: {
-                  user: 'Empty',
-                  fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-                }
+                messageProcess: 'Campo email no tiene formato adecuado: ' + checkEmail,
               }
             }
           }
           else {
             // error por email vacío
             processResult = {
-              ID: index,
+              row: index,
               status: 'ERROR',
               messageProcess: 'Campo email está vacío.',
               details: {
-                user: 'Empty',
-                fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                user: 'Empty'
               }
             }
           }
           console.log("<<<<<<<<< Resultado individual >>>>>>>>>>>>>>>>>>><<<<");
           console.log(processResult);
-          processResultLog.push(processResult);
+          errors.push(processResult);
         }
         else {
           // Log the Error
           processResult = {
-            ID: index,
+            row: index,
             status: 'ERROR',
             messageProcess: 'El campo Documento de Identidad está vacío.',
-            details: {
-              user: 'Empty',
-              fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-            }
           }
-          //console.log(processResult)
-          processResultLog.push(processResult);
-
+          errors.push(processResult);
         }
         index++;
         //#endregion
       }
-      console.log("--------------------------------------------------------");
-      console.log("Resultados de carga de archivo:");
-      //console.log(processResultLog);
-      console.log("--------------------------------------------------------");
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          ...processResultLog
-        }
-      })
 
     }
     else {
-      // Return Error
-      // console.log("Worksheet not found");
+      errors.push(
+        {
+          row: 0,
+          status: 'ERROR',
+          messageProcess: 'La hoja con nombre "Estudiantes" no existe en el archivo cargado',
+        }
+      );
     }
+
+    console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
+    console.log("         Resultados de carga de archivo:");
+    console.log(errors)
+    console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
+
+    let extError = errors.filter(e => e.status === 'ERROR');
+    let extSuccess = errors.filter(e => e.status === 'OK');
+
+    if(extError.length > 0){
+      return responseUtility.buildResponseFailed('json', null, {
+        additional_parameters: {
+          total_created: extSuccess.length,
+          errors: extError
+        }
+      })
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        successfully: extSuccess
+      }
+    })
   }
 
 }
