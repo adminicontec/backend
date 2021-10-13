@@ -93,7 +93,8 @@ class BannerDataService {
           ],
           total_register: (paging) ? await Banner.find(where).count() : 0,
           pageNumber: pageNumber,
-          nPerPage: nPerPage
+          nPerPage: nPerPage,
+          test: 'test'
         }
       })
 
