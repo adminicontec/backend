@@ -384,7 +384,8 @@ class EnrollmentService {
             // Si existe la matrícula en CV, intentar matricular en Moodle
             console.log("[  Campus  ] Matrícula ya existe: ");
             console.log(exist);
-            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
+            return responseUtility.buildResponseFailed('json', null,
+              { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
           }
           else {
             // Creación exitosa de Enrollment en CV
@@ -561,10 +562,9 @@ class EnrollmentService {
         }
 
         //#region   Revisión Documento de identidad para Casos especiales
-        if (element['Documento de Identidad'])
-        {
+        if (element['Documento de Identidad']) {
 
-          var newUserID =  generalUtility.normalizeUsername(element['Documento de Identidad']);
+          var newUserID = generalUtility.normalizeUsername(element['Documento de Identidad']);
           console.log(">>> Insert Username " + newUserID);
           let checkEmail = element['Correo Electrónico'];
           if (checkEmail != null) {
@@ -598,8 +598,8 @@ class EnrollmentService {
                 courseScheduling: params.courseScheduling,
                 sendEmail: params.sendEmail
               }
-              const resp = await this.insertOrUpdate(singleUserEnrollmentContent);
-              if (resp.status == 'success') {
+              const respEnrollment: any = await this.insertOrUpdate(singleUserEnrollmentContent);
+              if (respEnrollment.status == 'success') {
                 processResult = {
                   row: index,
                   status: 'OK',
@@ -611,19 +611,32 @@ class EnrollmentService {
                 }
               }
               else {
-                processResult = {
-                  row: index,
-                  status: 'ERROR',
-                  messageProcess: "resp.enrollment",
-                  details: {
-                    user: singleUserEnrollmentContent.user,
-                    fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                if (respEnrollment.status_code === 'enrollment_insertOrUpdate_already_exists') {
+                  processResult = {
+                    row: index,
+                    status: 'WARN',
+                    messageProcess: "Ya existe una matricula para el estudiante " + singleUserEnrollmentContent.user,
+                    details: {
+                      user: singleUserEnrollmentContent.user,
+                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                    }
+                  }
+
+                }
+                else {
+                  processResult = {
+                    row: index,
+                    status: 'ERROR',
+                    messageProcess: "Error al matricular al estudiante ",
+                    details: {
+                      user: singleUserEnrollmentContent.user,
+                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                    }
                   }
                 }
-
               }
               // build process Response
-              userEnrollmentResponse.push(resp);
+              userEnrollmentResponse.push(respEnrollment);
             }
             else {
               processResult = {
@@ -680,7 +693,7 @@ class EnrollmentService {
     let extError = errors.filter(e => e.status === 'ERROR');
     let extSuccess = errors.filter(e => e.status === 'OK');
 
-    if(extError.length > 0){
+    if (extError.length > 0) {
       return responseUtility.buildResponseFailed('json', null, {
         additional_parameters: {
           total_created: extSuccess.length,
