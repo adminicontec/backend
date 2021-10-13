@@ -464,6 +464,7 @@ class CourseSchedulingService {
         course_name: courseScheduling.program.name,
         course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        observations: courseScheduling.observations,
         type: 'student',
         notification_source: `course_start_${enrolled.user._id}_${courseScheduling._id}`,
         amount_notifications: 1
@@ -492,6 +493,7 @@ class CourseSchedulingService {
           program: {
             _id: courseScheduling.program._id,
             name: courseScheduling.program.name,
+            observations: courseScheduling.observations,
           },
           service: {
             service_id: courseScheduling.metadata.service_id,

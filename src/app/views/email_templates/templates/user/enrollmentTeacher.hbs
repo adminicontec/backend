@@ -23,6 +23,10 @@
       </div>
     {{/each}}
 
+    {{#if params.program.observations}}
+    <div>{{params.program.observations}}</div>
+    {{/if}}
+
     Lo invitamos a ingresar por la siguiente dirección:
     <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
 

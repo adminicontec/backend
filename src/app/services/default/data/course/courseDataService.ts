@@ -77,7 +77,7 @@ class CourseDataService {
 
           const today = moment()
           if (register.enrollmentDeadline) {
-            const enrollmentDeadline = moment(register.enrollmentDeadline)
+            const enrollmentDeadline = moment(register.enrollmentDeadline.toISOString().replace('T00:00:00.000Z', ''))
             if (today.format('YYYY-MM-DD') <= enrollmentDeadline.format('YYYY-MM-DD')) {
               register['enrollment_enabled'] = true
             }
