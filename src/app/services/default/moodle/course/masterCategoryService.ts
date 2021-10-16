@@ -120,8 +120,14 @@ class MasterCategoryService {
       let responseCategories = [];
       let singleCategory = {
         id: 0,
-        name: "",
-        description: ""
+        name: '',
+        idnumber:'',
+        parent: 0,
+        description: '',
+        subcat: {
+          id:0,
+          name:''
+        }
       }
 
       // Params for Moodle, fetch the complete list. Filtering only from results.
@@ -129,8 +135,6 @@ class MasterCategoryService {
         wstoken: moodle_setup.wstoken,
         wsfunction: moodle_setup.services.courses.getCategory,
         moodlewsrestformat: moodle_setup.restformat
-        // "criteria[0][key]": "idnumber",
-        // "criteria[0][value]": "master",
       };
 
 
@@ -157,23 +161,29 @@ class MasterCategoryService {
         )
       }
 
-      //console.log(respMoodle);
+      /// Solo Idnumber que tienen el formato R# y R#x, ejemplo:
+      // R1, R1E, R1P, R1V
+      const regexMain = new RegExp(/(^R[0-9]$)/);
 
-      let masterCategory = respMoodle; //.filter(m => m.idnumber === "master")
-
-      const regex = new RegExp('/([R0-9])\\d');
       if (respMoodle != null) {
-        let childCategory = respMoodle.filter(c => c.idnumber.match(regex));
-        console.log(childCategory);
+        let mainCategory = respMoodle.filter(c => c.idnumber.match(regexMain));
 
-       /* childCategory.forEach(element => {
+        mainCategory.forEach(element => {
+
+          // let index =  element.idnumber.replace('R', '');
+          // const regexSub = new RegExp(/(R['0-9'][EPV]*)/);
+
+
           singleCategory = {
             id: element.id,
             name: element.name,
-            description: element.description,
+            idnumber: element.idnumber,
+            parent: element.parent,
+            description: element.description.replace( /(<([^>]+)>)/ig, ''),
+            subcat:null
           }
           responseCategories.push(singleCategory);
-        })*/
+        })
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
