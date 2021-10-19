@@ -37,6 +37,8 @@ class EnrolledCourseService {
     let registers = []
     let steps = []
 
+    let added = {}
+
     try {
       steps.push('1')
       steps.push(params.user)
@@ -52,11 +54,14 @@ class EnrolledCourseService {
 
       enrolled.map((e) => {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
-          registers.push({
-            _id: e.course_scheduling.program.moodle_id,
-            name: e.course_scheduling.program.name,
-            startDate: e.course_scheduling.startDate
-          })
+          if (!added[e.course_scheduling.program.moodle_id]) {
+            registers.push({
+              _id: e.course_scheduling.program.moodle_id,
+              name: e.course_scheduling.program.name,
+              startDate: e.course_scheduling.startDate
+            })
+            added[e.course_scheduling.program.moodle_id] = e.course_scheduling.program.moodle_id
+          }
         }
       })
       steps.push('3')
@@ -73,11 +78,14 @@ class EnrolledCourseService {
 
       courses.map((e) => {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
-          registers.push({
-            _id: e.course_scheduling.program.moodle_id,
-            name: e.course_scheduling.program.name,
-            startDate: e.course_scheduling.startDate
-          })
+          if (!added[e.course_scheduling.program.moodle_id]) {
+            registers.push({
+              _id: e.course_scheduling.program.moodle_id,
+              name: e.course_scheduling.program.name,
+              startDate: e.course_scheduling.startDate
+            })
+            added[e.course_scheduling.program.moodle_id] = e.course_scheduling.program.moodle_id
+          }
         }
       })
       steps.push(5)
