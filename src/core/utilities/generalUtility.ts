@@ -284,7 +284,7 @@ class GeneralUtility {
     * si existen puntos, se eliminan
   */
   public normalizeUsername = (username: string) => {
-    return username.trim().toLowerCase().replace(/ /g, "_").replace(/\./g, "");
+    return username.trim().toLowerCase().replace(/ /g, "_").replace(/\./g, "").replace(/\,/g, "");
   }
 
   /*
