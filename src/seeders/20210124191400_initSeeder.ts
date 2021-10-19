@@ -50,59 +50,59 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // @seeder_logic Add seeder logic
 
     // @INFO: Agregando ciudades
-    let country_ids = await this.addCountries()
+    // let country_ids = await this.addCountries()
 
-    // @INFO: Agregando homes
-    let home_ids = await this.addHomes()
+    // // @INFO: Agregando homes
+    // let home_ids = await this.addHomes()
 
-    // @INFO: Agregando modulos y permisos
-    let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
+    // // @INFO: Agregando modulos y permisos
+    // let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
 
-    // @INFO: Agregando roles
-    let role_ids = await this.addRoles(module_permission_ids, home_ids)
+    // // @INFO: Agregando roles
+    // let role_ids = await this.addRoles(module_permission_ids, home_ids)
 
-    // @INFO: Agregando usuarios
-    let user_ids = await this.addUsers(role_ids)
+    // // @INFO: Agregando usuarios
+    // let user_ids = await this.addUsers(role_ids)
 
-    // @INFO: Agregando tipos de publicaciones
-    let post_type_ids = await this.addPostTypes()
+    // // @INFO: Agregando tipos de publicaciones
+    // let post_type_ids = await this.addPostTypes()
 
-    // @INFO: Agregando tipos de ubicaciones
-    let post_location_ids = await this.addPostLocations()
+    // // @INFO: Agregando tipos de ubicaciones
+    // let post_location_ids = await this.addPostLocations()
 
-    // @INFO: Agregando modos de cursos
-    let course_mode_ids = await this.addCourseModesCategories()
+    // // @INFO: Agregando modos de cursos
+    // let course_mode_ids = await this.addCourseModesCategories()
 
-    // @INFO: Agregando regionales
-    let regional_ids = await this.addRegionals()
+    // // @INFO: Agregando regionales
+    // let regional_ids = await this.addRegionals()
 
-    // @INFO: Agregando estados de programación
-    let scheduling_status_ids = await this.addCourseSchedulingStatuses()
+    // // @INFO: Agregando estados de programación
+    // let scheduling_status_ids = await this.addCourseSchedulingStatuses()
 
-    // @INFO: Agregando tipos de programación
-    let scheduling_type_ids = await this.addCourseSchedulingTypes()
+    // // @INFO: Agregando tipos de programación
+    // let scheduling_type_ids = await this.addCourseSchedulingTypes()
 
-    // @INFO: Agregando modos de programación
-    let scheduling_mode_ids = await this.addCourseSchedulingModes()
+    // // @INFO: Agregando modos de programación
+    // let scheduling_mode_ids = await this.addCourseSchedulingModes()
 
-    // @INFO: Agregando categorias de recursos academicos
-    let academic_resource_category_ids = await this.addAcademicResourceCategories()
+    // // @INFO: Agregando categorias de recursos academicos
+    // let academic_resource_category_ids = await this.addAcademicResourceCategories()
 
-    // @INFO: Agregando categorias de recursos academicos
-    let academic_resource_config_category_ids = await this.addAcademicResourceConfigCategories()
+    // // @INFO: Agregando categorias de recursos academicos
+    // let academic_resource_config_category_ids = await this.addAcademicResourceConfigCategories()
 
-    // @INFO: Agregando categorias de preguntas
-    let question_category_ids = await this.addQuestionCategories()
+    // // @INFO: Agregando categorias de preguntas
+    // let question_category_ids = await this.addQuestionCategories()
 
-    // TODO: Agregar PostCategories
+    // // TODO: Agregar PostCategories
 
-    // TODO: Agregar entornos
+    // // TODO: Agregar entornos
 
-    // @INFO: Agregando tipos de ubicaciones
-    let forum_location_ids = await this.addForumLocations()
+    // // @INFO: Agregando tipos de ubicaciones
+    // let forum_location_ids = await this.addForumLocations()
 
-    // @INFO: Agregando programaciones
-    // let course_scheduling_ids = await this.addCourseScheduling()
+    // // @INFO: Agregando programaciones
+    // // let course_scheduling_ids = await this.addCourseScheduling()
 
     return false; // Always return true | false
   }
@@ -1039,26 +1039,26 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
   private addRegionals = async () => {
 
     let regional_ids = {}
-    const regionals = [
-      {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19, short_key: 'AN'},
-      {name: 'Sur Occidente', moodle_id: 20, short_key: 'SO'},
-      {name: 'Oriente', moodle_id: 21, short_key: 'OR'},
-      {name: 'Centro y Sur Oriente', moodle_id: 22, short_key: 'CS'},
-      {name: 'Caribe', moodle_id: 13, short_key: 'CA'},
-      {name: 'Internacional', moodle_id: 23, short_key: 'IN'},
-    ]
-    for await (const regional of regionals) {
-      const exists: any = await regionalService.findBy({
-        query: QueryValues.ONE,
-        where: [{field: 'name', value: regional.name}]
-      })
-      if (exists.status === 'success') regional['id'] = exists.regional._id
+    // const regionals = [
+    //   {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19, short_key: 'AN'},
+    //   {name: 'Sur Occidente', moodle_id: 20, short_key: 'SO'},
+    //   {name: 'Oriente', moodle_id: 21, short_key: 'OR'},
+    //   {name: 'Centro y Sur Oriente', moodle_id: 22, short_key: 'CS'},
+    //   {name: 'Caribe', moodle_id: 13, short_key: 'CA'},
+    //   {name: 'Internacional', moodle_id: 23, short_key: 'IN'},
+    // ]
+    // for await (const regional of regionals) {
+    //   const exists: any = await regionalService.findBy({
+    //     query: QueryValues.ONE,
+    //     where: [{field: 'name', value: regional.name}]
+    //   })
+    //   if (exists.status === 'success') regional['id'] = exists.regional._id
 
-      const response:any = await regionalService.insertOrUpdate(regional)
-      if (response.status === 'success') {
-        regional_ids[regional.name] = response.regional._id
-      }
-    }
+    //   const response:any = await regionalService.insertOrUpdate(regional)
+    //   if (response.status === 'success') {
+    //     regional_ids[regional.name] = response.regional._id
+    //   }
+    // }
     return regional_ids
   }
 

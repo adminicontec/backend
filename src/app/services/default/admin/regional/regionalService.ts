@@ -41,7 +41,7 @@ class RegionalService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id name moodle_id short_key'
       if (params.query === QueryValues.ALL) {
         const registers = await Regional.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -86,6 +86,8 @@ class RegionalService {
             regional: {
               _id: response._id,
               name: response.name,
+              moodle_id: response.moodle_id,
+              short_key: response.short_key
             }
           }
         })
@@ -100,7 +102,9 @@ class RegionalService {
           additional_parameters: {
             regional: {
               _id: response._id,
-              name: response.name
+              name: response.name,
+              moodle_id: response.moodle_id,
+              short_key: response.short_key
             }
           }
         })
@@ -141,7 +145,7 @@ class RegionalService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name'
+    let select = 'id name moodle_id short_key'
     if (filters.select) {
       select = filters.select
     }

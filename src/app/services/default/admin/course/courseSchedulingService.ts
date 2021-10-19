@@ -145,23 +145,26 @@ class CourseSchedulingService {
    */
   public insertOrUpdate = async (params: ICourseScheduling) => {
 
+    let steps = [];
     try {
       const user: any = await User.findOne({ _id: params.user }).select('id short_key')
-
+      steps.push('1')
       if (typeof params.in_design === "string") {
         if (params.in_design === "0") params.in_design = false
         if (params.in_design === "1") params.in_design = true
       }
-
+      steps.push('2')
       if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
         params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode)
       }
+      steps.push('3')
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
         params.program = await this.saveLocalProgram(params.program)
       }
+      steps.push('4')
 
       if (params.city) {
         const isObjectID = await ObjectID.isValid(params.city);
@@ -176,9 +179,11 @@ class CourseSchedulingService {
           }
         }
       }
-
+      steps.push('5')
       if (params.country === '') delete params.country
 
+      steps.push('6')
+      steps.push(params)
       if (params.id) {
         const register: any = await CourseScheduling.findOne({ _id: params.id })
         .populate({ path: 'schedulingStatus', select: 'id name' })
@@ -274,7 +279,7 @@ class CourseSchedulingService {
         })
 
       } else {
-
+        steps.push('7')
         if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
           let hasParamsCost = false
           if (params.priceCOP) hasParamsCost = true
@@ -285,29 +290,32 @@ class CourseSchedulingService {
           params.priceCOP = 0
           params.priceUSD = 0
         }
+        steps.push('8')
         if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         let service_id = ''
-
+        steps.push('9')
         if (user.short_key) {
           service_id += `${user.short_key}`
         }
-
+        steps.push('10')
         if (params.regional) {
           const regional = await Regional.findOne({ _id: params.regional }).select('id short_key')
           if (regional && regional.short_key) {
             service_id += `${regional.short_key}`
           }
         }
-
+        steps.push('11')
         const currentDate = moment()
         service_id += `${currentDate.format('YYMMDD')}`
-
+        steps.push('12')
 
         let countRegisters = await CourseScheduling.count()
         countRegisters += 1
-
+        steps.push('13')
         service_id += `${generalUtility.formatNumberWithZero(countRegisters, 4)}`
+        steps.push('14')
+        steps.push(service_id)
 
         params.metadata = {
           user: params.user,
@@ -315,8 +323,12 @@ class CourseSchedulingService {
           service_id,
           year: moment().format('YYYY')
         }
+        steps.push('15')
+        steps.push(params)
 
         const { _id } = await CourseScheduling.create(params)
+        steps.push('16')
+        steps.push(_id)
         const response: any = await CourseScheduling.findOne({ _id })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'modular', select: 'id name' })
@@ -330,20 +342,26 @@ class CourseSchedulingService {
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
+        steps.push('17')
+        steps.push(response)
 
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
-
+        steps.push('18')
         let regional = null;
         if (response) {
+          steps.push('19')
           if (response.regional && response.regional.moodle_id) {
+            steps.push('20-1')
             regional = response.regional.moodle_id;
           } else if (response.regional_transversal) {
+            steps.push('20-2')
             regional = response.regional_transversal;
           }
         }
-
-        const moodleResponse: any = await moodleCourseService.createFromMaster({
+        steps.push(regional)
+        steps.push('21')
+        const paramsMoodle = {
           "shortName": `${response.program.code}_${service_id}`,
           "fullName": `${response.program.name}`,
           "masterId": `${response.program.moodle_id}`,
@@ -353,41 +371,58 @@ class CourseSchedulingService {
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
           "country": `${response.country.name}`
-        })
+        }
+        steps.push(paramsMoodle)
 
+        const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
+        steps.push('22')
+        steps.push(moodleResponse)
         if (moodleResponse.status === 'success') {
+          steps.push('23')
           if (moodleResponse.course && moodleResponse.course.id) {
+            steps.push('24')
             await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
               useFindAndModify: false,
               new: true,
               lean: true,
             })
-
+            steps.push('25')
             if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+              steps.push('26')
               await this.checkEnrollmentUsers(response)
               await this.checkEnrollmentTeachers(response)
               await this.serviceSchedulingNotification(response)
             }
           } else {
+            steps.push('24-b')
             await this.delete({ id: _id })
-            return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
+            return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
+              steps
+            } })
           }
         } else {
           await this.delete({ id: _id })
-          return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed' })
+          return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
+            steps
+          } })
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: {
               ...response,
-            }
+            },
+            steps
           }
         })
       }
 
     } catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      steps.push('25')
+      steps.push(e.getMessage())
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
+        steps
+      }})
     }
   }
 
