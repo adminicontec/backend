@@ -374,37 +374,47 @@ class CourseSchedulingService {
         }
         steps.push(paramsMoodle)
 
-        const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
-        steps.push('22')
-        steps.push(moodleResponse)
-        if (moodleResponse.status === 'success') {
-          steps.push('23')
-          if (moodleResponse.course && moodleResponse.course.id) {
-            steps.push('24')
-            await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
-              useFindAndModify: false,
-              new: true,
-              lean: true,
-            })
-            steps.push('25')
-            if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-              steps.push('26')
-              await this.checkEnrollmentUsers(response)
-              await this.checkEnrollmentTeachers(response)
-              await this.serviceSchedulingNotification(response)
+        if (!params.disabledCreateMasterMoodle) {
+          steps.push('22')
+          const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
+          steps.push(moodleResponse)
+          if (moodleResponse.status === 'success') {
+            steps.push('23')
+            if (moodleResponse.course && moodleResponse.course.id) {
+              steps.push('24')
+              await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
+                useFindAndModify: false,
+                new: true,
+                lean: true,
+              })
+              steps.push('25')
+              if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+                steps.push('26')
+                await this.checkEnrollmentUsers(response)
+                await this.checkEnrollmentTeachers(response)
+                await this.serviceSchedulingNotification(response)
+              }
+            } else {
+              steps.push('24-b')
+              await this.delete({ id: _id })
+              return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
+                steps
+              } })
             }
           } else {
-            steps.push('24-b')
             await this.delete({ id: _id })
             return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
               steps
             } })
           }
         } else {
-          await this.delete({ id: _id })
-          return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-            steps
-          } })
+          steps.push('22-b')
+          if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
+            steps.push('26')
+            await this.checkEnrollmentUsers(response)
+            await this.checkEnrollmentTeachers(response)
+            await this.serviceSchedulingNotification(response)
+          }
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
