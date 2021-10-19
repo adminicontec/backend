@@ -10,7 +10,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Enrollment} from '@scnode_app/models'
+import {CourseSchedulingDetails, Enrollment, User} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -35,7 +35,11 @@ class EnrolledCourseService {
    */
    public fetchEnrollmentByUser = async (params: IFetchEnrollementByUser) => {
     let registers = []
+    let steps = []
+
     try {
+      steps.push('1')
+      steps.push(params.user)
       const enrolled = await Enrollment.find({
         user: params.user
       }).select('id course_scheduling')
@@ -43,24 +47,54 @@ class EnrolledCourseService {
         {path: 'program', select: 'id name code moodle_id'}
       ] })
       .lean()
+      steps.push('2')
+      steps.push(enrolled)
 
       enrolled.map((e) => {
-        registers.push({
-          _id: e.course_scheduling.program.moodle_id,
-          name: e.course_scheduling.program.name,
-          startDate: e.course_scheduling.startDate
-        })
+        if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
+          registers.push({
+            _id: e.course_scheduling.program.moodle_id,
+            name: e.course_scheduling.program.name,
+            startDate: e.course_scheduling.startDate
+          })
+        }
       })
+      steps.push('3')
+
+      const courses = await CourseSchedulingDetails.find({
+        teacher: params.user
+      }).select('id course_scheduling')
+      .populate({ path: 'course_scheduling', select: 'id program startDate', populate: [
+        {path: 'program', select: 'id name code moodle_id'}
+      ] })
+      .lean()
+      steps.push('4')
+      steps.push(courses)
+
+      courses.map((e) => {
+        if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
+          registers.push({
+            _id: e.course_scheduling.program.moodle_id,
+            name: e.course_scheduling.program.name,
+            startDate: e.course_scheduling.startDate
+          })
+        }
+      })
+      steps.push(5)
 
       registers.sort((a, b) => moment.utc(b.startDate).diff(moment.utc(a.startDate)))
-    } catch (e) { }
+    } catch (e) {
+      steps.push('error')
+    }
+    steps.push('6')
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         current_courses: [
           ...registers
         ],
-        history_courses: []
+        history_courses: [],
+        steps
       }
     })
   }
