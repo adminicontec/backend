@@ -8,6 +8,7 @@ export interface ICourseSchedulingSession {
 }
 
 export interface ICourseScheduling {
+  disabledCreateMasterMoodle?: boolean
   metadata?: {
     user: string // Identificador del usuario que genera el registro
     date: string // Fecha del servicio
