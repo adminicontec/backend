@@ -58,6 +58,7 @@ class CourseSchedulingDataService {
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .select(select)
         .lean()
+        // console.log('register', register)
 
       if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
 
@@ -93,12 +94,26 @@ class CourseSchedulingDataService {
           date = moment.utc(params.sessionStartDate.date)
         }
         if (params.sessionStartDate.direction) direction = params.sessionStartDate.direction
-        sessions_where['sessions.startDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
+        if (register.schedulingMode) {
+          if (register.schedulingMode.name === 'Virtual') {
+            sessions_where['$and'] = [
+              {$or: [
+                {'startDate': {[`$gte`]: date.format('YYYY-MM-DD')}},
+                {$and: [
+                  {'startDate': {[`$lte`]: date.format('YYYY-MM-DD')}},
+                  {'endDate': {[`$gte`]: date.format('YYYY-MM-DD')}},
+                ]}
+              ]}
+            ]
+          } else {
+            sessions_where['sessions.startDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
 
-        selectDetails = selectDetails.split(' ').map((string) => {
-          if (string === 'sessions') string = 'sessions.$'
-          return string
-        }).join(' ')
+            selectDetails = selectDetails.split(' ').map((string) => {
+              if (string === 'sessions') string = 'sessions.$'
+              return string
+            }).join(' ')
+          }
+        }
       }
 
       const detailSessions = await CourseSchedulingDetails.find(sessions_where)
