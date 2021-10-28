@@ -185,6 +185,7 @@ class CourseSchedulingService {
       steps.push('6')
       steps.push(params)
       if (params.id) {
+        let visibleAtMoodle = 0;
         const register: any = await CourseScheduling.findOne({ _id: params.id })
         .populate({ path: 'schedulingStatus', select: 'id name' })
         .lean()
@@ -229,14 +230,17 @@ class CourseSchedulingService {
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
             await this.serviceSchedulingNotification(response)
+            visibleAtMoodle = 1;
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
             if (changes.length > 0) {
               await this.sendServiceSchedulingUpdated(response, changes);
             }
+            visibleAtMoodle = 1;
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
             await this.serviceSchedulingCancelled(response)
+            visibleAtMoodle = 1;
           }
         }
 
@@ -260,7 +264,8 @@ class CourseSchedulingService {
           "endDate": `${response.endDate}`,
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
-          "country": `${response.country.name}`
+          "country": `${response.country.name}`,
+          "visible": visibleAtMoodle
         });
 
         if (moodleResponse.status === 'success') {
