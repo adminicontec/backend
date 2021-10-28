@@ -1,6 +1,8 @@
 // @import types
 // @end
 
+import { bool } from "aws-sdk/clients/signer";
+
 // @add your types
 export interface IMoodleCourseQuery {
   courseID?: string,       // ID de curso (listado de cursos en Moodle)
@@ -32,5 +34,6 @@ export interface IMoodleCourse{
   customClassHours?: string,
   city?: string,
   country?: string,
+  visible?:number
 }
 //@end
