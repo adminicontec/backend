@@ -61,7 +61,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -154,6 +154,7 @@ class CourseSchedulingService {
         if (params.in_design === "1") params.in_design = true
       }
       steps.push('2')
+      if (params.hasCost && Array.isArray(params.hasCost)) delete params.hasCost;
       if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
@@ -434,7 +435,7 @@ class CourseSchedulingService {
 
     } catch (e) {
       steps.push('25')
-      steps.push(e.getMessage())
+      steps.push(e)
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
         steps
       }})
@@ -911,7 +912,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
     if (filters.select) {
       select = filters.select
     }
@@ -1006,7 +1007,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
 
       let where = {}
 

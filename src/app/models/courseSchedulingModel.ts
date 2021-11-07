@@ -30,6 +30,10 @@ const CourseSchedulingSchema = new Schema({
     ref: "CourseSchedulingMode",
     required: true
   },
+  schedulingModeDetails: {
+    type: Schema.Types.String,
+    enum: ['in_situ', 'online']
+  },
   modular: {
     type: Schema.Types.ObjectId,
     ref: "Modular",
