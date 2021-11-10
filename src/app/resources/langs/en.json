@@ -382,6 +382,10 @@
         "invalid": "Los parámetros son obligatorios"
       },
       "not_found": "Los eventos del curso en Moodle no han sido encontrados"
+    },
+    "certificate": {
+      "login_invalid": "El usuario o password no válido",
+      "not_found": "El certificado no existe"
     }
   },
   "passwordRecover": {
