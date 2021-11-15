@@ -53,6 +53,8 @@ export const router_prefix = (env.hasOwnProperty('router_prefix')) ? env['router
 export const moodle_setup:any         = (env.hasOwnProperty('moodle_setup')) ? env['moodle_setup'] : {};
 export const campus_setup:any         = (env.hasOwnProperty('campus_setup')) ? env['campus_setup'] : {};
 export const google_services = (env.hasOwnProperty('google_services')) ? env['google_services'] : {};
+export const certificate_setup:any         = (env.hasOwnProperty('certificate_setup')) ? env['certificate_setup'] : {};
+
 // @end
 
 // @export_globals
