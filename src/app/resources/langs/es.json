@@ -200,6 +200,10 @@
       },
       "delete": {
         "fail_action": "Ocurrio un error al eliminar el registro"
+      },
+      "report": {
+        "invalid_container": "Debes proporcionar un contenedor valido",
+        "survey_not_found": "Encuesta no encontrada"
       }
     },
     "country": {
