@@ -24,7 +24,7 @@ import {
   ISectionQuestionsOpen,
   ISectionQuestionsChoiceSimple,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
-import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, Question, Survey } from 'app/models';
+import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, Question, Survey } from '@scnode_app/models';
 // @end
 
 class SurveyDataService {
