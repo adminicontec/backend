@@ -602,6 +602,7 @@ class CourseSchedulingService {
       }
     }
 
+
     for (const key in notificationsByTeacher) {
       if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {
         const teacherData = notificationsByTeacher[key];
