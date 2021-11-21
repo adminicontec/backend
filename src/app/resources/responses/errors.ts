@@ -547,6 +547,18 @@ class ErrorResponse {
             "status_code": "survey_results_surveys_invalid",
             "code": 400
           }
+        },
+        "report": {
+          "invalid_container": {
+            "message": i18nUtility.__("app_error_messages.survey.report.invalid_container"),
+            "status_code": "survey_report_invalid_container",
+            "code": 400
+          },
+          "survey_not_found": {
+            "message": i18nUtility.__("app_error_messages.survey.report.survey_not_found"),
+            "status_code": "survey_report_survey_not_found",
+            "code": 400
+          }
         }
       },
 

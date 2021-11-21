@@ -545,6 +545,11 @@ class CourseSchedulingService {
             _id: courseScheduling.program._id,
             name: courseScheduling.program.name,
             observations: courseScheduling.observations,
+            client: (courseScheduling.client) ? courseScheduling.client : '-',
+            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+            scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+            course_code: (course.course && course.course.code) ? course.course.code : '',
+            course_name: (course.course && course.course.name) ? course.course.name : '',
           },
           service: {
             service_id: courseScheduling.metadata.service_id,
@@ -567,8 +572,9 @@ class CourseSchedulingService {
           duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
           schedule: '-',
         }
-
-        notificationsByTeacher[course.teacher._id].courses.push(item)
+        if (notificationsByTeacher[course.teacher._id]) {
+          notificationsByTeacher[course.teacher._id].courses.push(item)
+        }
       } else {
         course.sessions.map((session) => {
           let row_content = {
@@ -589,10 +595,13 @@ class CourseSchedulingService {
             duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
             schedule: schedule,
           }
-          notificationsByTeacher[course.teacher._id].courses.push({ ...row_content, ...session_data })
+          if (notificationsByTeacher[course.teacher._id]) {
+            notificationsByTeacher[course.teacher._id].courses.push({ ...row_content, ...session_data })
+          }
         })
       }
     }
+
 
     for (const key in notificationsByTeacher) {
       if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {

@@ -5,21 +5,32 @@
 <div class="txt_icontec">
 
   <h2>Inicio del curso</h2>
-  <p>
+  <div>
     Estimado (a) {{params.teacher.first_name}}
 
-    Usted ha sido inscrito al programa {{params.program.name}} con identificador de servicio {{params.service.service_id}} como docente con la siguiente programación.
+    Usted ha sido inscrito al programa {{params.program.name}} con identificador de servicio {{params.service.service_id}} como docente.
+    <br>
+    {{#if params.has_sessions}}
+    Recuerde crear las sesiones de Webex según la programación anterior
+    <br>
+    {{/if}}
+    A continuación la programación
+    <br>
+    {{#if params.program}}
+    <div>
+      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+      <p style="margin: 0;"><b>Código: </b>{{params.program.course_code}}</p>
+      <p style="margin: 0;"><b>Curso: </b>{{params.program.course_name}}</p>
+      <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
+      <p style="margin: 0;"><b>Ciudad: </b>{{params.program.city}}</p>
+    </div>
+    {{/if}}
 
     {{#each params.courses}}
       <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
-        <p><b>Cliente: </b>{{this.client}}</p>
-        <p><b>Código: </b>{{this.course_code}}</p>
-        <p><b>Curso: </b>{{this.course_name}}</p>
-        <p><b>Modalidad: </b>{{this.scheduling_mode}}</p>
-        <p><b>Ciudad: </b>{{this.city}}</p>
-        <p><b>Fecha de inicio: </b>{{this.start_date}}</p>
-        <p><b>Duración: </b>{{this.duration}}</p>
-        <p><b>Horario: </b>{{this.schedule}}</p>
+        <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.start_date}}</p>
+        <p style="margin: 0;"><b>Duración: </b>{{this.duration}}</p>
+        <p style="margin: 0;"><b>Horario: </b>{{this.schedule}}</p>
       </div>
     {{/each}}
 
@@ -29,18 +40,12 @@
 
     Lo invitamos a ingresar por la siguiente dirección:
     <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
-
-    {{#if params.has_sessions}}
-    <br><br>
-    Recuerde crear las sesiones de Webex según la programación anterior
-    {{/if}}
-
-    <br><br>
+    <br>
     En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-    <br><br>
+    <br>
     Cordialmente
     <br>
     Equipo Unidad Técnica de Educación
-  </p>
+  </div>
   <img src="{{params.mailer.footer_icon}}">
 </div>
