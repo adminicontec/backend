@@ -17,6 +17,7 @@ export interface ICourseScheduling {
   }
   user: string // Identificador del usuario logueado
   schedulingMode: {value: number, label: string} | string // Identificador del modo de programación
+  schedulingModeDetails: 'in_situ' | 'online',
   modular: string // Identificador del modular
   program: {value: number, label: string} | string // Identificador del programa
   schedulingType: string // Identificador del tipo de programación

@@ -46,11 +46,11 @@ class SurveyDataService {
    public generateReport = async (params: IGenerateSurveyReport) => {
     try {
 
-      // TODO: Revisar si el nombre es mejor dejarlo dinamico para evitar problema en servidor
+      const time = new Date().getTime()
 
       // @INFO: Se define el formato del reporte, xlsx por defecto
       const output_format: any = params.output_format ? params.output_format : 'xlsx'
-      const title: any = params.title ? params.title : 'reporte_satisfaccion'
+      const title: any = params.title ? params.title : `reporte_satisfaccion_${time}`
 
       // @INFO: Consultando el elemento relacionado a la encuesta
       let container_survey = null;
