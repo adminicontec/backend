@@ -50,7 +50,7 @@ class CalendarEventsService {
         duration: 0,
         durationFormated: '',
         //timemodified: ""
-        status: true || false,
+        status: '',
         timecompleted: ''
 
       }
@@ -126,11 +126,13 @@ class CalendarEventsService {
         // Group by Instance
         respMoodleCourseModules.courseModules.forEach(module => {
           let eventTime;
+          let eventTimeStart;
+          let eventTimeEnd;
           let timeDue;
           let timeStart;
           let timeEnd;
 
-          let statusActivity = false;
+          let statusActivity = '';
           let timecompleted;
 
           console.log("---------" + module.instance + "------------");
@@ -139,37 +141,41 @@ class CalendarEventsService {
           if (groupByInstance.length != 0) {
 
             if (groupByInstance[0].modulename === 'assign') {
-              eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
+              eventTimeStart = new Date(groupByInstance[0].timestart * 1000).toISOString();
               console.log("timeDue for assign: ");
-              console.log(eventTime);
+              console.log(eventTimeStart);
+              eventTimeEnd = null;
 
             }
             if (groupByInstance[0].modulename === 'forum') {
-              eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
+              eventTimeStart = new Date(groupByInstance[0].timestart * 1000).toISOString();
               console.log("timeDue: ");
-              console.log(eventTime);
+              console.log(eventTimeStart);
+              eventTimeEnd = null;
             }
             if (groupByInstance[0].modulename === 'quiz') {
               timeStart = groupByInstance.filter(g => g.eventtype == 'open');
               timeEnd = groupByInstance.filter(g => g.eventtype == 'close');
 
-              eventTime = new Date(timeStart[0].timestart * 1000).toISOString();
+              eventTimeStart = new Date(timeStart[0].timestart * 1000).toISOString();
               console.log("timeStart: ");
-              console.log(eventTime);
+              console.log(eventTimeStart);
 
-              eventTime = new Date(timeEnd[0].timestart * 1000).toISOString();
+              eventTimeEnd = new Date(timeEnd[0].timestart * 1000).toISOString();
               console.log("timeEnd: ");
-              console.log(eventTime);
+              console.log(eventTimeEnd);
             }
             // respActivitiesCompletion
             let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
             //console.log("Status " + statusActivity);
-            statusActivity = (completionActivity.state === 1) ? true : false;
+            //statusActivity = (completionActivity.state === 1) ? true : false;
             if (completionActivity.state === 1) {
+              statusActivity ='delivered';
               timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
               console.log("Complete on " + timecompleted);
             }
             else {
+              statusActivity ='pending';
               console.log("Pending !!!");
               timecompleted = null;
             }
@@ -185,8 +191,8 @@ class CalendarEventsService {
               modulename: groupByInstance[0].modulename,
               eventtype: '',
               instance: groupByInstance[0].instance,
-              timestart: eventTime,
-              timefinish: '',
+              timestart: eventTimeStart,
+              timefinish: eventTimeEnd,
               duration: 0,
               durationFormated: '',
               status: statusActivity,
