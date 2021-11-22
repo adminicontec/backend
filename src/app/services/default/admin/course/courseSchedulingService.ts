@@ -158,7 +158,7 @@ class CourseSchedulingService {
       if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
-        params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode)
+        params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode, params.schedulingModeDetails)
       }
       steps.push('3')
 
@@ -447,18 +447,31 @@ class CourseSchedulingService {
    * @param program Objeto de la modalidad
    * @returns
    */
-  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}) => {
+  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}, schedulingModeDetails: 'in_situ' | 'online' | null) => {
     let newSchedulingMode = null
-    const schedulingModeLocal = await CourseSchedulingMode.findOne({
+    let where = {
       moodle_id: schedulingMode.value
-    }).select('id').lean()
+    }
+    if (schedulingModeDetails) {
+      where['schedulingModeDetails'] = schedulingModeDetails
+      if (schedulingModeDetails === 'in_situ') {
+        schedulingMode.label = 'Presencial';
+      } else if (schedulingModeDetails === 'online') {
+        schedulingMode.label = 'En linea';
+      }
+    }
+    const schedulingModeLocal = await CourseSchedulingMode.findOne(where)
+    .select('id')
+    .lean()
+
     if (schedulingModeLocal) {
       newSchedulingMode = schedulingModeLocal._id
     } else {
       const newSchedulingModeLocal = await CourseSchedulingMode.create({
         name: schedulingMode.label,
         moodle_id: schedulingMode.value,
-        short_key: schedulingMode.label.substr(0, 1)
+        short_key: schedulingMode.label.substr(0, 1),
+        schedulingModeDetails: (schedulingModeDetails) ? schedulingModeDetails : null
       })
       if (newSchedulingModeLocal) {
         newSchedulingMode = newSchedulingModeLocal._id

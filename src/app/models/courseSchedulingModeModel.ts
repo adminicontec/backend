@@ -15,6 +15,10 @@ const CourseSchedulingModeSchema = new Schema({
   },
   moodle_id: { type: Schema.Types.String },
   short_key: { type: Schema.Types.String },
+  schedulingModeDetails: {
+    type: Schema.Types.String,
+    enum: ['in_situ', 'online']
+  },
   // @end
 }, {
   collection: 'course_scheduling_modes' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
