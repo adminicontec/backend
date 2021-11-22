@@ -44,6 +44,11 @@ class TeacherController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public list = async (req: Request, res: Response) => {
+    const response = await teacherService.list(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const teacherController = new TeacherController();

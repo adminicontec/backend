@@ -53,13 +53,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let country_ids = await this.addCountries()
 
     // // @INFO: Agregando homes
-    // let home_ids = await this.addHomes()
+    let home_ids = await this.addHomes()
 
     // // @INFO: Agregando modulos y permisos
-    // let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
+    let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
 
     // // @INFO: Agregando roles
-    // let role_ids = await this.addRoles(module_permission_ids, home_ids)
+    let role_ids = await this.addRoles(module_permission_ids, home_ids)
 
     // // @INFO: Agregando usuarios
     // let user_ids = await this.addUsers(role_ids)
@@ -466,6 +466,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:users_viewer', description: 'Consultar usuarios'},
         {name: 'permission:users_menu_access', description: 'Menu de usuarios'},
       ]},
+      {name: 'module:qualifiedTeacher', description: 'Módulo que permite administrar los docentes y tutores', permissions: [
+        {name: 'permission:qualifiedTeacher_create', description: 'Crear docentes'},
+        {name: 'permission:qualifiedTeacher_update', description: 'Editar docentes'},
+        {name: 'permission:qualifiedTeacher_delete', description: 'Eliminar docentes'},
+        {name: 'permission:qualifiedTeacher_list', description: 'Ver docentes'},
+        {name: 'permission:qualifiedTeacher_viewer', description: 'Consultar docentes'},
+        {name: 'permission:qualifiedTeacher_menu_access', description: 'Menu de docentes'},
+      ]},
       {name: 'module:roles', description: 'Módulo que permite administrar los roles', permissions: [
         {name: 'permission:roles_create', description: 'Crear roles'},
         {name: 'permission:roles_update', description: 'Editar roles'},
@@ -617,6 +625,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:users_update'],
           module_permission_ids['permission:users_delete'],
           module_permission_ids['permission:users_list'],
+          module_permission_ids['permission:qualifiedTeacher_create'],
+          module_permission_ids['permission:qualifiedTeacher_update'],
+          module_permission_ids['permission:qualifiedTeacher_delete'],
+          module_permission_ids['permission:qualifiedTeacher_list'],
           module_permission_ids['permission:roles_create'],
           module_permission_ids['permission:roles_update'],
           module_permission_ids['permission:roles_delete'],
@@ -663,6 +675,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:courses_menu_access'],
           module_permission_ids['permission:course_scheduling_menu_access'],
           module_permission_ids['permission:modular_menu_access'],
+          module_permission_ids['permission:qualifiedTeacher_menu_access'],
 
           // @INFO Permisos para el modulo editor (Catalogador)
           module_permission_ids['permission:survey_menu_access'],
