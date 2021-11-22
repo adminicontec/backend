@@ -1803,18 +1803,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
 
 
-    for await (const courseScheduling of courseSchedulings) {
-      const exists: any = await courseSchedulingService.findBy({
-        query: QueryValues.ONE,
-        where: [{field: 'moodle_id', value: courseScheduling.moodle_id}]
-      })
-      if (exists.status === 'success') courseScheduling['id'] = exists.scheduling._id
+    // for await (const courseScheduling of courseSchedulings) {
+    //   const exists: any = await courseSchedulingService.findBy({
+    //     query: QueryValues.ONE,
+    //     where: [{field: 'moodle_id', value: courseScheduling.moodle_id}]
+    //   })
+    //   if (exists.status === 'success') courseScheduling['id'] = exists.scheduling._id
 
-      const response:any = await courseSchedulingService.insertOrUpdate(courseScheduling)
-      if (response.status === 'success') {
-        course_scheduling_ids[response.scheduling.moodle_id] = response.scheduling._id
-      }
-    }
+    //   const response:any = await courseSchedulingService.insertOrUpdate(courseScheduling)
+    //   if (response.status === 'success') {
+    //     course_scheduling_ids[response.scheduling.moodle_id] = response.scheduling._id
+    //   }
+    // }
 
     console.log('course_scheduling_ids', course_scheduling_ids)
   }
