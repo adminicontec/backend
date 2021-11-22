@@ -20,6 +20,7 @@ import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moo
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
 import { consoleUtility } from '@scnode_core/utilities/consoleUtility';
+import { Console } from 'console';
 // @end
 
 class CalendarEventsService {
@@ -38,17 +39,20 @@ class CalendarEventsService {
       let responseEvents = [];
       let singleEvent = {
         id: 0,
-        name: "",
-        description: "",
+        name: '',
+        description: '',
         courseid: 0,
-        modulename: "",
+        modulename: '',
         instance: 0,
-        eventtype: "",
-        timestart: "",
-        timefinish: "",
+        eventtype: '',
+        timestart: '',
+        timefinish: '',
         duration: 0,
-        durationFormated: "",
+        durationFormated: '',
         //timemodified: ""
+        status: true || false,
+        timecompleted: ''
+
       }
 
       let courseID;
@@ -59,7 +63,7 @@ class CalendarEventsService {
       // take any of params as Moodle query filter
       if (params.courseID) {
         courseID = params.courseID;
-        // userID = params.userID;
+        userID = params.userID;
         console.log("Eventos para el curso " + courseID + " y usuario " + userID);
       }
       else {
@@ -78,14 +82,20 @@ class CalendarEventsService {
         'events[courseids][0]': courseID
       };
 
+      let moodleParamsActivitiesCompletion = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.getActivitiesStatus,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': courseID,
+        'userid': userID
+      }
+
       // 1. módulos asociados al curso en moodle
       console.log("Course Modules by type:");
       var select = ['assign', 'attendance', 'quiz', 'forum'];
       let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
 
       // 2. Validación si hay eventos asociados al curso en moodle
-
-
       let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
       if (respMoodleEvents.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
@@ -98,7 +108,20 @@ class CalendarEventsService {
           });
       }
 
-      // 3. group the events by Instance
+      // 3. Completion status of User Activities
+      let respActivitiesCompletion = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsActivitiesCompletion });
+      if (respActivitiesCompletion.exception) {
+        console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respActivitiesCompletion));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: {
+              key: 'moodle_events.not_found',
+              params: { respActivitiesCompletion }
+            }
+          });
+      }
+
+      // 4. group the events by Instance
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
         respMoodleCourseModules.courseModules.forEach(module => {
@@ -106,15 +129,20 @@ class CalendarEventsService {
           let timeDue;
           let timeStart;
           let timeEnd;
+
+          let statusActivity = false;
+          let timecompleted;
+
           console.log("---------" + module.instance + "------------");
           const groupByInstance = respMoodleEvents.events.filter(e => e.instance == module.instance);
-          console.log(groupByInstance);
+          console.log(module.name);
           if (groupByInstance.length != 0) {
 
             if (groupByInstance[0].modulename === 'assign') {
               eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
-              console.log("timeDue: ");
+              console.log("timeDue for assign: ");
               console.log(eventTime);
+
             }
             if (groupByInstance[0].modulename === 'forum') {
               eventTime = new Date(groupByInstance[0].timestart * 1000).toISOString();
@@ -133,6 +161,19 @@ class CalendarEventsService {
               console.log("timeEnd: ");
               console.log(eventTime);
             }
+            // respActivitiesCompletion
+            let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
+            //console.log("Status " + statusActivity);
+            statusActivity = (completionActivity.state === 1) ? true : false;
+            if (completionActivity.state === 1) {
+              timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
+              console.log("Complete on " + timecompleted);
+            }
+            else {
+              console.log("Pending !!!");
+              timecompleted = null;
+            }
+
             console.log("=============================================");
 
             // Build the answer
@@ -147,7 +188,9 @@ class CalendarEventsService {
               timestart: eventTime,
               timefinish: '',
               duration: 0,
-              durationFormated: ''
+              durationFormated: '',
+              status: statusActivity,
+              timecompleted: timecompleted
             };
             responseEvents.push(singleEvent);
           }
