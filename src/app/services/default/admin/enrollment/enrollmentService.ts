@@ -91,7 +91,7 @@ class EnrollmentService {
     try {
       registers = await Enrollment.find(where)
         .select(select)
-        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number' })
+        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
@@ -591,7 +591,7 @@ class EnrollmentService {
                 educationalLevel: element['Nivel Educativo'],
                 company: element['Empresa'],
                 genre: element['Género'],
-                origin: element['Origen'],
+                origin: element['Ejecutivo'],
 
                 courseID: params.courseID,
                 rolename: 'student',
