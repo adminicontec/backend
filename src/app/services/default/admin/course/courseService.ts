@@ -136,7 +136,7 @@ class CourseService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program courseType schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program courseType objectives content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
       if (params.select) {
         select = params.select
       }
@@ -218,6 +218,7 @@ class CourseService {
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          //.populate({ path: 'course', select: 'objectives' })
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
           .sort(sort)
@@ -226,30 +227,45 @@ class CourseService {
 
         for await (const register of registers) {
           let isActive = false;
-          console.log("------------ORIGINAL ---------------");
-          console.log(register);
-
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
           })
-          .lean()
+            .lean()
 
           let courseType = ''
+          let courseObjectives =[];
+          let courseContent = [];
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo
-            courseType = extra_info.courseType
+            courseType = extra_info.courseType;
+
+            // Objectives
+            extra_info.objectives.blocks.forEach(element => {
+              courseObjectives.push(element.data.items[0]);
+            });;
+
+            // Course content
+            extra_info.content.forEach(element => {
+              let blockText = [];
+              element.data.blocks.forEach(element => {
+                blockText.push(element.data.text);
+              });
+
+              let item = {
+                header: element.name,
+                modules: blockText
+              };
+              courseContent.push(item);
+            });
           }
 
           // course Is Active given end date
           let current = moment();
-          console.log(current);
-          console.log(register.endDate);
           if (current.isAfter(register.endDate))
             isActive = false;
           else
             isActive = true;
-          console.log(isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -267,12 +283,17 @@ class CourseService {
             priceCOP: register.priceCOP,
             priceUSD: register.priceUSD,
             discount: register.discount == null ? 0 : register.discount,
-            endDiscountDate: register.endDiscountDate == null ? null: register.endDiscountDate,            quota: register.amountParticipants,
+            endDiscountDate: register.endDiscountDate == null ? null : register.endDiscountDate,
+            quota: register.amountParticipants,
             lang: 'ES',
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
-            isActive: isActive
+            isActive: isActive,
+            objectives: courseObjectives,
+            content: courseContent
           }
           listOfCourses.push(courseToExport);
+          console.log("----------------------------");
+          console.log(listOfCourses);
         }
       } catch (e) {
         return responseUtility.buildResponseFailed('json')
@@ -384,7 +405,7 @@ class CourseService {
         params.content = params.content.map((c) => {
           try {
             if (c.data && typeof c.data === 'string') c.data = JSON.parse(c.data)
-          } catch(e) {}
+          } catch (e) { }
           return c;
         }, [])
       }
