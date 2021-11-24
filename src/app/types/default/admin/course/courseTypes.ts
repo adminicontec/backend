@@ -57,6 +57,8 @@ export interface IStoreCourse {
   lang: string,             // Idioma en el que se da el curso
   duration?: number,          // Numero de segundos para la duración del curso
   isActive?: boolean,          // Numero de segundos para la duración del curso
+  objectives?: any,
+  content?: any
 }
 
 export interface ICourseQuery {

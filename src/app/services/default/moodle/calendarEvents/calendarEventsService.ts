@@ -140,11 +140,18 @@ class CalendarEventsService {
           console.log(module.name);
           if (groupByInstance.length != 0) {
 
-            if (groupByInstance[0].modulename === 'assign') {
-              eventTimeStart = new Date(groupByInstance[0].timestart * 1000).toISOString();
+            if (groupByInstance[0].modulename === 'attendance') {
+              eventTimeEnd = new Date(groupByInstance[0].timestart * 1000).toISOString();
               console.log("timeDue for assign: ");
               console.log(eventTimeStart);
-              eventTimeEnd = null;
+              eventTimeStart = null;
+
+            }
+            if (groupByInstance[0].modulename === 'assign') {
+              eventTimeEnd = new Date(groupByInstance[0].timestart * 1000).toISOString();
+              console.log("timeDue for assign: ");
+              console.log(eventTimeStart);
+              eventTimeStart = null;
 
             }
             if (groupByInstance[0].modulename === 'forum') {
@@ -170,12 +177,12 @@ class CalendarEventsService {
             //console.log("Status " + statusActivity);
             //statusActivity = (completionActivity.state === 1) ? true : false;
             if (completionActivity.state === 1) {
-              statusActivity ='delivered';
+              statusActivity = 'delivered';
               timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
               console.log("Complete on " + timecompleted);
             }
             else {
-              statusActivity ='pending';
+              statusActivity = 'pending';
               console.log("Pending !!!");
               timecompleted = null;
             }
