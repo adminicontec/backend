@@ -277,6 +277,11 @@ class GeneralUtility {
     return Math.floor(Date.parse(dateToChange) / 1000.0) + hours * 3600 + interval
   }
 
+  public unixTimeToString = (unixTime: number) => {
+
+    return new Date(unixTime * 1000).toISOString()
+  }
+
   /*
     * Método que normaliza el nombre de un usuario a formato Moodle-CampusDigital:
     * todos los caracteres deben ir en minúsculas
@@ -296,12 +301,12 @@ class GeneralUtility {
     return username.trim().replace(/\./g, "");
   }
 
-    /*
-    * Método que normaliza el email de un usuario :
-    * todos los caracteres deben ir en minúsculas
-    * se eliminan los espacios iniciales o finales
-    * se eliminan los posibles saltos de línea
-  */
+  /*
+  * Método que normaliza el email de un usuario :
+  * todos los caracteres deben ir en minúsculas
+  * se eliminan los espacios iniciales o finales
+  * se eliminan los posibles saltos de línea
+*/
   public normalizeEmail = (email: string) => {
     return email.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
   }

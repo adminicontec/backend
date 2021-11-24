@@ -17,18 +17,17 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import { Modular } from '@scnode_app/models'
+import { Modular, Role, AppModulePermission } from '@scnode_app/models'
 import { TeacherProfile } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
-import { IMassiveLoad, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IMassiveLoad, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
-import { create } from 'domain';
-import { Console } from 'console';
+import { completionstatusController } from 'app/controllers/default/admin/completionStatus/completionstatusController';
 
 // @end
 
@@ -133,11 +132,11 @@ class TeacherService {
           }
 
           let extError = processResultLog.filter(e => e.status === 'ERROR');
-          if(extError){
-          console.log("Log de Errores: ");
-          console.log(extError);
+          if (extError) {
+            console.log("Log de Errores: ");
+            console.log(extError);
           }
-          else{
+          else {
             console.log("Carga sin Errores.");
           }
 
@@ -275,7 +274,7 @@ class TeacherService {
         }
         else {
           // Retornar ERROR: revisar con equipo
-           console.log("Error cargando a " + cvUserParams.username);
+          console.log("Error cargando a " + cvUserParams.username);
         }
 
       }
@@ -288,7 +287,99 @@ class TeacherService {
   }
 
 
+  public list = async (filters: ITeacherQuery = {}) => {
+
+    let qualifiedTeachers = [];
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    console.log("Enter to Teacher service");
+
+    try {
+      // Consultando el ID de Permiso is_teacher
+      let roles_ids = [];
+      const permission_teacher = await AppModulePermission.findOne({ name: "config:is_teacher" }).select("_id");
+
+      if (permission_teacher) {
+        let roles = await Role.find({ app_module_permissions: { $in: permission_teacher._id } }).select("_id");
+        if (roles && roles.length > 0) {
+          roles_ids = roles.reduce((accum, element) => {
+            accum.push(element._id)
+            return accum
+          }, [])
+
+          filters.roles = roles_ids;
+        }
+      }
+
+      if (!filters.roles) {
+        filters.roles = []
+      }
+
+      let teachers: any = await userService.list(filters);
+
+
+      if (teachers.status == "error")
+        return responseUtility.buildResponseFailed('json')
+
+
+      console.log(teachers.users);
+
+      teachers.users.forEach(element => {
+
+        let teacherData: ITeacher = {
+          userData: element,
+          // user: element.username,
+          // email: element.email,
+          // phoneNumber: element.phoneNumber,
+          // firstname: element.profile.first_name,
+          // lastname: element.profile.last_name,
+          // city: element.profile.city,
+          // country: element.profile.country,
+          // regional: element.profile.regional,
+
+          // Inner query to get contractType
+          contractType: {
+            type: 'Interno',
+            isTeacher: true,
+            isTutor: false,
+          },
+          courses: [
+            {
+              modular: 'Calidad',
+              name: 'first course',
+            },
+            {
+              modular: 'Agroalimentario',
+              name: 'second course',
+            },
+          ]
+        };
+
+        qualifiedTeachers.push(teacherData);
+      });
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          qualifiedTeachers: [
+            ...qualifiedTeachers
+          ],
+          total_register: (paging) ? await qualifiedTeachers.length : 0,
+          pageNumber: pageNumber,
+          nPerPage: nPerPage
+        }
+      })
+
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed("json");
+    }
+  }
+
 }
+
 
 export const teacherService = new TeacherService();
 export { TeacherService as DefaultAdminTeacherTeacherService };

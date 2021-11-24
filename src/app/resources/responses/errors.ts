@@ -985,6 +985,24 @@ class ErrorResponse {
           }
         }
       },
+
+      "certificate": {
+        "login_invalid": {
+          "message": i18nUtility.__("app_error_messages.certificate.login_invalid"),
+          "status_code": "certificate_login_invalid",
+          "code": 400
+        },
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.certificate.not_found"),
+          "status_code": "certificate_not_found",
+          "code": 400
+        },
+        "alltemplate": {
+          "message": i18nUtility.__("app_error_messages.certificate.alltemplate"),
+          "status_code": "certificate_alltemplate",
+          "code": 400
+        },
+      }
     };
 
     return json;
