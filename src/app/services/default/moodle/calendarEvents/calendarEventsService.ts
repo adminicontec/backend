@@ -101,9 +101,10 @@ class CalendarEventsService {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: {
-              key: 'moodle_events.not_found',
-              params: { respMoodleEvents }
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
             }
           });
       }
@@ -114,9 +115,10 @@ class CalendarEventsService {
         console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respActivitiesCompletion));
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: {
-              key: 'moodle_events.not_found',
-              params: { respActivitiesCompletion }
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParamsActivitiesCompletion.wsfunction,
+              error: respActivitiesCompletion
             }
           });
       }
@@ -221,17 +223,24 @@ class CalendarEventsService {
           });
       }
 
-
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           events: responseEvents, //respMoodleEvents.events,
         }
       })
 
-
-
     } catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      console.log(e.message);
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'calendarEvent.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
     }
   }
 }

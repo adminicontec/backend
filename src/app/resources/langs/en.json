@@ -347,6 +347,9 @@
         }
       }
     },
+    "calendarEvent": {
+      "exception": "Error con petición de Moodle."
+    },
     "moodle": {
       "exception": "Error con petición de Moodle: :error",
       "error": "Error con petición de Moodle: :error"
