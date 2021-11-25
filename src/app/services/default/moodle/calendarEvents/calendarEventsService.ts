@@ -100,13 +100,13 @@ class CalendarEventsService {
       if (respMoodleEvents.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
         return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: 'calendarEvent.exception',
-          additional_parameters: {
-            process: moodleParams.wsfunction,
-            error: respMoodleEvents
-          }
-        });
+          {
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
+            }
+          });
       }
 
       // 3. Completion status of User Activities
@@ -231,7 +231,16 @@ class CalendarEventsService {
 
     } catch (e) {
       console.log(e.message);
-      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'calendarEvent.exception', params: { error: e.message } } })
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'calendarEvent.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
     }
   }
 }
