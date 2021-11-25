@@ -906,6 +906,13 @@ class ErrorResponse {
           }
         },
       },
+      "calendarEvent":{
+        "exception": {
+          "message": i18nUtility.__("app_error_messages.calendarEvent.exception"),
+          "status_code": "calendar_event_exception",
+          "code": 400
+        },
+      },
       "moodle": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.moodle.exception"),
