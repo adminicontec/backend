@@ -14,25 +14,52 @@
     Recuerde crear las sesiones de Webex según la programación anterior
     <br>
     {{/if}}
-    A continuación la programación
-    <br>
+
     {{#if params.program}}
-    <div>
-      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
-      <p style="margin: 0;"><b>Código: </b>{{params.program.course_code}}</p>
-      <p style="margin: 0;"><b>Curso: </b>{{params.program.course_name}}</p>
-      <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
-      <p style="margin: 0;"><b>Ciudad: </b>{{params.program.city}}</p>
-    </div>
+      <div>
+        <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+        <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
+        <p style="margin: 0;"><b>Ciudad: </b>{{params.program.city}}</p>
+      </div>
     {{/if}}
 
     {{#each params.courses}}
-      <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
-        <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.start_date}}</p>
-        <p style="margin: 0;"><b>Duración: </b>{{this.duration}}</p>
-        <p style="margin: 0;"><b>Horario: </b>{{this.schedule}}</p>
+      <div>
+        <p style="margin: 0;"><b>Código: </b>{{this.course_code}}</p>
+        <p style="margin: 0;"><b>Curso: </b>{{this.course_name}}</p>
       </div>
+
+      {{#if this.sessions}}
+        A continuación la programación:
+        {{#each this.sessions}}
+          <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
+            <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.start_date}}</p>
+            <p style="margin: 0;"><b>Duración: </b>{{this.duration}}</p>
+            <p style="margin: 0;"><b>Horario: </b>{{this.schedule}}</p>
+          </div>
+        {{/each}}
+      {{/if}}
+      {{#if this.info}}
+        A continuación la programación:
+        <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
+          <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.info.start_date}}</p>
+          <p style="margin: 0;"><b>Duración: </b>{{this.info.duration}}</p>
+        </div>
+      {{/if}}
     {{/each}}
+
+    <br>
+    {{!-- {{#if params.program}}
+    <div>
+      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+
+
+      <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
+      <p style="margin: 0;"><b>Ciudad: </b>{{params.program.city}}</p>
+    </div>
+    {{/if}} --}}
+
+
 
     {{#if params.program.observations}}
     <div>{{params.program.observations}}</div>

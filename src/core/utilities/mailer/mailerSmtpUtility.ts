@@ -71,8 +71,8 @@ class MailerSmtpUtility {
       },
       pool: true, // use pooled connection
       rateLimit: true, // enable to make sure we are limiting
-      maxConnections: 20, // set limit to 1 connection only
-      maxMessages: 100, // send 3 emails per second
+      maxConnections: 1, // set limit to 1 connection only
+      maxMessages: 3, // send 3 emails per second
     });
 
     return responseUtility.buildResponseSuccess('json',null,{additional_parameters: {transporter: transporter}});
@@ -86,6 +86,8 @@ class MailerSmtpUtility {
   public sendMail = async (params: MailerSMTPSendMail) => {
 
     try {
+      await this.sleep(1000);
+
       const transporter = params.transporter;
 
       if (params.mail_options.html !== "") {
@@ -103,6 +105,10 @@ class MailerSmtpUtility {
       console.log('error senmail', e)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  private sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

@@ -561,8 +561,8 @@ class CourseSchedulingService {
             client: (courseScheduling.client) ? courseScheduling.client : '-',
             city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
             scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
-            course_code: (course.course && course.course.code) ? course.course.code : '',
-            course_name: (course.course && course.course.name) ? course.course.name : '',
+            // course_code: (course.course && course.course.code) ? course.course.code : '',
+            // course_name: (course.course && course.course.name) ? course.course.name : '',
           },
           service: {
             service_id: courseScheduling.metadata.service_id,
@@ -575,29 +575,31 @@ class CourseSchedulingService {
       if (course.sessions.length === 0) {
 
         let item = {
-          client: (courseScheduling.client) ? courseScheduling.client : '-',
-          city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
-          scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+          // client: (courseScheduling.client) ? courseScheduling.client : '-',
+          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
-          start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
-          end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
-          duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
-          schedule: '-',
+          info: {
+            start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
+            end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
+            duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
+            schedule: '-',
+          }
         }
         if (notificationsByTeacher[course.teacher._id]) {
           notificationsByTeacher[course.teacher._id].courses.push(item)
         }
       } else {
+        let item = {
+          // client: (courseScheduling.client) ? courseScheduling.client : '',
+          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
+          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
+          course_code: (course.course && course.course.code) ? course.course.code : '',
+          course_name: (course.course && course.course.name) ? course.course.name : '',
+          sessions: []
+        }
         course.sessions.map((session) => {
-          let row_content = {
-            client: (courseScheduling.client) ? courseScheduling.client : '',
-            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
-            scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
-            course_code: (course.course && course.course.code) ? course.course.code : '',
-            course_name: (course.course && course.course.name) ? course.course.name : '',
-          }
-
           let schedule = ''
           if (session.startDate && session.duration) {
             let endDate = moment(session.startDate).add(session.duration, 'seconds')
@@ -608,10 +610,11 @@ class CourseSchedulingService {
             duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
             schedule: schedule,
           }
-          if (notificationsByTeacher[course.teacher._id]) {
-            notificationsByTeacher[course.teacher._id].courses.push({ ...row_content, ...session_data })
-          }
+          item.sessions.push({ ...session_data })
         })
+        if (notificationsByTeacher[course.teacher._id]) {
+          notificationsByTeacher[course.teacher._id].courses.push(item)
+        }
       }
     }
 
@@ -797,7 +800,7 @@ class CourseSchedulingService {
       const mail = await mailService.sendMail({
         emails,
         mailOptions: {
-          subject: i18nUtility.__('mailer.enrollment_user.subject'),
+          subject: (paramsTemplate.subject) ? paramsTemplate.subject : i18nUtility.__('mailer.enrollment_user.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
