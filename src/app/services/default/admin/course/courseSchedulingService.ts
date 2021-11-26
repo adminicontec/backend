@@ -491,9 +491,13 @@ class CourseSchedulingService {
     const programArr = program.label.toString().split('|')
     if (programArr[0] && programArr[1]) {
       const programLocal = await Program.findOne({
-        moodle_id: program.value
+        moodle_id: program.value,
+        code: programArr[0].trim(),
       }).select('id').lean()
       if (programLocal) {
+        await Program.findByIdAndUpdate(programLocal._id, {
+          name: programArr[1].trim(),
+        }, { useFindAndModify: false, new: true })
         newProgram = programLocal._id
       } else {
         const newprogramLocal = await Program.create({

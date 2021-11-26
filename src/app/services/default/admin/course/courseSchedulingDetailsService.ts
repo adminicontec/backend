@@ -97,15 +97,18 @@ class CourseSchedulingDetailsService {
   public insertOrUpdate = async (params: ICourseSchedulingDetail) => {
 
     try {
-
       if (params.course && typeof params.course !== "string" && params.course.hasOwnProperty('value')) {
 
         const courseArr = params.course.label.toString().split('|')
         if (courseArr[0] && courseArr[1]) {
           const courseLocal = await CourseSchedulingSection.findOne({
-            moodle_id: params.course.value
+            moodle_id: params.course.value,
+            code: courseArr[0].trim(),
           }).select('id').lean()
           if (courseLocal) {
+            await CourseSchedulingSection.findByIdAndUpdate(courseLocal._id, {
+              name: courseArr[1].trim(),
+            }, { useFindAndModify: false, new: true })
             params.course = courseLocal._id
           } else {
             const newCourseLocal = await CourseSchedulingSection.create({
