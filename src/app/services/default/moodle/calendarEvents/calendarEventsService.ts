@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
@@ -59,6 +60,8 @@ class CalendarEventsService {
       let startDate;
       let endDate;
       let userID;
+
+      const today = moment();
 
       // take any of params as Moodle query filter
       if (params.courseID) {
@@ -176,17 +179,30 @@ class CalendarEventsService {
             }
             // respActivitiesCompletion
             let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
-            //console.log("Status " + statusActivity);
-            //statusActivity = (completionActivity.state === 1) ? true : false;
+
             if (completionActivity.state === 1) {
               statusActivity = 'delivered';
               timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
               console.log("Complete on " + timecompleted);
             }
             else {
-              statusActivity = 'pending';
-              console.log("Pending !!!");
-              timecompleted = null;
+              if (today.isBefore(eventTimeStart)) {
+                statusActivity = 'not_enabled';
+                console.log("not enabled yet !!!");
+                timecompleted = null;
+              }
+              else {
+                if (today.isBefore(eventTimeEnd)) {
+                  statusActivity = 'pending';
+                  console.log("Pending !!!");
+                  timecompleted = null;
+                }
+                else{
+                  statusActivity = 'not_delivered';
+                  console.log("Not delivered !!!");
+                  timecompleted = null;
+                }
+              }
             }
 
             console.log("=============================================");
