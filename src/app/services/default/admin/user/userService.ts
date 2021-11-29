@@ -566,6 +566,22 @@ class UserService {
       where["roles"] = { $in: filters.roles };
     }
 
+    if (filters.role_names) {
+      if (typeof filters.role_names === "string") {
+        filters.role_names = filters.role_names.split(",");
+      }
+      const roles = await Role.find({name: {$in: filters.role_names}}).select('id')
+      if (roles) {
+        const role_ids = roles.reduce((accum: any, element: any) => {
+          accum.push(element._id)
+          return accum
+        }, [])
+        if (role_ids.length > 0) {
+          where["roles"] = { $in: role_ids };
+        }
+      }
+    }
+
     let registers = []
     try {
       registers = await User.find(where)
