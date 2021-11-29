@@ -143,6 +143,7 @@ class CourseSchedulingDetailsService {
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+        .populate({path: 'course', select: 'id name code'})
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
         const changes = this.validateChanges(params, register)
@@ -180,7 +181,7 @@ class CourseSchedulingDetailsService {
             await courseSchedulingService.sendUnenrollmentUserEmail(register.teacher.email, {
               mailer: customs['mailer'],
               first_name: register.teacher.profile.first_name,
-              course_name: response.course_scheduling.program.name,
+              course_name: register.course.name,
               type: 'teacher',
               notification_source: `course_teacher_remove_${register.teacher._id}_${response._id}`,
               // amount_notifications: 1
