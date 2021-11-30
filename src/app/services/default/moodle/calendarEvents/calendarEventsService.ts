@@ -152,10 +152,8 @@ class CalendarEventsService {
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
         respMoodleCourseModules.courseModules.forEach(module => {
-          let eventTime;
           let eventTimeStart;
           let eventTimeEnd;
-          let timeDue;
           let timeStart;
           let timeEnd;
 
