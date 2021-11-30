@@ -172,7 +172,6 @@ class CalendarEventsService {
               console.log("timeDue for assign: ");
               console.log(eventTimeStart);
               eventTimeStart = null;
-
             }
             if (groupByInstance[0].modulename === 'assign') {
               // start date of Assignment
