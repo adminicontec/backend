@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
@@ -21,6 +22,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
 import { consoleUtility } from '@scnode_core/utilities/consoleUtility';
 import { Console } from 'console';
+import e from 'express';
 // @end
 
 class CalendarEventsService {
@@ -60,6 +62,8 @@ class CalendarEventsService {
       let endDate;
       let userID;
 
+      const today = moment();
+
       // take any of params as Moodle query filter
       if (params.courseID) {
         courseID = params.courseID;
@@ -90,6 +94,14 @@ class CalendarEventsService {
         'userid': userID
       }
 
+      let moodleParamsAssignement = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.calendarEvents.asignment,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseids[0]': courseID,
+        'includenotenrolledcourses': 1
+      };
+
       // 1. módulos asociados al curso en moodle
       console.log("Course Modules by type:");
       var select = ['assign', 'attendance', 'quiz', 'forum'];
@@ -109,7 +121,20 @@ class CalendarEventsService {
           });
       }
 
-      // 3. Completion status of User Activities
+      let respMoodleAssignement = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsAssignement });
+      if (respMoodleAssignement.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodleAssignement));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleAssignement
+            }
+          });
+      }
+
+      // 4. Completion status of User Activities
       let respActivitiesCompletion = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsActivitiesCompletion });
       if (respActivitiesCompletion.exception) {
         console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respActivitiesCompletion));
@@ -127,10 +152,8 @@ class CalendarEventsService {
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
         respMoodleCourseModules.courseModules.forEach(module => {
-          let eventTime;
           let eventTimeStart;
           let eventTimeEnd;
-          let timeDue;
           let timeStart;
           let timeEnd;
 
@@ -147,14 +170,13 @@ class CalendarEventsService {
               console.log("timeDue for assign: ");
               console.log(eventTimeStart);
               eventTimeStart = null;
-
             }
             if (groupByInstance[0].modulename === 'assign') {
-              eventTimeEnd = new Date(groupByInstance[0].timestart * 1000).toISOString();
-              console.log("timeDue for assign: ");
-              console.log(eventTimeStart);
-              eventTimeStart = null;
+              // start date of Assignment
+              let assignment = respMoodleAssignement.courses[0].assignments.find(t => t.id == module.instance);
 
+              eventTimeStart = generalUtility.unixTimeToString(assignment.allowsubmissionsfromdate);
+              eventTimeEnd = new Date(groupByInstance[0].timestart * 1000).toISOString();
             }
             if (groupByInstance[0].modulename === 'forum') {
               eventTimeStart = new Date(groupByInstance[0].timestart * 1000).toISOString();
@@ -176,17 +198,30 @@ class CalendarEventsService {
             }
             // respActivitiesCompletion
             let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
-            //console.log("Status " + statusActivity);
-            //statusActivity = (completionActivity.state === 1) ? true : false;
+
             if (completionActivity.state === 1) {
               statusActivity = 'delivered';
               timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
               console.log("Complete on " + timecompleted);
             }
             else {
-              statusActivity = 'pending';
-              console.log("Pending !!!");
-              timecompleted = null;
+              if (today.isBefore(eventTimeStart)) {
+                statusActivity = 'not_enabled';
+                console.log("not enabled yet !!!");
+                timecompleted = null;
+              }
+              else {
+                if (today.isBefore(eventTimeEnd)) {
+                  statusActivity = 'pending';
+                  console.log("Pending !!!");
+                  timecompleted = null;
+                }
+                else {
+                  statusActivity = 'not_delivered';
+                  console.log("Not delivered !!!");
+                  timecompleted = null;
+                }
+              }
             }
 
             console.log("=============================================");
