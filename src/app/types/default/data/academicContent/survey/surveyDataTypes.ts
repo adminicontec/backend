@@ -41,6 +41,7 @@ export interface ISectionQuestionsChoiceSimple {
   _id: string
   title: string
   answers:  Record<string, IAnswersChoiseSimple>
+  total_answers: number,
 }
 
 export interface IReportSurvey {
