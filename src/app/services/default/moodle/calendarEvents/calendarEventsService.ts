@@ -20,9 +20,6 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
-import { consoleUtility } from '@scnode_core/utilities/consoleUtility';
-import { Console } from 'console';
-import e from 'express';
 // @end
 
 class CalendarEventsService {
@@ -252,7 +249,7 @@ class CalendarEventsService {
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: {
-              key: 'moodle_events.not_found',
+              key: 'grades.not_found',
               params: { respMoodleCourseModules }
             }
           });

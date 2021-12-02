@@ -1,0 +1,127 @@
+// @import_dependencies_node Import libraries
+// @end
+
+// @import services
+// @end
+
+// @import utilities
+import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { moodle_setup } from '@scnode_core/config/globals';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
+// @end
+
+// @import models
+// @end
+
+// @import types
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { IMoodleGradesQuery } from '@scnode_app/types/default/moodle/grades/gradesTypes'
+// @end
+
+class GradesService {
+
+  /*===============================================
+  =            Estructura de un metodo            =
+  ================================================
+    // La estructura de un metodo debe ser la siguiente:
+    public methodName = () => {}
+  /*======  End of Estructura de un metodo  =====*/
+
+  constructor() { }
+
+  public fetchGrades = async (params: IMoodleGradesQuery) => {
+    try {
+
+      var select = ['assign', 'quiz', 'forum'];
+
+      let responseGrades = [];
+      let singleGrade = {
+        id: 0,
+        name: '',
+        itemmodule: '',
+        cmid: 0,
+        graderaw: 0,
+        grademin: 0,
+        grademax: 0,
+      }
+
+      let courseID;
+      let userID
+
+      // take any of params as Moodle query filter
+      if (params.courseID && params.userID) {
+        courseID = params.courseID;
+        userID = params.userID;
+        console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
+      }
+      else {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
+      }
+
+      let moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.gradeReport,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': courseID,
+        'userid': userID,
+      };
+
+      let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+
+      if (respMoodleEvents.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'grades.moodle_exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
+            }
+          });
+      }
+
+      respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
+        const gradeSearch = select.find(field => field == element.itemmodule);
+
+        if (gradeSearch != null) {
+
+          singleGrade = {
+            id: element.id,
+            name: element.itemname,
+            itemmodule: element.itemmodule,
+            cmid: element.cmid,
+            graderaw: element.graderaw,
+            grademin: element.grademin,
+            grademax: element.grademax
+          };
+
+        responseGrades.push(singleGrade);
+        }
+      });
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          grades: responseGrades
+        }
+      })
+
+    } catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
+    }
+
+  }
+
+
+}
+
+export const gradesService = new GradesService();
+export { GradesService as DefaultMoodleGradesGradesService };

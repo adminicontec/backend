@@ -350,6 +350,10 @@
     "calendarEvent": {
       "exception": "Error con petición de Moodle."
     },
+    "grades": {
+      "exception": "Error con petición de Calificaciones. Faltan parámetros :name",
+      "moodle_exception": "Error con petición hacia Moodle de Calificaciones."
+    },
     "moodle": {
       "exception": "Error con petición de Moodle: :error",
       "error": "Error con petición de Moodle: :error"
