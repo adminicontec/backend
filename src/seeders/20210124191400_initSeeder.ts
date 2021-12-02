@@ -995,6 +995,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'teacher', description: 'Dashboard de docentes'},
       {name: 'guest', description: 'Landing principal'},
       {name: 'officials_landing', description: 'Landing de colaboradores'},
+      {name: 'live', description: 'En vivo'},
     ]
     for await (const postLocation of post_locations) {
       const exists: any = await postLocationService.findBy({
