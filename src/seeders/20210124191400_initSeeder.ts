@@ -67,8 +67,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // // @INFO: Agregando tipos de publicaciones
     // let post_type_ids = await this.addPostTypes()
 
-    // // @INFO: Agregando tipos de ubicaciones
-    // let post_location_ids = await this.addPostLocations()
+    // @INFO: Agregando tipos de ubicaciones
+    let post_location_ids = await this.addPostLocations()
 
     // // @INFO: Agregando modos de cursos
     // let course_mode_ids = await this.addCourseModesCategories()
