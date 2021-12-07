@@ -90,6 +90,7 @@ export interface IUserQuery {
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
   roles?: Array<string> | string // Roles
+  role_names?: Array<string> | string // Roles
 }
 
 export interface IUserDateTimezone {

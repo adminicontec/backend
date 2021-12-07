@@ -61,7 +61,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -74,7 +74,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .select(select)
           .lean()
 
@@ -95,7 +95,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .select(select)
           .lean()
 
@@ -154,10 +154,11 @@ class CourseSchedulingService {
         if (params.in_design === "1") params.in_design = true
       }
       steps.push('2')
+      if (params.hasCost && Array.isArray(params.hasCost)) delete params.hasCost;
       if (params.hasCost && typeof params.hasCost === 'string') params.hasCost = (params.hasCost === 'true') ? true : false
 
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
-        params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode)
+        params.schedulingMode = await this.saveLocalSchedulingMode(params.schedulingMode, params.schedulingModeDetails)
       }
       steps.push('3')
 
@@ -218,6 +219,7 @@ class CourseSchedulingService {
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
         await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
+        await User.populate(response, {path: 'account_executive', select: 'id profile.first_name profile.last_name email'})
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, {path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
@@ -341,6 +343,7 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingType', select: 'id name' })
           .populate({ path: 'schedulingStatus', select: 'id name' })
           .populate({ path: 'regional', select: 'id name moodle_id' })
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
@@ -434,7 +437,7 @@ class CourseSchedulingService {
 
     } catch (e) {
       steps.push('25')
-      steps.push(e.getMessage())
+      steps.push(e)
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
         steps
       }})
@@ -446,18 +449,31 @@ class CourseSchedulingService {
    * @param program Objeto de la modalidad
    * @returns
    */
-  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}) => {
+  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}, schedulingModeDetails: 'in_situ' | 'online' | null) => {
     let newSchedulingMode = null
-    const schedulingModeLocal = await CourseSchedulingMode.findOne({
+    let where = {
       moodle_id: schedulingMode.value
-    }).select('id').lean()
+    }
+    if (schedulingModeDetails) {
+      where['schedulingModeDetails'] = schedulingModeDetails
+      if (schedulingModeDetails === 'in_situ') {
+        schedulingMode.label = 'Presencial';
+      } else if (schedulingModeDetails === 'online') {
+        schedulingMode.label = 'En linea';
+      }
+    }
+    const schedulingModeLocal = await CourseSchedulingMode.findOne(where)
+    .select('id')
+    .lean()
+
     if (schedulingModeLocal) {
       newSchedulingMode = schedulingModeLocal._id
     } else {
       const newSchedulingModeLocal = await CourseSchedulingMode.create({
         name: schedulingMode.label,
         moodle_id: schedulingMode.value,
-        short_key: schedulingMode.label.substr(0, 1)
+        short_key: schedulingMode.label.substr(0, 1),
+        schedulingModeDetails: (schedulingModeDetails) ? schedulingModeDetails : null
       })
       if (newSchedulingModeLocal) {
         newSchedulingMode = newSchedulingModeLocal._id
@@ -477,9 +493,13 @@ class CourseSchedulingService {
     const programArr = program.label.toString().split('|')
     if (programArr[0] && programArr[1]) {
       const programLocal = await Program.findOne({
-        moodle_id: program.value
+        moodle_id: program.value,
+        code: programArr[0].trim(),
       }).select('id').lean()
       if (programLocal) {
+        await Program.findByIdAndUpdate(programLocal._id, {
+          name: programArr[1].trim(),
+        }, { useFindAndModify: false, new: true })
         newProgram = programLocal._id
       } else {
         const newprogramLocal = await Program.create({
@@ -542,8 +562,14 @@ class CourseSchedulingService {
           },
           program: {
             _id: courseScheduling.program._id,
+            course_scheduling_id: courseScheduling._id,
             name: courseScheduling.program.name,
             observations: courseScheduling.observations,
+            client: (courseScheduling.client) ? courseScheduling.client : '-',
+            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+            scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+            // course_code: (course.course && course.course.code) ? course.course.code : '',
+            // course_name: (course.course && course.course.name) ? course.course.name : '',
           },
           service: {
             service_id: courseScheduling.metadata.service_id,
@@ -556,28 +582,31 @@ class CourseSchedulingService {
       if (course.sessions.length === 0) {
 
         let item = {
-          client: (courseScheduling.client) ? courseScheduling.client : '-',
-          city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
-          scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+          // client: (courseScheduling.client) ? courseScheduling.client : '-',
+          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
-          start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
-          end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
-          duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
-          schedule: '-',
-        }
-
-        notificationsByTeacher[course.teacher._id].courses.push(item)
-      } else {
-        course.sessions.map((session) => {
-          let row_content = {
-            client: (courseScheduling.client) ? courseScheduling.client : '',
-            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
-            scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
-            course_code: (course.course && course.course.code) ? course.course.code : '',
-            course_name: (course.course && course.course.name) ? course.course.name : '',
+          info: {
+            start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
+            end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
+            duration: (course.duration) ? generalUtility.getDurationFormated(course.duration) : '0h',
+            schedule: '-',
           }
-
+        }
+        if (notificationsByTeacher[course.teacher._id]) {
+          notificationsByTeacher[course.teacher._id].courses.push(item)
+        }
+      } else {
+        let item = {
+          // client: (courseScheduling.client) ? courseScheduling.client : '',
+          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
+          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
+          course_code: (course.course && course.course.code) ? course.course.code : '',
+          course_name: (course.course && course.course.name) ? course.course.name : '',
+          sessions: []
+        }
+        course.sessions.map((session) => {
           let schedule = ''
           if (session.startDate && session.duration) {
             let endDate = moment(session.startDate).add(session.duration, 'seconds')
@@ -588,10 +617,14 @@ class CourseSchedulingService {
             duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
             schedule: schedule,
           }
-          notificationsByTeacher[course.teacher._id].courses.push({ ...row_content, ...session_data })
+          item.sessions.push({ ...session_data })
         })
+        if (notificationsByTeacher[course.teacher._id]) {
+          notificationsByTeacher[course.teacher._id].courses.push(item)
+        }
       }
     }
+
 
     for (const key in notificationsByTeacher) {
       if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {
@@ -604,7 +637,7 @@ class CourseSchedulingService {
           courses: teacherData.courses,
           has_sessions: teacherData.has_sessions,
           type: 'teacher',
-          notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program._id}`,
+          notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program.course_scheduling_id}`,
           amount_notifications: amount_notifications ? amount_notifications : null
         })
       }
@@ -774,7 +807,7 @@ class CourseSchedulingService {
       const mail = await mailService.sendMail({
         emails,
         mailOptions: {
-          subject: i18nUtility.__('mailer.enrollment_user.subject'),
+          subject: (paramsTemplate.subject) ? paramsTemplate.subject : i18nUtility.__('mailer.enrollment_user.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
@@ -911,7 +944,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
     if (filters.select) {
       select = filters.select
     }
@@ -966,7 +999,7 @@ class CourseSchedulingService {
         .populate({ path: 'city', select: 'id name' })
         .populate({ path: 'country', select: 'id name' })
         // .populate({path: 'course', select: 'id name'})
-        // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })
@@ -1006,7 +1039,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
 
       let where = {}
 

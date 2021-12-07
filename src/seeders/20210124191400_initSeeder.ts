@@ -67,8 +67,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // // @INFO: Agregando tipos de publicaciones
     // let post_type_ids = await this.addPostTypes()
 
-    // // @INFO: Agregando tipos de ubicaciones
-    // let post_location_ids = await this.addPostLocations()
+    // @INFO: Agregando tipos de ubicaciones
+    let post_location_ids = await this.addPostLocations()
 
     // // @INFO: Agregando modos de cursos
     // let course_mode_ids = await this.addCourseModesCategories()
@@ -390,6 +390,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'student', description: 'Home destinado para estudiantes'},
       {name: 'teacher', description: 'Home destinado para docentes'},
       {name: 'admin', description: 'Home destinado para administradores'},
+      {name: 'account_executive', description: 'Home destinado para ejecutivos de cuenta'},
     ]
 
     for await (const home of homes) {
@@ -422,6 +423,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         name: 'global_permissions', description: 'Este modulo contiene los permisos globales', permissions: [
           { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
           { name: 'config:is_student', description: 'Permiso que identifica a los estudiantes dentro del campus' },
+          { name: 'config:is_account_executive', description: 'Permiso que identifica a los ejecutivos de cuenta dentro del campus' },
           { name: 'config:go_to_campus', description: 'Permiso que permite dar acceso al campus' },
           { name: 'config:go_to_moodle', description: 'Permiso que permite dar acceso al moodle' },
         ]
@@ -465,6 +467,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:users_list', description: 'Ver usuarios'},
         {name: 'permission:users_viewer', description: 'Consultar usuarios'},
         {name: 'permission:users_menu_access', description: 'Menu de usuarios'},
+      ]},
+      {name: 'module:account_executives', description: 'Módulo que permite administrar los ejecutivos de cuenta', permissions: [
+        {name: 'permission:account_executives_menu_access', description: 'Menu de ejecutivos de cuenta'},
       ]},
       {name: 'module:qualifiedTeacher', description: 'Módulo que permite administrar los docentes y tutores', permissions: [
         {name: 'permission:qualifiedTeacher_create', description: 'Crear docentes'},
@@ -670,6 +675,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:banners_menu_access'],
           // module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
+          module_permission_ids['permission:account_executives_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],
@@ -839,6 +845,19 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         moodle_id: 7
       },
+      {
+        name: 'account_executive',
+        description: 'Ejecutivo de cuenta',
+        app_module_permissions: [
+          module_permission_ids['config:is_account_executive'],
+          // module_permission_ids['config:go_to_campus'],
+          // module_permission_ids['config:go_to_moodle'],
+        ],
+        homes: [
+          home_ids['account_executive']
+        ],
+        // moodle_id: 4
+      },
     ]
 
     for await (const role of roles) {
@@ -976,6 +995,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'teacher', description: 'Dashboard de docentes'},
       {name: 'guest', description: 'Landing principal'},
       {name: 'officials_landing', description: 'Landing de colaboradores'},
+      {name: 'live', description: 'En vivo'},
     ]
     for await (const postLocation of post_locations) {
       const exists: any = await postLocationService.findBy({
@@ -1803,18 +1823,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
 
 
-    for await (const courseScheduling of courseSchedulings) {
-      const exists: any = await courseSchedulingService.findBy({
-        query: QueryValues.ONE,
-        where: [{field: 'moodle_id', value: courseScheduling.moodle_id}]
-      })
-      if (exists.status === 'success') courseScheduling['id'] = exists.scheduling._id
+    // for await (const courseScheduling of courseSchedulings) {
+    //   const exists: any = await courseSchedulingService.findBy({
+    //     query: QueryValues.ONE,
+    //     where: [{field: 'moodle_id', value: courseScheduling.moodle_id}]
+    //   })
+    //   if (exists.status === 'success') courseScheduling['id'] = exists.scheduling._id
 
-      const response:any = await courseSchedulingService.insertOrUpdate(courseScheduling)
-      if (response.status === 'success') {
-        course_scheduling_ids[response.scheduling.moodle_id] = response.scheduling._id
-      }
-    }
+    //   const response:any = await courseSchedulingService.insertOrUpdate(courseScheduling)
+    //   if (response.status === 'success') {
+    //     course_scheduling_ids[response.scheduling.moodle_id] = response.scheduling._id
+    //   }
+    // }
 
     console.log('course_scheduling_ids', course_scheduling_ids)
   }

@@ -200,6 +200,10 @@
       },
       "delete": {
         "fail_action": "Ocurrio un error al eliminar el registro"
+      },
+      "report": {
+        "invalid_container": "Debes proporcionar un contenedor valido",
+        "survey_not_found": "Encuesta no encontrada"
       }
     },
     "country": {
@@ -345,6 +349,10 @@
     },
     "calendarEvent": {
       "exception": "Error con petición de Moodle."
+    },
+    "grades": {
+      "exception": "Error con petición de Calificaciones. Faltan parámetros :name",
+      "moodle_exception": "Error con petición hacia Calificaciones de Moodle."
     },
     "moodle": {
       "exception": "Error con petición de Moodle: :error",

@@ -410,7 +410,8 @@ class CourseService {
         }, [])
       }
       if (params.schedulingMode && typeof params.schedulingMode !== "string" && params.schedulingMode.hasOwnProperty('value')) {
-        params.schedulingMode = await courseSchedulingService.saveLocalSchedulingMode(params.schedulingMode)
+        // TODO: Modificar para que se ajuste a presencial - en linea
+        params.schedulingMode = await courseSchedulingService.saveLocalSchedulingMode(params.schedulingMode, null)
       }
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
