@@ -9,7 +9,7 @@ import { courseSchedulingDetailsService } from '@scnode_app/services/default/adm
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { certificate_setup } from '@scnode_core/config/globals';
+import { certificate_setup, program_type_collection, program_type_abbr } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
@@ -21,6 +21,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IQueryUserToCertificate, ICertificate, IQueryCertificate } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UserType } from 'aws-sdk/clients/workdocs';
+import { substring } from 'sequelize/types/lib/operators';
 // @end
 
 class CertificateService {
@@ -83,7 +84,6 @@ class CertificateService {
   public setCertificate = async (params: IQueryUserToCertificate) => {
 
     try {
-
       let certificateConsecutive = params.consecutive;
       console.log("Certifcate for username: " + params.username);
 
@@ -123,6 +123,11 @@ class CertificateService {
       //   }
       // });
 
+      if (respCourse.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
       if (respCourseDetails.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
@@ -146,7 +151,46 @@ class CertificateService {
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
 
-      // 2. Estatus de estudiante en Moodle
+      // 2. Tipo de programa
+      let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      console.log('Program:');
+      console.log(programType);
+
+      let field_dato_1 = '';
+      let field_template = '';
+      let field_asistio = '';
+      let field_pais = '';
+      let field_ciudad = '';
+      // let field_listado_cursos = '';
+      let field_listado_cursos = [];
+      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+        field_dato_1 = 'Asistió y aprobó el curso ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al curso ' + respCourse.scheduling.program.name;
+        field_template = 'CP00000001';
+      }
+      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+        field_dato_1 = 'Asistió y aprobó el programa ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al programa ' + respCourse.scheduling.program.name;
+        field_template = 'CP00000002';
+      }
+      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+        field_dato_1 = 'Asistió y aprobó el dipĺomado ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al programa ' + respCourse.scheduling.program.name;
+        field_template = 'CP00000002';
+      }
+
+
+      console.log('....................................');
+      // 3. Listado de Módulos (cursos) que comprende el programa
+      respCourseDetails.schedulings.forEach(element => {
+        //field_listado_cursos += element.course.name + '\r\n';
+        field_listado_cursos.push(element.course.name);
+      });
+      console.log(field_listado_cursos);
+      field_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
+      field_pais = respCourse.scheduling.country.name;
+
+      // 3. Estatus de estudiante en Moodle
       // - Asistencias
       // - Entregas de actividades completas
 
@@ -158,24 +202,24 @@ class CertificateService {
       const currentDate = new Date(timeElapsed);
 
       let certificateParams: ICertificate = {
-        modulo: params.module,
+        modulo: field_template,
         numero_certificado: certificateConsecutive.toString(),
         correo: respDataUser.user.email,
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
-        asistio: 'SI',
+        asistio: field_asistio,
         certificado: respCourse.scheduling.program.name,
         intensidad: '',
-        listado_cursos: '',
-        ciudad: 'Bogotá',
-        pais: 'Colombia',
+        listado_cursos: field_listado_cursos,
+        ciudad: field_ciudad,
+        pais: field_pais,
         fecha_certificado: new Date(2021, 11, 12),
         fecha_aprobacion: new Date(2021, 10, 30),
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
         fecha_impresion: currentDate,
-        dato_1: 'Asistió al curso / Asistió y aprobó el curso',
+        dato_1: field_dato_1,
         dato_2: '',
       }
       //#endregion

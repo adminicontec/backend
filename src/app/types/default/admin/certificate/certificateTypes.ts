@@ -28,7 +28,7 @@ export interface ICertificate {
   alcance?: string,
   alcance_ingles?: string,
   intensidad: string,
-  listado_cursos?: string,
+  listado_cursos?: any,
   ciudad: string,
   pais: string,
   fecha_certificado: Date,
