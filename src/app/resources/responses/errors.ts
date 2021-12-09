@@ -906,14 +906,14 @@ class ErrorResponse {
           }
         },
       },
-      "calendarEvent":{
+      "calendarEvent": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.calendarEvent.exception"),
           "status_code": "calendar_event_exception",
           "code": 400
         },
       },
-      "grades":{
+      "grades": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.grades.exception"),
           "status_code": "grades_exception",
