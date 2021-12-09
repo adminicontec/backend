@@ -3,6 +3,8 @@
 
 // @import services
 import { userService } from '@scnode_app/services/default/admin/user/userService';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 // @end
 
 // @import utilities
@@ -94,6 +96,38 @@ class CertificateService {
       // usuario no existe
       if (respDataUser.status === "error") return respDataUser
 
+      //  course Scheduling Data
+      let respCourse: any = await courseSchedulingService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: '_id', value: params.courseId }]
+      });
+
+      //  course Scheduling Details data
+      let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
+        query: QueryValues.ALL,
+        where: [{ field: 'course_scheduling', value: params.courseId }]
+      });
+
+      // console.log(" --- course Scheduling --- ");
+      // console.log(respCourse);
+      // console.log('\r\n');
+
+      // console.log(" --- course Scheduling Details --- ");
+      // console.log(respCourseDetails);
+      // console.log('\r\n');
+
+      // return responseUtility.buildResponseSuccess('json', null, {
+      //   additional_parameters: {
+      //     program: respCourse.scheduling,
+      //     details: respCourseDetails.schedulings
+      //   }
+      // });
+
+      if (respCourseDetails.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
       // return responseUtility.buildResponseSuccess('json', null, {
       //   additional_parameters: {
       //     tokenHC: tokenHC,
@@ -101,6 +135,23 @@ class CertificateService {
       //   }
       // });
       //#endregion
+
+
+      //#region Validations to generate Certificate
+      //schedulingStatus
+      // 1. Estatus de Programa: se permite generar si está confirmado o ejecutado.
+      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+      }
+
+      // 2. Estatus de estudiante en Moodle
+      // - Asistencias
+      // - Entregas de actividades completas
+
+      //#endregion
+
 
       //#region Build the certificate Parameters
       const timeElapsed = Date.now();
@@ -113,10 +164,7 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
         asistio: 'SI',
-        certificado: 'DIPLOMADO EN GESTIÓN DE CALIDAD BAJO LA NTC ISO 9001:2015',
-        certificado_ingles: '',
-        alcance: '',
-        alcance_ingles: '',
+        certificado: respCourse.scheduling.program.name,
         intensidad: '',
         listado_cursos: '',
         ciudad: 'Bogotá',
@@ -126,7 +174,9 @@ class CertificateService {
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
-        fecha_impresion: currentDate
+        fecha_impresion: currentDate,
+        dato_1: 'Asistió al curso / Asistió y aprobó el curso',
+        dato_2: '',
       }
       //#endregion
       console.log("Certificate Params");
@@ -144,22 +194,31 @@ class CertificateService {
       console.log("Token: ");
       var tokenHC = respToken.token;
 
-      // Build request for Create Certificate
+
+      let respHuella = {
+        info_program: {
+          program: respCourse.scheduling,
+          details: respCourseDetails.schedulings
+        },
+        params: certificateParams,
+        resultado: "freeze",
+        estado: "OK"
+      };
+
+      /*// Build request for Create Certificate
       let respHuella: any = await queryUtility.query({
         method: 'post',
         url: certificate_setup.endpoint.create_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
         params: JSON.stringify(certificateParams)
-      });
+      });*/
 
       if (respHuella.estado == 'Error') {
 
         console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.generation', params: {error: respHuella.resultado}}
-          })
+          { error_key: { key: 'certificate.generation', params: { error: respHuella.resultado } } });
       }
       //#endregion
       // certificateConsecutive++;
@@ -168,7 +227,7 @@ class CertificateService {
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           tokenHC: tokenHC,
-          certificate: respHuella.resultado
+          certificate: respHuella
         }
       });
 

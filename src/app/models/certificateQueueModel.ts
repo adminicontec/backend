@@ -6,7 +6,37 @@ const { Schema } = mongoose;
 
 const CertificateQueueSchema = new Schema({
   // @add_schema Add schema here
-  
+  userId: {
+    type: Schema.Types.Number,
+    required: true
+  },
+  courseId: {
+    type: Schema.Types.Number,
+    required: true
+  },
+  certificateType: {
+    type: Schema.Types.String,
+    required: true
+  },
+  certificateModule: {
+    type: Schema.Types.String,
+    required: true
+  },
+  status: {
+    type: Schema.Types.String,
+    required: true
+  },
+  certificate: {
+    hash: {
+      type: Schema.Types.String,
+      required: false
+    },
+    url: {
+      type: Schema.Types.String,
+      required: false
+    },
+    required: false,
+  },
   // @end
 }, {
   collection: 'certificate_queues' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

@@ -54,7 +54,6 @@ class CourseSchedulingService {
    * @returns
    */
   public findBy = async (params: IQueryFind) => {
-    console.log("------------ findBy -----------------");
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
