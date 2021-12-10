@@ -10,9 +10,7 @@ export interface IQueryCertificate {
 
 export interface IQueryUserToCertificate {
   username: string, // Nombre de usario
-  courseId: string,
-  module: string,
-  consecutive?: number
+  courseId: string
 }
 
 
@@ -67,6 +65,14 @@ export interface ICertificateQueueQuery {
   nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
+}
+
+
+export interface ICertificateQueueRequest {
+  id?: string,
+  users: Array<string>,
+  courseId: string,
+  status: string,
 }
 
 export interface ICertificateQueue {
