@@ -14,7 +14,7 @@ import { CertificateQueue } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueRequest, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 // @end
 
 class CertificateQueueService {
@@ -71,7 +71,7 @@ class CertificateQueueService {
 * @param params Elementos a registrar
 * @returns
 */
-  public insertOrUpdate = async (params: ICertificateQueue) => {
+  public insertOrUpdate = async (params: ICertificateQueueRequest) => {
 
     try {
       if (params.id) {
@@ -93,20 +93,42 @@ class CertificateQueueService {
         console.log("Insert certificate queue");
         console.log(params);
 
-        const exist = await CertificateQueue.findOne({ userid: params.userId, courseid: params.courseId })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: params.userId, courseid: params.courseId } } })
+        let totalResponse = [];
 
-        const response: any = await CertificateQueue.create(params)
+        for await (const userId of params.users) {
+
+          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId })
+          if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
+
+          const response: any = await CertificateQueue.create({
+            userId: userId,
+            courseId: params.courseId,
+            status: params.status,
+            certificateType: '',
+            certificateModule: ''
+           });
+
+           let certificateQueueResponse = {
+            _id: response.id,
+            userId: response.userId,
+            courseId: response.courseId,
+            certificateType: response.certificateType,
+            certificateModule: response.certificateModule,
+            status: response.status
+          }
+          totalResponse.push(certificateQueueResponse);
+
+        };
+
+        // const exist = await CertificateQueue.findOne({ userid: params.userId, courseid: params.courseId })
+        // if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: params.userId, courseid: params.courseId } } })
+
+        // const response: any = await CertificateQueue.create(params)
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
-              _id: response.id,
-              userId: response.userId,
-              courseId: response.courseId,
-              certificateType: response.certificateType,
-              certificateModule: response.certificateModule,
-              status: response.status
+              totalResponse
             }
           }
         })
@@ -114,13 +136,13 @@ class CertificateQueueService {
 
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null,
-      {
-        additional_parameters: {
-          process: 'insertOrUpdate()',
-          error: e.message
-        }
+        {
+          additional_parameters: {
+            process: 'insertOrUpdate()',
+            error: e.message
+          }
 
-      })
+        })
     }
   }
 

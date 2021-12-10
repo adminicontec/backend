@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
@@ -84,7 +85,6 @@ class CertificateService {
   public setCertificate = async (params: IQueryUserToCertificate) => {
 
     try {
-      let certificateConsecutive = params.consecutive;
       console.log("Certifcate for username: " + params.username);
 
       //#region  querying data for user to Certificate, param: username
@@ -159,36 +159,38 @@ class CertificateService {
       let field_dato_1 = '';
       let field_template = '';
       let field_asistio = '';
-      let field_pais = '';
-      let field_ciudad = '';
-      // let field_listado_cursos = '';
-      let field_listado_cursos = [];
+      let field_pais = respCourse.scheduling.country.name;
+      let field_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
+      let field_listado_cursos = '';
+      let field_consecutive = generalUtility.rand(1, 50).toString();
+      let fielf_numero_certificado = respCourse.scheduling.metadata.service_id + '-' + field_consecutive.padStart(4, '0');
+
+      let schedulingType = respCourse.scheduling.schedulingType;
+
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
         field_dato_1 = 'Asistió y aprobó el curso ' + respCourse.scheduling.program.name;
-        field_asistio = 'Asistió al curso ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al curso';
         field_template = 'CP00000001';
       }
       if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
         field_dato_1 = 'Asistió y aprobó el programa ' + respCourse.scheduling.program.name;
-        field_asistio = 'Asistió al programa ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al programa';
+
+        // Listado de Módulos (cursos) que comprende el programa
+        respCourseDetails.schedulings.forEach(element => {
+          field_listado_cursos += element.course.name + '\r\n';
+        });
+
         field_template = 'CP00000002';
       }
       if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
         field_dato_1 = 'Asistió y aprobó el dipĺomado ' + respCourse.scheduling.program.name;
-        field_asistio = 'Asistió al programa ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al diplomado';
         field_template = 'CP00000002';
       }
 
 
       console.log('....................................');
-      // 3. Listado de Módulos (cursos) que comprende el programa
-      respCourseDetails.schedulings.forEach(element => {
-        //field_listado_cursos += element.course.name + '\r\n';
-        field_listado_cursos.push(element.course.name);
-      });
-      console.log(field_listado_cursos);
-      field_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
-      field_pais = respCourse.scheduling.country.name;
 
       // 3. Estatus de estudiante en Moodle
       // - Asistencias
@@ -201,26 +203,29 @@ class CertificateService {
       const timeElapsed = Date.now();
       const currentDate = new Date(timeElapsed);
 
+      console.log('Intensidad:');
+      console.log(respCourse.scheduling.total_scheduling);
+
       let certificateParams: ICertificate = {
         modulo: field_template,
-        numero_certificado: certificateConsecutive.toString(),
+        numero_certificado: fielf_numero_certificado,
         correo: respDataUser.user.email,
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
         asistio: field_asistio,
         certificado: respCourse.scheduling.program.name,
-        intensidad: '',
+        intensidad: generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration),
         listado_cursos: field_listado_cursos,
         ciudad: field_ciudad,
         pais: field_pais,
-        fecha_certificado: new Date(2021, 11, 12),
-        fecha_aprobacion: new Date(2021, 10, 30),
+        fecha_certificado: currentDate,
+        fecha_aprobacion: currentDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
         fecha_impresion: currentDate,
         dato_1: field_dato_1,
-        dato_2: '',
+        dato_2: moment(currentDate).locale('es').format('LL'),
       }
       //#endregion
       console.log("Certificate Params");
@@ -238,28 +243,26 @@ class CertificateService {
       console.log("Token: ");
       var tokenHC = respToken.token;
 
+      // let respHuella = {
+      //   info_program: {
+      //     program: respCourse.scheduling,
+      //     details: respCourseDetails.schedulings
+      //   },
+      //   params: certificateParams,
+      //   resultado: "freeze",
+      //   estado: "OK"
+      // };
 
-      let respHuella = {
-        info_program: {
-          program: respCourse.scheduling,
-          details: respCourseDetails.schedulings
-        },
-        params: certificateParams,
-        resultado: "freeze",
-        estado: "OK"
-      };
-
-      /*// Build request for Create Certificate
+      // Build request for Create Certificate
       let respHuella: any = await queryUtility.query({
         method: 'post',
         url: certificate_setup.endpoint.create_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
         params: JSON.stringify(certificateParams)
-      });*/
+      });
 
       if (respHuella.estado == 'Error') {
-
         console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.generation', params: { error: respHuella.resultado } } });
@@ -270,8 +273,13 @@ class CertificateService {
       // Get All templates
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
+          // info_program: {
+          //   program: respCourse.scheduling,
+          //   details: respCourseDetails.schedulings
+          // },
           tokenHC: tokenHC,
-          certificate: respHuella
+          responseHC: respHuella.resultado,
+          certificate: certificateParams
         }
       });
 
