@@ -1,13 +1,16 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment'
 // @end
 
 // @import services
 import { userService } from '@scnode_app/services/default/admin/user/userService';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { certificate_setup } from '@scnode_core/config/globals';
+import { certificate_setup, program_type_collection, program_type_abbr } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
@@ -19,6 +22,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IQueryUserToCertificate, ICertificate, IQueryCertificate } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UserType } from 'aws-sdk/clients/workdocs';
+import { substring } from 'sequelize/types/lib/operators';
 // @end
 
 class CertificateService {
@@ -55,9 +59,10 @@ class CertificateService {
       });
 
       if (respHuella.estado == 'Error') {
+        console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'certificate.alltemplate' }
+            error_key: { key: 'certificate.generation' }
           })
       }
 
@@ -80,8 +85,6 @@ class CertificateService {
   public setCertificate = async (params: IQueryUserToCertificate) => {
 
     try {
-
-      let certificateConsecutive = params.consecutive;
       console.log("Certifcate for username: " + params.username);
 
       //#region  querying data for user to Certificate, param: username
@@ -91,7 +94,44 @@ class CertificateService {
       })
 
       // usuario no existe
-      if (respDataUser.status === "error" ) return respDataUser
+      if (respDataUser.status === "error") return respDataUser
+
+      //  course Scheduling Data
+      let respCourse: any = await courseSchedulingService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: '_id', value: params.courseId }]
+      });
+
+      //  course Scheduling Details data
+      let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
+        query: QueryValues.ALL,
+        where: [{ field: 'course_scheduling', value: params.courseId }]
+      });
+
+      // console.log(" --- course Scheduling --- ");
+      // console.log(respCourse);
+      // console.log('\r\n');
+
+      // console.log(" --- course Scheduling Details --- ");
+      // console.log(respCourseDetails);
+      // console.log('\r\n');
+
+      // return responseUtility.buildResponseSuccess('json', null, {
+      //   additional_parameters: {
+      //     program: respCourse.scheduling,
+      //     details: respCourseDetails.schedulings
+      //   }
+      // });
+
+      if (respCourse.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
+      if (respCourseDetails.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
 
       // return responseUtility.buildResponseSuccess('json', null, {
       //   additional_parameters: {
@@ -101,31 +141,91 @@ class CertificateService {
       // });
       //#endregion
 
+
+      //#region Validations to generate Certificate
+      //schedulingStatus
+      // 1. Estatus de Programa: se permite generar si está confirmado o ejecutado.
+      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+      }
+
+      // 2. Tipo de programa
+      let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      console.log('Program:');
+      console.log(programType);
+
+      let field_dato_1 = '';
+      let field_template = '';
+      let field_asistio = '';
+      let field_pais = respCourse.scheduling.country.name;
+      let field_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
+      let field_listado_cursos = '';
+      let field_consecutive = generalUtility.rand(1, 50).toString();
+      let fielf_numero_certificado = respCourse.scheduling.metadata.service_id + '-' + field_consecutive.padStart(4, '0');
+
+      let schedulingType = respCourse.scheduling.schedulingType;
+
+      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+        field_dato_1 = 'Asistió y aprobó el curso ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al curso';
+        field_template = 'CP00000001';
+      }
+      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+        field_dato_1 = 'Asistió y aprobó el programa ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al programa';
+
+        // Listado de Módulos (cursos) que comprende el programa
+        respCourseDetails.schedulings.forEach(element => {
+          field_listado_cursos += element.course.name + '\r\n';
+        });
+
+        field_template = 'CP00000002';
+      }
+      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+        field_dato_1 = 'Asistió y aprobó el dipĺomado ' + respCourse.scheduling.program.name;
+        field_asistio = 'Asistió al diplomado';
+        field_template = 'CP00000002';
+      }
+
+
+      console.log('....................................');
+
+      // 3. Estatus de estudiante en Moodle
+      // - Asistencias
+      // - Entregas de actividades completas
+
+      //#endregion
+
+
       //#region Build the certificate Parameters
       const timeElapsed = Date.now();
       const currentDate = new Date(timeElapsed);
 
+      console.log('Intensidad:');
+      console.log(respCourse.scheduling.total_scheduling);
+
       let certificateParams: ICertificate = {
-        modulo: params.module,
-        numero_certificado: certificateConsecutive.toString(),
+        modulo: field_template,
+        numero_certificado: fielf_numero_certificado,
         correo: respDataUser.user.email,
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
-        asistio: 'SI',
-        certificado: 'DIPLOMADO EN GESTIÓN DE CALIDAD BAJO LA NTC ISO 9001:2015',
-        certificado_ingles: '',
-        alcance: '',
-        alcance_ingles: '',
-        intensidad: '',
-        listado_cursos: '',
-        ciudad: 'Bogotá',
-        pais: 'Colombia',
-        fecha_certificado: new Date(2021, 11, 12),
-        fecha_aprobacion: new Date(2021, 10, 30),
+        asistio: field_asistio,
+        certificado: respCourse.scheduling.program.name,
+        intensidad: generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration),
+        listado_cursos: field_listado_cursos,
+        ciudad: field_ciudad,
+        pais: field_pais,
+        fecha_certificado: currentDate,
+        fecha_aprobacion: currentDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
-        fecha_impresion: currentDate
+        fecha_impresion: currentDate,
+        dato_1: field_dato_1,
+        dato_2: moment(currentDate).locale('es').format('LL'),
       }
       //#endregion
       console.log("Certificate Params");
@@ -136,11 +236,22 @@ class CertificateService {
       let respToken: any = await this.login();
 
       if (respToken.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.login_invalid' } })
       }
 
       console.log("Token: ");
       var tokenHC = respToken.token;
+
+      // let respHuella = {
+      //   info_program: {
+      //     program: respCourse.scheduling,
+      //     details: respCourseDetails.schedulings
+      //   },
+      //   params: certificateParams,
+      //   resultado: "freeze",
+      //   estado: "OK"
+      // };
 
       // Build request for Create Certificate
       let respHuella: any = await queryUtility.query({
@@ -152,10 +263,9 @@ class CertificateService {
       });
 
       if (respHuella.estado == 'Error') {
+        console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.alltemplate' }
-          })
+          { error_key: { key: 'certificate.generation', params: { error: respHuella.resultado } } });
       }
       //#endregion
       // certificateConsecutive++;
@@ -163,8 +273,13 @@ class CertificateService {
       // Get All templates
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
+          // info_program: {
+          //   program: respCourse.scheduling,
+          //   details: respCourseDetails.schedulings
+          // },
           tokenHC: tokenHC,
-          certificate: respHuella.resultado
+          responseHC: respHuella.resultado,
+          certificate: certificateParams
         }
       });
 
@@ -193,7 +308,7 @@ class CertificateService {
     if (respHuella.estado == "Error") {
       return responseUtility.buildResponseFailed('json', null,
         {
-          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respHuella.result } }
+          error_key: { key: 'certificate.login_invalid', params: { name: respHuella.result } }
         })
     }
 

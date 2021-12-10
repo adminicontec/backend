@@ -93,6 +93,12 @@ class CourseSchedulingDetailsController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+  public params = async (req: Request, res: Response) => {
+    const {course_scheduling} = req.getParameters.all()
+		const response = await courseSchedulingDetailsService.findBy({query: QueryValues.ALL, where: [{field: 'course_scheduling', value: course_scheduling}]})
+		return responseUtility.sendResponseFromObject(res, response)
+	}
+
 }
 
 export const courseSchedulingDetailsController = new CourseSchedulingDetailsController();
