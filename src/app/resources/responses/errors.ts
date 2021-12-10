@@ -906,14 +906,14 @@ class ErrorResponse {
           }
         },
       },
-      "calendarEvent":{
+      "calendarEvent": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.calendarEvent.exception"),
           "status_code": "calendar_event_exception",
           "code": 400
         },
       },
-      "grades":{
+      "grades": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.grades.exception"),
           "status_code": "grades_exception",
@@ -1016,7 +1016,6 @@ class ErrorResponse {
           }
         }
       },
-
       "certificate": {
         "login_invalid": {
           "message": i18nUtility.__("app_error_messages.certificate.login_invalid"),
@@ -1028,14 +1027,39 @@ class ErrorResponse {
           "status_code": "certificate_not_found",
           "code": 400
         },
-        "alltemplate": {
-          "message": i18nUtility.__("app_error_messages.certificate.alltemplate"),
-          "status_code": "certificate_alltemplate",
+        "generation": {
+          "message": i18nUtility.__("app_error_messages.certificate.generation"),
+          "status_code": "certificate_generation",
           "code": 400
         },
+        "requirements": {
+          "program_status": {
+            "message": i18nUtility.__("app_error_messages.certificate.requirements.program_status"),
+            "status_code": "certificate_requeriments_program_status",
+            "code": 400
+          },
+          "student_status": {
+            "message": i18nUtility.__("app_error_messages.certificate.requirements.student_status"),
+            "status_code": "certificate_requeriments_student_status",
+            "code": 400
+          }
+        },
+        "queue": {
+          "insertOrUpdate": {
+            "failed": {
+              "message": i18nUtility.__("app_error_messages.moodle_user.insertOrUpdate.failed"),
+              "status_code": "certificate_queue_insertOrUpdate_failed",
+              "code": 400
+            }
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.certificate.queue.not_found"),
+            "status_code": "certificate_queue_not_found",
+            "code": 400
+          },
+        }
       }
     };
-
     return json;
   }
 }

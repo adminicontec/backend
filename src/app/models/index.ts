@@ -1,4 +1,5 @@
 // @import_models
+import { CertificateQueueModel } from "@scnode_app/models/certificateQueueModel";
 import { TeacherProfileModel } from "@scnode_app/models/teacherProfileModel";
 import { LandingModel } from "@scnode_app/models/landingModel";
 import { StoreCourseModel } from "@scnode_app/models/storeCourseModel";
@@ -48,6 +49,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CertificateQueue = CertificateQueueModel
 export const TeacherProfile = TeacherProfileModel
 export const Landing = LandingModel
 export const StoreCourse = StoreCourseModel
