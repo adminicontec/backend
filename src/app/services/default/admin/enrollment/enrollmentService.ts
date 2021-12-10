@@ -221,6 +221,7 @@ class EnrollmentService {
           // If the usename (document ID) has uppercase letters or spaces, must be replace to avoid mooodle's username wrong format
           var newUserID = params.documentID.toLowerCase().replace(/ /g, "_");
 
+          let email_old = null
           var isNew = false;
           // check rolename, if not exists, guest as default in moodle, viewer in CV
           //if(params.rolename ==)
@@ -338,6 +339,7 @@ class EnrollmentService {
           else {
             console.log(">>[CampusVirtual]: El usuario existe: " + respCampusDataUser.user._id);
             console.log(">>>>>>>>>>>>>>>>>>>>");
+            email_old = respCampusDataUser.user.email;
 
             paramToEnrollment.user.moodleUserID = respCampusDataUser.user.moodle_id;
             cvUserParams.id = respCampusDataUser.user._id.toString();
@@ -384,10 +386,28 @@ class EnrollmentService {
             // Si existe la matrícula en CV, intentar matricular en Moodle
             console.log("[  Campus  ] Matrícula ya existe: ");
             console.log(exist);
+
+            // @INFO: Se envia email de bienvenida
+            if (
+              (params.sendEmail === true || params.sendEmail === 'true') &&
+              courseScheduling.schedulingStatus.name === 'Confirmado' &&
+              !isNew &&
+              email_old !== params.email
+            ) {
+              await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
+                mailer: customs['mailer'],
+                first_name: respCampusDataUser.user.profile.first_name,
+                course_name: courseScheduling.program.name,
+                course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+                course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                type: 'student'
+              })
+            }
             return responseUtility.buildResponseFailed('json', null,
               { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
           }
           else {
+            console.log("[  Campus  ] Matrícula NO existe: ");
             // Creación exitosa de Enrollment en CV
             // parámetros para Enrollment en CV, requiere nombre de Curso
             let paramsCVEnrollment = { ...params };
@@ -405,6 +425,7 @@ class EnrollmentService {
             let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
             console.log('respMoodle3', respMoodle3);
 
+            console.log('Validación de envio de email: ', params.sendEmail, courseScheduling)
             // @INFO: Se envia email de bienvenida
             if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
               await courseSchedulingService.sendEnrollmentUserEmail([params.email], {

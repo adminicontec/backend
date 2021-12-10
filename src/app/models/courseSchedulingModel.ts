@@ -124,6 +124,11 @@ const CourseSchedulingSchema = new Schema({
   enrollmentDeadline: {
     type: Schema.Types.Date,
   },
+  account_executive: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: false
+  },
   // @end
 }, {
   collection: 'course_schedulings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

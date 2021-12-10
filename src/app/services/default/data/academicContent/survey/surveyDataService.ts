@@ -195,7 +195,8 @@ class SurveyDataService {
                 const _item_multiple: ISectionQuestionsChoiceSimple = {
                   _id: child.question._id,
                   title: this.htmlEntitiesToUTF(child.question.content),
-                  answers: {}
+                  answers: {},
+                  total_answers: 0,
                 }
 
                 if (child.question.answers) {
@@ -248,6 +249,7 @@ class SurveyDataService {
               case 'multiple-choice-unique-answer':
                 if (section_questions_choice_simple[result.question.toString()] && section_questions_choice_simple[result.question.toString()].answers[result.answer]) {
                   section_questions_choice_simple[result.question.toString()].answers[result.answer].total_answers += 1;
+                  section_questions_choice_simple[result.question.toString()].total_answers += 1;
                 }
                 break;
             }
@@ -360,14 +362,18 @@ class SurveyDataService {
         for (const question_id in data.section_questions_choice_simple) {
           if (Object.prototype.hasOwnProperty.call(data.section_questions_choice_simple, question_id)) {
             const question = data.section_questions_choice_simple[question_id];
-            const headers = [question.title, '']
+            const headers = [question.title, '', '']
 
             let itemMerge = {}
             itemMerge['s'] = {r: row, c: 0}
-            itemMerge['e'] = {r: row, c: 1}
+            itemMerge['e'] = {r: row, c: 2}
             row++
 
             sheet_data_aoa.push(headers)
+
+            const subheaders = ['Pregunta', 'Porcentaje', 'Cantidad de respuestas']
+            sheet_data_aoa.push(subheaders)
+            row++
 
             for (const answer_id in question.answers) {
               if (Object.prototype.hasOwnProperty.call(question.answers, answer_id)) {
@@ -376,6 +382,12 @@ class SurveyDataService {
                 const data = []
 
                 data.push(answer.title)
+
+                let percentage = '0%';
+                if (question.total_answers > 0) {
+                  percentage = `${Math.round((answer.total_answers * 100) / question.total_answers)}%`;
+                }
+                data.push(percentage)
                 data.push(answer.total_answers)
                 sheet_data_aoa.push(data)
                 row++;

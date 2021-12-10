@@ -60,7 +60,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -73,7 +73,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .select(select)
           .lean()
 
@@ -94,7 +94,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .select(select)
           .lean()
 
@@ -218,6 +218,7 @@ class CourseSchedulingService {
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
         await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
+        await User.populate(response, {path: 'account_executive', select: 'id profile.first_name profile.last_name email'})
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
@@ -341,6 +342,7 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingType', select: 'id name' })
           .populate({ path: 'schedulingStatus', select: 'id name' })
           .populate({ path: 'regional', select: 'id name moodle_id' })
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
@@ -947,7 +949,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
     if (filters.select) {
       select = filters.select
     }
@@ -1002,7 +1004,7 @@ class CourseSchedulingService {
         .populate({ path: 'city', select: 'id name' })
         .populate({ path: 'country', select: 'id name' })
         // .populate({path: 'course', select: 'id name'})
-        // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+        .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })

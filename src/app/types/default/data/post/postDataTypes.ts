@@ -24,7 +24,15 @@ export interface IFetchPosts {
     direction: string
   },
   onlyImportant: boolean,
-  exclude?: Array<string>
+  exclude?: Array<string>,
+  startDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  } // Fecha de busqueda
+  endDate?: {
+    date: 'today' | string
+    direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
+  } // Fecha de busqueda
 }
 
 export interface IFetchPost {

@@ -168,6 +168,26 @@ class PostDataService {
         where['eventDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
       }
 
+      if (params.startDate) {
+        let direction = 'lte'
+        let date = moment()
+        if (params.startDate.date !== 'today') {
+          date = moment(params.startDate.date)
+        }
+        if (params.startDate.direction) direction = params.startDate.direction
+        where['startDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD hh:mm:ss').replace(' ', 'T')}
+      }
+
+      if (params.endDate) {
+        let direction = 'lte'
+        let date = moment()
+        if (params.endDate.date !== 'today') {
+          date = moment(params.endDate.date)
+        }
+        if (params.endDate.direction) direction = params.endDate.direction
+        where['endDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD hh:mm:ss').replace(' ', 'T')}
+      }
+
       if (params.locations) {
         let locations = await PostLocation.find({'name': {$in: params.locations}}).select('id')
         locations = locations.map((l) => l._id)

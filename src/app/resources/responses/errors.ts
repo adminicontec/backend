@@ -913,6 +913,18 @@ class ErrorResponse {
           "code": 400
         },
       },
+      "grades": {
+        "exception": {
+          "message": i18nUtility.__("app_error_messages.grades.exception"),
+          "status_code": "grades_exception",
+          "code": 400
+        },
+        "moodle_exception": {
+          "message": i18nUtility.__("app_error_messages.grades.moodle_exception"),
+          "status_code": "grades_moodle_exception",
+          "code": 400
+        },
+      },
       "moodle": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.moodle.exception"),
@@ -1048,7 +1060,6 @@ class ErrorResponse {
         }
       }
     };
-
     return json;
   }
 }
