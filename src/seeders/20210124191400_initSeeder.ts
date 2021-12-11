@@ -570,6 +570,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:consultation_room', description: 'Modulo que permite la administración de sala de consulta', permissions: [
         {name: 'permission:consultation_room_menu_access', description: 'Menu de sala de consulta'}
+      ]},
+      {name: 'module:isolution', description: 'Modulo que permite la administración de isolucion', permissions: [
+        {name: 'permission:isolution_menu_access', description: 'Menu de isolucion'}
       ]}
     ]
 
@@ -866,6 +869,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         description: 'Ejecutivo de cuenta',
         app_module_permissions: [
           module_permission_ids['config:is_account_executive'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
+          module_permission_ids['permission:isolution_menu_access'],
           // module_permission_ids['config:go_to_campus'],
           // module_permission_ids['config:go_to_moodle'],
         ],
