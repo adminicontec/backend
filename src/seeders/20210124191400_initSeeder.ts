@@ -523,6 +523,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_enrollment_delete', description: 'Eliminar programas'},
         {name: 'permission:course_scheduling_enrollment_list', description: 'Ver programas'},
         {name: 'permission:course_scheduling_enrollment_viewer', description: 'Consultar programas'},
+        {name: 'permission:course_scheduling_enrollment_generate_certifications', description: 'Generar certificados'},
+        {name: 'permission:course_scheduling_enrollment_download_certifications', description: 'Descargar certificados'},
         // {name: 'permission:course_scheduling_enrollment_menu_access', description: 'Menu de programas'},
       ]},
       {name: 'module:modular', description: 'Módulo que permite administrar los modulares', permissions: [
@@ -654,6 +656,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:course_scheduling_update'],
           module_permission_ids['permission:course_scheduling_delete'],
           module_permission_ids['permission:course_scheduling_enrollment_list'],
+          module_permission_ids['permission:course_scheduling_enrollment_generate_certifications'],
+          module_permission_ids['permission:course_scheduling_enrollment_download_certifications'],
           module_permission_ids['permission:course_scheduling_enrollment_create'],
           module_permission_ids['permission:course_scheduling_enrollment_update'],
           module_permission_ids['permission:course_scheduling_enrollment_delete'],
