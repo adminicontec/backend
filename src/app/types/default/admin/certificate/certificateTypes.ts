@@ -9,7 +9,8 @@ export interface IQueryCertificate {
 }
 
 export interface IQueryUserToCertificate {
-  username: string, // Nombre de usario
+  certificateQueueId: string,
+  userId: string, // Nombre de usario
   courseId: string
 }
 
@@ -58,33 +59,41 @@ export interface ICertificate {
     dato_10?: string,
   ],
 }
-
-
 export interface ICertificateQueueQuery {
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
+  status?: string,
 }
-
-
 export interface ICertificateQueueRequest {
   id?: string,
-  users: Array<string>,
+  users?: Array<string>,
+  userId?: string,
   courseId: string,
   status: string,
 }
 
 export interface ICertificateQueue {
   id?: string,
-  userId: number,
-  courseId: number,
-  certificateType: string,
-  certificateModule: string,
+  courseId?: string,
+  users?: Array<string>,
+  userId?: string,
+  certificateType?: string,
+  certificateModule?: string,
   status: string,
+  message: string,
   certificate?: {
     hash: string,
     url: string
   }
+}
+
+export enum QueueStatus {
+  NEW = 'New',
+  IN_PROCESS = 'In-process',
+  COMPLETE = 'Complete',
+  ERROR = 'Error',
+  RE_ISSUE = 'Re-issue',
 }
 //@end
