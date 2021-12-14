@@ -63,6 +63,11 @@ export interface ICourseSchedulingQuery {
   regional?: string // Busca por regional
   client?: string // Busca por cliente
   service_id?: string
+  start_date?: string // Buscar por fecha de inicio
+  end_date?: string // Buscar por fecha de fin
+  modular?: string
+  program_course_name?: string
+  account_executive?: string // Buscar solo resultados de ese accountExecutive
 }
 
 export interface ICourseSchedulingReport {
