@@ -6,12 +6,12 @@ const { Schema } = mongoose;
 
 const CertificateQueueSchema = new Schema({
   // @add_schema Add schema here
-  userId: {
-    type: Schema.Types.String,
+  courseId: {
+    type: Schema.Types.ObjectId,
     required: true
   },
-  courseId: {
-    type: Schema.Types.String,
+  userId: {
+    type: Schema.Types.ObjectId,
     required: true
   },
   certificateType: {
@@ -26,6 +26,10 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.String,
     required: true
   },
+  message: {
+    type: Schema.Types.String,
+    required: false
+  },
   certificate: {
     hash: {
       type: Schema.Types.String,
@@ -39,13 +43,13 @@ const CertificateQueueSchema = new Schema({
   },
   // @end
 }, {
-  collection: 'certificate_queues' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'certificate_queues', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-CertificateQueueSchema.plugin(mongoose_delete,{
-  deletedAt : true,
+CertificateQueueSchema.plugin(mongoose_delete, {
+  deletedAt: true,
   overrideMethods: 'all',
   indexFields: 'all'
 });

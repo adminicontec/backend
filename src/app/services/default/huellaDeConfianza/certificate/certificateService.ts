@@ -6,6 +6,7 @@ import moment from 'moment'
 import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
 import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
+import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 // @end
 
 // @import utilities
@@ -19,7 +20,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate, QueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UserType } from 'aws-sdk/clients/workdocs';
 import { substring } from 'sequelize/types/lib/operators';
@@ -85,12 +86,12 @@ class CertificateService {
   public setCertificate = async (params: IQueryUserToCertificate) => {
 
     try {
-      console.log("Certifcate for username: " + params.username);
+      console.log("Certifcate for username: " + params.userId);
 
       //#region  querying data for user to Certificate, param: username
       let respDataUser: any = await userService.findBy({
         query: QueryValues.ONE,
-        where: [{ field: 'profile.doc_number', value: params.username }]
+        where: [{ field: '_id', value: params.userId }]
       })
 
       // usuario no existe
@@ -107,21 +108,6 @@ class CertificateService {
         query: QueryValues.ALL,
         where: [{ field: 'course_scheduling', value: params.courseId }]
       });
-
-      // console.log(" --- course Scheduling --- ");
-      // console.log(respCourse);
-      // console.log('\r\n');
-
-      // console.log(" --- course Scheduling Details --- ");
-      // console.log(respCourseDetails);
-      // console.log('\r\n');
-
-      // return responseUtility.buildResponseSuccess('json', null, {
-      //   additional_parameters: {
-      //     program: respCourse.scheduling,
-      //     details: respCourseDetails.schedulings
-      //   }
-      // });
 
       if (respCourse.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
@@ -253,6 +239,12 @@ class CertificateService {
       //   estado: "OK"
       // };
 
+      let responseCertQueueOnError: any = await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        status: 'In-process',//QueueStatus.IN_PROCESS,
+        message: ''
+      });
+
       // Build request for Create Certificate
       let respHuella: any = await queryUtility.query({
         method: 'post',
@@ -264,11 +256,34 @@ class CertificateService {
 
       if (respHuella.estado == 'Error') {
         console.log(respHuella);
+
+        let responseCertQueueOnError: any = await certificateQueueService.insertOrUpdate({
+          id: params.certificateQueueId,
+          status: 'Error',//QueueStatus.ERROR,
+          certificateModule: field_template,
+          certificateType: '',
+          message: respHuella.resultado
+        });
+
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.generation', params: { error: respHuella.resultado } } });
       }
       //#endregion
       // certificateConsecutive++;
+      //update certificatQueue status
+
+      let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        status: 'Complete',//QueueStatus.COMPLETE,
+        message: 'Certificado generado.',
+        certificateModule: field_template,
+        certificateType: '',
+        certificate: {
+          hash: respHuella.resultado.certificado,
+          url: respHuella.resultado.url
+        }
+      });
+
 
       // Get All templates
       return responseUtility.buildResponseSuccess('json', null, {
