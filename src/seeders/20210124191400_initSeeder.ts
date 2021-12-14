@@ -523,6 +523,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_enrollment_delete', description: 'Eliminar programas'},
         {name: 'permission:course_scheduling_enrollment_list', description: 'Ver programas'},
         {name: 'permission:course_scheduling_enrollment_viewer', description: 'Consultar programas'},
+        {name: 'permission:course_scheduling_enrollment_generate_certifications', description: 'Generar certificados'},
+        {name: 'permission:course_scheduling_enrollment_download_certifications', description: 'Descargar certificados'},
         // {name: 'permission:course_scheduling_enrollment_menu_access', description: 'Menu de programas'},
       ]},
       {name: 'module:modular', description: 'Módulo que permite administrar los modulares', permissions: [
@@ -561,6 +563,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
         {name: 'permission:landings_menu_access', description: 'Menu de configuración de landings'}
+      ]},
+      {name: 'module:profile', description: 'Modulo que permite la administración del perfil de usuario', permissions: [
+        {name: 'permission:profile_menu_access', description: 'Menu de perfil de usuario'}
+      ]},
+      {name: 'module:teaching_resources', description: 'Modulo que permite la administración de recursos para la enseñanza', permissions: [
+        {name: 'permission:teaching_resources_menu_access', description: 'Menu de recursos para la enseñanza'}
+      ]},
+      {name: 'module:consultation_room', description: 'Modulo que permite la administración de sala de consulta', permissions: [
+        {name: 'permission:consultation_room_menu_access', description: 'Menu de sala de consulta'}
+      ]},
+      {name: 'module:isolution', description: 'Modulo que permite la administración de isolucion', permissions: [
+        {name: 'permission:isolution_menu_access', description: 'Menu de isolucion'}
       ]}
     ]
 
@@ -654,6 +668,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:course_scheduling_update'],
           module_permission_ids['permission:course_scheduling_delete'],
           module_permission_ids['permission:course_scheduling_enrollment_list'],
+          module_permission_ids['permission:course_scheduling_enrollment_generate_certifications'],
+          module_permission_ids['permission:course_scheduling_enrollment_download_certifications'],
           module_permission_ids['permission:course_scheduling_enrollment_create'],
           module_permission_ids['permission:course_scheduling_enrollment_update'],
           module_permission_ids['permission:course_scheduling_enrollment_delete'],
@@ -719,6 +735,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['config:is_student'],
           module_permission_ids['config:go_to_campus'],
           module_permission_ids['config:go_to_moodle'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
         ],
         homes: [
           home_ids['student']
@@ -732,6 +751,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['config:is_teacher'],
           module_permission_ids['config:go_to_campus'],
           module_permission_ids['config:go_to_moodle'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:teaching_resources_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
         ],
         homes: [
           home_ids['teacher']
@@ -850,6 +873,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         description: 'Ejecutivo de cuenta',
         app_module_permissions: [
           module_permission_ids['config:is_account_executive'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:posts_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
+          module_permission_ids['permission:isolution_menu_access'],
           // module_permission_ids['config:go_to_campus'],
           // module_permission_ids['config:go_to_moodle'],
         ],
@@ -934,6 +961,18 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         },
         roles: [
           role_ids['logistics_assistant']
+        ]
+      },
+      {
+        username: 'userexecutive',
+        password: '123456',
+        email: 'userexecutive@example.com',
+        profile: {
+          first_name: 'User',
+          last_name: 'Executive'
+        },
+        roles: [
+          role_ids['account_executive']
         ]
       }
     ]

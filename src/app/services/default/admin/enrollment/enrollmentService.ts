@@ -28,7 +28,7 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -65,7 +65,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID'
+    let select = 'id user courseID course_scheduling'
     if (filters.select) {
       select = filters.select
     }
@@ -87,6 +87,22 @@ class EnrollmentService {
       where['courseID'] = filters.courseID
     }
 
+    if (filters.without_certification && filters.course_scheduling) {
+      const certifications = await CertificateQueue.find({
+        courseId: filters.course_scheduling,
+        status: {$in: ['New', 'In-process', 'Complete']}
+      })
+      .select('id userId')
+
+      const user_ids = certifications.reduce((accum, element) => {
+        accum.push(element.userId)
+        return accum
+      }, [])
+      if (user_ids.length > 0) {
+        where['user'] = {$nin: user_ids}
+      }
+    }
+
     let registers = []
     try {
       registers = await Enrollment.find(where)
@@ -102,6 +118,18 @@ class EnrollmentService {
         if (register.user && register.user.profile) {
           register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
         }
+
+        if (filters.check_certification) {
+          const certificate = await CertificateQueue.findOne({
+            userId: register.user._id,
+            courseId: register.course_scheduling,
+            status: {$in: ['New', 'In-process', 'Complete']}
+          })
+          .select('')
+
+          register.certificate = certificate
+        }
+
         count++
       }
     } catch (e) { }
@@ -364,7 +392,7 @@ class EnrollmentService {
             if (teachers.includes(respCampusDataUser.user._id.toString())) {
               return responseUtility.buildResponseFailed('json')
             }
-            userEnrollment = respCampusDataUser.userD
+            userEnrollment = respCampusDataUser.user
             params.user = respCampusDataUser.user._id
 
             // Usuario ya existe en CV:

@@ -160,7 +160,7 @@ class CourseSchedulingDetailsService {
             {path: 'schedulingMode', select: 'id name'},
             {path: 'program', select: 'id name'}
           ]})
-        await Course.populate(response, { path: 'course', select: 'id name moodle_id' })
+        await CourseSchedulingSection.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
 
@@ -195,6 +195,7 @@ class CourseSchedulingDetailsService {
                 mailer: customs['mailer'],
                 service_id: response.course_scheduling.metadata.service_id,
                 program_name: response.course_scheduling.program.name,
+                course_name: response.course.name,
                 notification_source: `course_updated_${response._id}`,
                 changes
               }
@@ -264,19 +265,20 @@ class CourseSchedulingDetailsService {
 
   private validateChanges = (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
     const changes = []
+
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        message: `La fecha de inicio del curso ha cambiado a ${params.startDate}`
+        message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
-        message: `La fecha de fin del curso ha cambiado a ${params.endDate}`
+        message: `<div>La fecha de fin del curso ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.endDate}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
       changes.push({
-        message: `La duración del curso ha cambiado a ${generalUtility.getDurationFormated(register.duration)}`
+        message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
       })
     }
 
@@ -289,9 +291,11 @@ class CourseSchedulingDetailsService {
       ((register.number_of_sessions && params.number_of_sessions) && params.number_of_sessions.toString() !== register.number_of_sessions.toString()) ||
       sessionsChange.length > 0
     ) {
-      let message = `Las sesiones han cambiado:<ul>`
+      let message = `Las siguientes sesiones han sido modificadas:<ul>`
       params.sessions.map((session) => {
-        message += `<li>Fecha de inicio: ${moment(session.startDate).format('DD/MM/YYYY hh:mm a')}<br>Duración: ${generalUtility.getDurationFormated(session.duration)}</li>`
+        if (session.hasChanges === 'on') {
+          message += `<li>Fecha de inicio: ${moment(session.startDate).format('DD/MM/YYYY hh:mm a')}<br>Duración: ${generalUtility.getDurationFormated(session.duration)}</li>`
+        }
       })
       message += `</ul>`
       changes.push({

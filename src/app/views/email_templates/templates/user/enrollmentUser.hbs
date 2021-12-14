@@ -4,24 +4,19 @@
 
 <div class="txt_icontec">
 
-  <h2>Inicio del curso</h2>
-  <p>
-    Estimado (a) {{params.first_name}}
-
-    Usted ha sido inscrito al curso de {{params.course_name}} como parte de su plan de formación.
-
-    Lo invitamos a ingresar por la siguiente dirección:
-    <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
-
-    La fecha para el curso va desde
-    {{params.course_start}} hasta {{params.course_end}}
-
-    Lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1">instructivo</a> de ingreso al Campus Digital
-
-    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-
-    Cordialmente
-    Equipo Unidad Técnica de Educación
-  </p>
+  <h2>Inicio del curso</h2><br>
+  <div>Estimado (a) {{params.first_name}}</div>
+  <br>
+  <div>Usted ha sido inscrito al programa {{params.course_name}} como parte de su plan de formación.</div>
+  <br>
+  <div>Lo invitamos a ingresar por la siguiente dirección:<a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></div>
+  <br>
+  <div>La fecha para el curso va desde {{params.course_start}} hasta {{params.course_end}}.</div>
+  <br>
+  <div>Lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo</a> de ingreso al Campus Digital.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <br><br>
+  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

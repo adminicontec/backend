@@ -718,12 +718,12 @@ class CourseSchedulingService {
     const changes = []
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        message: `La fecha de inicio del programa ha cambiado a ${params.startDate}`
+        message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
-        message: `La fecha de fin del programa ha cambiado a ${params.endDate}`
+        message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.endDate}</div>`
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -966,6 +966,16 @@ class CourseSchedulingService {
       }
     }
 
+    if (filters.program_course_name) {
+      // where = {
+      //   ...where,
+      //   $or: [
+      //     { ['program.name']: { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' } }
+      //   ]
+      // }
+      where['program.name'] = { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
+    }
+
     if (filters.service_id) {
       where['metadata.service_id'] = { $regex: '.*' + filters.service_id + '.*', $options: 'i' }
     }
@@ -984,6 +994,10 @@ class CourseSchedulingService {
     if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
     if (filters.regional) where['regional'] = filters.regional
     if (filters.client) where['client'] = { $regex: '.*' + filters.client + '.*', $options: 'i' }
+    if (filters.modular) where['modular'] = filters.modular;
+    if (filters.account_executive) where['account_executive'] = filters.account_executive;
+    if (filters.start_date) where['startDate'] = {$gte: filters.start_date};
+    if (filters.end_date) where['endDate'] = {$lte: filters.end_date};
 
 
     // if (filters.user) {
@@ -992,6 +1006,7 @@ class CourseSchedulingService {
 
     let registers = []
     try {
+      console.log('Where: ', where, filters.program_course_name)
       registers = await CourseScheduling.find(where)
         .select(select)
         .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })

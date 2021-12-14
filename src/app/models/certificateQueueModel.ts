@@ -6,12 +6,14 @@ const { Schema } = mongoose;
 
 const CertificateQueueSchema = new Schema({
   // @add_schema Add schema here
-  courseId: {
-    type: Schema.Types.ObjectId,
-    required: true
-  },
   userId: {
     type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  courseId: {
+    type: Schema.Types.ObjectId,
+    ref: "CourseScheduling",
     required: true
   },
   certificateType: {
@@ -24,7 +26,8 @@ const CertificateQueueSchema = new Schema({
   },
   status: {
     type: Schema.Types.String,
-    required: true
+    required: true,
+    enum: ['New', 'In-process', 'Complete', 'Error', 'Re-issue']
   },
   message: {
     type: Schema.Types.String,
