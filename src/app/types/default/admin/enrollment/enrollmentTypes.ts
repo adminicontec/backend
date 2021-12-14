@@ -36,6 +36,9 @@ export interface IEnrollmentQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  course_scheduling?: string;
+  without_certification?: boolean
+  check_certification?: boolean
 }
 
 export interface IMassiveEnrollment{
