@@ -42,12 +42,12 @@ class CertificateQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id courseId userId status certificateType certificateModule certificate';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            cities: registers
+            certificateQueue: registers
           }
         })
       } else if (params.query === QueryValues.ONE) {
@@ -55,7 +55,7 @@ class CertificateQueueService {
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'city.not_found' })
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            city: register
+            certificateQueue: register
           }
         })
       }
@@ -71,7 +71,7 @@ class CertificateQueueService {
 * @param params Elementos a registrar
 * @returns
 */
-  public insertOrUpdate = async (params: ICertificateQueueRequest) => {
+  public insertOrUpdate = async (params: ICertificateQueue) => {
 
     try {
       if (params.id) {
@@ -79,12 +79,12 @@ class CertificateQueueService {
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
 
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
-
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
               _id: response._id,
-              name: response.name,
+              status: response.status,
+              certificate: response.certificate
             }
           }
         })
@@ -101,8 +101,8 @@ class CertificateQueueService {
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
 
           const response: any = await CertificateQueue.create({
-            userId: userId,
             courseId: params.courseId,
+            userId: userId,
             status: params.status,
             certificateType: '',
             certificateModule: ''
@@ -110,8 +110,8 @@ class CertificateQueueService {
 
            let certificateQueueResponse = {
             _id: response.id,
-            userId: response.userId,
             courseId: response.courseId,
+            userId: response.userId,
             certificateType: response.certificateType,
             certificateModule: response.certificateModule,
             status: response.status
@@ -159,7 +159,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id userId courseId certificateType certificateModule status'
+    let select = 'id courseId userId status certificateType certificateModule certificate'
     if (filters.select) {
       select = filters.select
     }
@@ -195,6 +195,52 @@ class CertificateQueueService {
       }
     })
   }
+
+
+  public fetchItems = async (filters: ICertificateQueueQuery = {}) => {
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id courseId userId status certificateType certificateModule certificate'
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {}
+
+    if (filters.search) {
+      const search = filters.search
+      where = {
+        ...where,
+        $or: [
+          { name: { $regex: '.*' + search + '.*', $options: 'i' } },
+        ]
+      }
+    }
+
+    let registers = []
+    try {
+      registers = await CertificateQueue.find(where)
+        .select(select)
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+    } catch (e) { }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        certificateQueue: [
+          ...registers
+        ],
+        total_register: (paging) ? await CertificateQueue.find(where).count() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    })
+  }
+
 
 }
 
