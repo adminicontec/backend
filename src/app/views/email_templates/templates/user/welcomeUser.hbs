@@ -4,22 +4,17 @@
 
 <div class="txt_icontec">
 
-  <h2>¡Bienvenid@ al Campus Digital Icontec!</h2>
-  <p>
-    Estimado (a) {{params.first_name}}
-
-    Lo invitamos a ingresar por la siguiente dirección:
-    <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>
-
-    Ingrese con su usuario: {{params.username}}
-    y contraseña: {{params.password}}
-
-    Lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1">instructivo</a> de ingreso al Campus Digital
-
-    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-
-    Cordialmente
-    Equipo Unidad Técnica de Educación
-  </p>
+  <h2>¡Bienvenid@ al Campus Digital Icontec!</h2><br>
+  <div>Estimado (a) {{params.first_name}}</div>
+  <br>
+  <div>Lo invitamos a ingresar por la siguiente dirección:<a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>.</div>
+  <br>
+  <div>Ingrese con su usuario: {{params.username}} y contraseña: {{params.password}}</div>
+  <br>
+  <div>Lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo</a> de ingreso al Campus Digital.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <br><br>
+  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

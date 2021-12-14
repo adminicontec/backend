@@ -392,7 +392,7 @@ class EnrollmentService {
             if (teachers.includes(respCampusDataUser.user._id.toString())) {
               return responseUtility.buildResponseFailed('json')
             }
-            userEnrollment = respCampusDataUser.userD
+            userEnrollment = respCampusDataUser.user
             params.user = respCampusDataUser.user._id
 
             // Usuario ya existe en CV:

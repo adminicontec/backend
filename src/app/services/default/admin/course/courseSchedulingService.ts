@@ -718,12 +718,12 @@ class CourseSchedulingService {
     const changes = []
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        message: `La fecha de inicio del programa ha cambiado a ${params.startDate}`
+        message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
-        message: `La fecha de fin del programa ha cambiado a ${params.endDate}`
+        message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.endDate}</div>`
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {

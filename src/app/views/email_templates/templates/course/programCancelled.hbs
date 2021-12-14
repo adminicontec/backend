@@ -4,14 +4,11 @@
 
 <div class="txt_icontec">
 
-  <h2>Servicio cancelado</h2>
-  <p>
-    El servicio con código {{params.service_id}} correspondiente al programa {{params.program_name}} ha sido cancelado el dia {{params.today}}
-
-    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-
-    Cordialmente
-    Equipo Unidad Técnica de Educación
-  </p>
+  <h2>Servicio cancelado</h2><br>
+  <div>El programa {{params.program_name}} con código de servicio {{params.service_id}} ha sido cancelado el dia {{params.today}}.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <br><br>
+  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

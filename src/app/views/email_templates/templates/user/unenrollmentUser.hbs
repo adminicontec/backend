@@ -4,16 +4,13 @@
 
 <div class="txt_icontec">
 
-  <h2>Retiro del curso</h2>
-  <p>
-    Estimado (a) {{params.first_name}}
-
-    Usted ha sido des matriculado del curso de {{params.course_name}}.
-
-    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-
-    Cordialmente
-    Equipo Unidad Técnica de Educación
-  </p>
+  <h2>Retiro del curso</h2><br>
+  <div>Estimado (a) {{params.first_name}}</div>
+  <br>
+  <div>Usted ha sido des matriculado del programa {{params.course_name}}.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <br>
+  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

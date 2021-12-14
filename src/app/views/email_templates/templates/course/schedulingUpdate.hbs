@@ -4,20 +4,19 @@
 
 <div class="txt_icontec">
 
-  <h2>Programación modificada</h2>
-  <div>
-    El servicio con código {{params.service_id}} correspondiente al programa {{params.program_name}} ha sido modificado
-
-    {{#each params.changes}}
-      {{{this.message}}}
-    {{/each}}
-
-    <br><br>
-    En caso de cualquier inquietud accede <a href="{{params.mailer.help_desk}}">aquí a la mesa de ayuda</a>.
-    <br><br>
-    Cordialmente
-    <br>
-    Equipo Unidad Técnica de Educación
-  </div>
+  <h2>Programación modificada</h2><br>
+  {{#if params.course_name}}
+  <div>El curso {{params.course_name}} del programa {{params.program_name}} con código de servicio {{params.service_id}} ha sido modificado</div>
+  {{else}}
+  <div>El programa {{params.program_name}} con código de servicio {{params.service_id}} ha sido modificado</div>
+  {{/if}}
+  <br>
+  {{#each params.changes}}
+    <div>{{{this.message}}}</div>
+  {{/each}}
+  <br>
+  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <br><br>
+  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>
