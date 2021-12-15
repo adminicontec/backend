@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Html-Pdf template</title>
+    <style>
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/c10611be2538a1849ed1a7addfb942a7.ttf) format("truetype");
+        font-weight:200;font-style:normal;font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/219a560aabd1e338e027b7893a040d2a.ttf) format("truetype");
+        font-weight:300;
+        font-style:normal;
+        font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/eccb1814f137b6f2fac5b36c564cf354.ttf) format("truetype");
+        font-weight:400;
+        font-style:normal;
+        font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/ee80149348e829e40df440058caae2ac.ttf) format("truetype");
+        font-weight:500;
+        font-style:normal;
+        font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/ed9b7e1ba8f95313809fe56e667f2b7c.ttf) format("truetype");
+        font-weight:600;
+        font-style:normal;
+        font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/4ae9d1269b992e155b66eeca34a0462d.ttf) format("truetype");
+        font-weight:700;
+        font-style:normal;
+        font-display:swap
+      }
+      @font-face{
+        font-family:'Catamaran';
+        src:url({{campus_virtual}}/assets/570fc3c147980f1d286f40bc9e699c18.ttf) format("truetype");
+        font-weight:800;
+        font-style:normal;
+        font-display:swap
+      }
+      body {
+        font-family: 'Catamaran';
+      }
+      .title-principal {
+        font-weight: 700;
+        font-size: 1.3rem;
+      }
+      .title {
+        color: #0085ca;
+        font-weight: 700;
+        font-size: 1.2rem;
+        text-align: center;
+      }
+      .subtitle {
+        color: #002e5d;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .text-small {
+        font-size: .7rem;
+      }
+      .text-content {
+        font-weight: 400;
+        font-size: .8rem;
+        line-height: 1.5;
+      }
+      .blue {
+        color: #0085ca;
+      }
+      .gray {
+        color: #7C878E;
+      }
+      .divider {
+        width: 100%;
+        height: 2px;
+        background-color: rgb(0, 187, 126);
+      }
+      .discount-value-card {
+        padding: 0.2rem 0.8rem;
+        background-color: #FFD100;
+        color: black;
+        font-size: .9rem;
+      }
+      .discount-price {
+        margin: 0px;
+        text-decoration: line-through;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .field-price {
+        font-weight: bold;
+        font-size: 1rem;
+        color: #000000;
+        flex: none;
+        order: 0;
+        flex-grow: 0;
+        margin: 0px 0px;
+        margin-bottom: 0.5rem;
+      }
+      .field {
+        font-size: .8rem;
+        color: #000000;
+        flex: none;
+        order: 1;
+        align-self: stretch;
+        flex-grow: 0;
+        margin: 0px 0px;
+        margin-bottom: 0.5rem;
+      }
+      .mb-1 {
+        margin-bottom: .5rem;
+      }
+      .cover-url-container {
+        margin-bottom: 1rem;
+      }
+      .cover-url-container img {
+        width: 70%;
+        margin: 0 auto;
+        border-radius: 20px;
+      }
+      .justify {
+        text-align: justify;
+      }
+    </style>
+</head>
+<body>
+  <div style="text-align: left; margin-left: -15px;">
+    <img src="{{campus_virtual}}/assets/ad942125ca7dbecbfbaafb19a22a1764.png" style="width: 150px" />
+  </div>
+  <div class='title-principal'>{{title}}</div>
+  {{#if duration}}
+    <div class="text-small">Duración: {{duration}}</div>
+  {{/if}}
+  {{#if scheduling}}
+    <table style="border: 1; border-collapse: separate;">
+      <tr>
+        <td style="width: 60%">
+          {{#if long_description}}
+            <div class="text-content justify">
+              {{{long_description}}}
+            </div>
+            <br>
+          {{/if}}
+        </td>
+        <td style="width: 40%; padding: 0px 0px 0px 40px;">
+          <div>
+            {{#if cover_url}}
+              <div class="cover-url-container">
+                <img src={{cover_url}} alt="" />
+              </div>
+            {{/if}}
+            {{#if scheduling.price}}
+              {{#if scheduling.discount}}
+                <table class="mb-1">
+                  <tr>
+                    <td class="discount-value-card">{{scheduling.discount}}% Dcto *</td>
+                    <td class="discount-price">{{scheduling.price_without_discount}}</td>
+                  </tr>
+                </table>
+              {{/if}}
+              <div class="field-price mb-1"><b>Inversión: {{scheduling.price}}</b></div>
+            {{/if}}
+            {{#if scheduling.startDate}}
+              <div class="field mb-1">Fecha de inicio: {{scheduling.startDate}}</div>
+            {{/if}}
+            {{#if scheduling.schedulingMode}}
+              <div class="field mb-1">Modalidad: {{scheduling.schedulingMode}}</div>
+            {{/if}}
+            {{#if scheduling.city}}
+              <div class="field mb-1">Ciudad: {{scheduling.city}}</div>
+            {{/if}}
+            {{#if scheduling.discountLimit}}
+              <div class="text-small mb-1">{{{scheduling.discountLimit}}}</div>
+            {{/if}}
+            <br>
+          </div>
+        </td>
+      </tr>
+    </table>
+  {{else}}
+    {{#if long_description}}
+      <div class="text-content justify">
+        {{{long_description}}}
+      </div>
+      <br>
+    {{/if}}
+  {{/if}}
+
+  <div class="title">¿PORQUÉ IMPULSAR TU DESARROLLO CON ICONTEC?</div><br>
+  <table>
+    <tr>
+      <td style="width: 25%;vertical-align: top;" class="text-content blue">
+        <div>
+          <div style="text-align: center;margin-bottom: .5rem">
+            <img style="width: 48px; height: 48px;" src="{{campus_virtual}}/assets/e793675d337dafd01b2c0d0fc601ee3b.svg" alt="">
+          </div>
+          <div>
+            Somos el Organismo Nacional de Normalización en Colombia, responsable por la estructuración de las Normas Técnicas Colombianas que se requieren para impulsar la competitividad de las empresas a nivel nacional e internacional.
+          </div>
+        </div>
+      </td>
+      <td style="width: 25%;vertical-align: top;" class="text-content blue">
+        <div>
+          <div style="text-align: center;margin-bottom: .5rem">
+            <img style="width: 48px; height: 48px;" src="{{campus_virtual}}/assets/2cd805af00c2237594dc212d7f6592ca.svg" alt="">
+          </div>
+          <div>
+            ICONTEC en representación por Colombia, participa activamente en comités internacionales y reuniones técnicas en temas de normas internacionales y  gestión en organizaciones como la ISO, IEC y COPANT.
+          </div>
+        </div>
+      </td>
+      <td style="width: 25%;vertical-align: top;" class="text-content blue">
+        <div>
+          <div style="text-align: center;margin-bottom: .5rem">
+            <img style="width: 48px; height: 48px;" src="{{campus_virtual}}/assets/c2d14706bf5eb9dbf4e660426e8c786e.svg" alt="">
+          </div>
+          <div>
+            Contamos con expertos profesionales en sistemas de gestión que también desarrollan actividades de evaluación de la conformidad y otras actividades como consultoría condición que permite orientar adecuadamente los enfoques técnicos de los referentes en contextos empresariales.
+          </div>
+        </div>
+      </td>
+      <td style="width: 25%;vertical-align: top;" class="text-content blue">
+        <div>
+          <div style="text-align: center;margin-bottom: .5rem">
+            <img style="width: 48px; height: 48px;" src="{{campus_virtual}}/assets/5619409ecf02ec141531367d58ba6223.svg" alt="">
+          </div>
+          <div>
+            Tenemos presencia a nivel internacional en Suramérica y Centroamérica, lo que nos permite contar con una cobertura amplia y con profesionales competentes en la región.
+          </div>
+        </div>
+      </td>
+    </tr>
+  </table>
+  <br>
+  {{#if competencies}}
+    <div class="title">COMPETENCIAS A DESARROLLAR</div>
+    <div class="text-content">
+      {{{competencies}}}
+    </div>
+    <br>
+  {{/if}}
+  {{#if objectives}}
+    <div class="title">OBJETIVOS</div>
+    <div class="text-content">
+      {{{objectives}}}
+    </div>
+    <br>
+  {{/if}}
+  {{#if content}}
+    <div class="title">CONTENIDO</div><br>
+    {{#each content}}
+      <div>
+        <div class="subtitle">{{this.name}}</div>
+        <div class="divider"></div>
+        <div class="text-content gray">{{{this.content}}}</div>
+      </div>
+      <br>
+    {{/each}}
+    <br>
+  {{/if}}
+  {{#if focus}}
+    <div class="title">¿QUIÉN PUEDE PARTICIPAR?</div>
+    <div class="text-content">
+      {{{focus}}}
+    </div>
+    <br>
+  {{/if}}
+  {{#if materials}}
+    <div class="title">MATERIALES ORIGINALES DE ICONTEC</div>
+    <div class="text-content">
+      {{{materials}}}
+    </div>
+    <br>
+  {{/if}}
+  {{#if methodology}}
+    <div class="title">METODOLOGÍA</div><br>
+    <div class="text-content">
+      {{{methodology}}}
+    </div>
+    <br>
+  {{/if}}
+  {{#if generalities}}
+    <div class="title">CERTIFICACIÓN Y DATOS GENERALES</div>
+    <div class="text-content">
+      {{{generalities}}}
+    </div>
+    <br>
+  {{/if}}
+</body>
+</html>

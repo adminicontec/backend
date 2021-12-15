@@ -527,19 +527,19 @@ class GeneralUtility {
    * @INFO Obtener duración con el formato
    * @param seconds
    */
-  public getDurationFormated = (seconds: number) => {
+  public getDurationFormated = (seconds: number, format: 'short' | 'large' = 'short') => {
     const hours = Math.trunc(seconds / 3600)
     const minutes = Math.trunc((seconds - (hours * 3600)) / 60)
     const seconds2 = Math.trunc(seconds - (hours * 3600) - (minutes * 60))
     let response: string = ''
     if (hours) {
-      response = `${response} ${hours}h`
+      response = `${response} ${hours}${(format === 'short') ? 'h' : ' Horas'}`
     }
     if (minutes) {
-      response = `${response} ${minutes}m`
+      response = `${response} ${minutes}${(format === 'short') ? 'm' : ' Minutos'}`
     }
     if (seconds2) {
-      response = `${response} ${seconds2}s`
+      response = `${response} ${seconds2}${(format === 'short') ? 's' : ' Segundos'}`
     }
     return response.trim();
   }
