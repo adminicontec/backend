@@ -2,14 +2,18 @@
 import moment from 'moment'
 // @end
 
+import { customs } from '@scnode_core/config/globals'
+
 // @import services
 import { courseService } from '@scnode_app/services/default/admin/course/courseService'
+import { editorjsService } from '@scnode_app/services/default/general/editorjs/editorjsService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { mapUtility } from '@scnode_core/utilities/mapUtility'
+import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
@@ -17,7 +21,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @end
 
 // @import types
-import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse } from '@scnode_app/types/default/data/course/courseDataTypes'
 // @end
 
 class CourseDataService {
@@ -36,7 +40,7 @@ class CourseDataService {
    * @param params
    * @returns
    */
-   public fetchCourse = async (params: IFetchCourse) => {
+  public fetchCourse = async (params: IFetchCourse) => {
 
     try {
 
@@ -91,13 +95,150 @@ class CourseDataService {
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          course: register
+          course: register,
         }
       })
 
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public generateCourseFile = async (params: IGenerateCourseFile) => {
+    try {
+      const courseData: any = await this.fetchCourse({
+        slug: params.slug
+      })
+      if (courseData.status === 'error') return courseData
+
+      const file = await this.buildCourseFile(courseData.course)
+
+      return file
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private buildCourseFile = async (course: ICourse) => {
+    let path = '/data/course/courseReport'
+    const time = new Date().getTime()
+
+    let contentItems = []
+    if (course?.extra_info?.content?.length) {
+      for (const _item of course?.extra_info?.content) {
+        contentItems.push({
+          name: _item.name,
+          content: (_item.data?.blocks) ? editorjsService.jsonToHtml(_item.data?.blocks) : _item.data
+        })
+      }
+    }
+
+    let scheduling = {};
+    if (course.hasCost && course.priceCOP) {
+      if (course.discount && course.endDiscountDate && moment().isSameOrBefore(moment.utc(course?.endDiscountDate).endOf('day'))) {
+        scheduling['discount'] = course.discount
+        scheduling['price_without_discount'] = this.getPrice(course, false)
+        scheduling['price'] = this.getPrice(course, false)
+        scheduling['discountLimit'] = `*Válido hasta <b>${moment.utc(course?.endDiscountDate).format('DD/MM/YYYY')}</b>. No es acumulable con otras promociones`
+      }
+      scheduling['price'] = this.getPrice(course)
+    }
+
+    if (course.startDate) {
+      scheduling['startDate'] = moment(course?.startDate.toISOString().replace('T00:00:00.000Z','')).format('DD/MM/YYYY')
+    }
+
+    if (course?.schedulingMode?.name) {
+      scheduling['schedulingMode'] = course?.schedulingMode?.name
+    }
+
+    if (course?.city?.name) {
+      scheduling['city'] = course?.city?.name
+    }
+
+    // TODO: Modificar formulario de capacitaciones a nivel de colaborador para que solo pida la relación con una ficha
+    // TODO: Modificar formulario de fichas para agregar los demas campos
+    // TODO: Modificar endpoint de capacitaciones para que traiga la info desde la ficha
+    // TODO: Modificar el front de capacitaciones para que lea data desde la ficha
+    // TODO: Redireccionar a pantalla del curso
+    // TODO: Modificar pantalla de curso para que reciba una ficha y no un courseScheduling
+
+    const responsePdf = await htmlPdfUtility.generatePdf({
+      from: 'file',
+      file: {
+        path,
+        type: 'hbs',
+        context: {
+          campus_virtual: customs['campus_virtual'],
+          logo: `${customs['campus_virtual']}/assets/ad942125ca7dbecbfbaafb19a22a1764.png`,
+          title: course.program.name,
+          cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
+          duration: course.duration ? generalUtility.getDurationFormated(course.duration, 'large') : null,
+          long_description: course?.extra_info?.description?.blocks ? editorjsService.jsonToHtml(course.extra_info.description.blocks) : null,
+          competencies: course?.extra_info?.competencies?.blocks ? editorjsService.jsonToHtml(course.extra_info.competencies.blocks) : null,
+          objectives: course?.extra_info?.objectives?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.objectives?.blocks) : null,
+          content: contentItems.length > 0 ? contentItems : null,
+          focus: course?.extra_info?.focus?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.focus?.blocks) : null,
+          materials: course?.extra_info?.materials?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.materials?.blocks) : null,
+          methodology: course?.extra_info?.methodology?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.methodology?.blocks) : null,
+          generalities: course?.extra_info?.generalities?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.generalities?.blocks) : null,
+          scheduling
+        }
+      },
+      to_file: {
+        file: {
+          name: `${time}.pdf`,
+        },
+        path: 'data/course/courseReport'
+      },
+      options: {
+        // orientation: "landscape",
+        format: "Tabloid",
+        border: {
+          top: "15mm",            // default is 0, units: mm, cm, in, px
+          right: "15mm",
+          bottom: "15mm",
+          left: "15mm"
+        },
+        "footer": {
+          "height": "15mm",
+          "contents": {
+            default: '<div style="font-size:0.8rem; text-align: right"><span >{{page}}</span>/<span>{{pages}}</span></div>', // fallback value
+          }
+        }
+      },
+    })
+
+    if (responsePdf.status === 'error') return responsePdf
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        path: responsePdf.path
+      }
+    })
+  }
+
+  private getPrice = (course: ICourse, withDiscount: boolean = true) => {
+    const price = course?.priceCOP
+    const discount = course?.discount
+    let finalPrice = ''
+    if(!price) return null
+
+    let priceWithIva = parseFloat(price.toString())
+    if (customs['iva']) {
+      priceWithIva = priceWithIva + ((priceWithIva * parseInt(customs['iva'])) / 100)
+    }
+
+    if (withDiscount === true && moment().isSameOrBefore(moment(course?.endDiscountDate).endOf('day'))) {
+      if(discount){
+        finalPrice += parseFloat(Math.round(priceWithIva*(1-(discount/100))).toString()).toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace(',00', '')
+      }else{
+        finalPrice += priceWithIva.toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace('.00', '')
+      }
+    } else {
+      finalPrice += priceWithIva.toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace('.00', '')
+    }
+    return finalPrice
   }
 
   /**

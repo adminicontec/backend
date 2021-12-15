@@ -54,6 +54,17 @@ class CourseDataController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * Metodo que permite consultar un curso
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public generateCourseFile = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseDataService.generateCourseFile(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 }
 
 export const courseDataController = new CourseDataController();
