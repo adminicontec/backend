@@ -954,30 +954,25 @@ class CourseSchedulingService {
       select = filters.select
     }
 
-    let where = {}
+    let where: object[] = []
 
     if (filters.search) {
       const search = filters.search
-      where = {
-        ...where,
-        $or: [
-          { observations: { $regex: '.*' + search + '.*', $options: 'i' } }
-        ]
-      }
-    }
-
-    if (filters.program_course_name) {
-      // where = {
-      //   ...where,
-      //   $or: [
-      //     { ['program.name']: { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' } }
-      //   ]
-      // }
-      where['program.name'] = { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
+      where.push({
+        $match: {
+          $or: [
+            { observations: { $regex: '.*' + search + '.*', $options: 'i' } }
+          ]
+        }
+      })
     }
 
     if (filters.service_id) {
-      where['metadata.service_id'] = { $regex: '.*' + filters.service_id + '.*', $options: 'i' }
+      where.push({
+        $match: {
+          'metadata.service_id': { $regex: '.*' + filters.service_id + '.*', $options: 'i' }
+        }
+      })
     }
 
     if (filters.course_scheduling_code) {
@@ -986,28 +981,101 @@ class CourseSchedulingService {
         accum.push(element._id)
         return accum
       }, [])
-      where['program'] = { $in: program_ids }
+      where.push({
+          $match: {
+            program: { $in: program_ids.map((p) => ObjectID(p)) }
+          }
+      })
     }
 
-    if (filters.schedulingType) where['schedulingType'] = filters.schedulingType
-    if (filters.schedulingStatus) where['schedulingStatus'] = filters.schedulingStatus
-    if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
-    if (filters.regional) where['regional'] = filters.regional
-    if (filters.client) where['client'] = { $regex: '.*' + filters.client + '.*', $options: 'i' }
-    if (filters.modular) where['modular'] = filters.modular;
-    if (filters.account_executive) where['account_executive'] = filters.account_executive;
-    if (filters.start_date) where['startDate'] = {$gte: filters.start_date};
-    if (filters.end_date) where['endDate'] = {$lte: filters.end_date};
+    if (filters.schedulingType) where.push({$match: {schedulingType: ObjectID(filters.schedulingType)}})
+    if (filters.schedulingStatus) where.push({$match: {schedulingStatus: ObjectID(filters.schedulingStatus)}})
+    if (filters.schedulingMode) where.push({$match: {schedulingMode: ObjectID(filters.schedulingMode)}})
+    if (filters.regional) where.push({$match: {regional: ObjectID(filters.regional)}})
+    if (filters.client) where.push({$match: {client: { $regex: '.*' + filters.client + '.*', $options: 'i' }}})
+    if (filters.modular) where.push({$match: {modular: ObjectID(filters.modular)}})
+    if (filters.account_executive) where.push({$match: {account_executive: ObjectID(filters.account_executive)}})
+    if (filters.start_date) where.push({$match: {startDate: {$gte: new Date(filters.start_date)}}})
+    if (filters.end_date) where.push({$match: {endDate: {$lte: new Date(filters.end_date)}}})
 
 
     // if (filters.user) {
     // where['metadata.user'] = filters.user
     // }
 
+    if (filters.program_course_name) {
+      // Buscar el los cursos una coincidencia
+      const responseCourses = await CourseSchedulingDetails.aggregate([
+        {
+          $lookup: {
+            from: "course_scheduling_sections",
+            localField: "course",
+            foreignField: "_id",
+            as: "course_doc"
+          }
+        },{
+          $match: {
+            "course_doc.name": { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
+          }
+        }
+      ])
+      let programsId = []
+      if (responseCourses && responseCourses.length) {
+        programsId = responseCourses.map((c) => ObjectID(c.course_scheduling))
+      }
+
+      where.push({
+        $lookup: {
+          from: "programs",
+          localField: "program",
+          foreignField: "_id",
+          as: "program_doc"
+        }
+      })
+
+      if (programsId.length) {
+        where.push({
+          $match:{
+            $or : [
+              {
+                _id: { $in: programsId }
+              },
+              {
+                'program_doc.name': { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
+              }
+            ]
+          }
+        })
+      } else {
+        where.push({
+          $match: {
+            'program_doc.name': { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
+          }
+        })
+      }
+    }
+
     let registers = []
     try {
-      console.log('Where: ', where, filters.program_course_name)
-      registers = await CourseScheduling.find(where)
+      if (where.length) {
+        registers = await CourseScheduling.aggregate(where)
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort({ startDate: -1 })
+        await CourseScheduling.populate(registers, [
+          { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
+          { path: 'schedulingMode', select: 'id name moodle_id' },
+          { path: 'modular', select: 'id name' },
+          { path: 'program', select: 'id name moodle_id code' },
+          { path: 'schedulingType', select: 'id name' },
+          { path: 'schedulingStatus', select: 'id name' },
+          { path: 'regional', select: 'id name' },
+          { path: 'city', select: 'id name' },
+          { path: 'country', select: 'id name' },
+          {path: 'account_executive', select: 'id profile.first_name profile.last_name'}
+        ])
+      } else {
+        registers = await CourseScheduling.find({})
         .select(select)
         .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -1024,6 +1092,7 @@ class CourseSchedulingService {
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })
         .lean()
+      }
 
       for await (const register of registers) {
         if (register.startDate) register.startDate = moment.utc(register.startDate).format('YYYY-MM-DD')
@@ -1037,14 +1106,16 @@ class CourseSchedulingService {
         //   register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
         // }
       }
-    } catch (e) { }
+    } catch (e) {
+      console.log('Error: ', e)
+    }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         schedulings: [
           ...registers
         ],
-        total_register: (paging) ? await CourseScheduling.find(where).count() : 0,
+        total_register: (paging) ? (where.length ? (await CourseScheduling.aggregate(where)).length : await CourseScheduling.find({}).count()) : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
