@@ -9,7 +9,11 @@ export interface ICourse {
   // name             : string,             // Nombre del curso
   // fullname?         : string,             // Nombre Completo del curso
   // displayname?      : string,             // Nombre Para mostrar del curso
+  short_description?: string
   description: string,             // Descripción del curso
+  alternative_title?: string,
+  platform_video?: string,
+  url_video?: string,
   // courseType?      : string,             // Tipo de curso
   // mode?            : string,             // Modalidad
   // startDate        : string,             // fecha de inicio

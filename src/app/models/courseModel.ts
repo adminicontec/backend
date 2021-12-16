@@ -35,6 +35,18 @@ const CourseSchema = new Schema({
   //   type: Schema.Types.String,
   //   required: false,
   // },
+  alternative_title: {
+    type: Schema.Types.String
+  },
+  short_description: {
+    type: Schema.Types.Mixed,
+  },
+  platform_video: {
+    type: Schema.Types.String
+  },
+  url_video: {
+    type: Schema.Types.String
+  },
   description: {
     type: Schema.Types.Mixed,
     required: true,
