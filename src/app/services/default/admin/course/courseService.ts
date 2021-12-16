@@ -227,13 +227,17 @@ class CourseService {
 
         for await (const register of registers) {
           let isActive = false;
+
+          console.log(register);
+
+
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
           })
             .lean()
 
           let courseType = ''
-          let courseObjectives =[];
+          let courseObjectives = [];
           let courseContent = [];
 
           if (schedulingExtraInfo) {
@@ -262,10 +266,20 @@ class CourseService {
 
           // course Is Active given end date
           let current = moment();
-          if (current.isAfter(register.endDate))
+          if (register.hasCost) {
+            console.log("Fecha limite:");
+            console.log(register.enrollmentDeadline);
+            if (current.isAfter(register.enrollmentDeadline)) {
+              isActive = false;
+            }
+            else {
+              isActive = true;
+            }
+          }
+          else {
             isActive = false;
-          else
-            isActive = true;
+          }
+
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -289,11 +303,11 @@ class CourseService {
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
             isActive: isActive,
             objectives: courseObjectives,
-            content: courseContent
+            content: courseContent,
           }
           listOfCourses.push(courseToExport);
           console.log("----------------------------");
-          console.log(listOfCourses);
+          //console.log(listOfCourses);
         }
       } catch (e) {
         return responseUtility.buildResponseFailed('json')
