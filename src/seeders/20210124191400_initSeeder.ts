@@ -560,6 +560,12 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_officials_training', description: 'Landing de colaboradores'},
         {name: 'permission:landings_officials_scheduling', description: 'Landing de colaboradores'},
 
+        {name: 'permission:landings_student', description: 'Landing de estudiantes'},
+        {name: 'permission:landings_student_general_info', description: 'Landing de estudiantes'},
+        {name: 'permission:landings_student_article', description: 'Landing de estudiantes'},
+        {name: 'permission:landings_student_training', description: 'Landing de estudiantes'},
+        {name: 'permission:landings_student_scheduling', description: 'Landing de estudiantes'},
+
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
         {name: 'permission:landings_menu_access', description: 'Menu de configuración de landings'}
@@ -725,6 +731,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:landings_officials_article'],
           module_permission_ids['permission:landings_officials_training'],
           module_permission_ids['permission:landings_officials_scheduling'],
+          module_permission_ids['permission:landings_student'],
+          module_permission_ids['permission:landings_student_general_info'],
+          module_permission_ids['permission:landings_student_article'],
+          module_permission_ids['permission:landings_student_training'],
+          module_permission_ids['permission:landings_student_scheduling'],
         ],
         homes: [
           home_ids['admin']
