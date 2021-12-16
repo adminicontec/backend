@@ -56,7 +56,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
+      let select = 'id schedulingMode program courseType short_description alternative_title platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -407,6 +407,7 @@ class CourseService {
       if (params.program && typeof params.program === 'string') params.program = JSON.parse(params.program)
       if (params.schedulingMode && typeof params.schedulingMode === 'string') params.schedulingMode = JSON.parse(params.schedulingMode)
       if (params.description && typeof params.description === 'string') params.description = JSON.parse(params.description)
+      if (params.short_description && typeof params.short_description === 'string') params.short_description = JSON.parse(params.short_description)
       if (params.competencies && typeof params.competencies === 'string') params.competencies = JSON.parse(params.competencies)
       if (params.objectives && typeof params.objectives === 'string') params.objectives = JSON.parse(params.objectives)
       if (params.content && typeof params.content === 'string') params.content = JSON.parse(params.content)
@@ -415,6 +416,12 @@ class CourseService {
       if (params.important_info && typeof params.important_info === 'string') params.important_info = JSON.parse(params.important_info)
       if (params.methodology && typeof params.methodology === 'string') params.methodology = JSON.parse(params.methodology)
       if (params.generalities && typeof params.generalities === 'string') params.generalities = JSON.parse(params.generalities)
+
+      // alternative_title
+      // short_description
+      // platform_video
+      // url_video
+
       if (Array.isArray(params.content)) {
         params.content = params.content.map((c) => {
           try {
