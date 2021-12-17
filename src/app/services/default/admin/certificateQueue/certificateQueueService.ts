@@ -14,7 +14,7 @@ import { CertificateQueue } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueRequest, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 // @end
 
 class CertificateQueueService {
