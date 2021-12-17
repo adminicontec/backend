@@ -89,11 +89,4 @@ export interface ICertificateQueue {
   }
 }
 
-export enum QueueStatus {
-  NEW = 'New',
-  IN_PROCESS = 'In-process',
-  COMPLETE = 'Complete',
-  ERROR = 'Error',
-  RE_ISSUE = 'Re-issue',
-}
 //@end
