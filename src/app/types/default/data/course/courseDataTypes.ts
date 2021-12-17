@@ -39,7 +39,8 @@ export interface IFetchCourses {
   random?: {
     size?: number
   },
-  exclude?: Array<string>
+  exclude?: Array<string>,
+  new?: boolean
 }
 
 export interface IFetchCourse {
