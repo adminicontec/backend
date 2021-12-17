@@ -63,8 +63,8 @@ export interface IStoreCourse {
   isActive?: boolean,          // Numero de segundos para la duración del curso
   objectives?: any,
   content?: any,
-  // startPublicationDate?: string,
-  // endPublicationDate?: string,
+  startPublicationDate?: string,
+  endPublicationDate?: string,
 }
 
 export interface ICourseQuery {
