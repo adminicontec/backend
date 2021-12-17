@@ -110,8 +110,6 @@ class CourseService {
 
     try {
       console.log("List of available courses:")
-
-      //params.mode = 'Abierto';
       let listOfCourses = []
       const paging = (params.pageNumber && params.nPerPage) ? true : false
 
@@ -260,15 +258,11 @@ class CourseService {
 
           // course Is Active given end date
           let current = moment();
-          if (register.hasCost && register.priceCOP != 0) {
-            if (register.endPublicationDate) {
-              if (current.isAfter(register.endPublicationDate)) {
-                isActive = false;
-              }
-              else {
-                isActive = true;
-              }
-            }
+          if (register.hasCost) {
+            if (current.isBetween(register.startPublicationDate, register.endPublicationDate))
+              isActive = true;
+            else
+              isActive = false;
           }
           else {
             isActive = false;
@@ -286,10 +280,12 @@ class CourseService {
             mode: register.schedulingMode.name,
             startDate: register.startDate,
             endDate: register.endDate,
+            startPublicationDate: register.startPublicationDate,
+            endPublicationDate: register.endPublicationDate,
             maxEnrollmentDate: register.enrollmentDeadline,
             hasCost: register.hasCost,
-            priceCOP: register.priceCOP,
-            priceUSD: register.priceUSD,
+            priceCOP: register.priceCOP == null ? 0 : register.priceCOP,
+            priceUSD: register.priceUSD == null ? 0 : register.priceUSD,
             discount: register.discount == null ? 0 : register.discount,
             endDiscountDate: register.endDiscountDate == null ? null : register.endDiscountDate,
             quota: register.amountParticipants,
@@ -298,8 +294,6 @@ class CourseService {
             isActive: isActive,
             objectives: courseObjectives,
             content: courseContent,
-            //startPublicationDate: register.startPublicationDate,
-            //endPublicationDate: register.endPublicationDate
           }
           listOfCourses.push(courseToExport);
         }
