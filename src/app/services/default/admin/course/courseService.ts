@@ -267,7 +267,7 @@ class CourseService {
           else {
             isActive = false;
           }
-          console.log("Course is active: " + isActive);
+          //console.log("Course is active: " + isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
