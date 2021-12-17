@@ -19,6 +19,10 @@ const LandingSchema = new Schema({
     {
       unique: {type: Schema.Types.String, require: true},
       status: {type: Schema.Types.Boolean, default: true},
+      course: {
+        type: Schema.Types.ObjectId,
+        ref: "Course",
+      },
       title: {type: Schema.Types.String},
       description: {type: Schema.Types.String},
       attachedUrl: {type: Schema.Types.String},

@@ -3,6 +3,7 @@
 
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import { courseService } from '@scnode_app/services/default/admin/course/courseService'
 // @end
 
 // @import config
@@ -14,7 +15,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Landing } from '@scnode_app/models'
+import { Course, Landing } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -70,6 +71,7 @@ class LandingService {
       let select = 'id slug title_page title_training title_references title_posts article trainings scheduling'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Landing.find(where)
+          .populate({path: 'trainings.course', select: 'id program'})
           .select(select)
           .lean()
 
@@ -80,10 +82,16 @@ class LandingService {
         })
       } else if (params.query === QueryValues.ONE) {
         const register: any = await Landing.findOne(where)
+          .populate({path: 'trainings.course', select: 'id program'})
           .select(select)
           .lean()
 
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'landing.not_found' })
+
+        if (register?.trainings) {
+          register.trainings = await this.getExtraInfo(register?.trainings)
+        }
+
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -96,6 +104,45 @@ class LandingService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public getExtraInfo = async (trainings: Array<any>) => {
+    const program_ids = trainings.reduce((accum, element) => {
+      if (element?.course) {
+        accum.push(element.course.program._id.toString())
+      }
+      return accum
+    }, [])
+
+    if (program_ids.length > 0) {
+      const schedulingExtraInfo: any = await Course.find({
+        program: {$in: program_ids}
+      })
+      .populate({path: 'schedulingMode', select: 'id name'})
+      .lean()
+
+      const extra_info_by_program = schedulingExtraInfo.reduce((accum, element) => {
+        if (!accum[element.program]) {
+          element.coverUrl = courseService.coverUrl(element)
+          accum[element.program.toString()] = element
+        }
+        return accum
+      }, {})
+
+      for await (const _item of trainings) {
+        if (_item?.course) {
+          if (extra_info_by_program[_item.course.program._id.toString()]) {
+            _item['course']['extra_info'] = extra_info_by_program[_item.course.program._id.toString()]
+          }
+        }
+      }
+    }
+    for (const training of trainings) {
+      if (training.attachedUrl) {
+        training.attachedFile = landingService.trainingAttachedUrl(training)
+      }
+    }
+    return trainings;
   }
 
   /**

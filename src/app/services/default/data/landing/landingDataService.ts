@@ -39,6 +39,9 @@ class LandingDataService {
     try {
 
       const landing = await Landing.findOne({slug: params.slug})
+      .populate({path: 'trainings.course', select: 'id program', populate: {
+        path: 'program', select: 'id name'
+      }})
       .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references')
       .lean()
 
@@ -48,11 +51,7 @@ class LandingDataService {
         }
 
         if (landing.trainings) {
-          for (const training of landing.trainings) {
-            if (training.attachedUrl) {
-              training.attachedFile = landingService.trainingAttachedUrl(training)
-            }
-          }
+          landing.trainings = await landingService.getExtraInfo(landing.trainings)
         }
 
         if (landing.scheduling) {

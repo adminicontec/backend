@@ -156,10 +156,7 @@ class CourseDataService {
       scheduling['city'] = course?.city?.name
     }
 
-    // TODO: Modificar formulario de capacitaciones a nivel de colaborador para que solo pida la relación con una ficha
-    // TODO: Modificar formulario de fichas para agregar los demas campos
-    // TODO: Modificar endpoint de capacitaciones para que traiga la info desde la ficha
-    // TODO: Modificar el front de capacitaciones para que lea data desde la ficha
+    // TODO: Agregar icono de play a las tarjetas de colaboradores cuando tenga video
     // TODO: Redireccionar a pantalla del curso
     // TODO: Modificar pantalla de curso para que reciba una ficha y no un courseScheduling
 
