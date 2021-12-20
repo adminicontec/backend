@@ -77,6 +77,7 @@ export interface ICourse {
   enrollment_enabled?: boolean
   extra_info: {
     content?: Array<{category: string, data: any, name: string}>
+    originalCoverUrl?: string
     coverUrl?: string
     description?: any
     requirements?: any

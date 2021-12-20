@@ -1,4 +1,5 @@
 // @import_routes
+import { uploadAssetsRoute } from "@scnode_app/routes/default/general/upload/uploadAssetsRoute";
 import { gradesRoute } from "@scnode_app/routes/default/admin/grades/gradesRoute";
 import { certificateQueueRoute } from "@scnode_app/routes/default/admin/certificateQueue/certificateQueueRoute";
 import { surveyDataRoute } from "@scnode_app/routes/default/data/academicContent/survey/surveyDataRoute";
@@ -68,6 +69,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    uploadAssetsRoute,
     gradesRoute,
     certificateQueueRoute,
     surveyDataRoute,

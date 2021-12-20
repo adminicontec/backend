@@ -59,7 +59,6 @@ class AttachedServerUtility {
    */
   public upload = async (file, file_name, upload_config: UploadConfig) => {
 
-    console.log('inUpload', file, file_name, upload_config)
     const upload_config_base_path = (upload_config.base_path) ? upload_config.base_path : 'uploads'
     let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
     if (upload_config.base_path_type === "absolute") {
@@ -75,13 +74,13 @@ class AttachedServerUtility {
     const fileExists = fileUtility.fileExists(full_path_file);
     console.log('full_path_file', full_path_file)
     console.log('fileExists', fileExists)
-    
-    if (fileExists === true) {
-      console.log('infileExists')
-      return responseUtility.buildResponseFailed('json',null,{additional_parameters: {
-        reason: i18nUtility.i18nMessage("error_messages.upload_files.file_upload_already_exist")
-      }})
-    }
+
+    // if (fileExists === true) {
+    //   console.log('infileExists')
+    //   return responseUtility.buildResponseFailed('json',null,{additional_parameters: {
+    //     reason: i18nUtility.i18nMessage("error_messages.upload_files.file_upload_already_exist")
+    //   }})
+    // }
 
     console.log('createDirRecursive',full_path_file)
     // Creando la estructura de carpetas necesaria para cargar el archivo

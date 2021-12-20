@@ -100,6 +100,7 @@ class CourseDataService {
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo
+            extra_info.originalCoverUrl = extra_info.coverUrl
             extra_info.coverUrl = courseService.coverUrl(extra_info)
             register['extra_info'] = extra_info
           }
@@ -155,6 +156,7 @@ class CourseDataService {
             schedulingMode: schedulingExtraInfo.schedulingMode
           }
           let extra_info = schedulingExtraInfo
+          extra_info.originalCoverUrl = extra_info.coverUrl
           extra_info.coverUrl = courseService.coverUrl(extra_info)
           register['extra_info'] = extra_info
         }
@@ -223,19 +225,16 @@ class CourseDataService {
     if (course?.city?.name) {
       scheduling['city'] = course?.city?.name
     }
-
-    console.log('test', "file:///" + __dirname.split('app')[0].replace(/\\/g, "/") + "app/")
-
+    console.log('file', courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}))
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
         path,
         type: 'hbs',
         context: {
-          campus_virtual: customs['campus_virtual'],
-          logo: `${customs['campus_virtual']}/assets/ad942125ca7dbecbfbaafb19a22a1764.png`,
           title: course.program.name,
-          cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
+          // cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
+          cover_url: courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}),
           duration: course.duration ? generalUtility.getDurationFormated(course.duration, 'large') : null,
           long_description: course?.extra_info?.description?.blocks ? editorjsService.jsonToHtml(course.extra_info.description.blocks) : null,
           competencies: course?.extra_info?.competencies?.blocks ? editorjsService.jsonToHtml(course.extra_info.competencies.blocks) : null,
@@ -257,7 +256,7 @@ class CourseDataService {
       options: {
         // orientation: "landscape",
         format: "Tabloid",
-        base: "file:///" + __dirname.split('app')[0].replace(/\\/g, "/") + "app/",
+        base: `${customs['pdf_base']}/`,
         border: {
           top: "15mm",            // default is 0, units: mm, cm, in, px
           right: "15mm",

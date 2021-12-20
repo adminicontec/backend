@@ -562,10 +562,15 @@ class CourseService {
    * Metodo que convierte el valor del cover de un curso a la URL donde se aloja el recurso
    * @param {config} Objeto con data del Course
    */
-  public coverUrl = ({ coverUrl }) => {
+  public coverUrl = ({ coverUrl }, options?: any) => {
+    const format = (options?.format) ? options.format : 'link'
+    let base = customs['uploads']
+    if (format === 'file') {
+      base = customs['pdf_base']
+    }
     return coverUrl && coverUrl !== ''
-      ? `${customs['uploads']}/${this.default_cover_path}/${coverUrl}`
-      : `${customs['uploads']}/${this.default_cover_path}/default.jpg`
+      ? `${base}/${this.default_cover_path}/${coverUrl}`
+      : `${base}/${this.default_cover_path}/default.jpg`
   }
 
 }
