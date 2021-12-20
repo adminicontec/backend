@@ -224,6 +224,8 @@ class CourseDataService {
       scheduling['city'] = course?.city?.name
     }
 
+    console.log('test', "file:///" + __dirname.split('app')[0].replace(/\\/g, "/") + "app/")
+
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
