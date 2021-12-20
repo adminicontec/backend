@@ -255,6 +255,7 @@ class CourseDataService {
       options: {
         // orientation: "landscape",
         format: "Tabloid",
+        base: "file:///" + __dirname.split('app')[0].replace(/\\/g, "/") + "app/",
         border: {
           top: "15mm",            // default is 0, units: mm, cm, in, px
           right: "15mm",

@@ -4,6 +4,7 @@ import {UploadConfig} from '@scnode_core/types/default/attached/attachedTypes'
 
 // @add your types
 export interface IPdfOptions {
+  base?: any
   // Export options
   // Papersize Options: http://phantomjs.org/api/webpage/property/paper-size.html
   height?: string,   // allowed units: mm, cm, in, px
