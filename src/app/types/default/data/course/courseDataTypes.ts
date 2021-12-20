@@ -42,15 +42,19 @@ export interface IFetchCourses {
   exclude?: Array<string>
 }
 
+export type ISlugType = 'course_scheduling' | 'program'
+
 export interface IFetchCourse {
   id?: string,
   slug?: string
   generate_pdf?: boolean
+  slug_type?: ISlugType
 }
 
 export interface IGenerateCourseFile {
   id?: string,
   slug?: string
+  slug_type?: ISlugType
 }
 
 export interface IContentEditorJs{
