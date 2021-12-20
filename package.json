@@ -10,9 +10,10 @@
     "pm2_start": "pm2 start",
     "compiler-tsc": "tsc",
     "start-prod": "npm run build-prod && npm run start",
-    "build-prod": "npm run pre-compiler && npm run compiler-tsc",
+    "build-prod": "npm run pre-compiler && npm run compiler-tsc && npm run copy-files",
     "pre-compiler": "scnode_cli --pre_compiler",
-    "dev": "npm run pre-compiler && nodemon -r tsconfig-paths/register --watch src src/app/server.ts"
+    "dev": "npm run pre-compiler && nodemon -r tsconfig-paths/register --watch src src/app/server.ts",
+    "copy-files": "cp -R ./src/app/assets/ ./dist/src/app/assets/"
   },
   "preferGlobal": true,
   "dependencies": {
