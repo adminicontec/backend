@@ -906,7 +906,7 @@ class ErrorResponse {
           }
         },
       },
-      "calendarEvent":{
+      "calendarEvent": {
         "exception": {
           "message": i18nUtility.__("app_error_messages.calendarEvent.exception"),
           "status_code": "calendar_event_exception",
@@ -1025,11 +1025,6 @@ class ErrorResponse {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.certificate.not_found"),
           "status_code": "certificate_not_found",
-          "code": 400
-        },
-        "alltemplate": {
-          "message": i18nUtility.__("app_error_messages.certificate.alltemplate"),
-          "status_code": "certificate_alltemplate",
           "code": 400
         },
         "generation": {

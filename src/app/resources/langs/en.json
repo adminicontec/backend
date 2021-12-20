@@ -396,7 +396,18 @@
     },
     "certificate": {
       "login_invalid": "El usuario o password no válido",
-      "not_found": "El certificado no existe"
+      "not_found": "El certificado no existe",
+      "generation": "No se puede generar el certificado: :error",
+      "requirements": {
+        "program_status": "No se puede generar el certificado. El estado del programa es: :error",
+        "student_status": "No se puede generar el certificado. El estudiante :name tiene el siguiente problema: :error"
+      },
+      "queue": {
+        "not_found": "El item de la cola de certificado no existe.",
+        "insertOrUpdate": {
+          "failed": "Error al insertar registro en la cola de Generación de Certificados."
+        }
+      }
     }
   },
   "passwordRecover": {

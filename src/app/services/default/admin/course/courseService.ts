@@ -110,10 +110,7 @@ class CourseService {
 
     try {
       console.log("List of available courses:")
-
       let listOfCourses = []
-      //let courseToExport;
-
       const paging = (params.pageNumber && params.nPerPage) ? true : false
 
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
@@ -227,14 +224,13 @@ class CourseService {
 
         for await (const register of registers) {
           let isActive = false;
+          let courseType = ''
+          let courseObjectives = [];
+          let courseContent = [];
+
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
-          })
-            .lean()
-
-          let courseType = ''
-          let courseObjectives =[];
-          let courseContent = [];
+          }).lean()
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo
@@ -262,10 +258,16 @@ class CourseService {
 
           // course Is Active given end date
           let current = moment();
-          if (current.isAfter(register.endDate))
+          if (register.hasCost) {
+            if (current.isBetween(register.startPublicationDate, register.endPublicationDate))
+              isActive = true;
+            else
+              isActive = false;
+          }
+          else {
             isActive = false;
-          else
-            isActive = true;
+          }
+          //console.log("Course is active: " + isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -278,10 +280,12 @@ class CourseService {
             mode: register.schedulingMode.name,
             startDate: register.startDate,
             endDate: register.endDate,
+            startPublicationDate: register.startPublicationDate,
+            endPublicationDate: register.endPublicationDate,
             maxEnrollmentDate: register.enrollmentDeadline,
             hasCost: register.hasCost,
-            priceCOP: register.priceCOP,
-            priceUSD: register.priceUSD,
+            priceCOP: register.priceCOP == null ? 0 : register.priceCOP,
+            priceUSD: register.priceUSD == null ? 0 : register.priceUSD,
             discount: register.discount == null ? 0 : register.discount,
             endDiscountDate: register.endDiscountDate == null ? null : register.endDiscountDate,
             quota: register.amountParticipants,
@@ -289,11 +293,9 @@ class CourseService {
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
             isActive: isActive,
             objectives: courseObjectives,
-            content: courseContent
+            content: courseContent,
           }
           listOfCourses.push(courseToExport);
-          console.log("----------------------------");
-          console.log(listOfCourses);
         }
       } catch (e) {
         return responseUtility.buildResponseFailed('json')

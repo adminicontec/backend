@@ -9,7 +9,7 @@ export interface IQueryFind {
 
 interface IQueryWhereFind {
   field: string, // Campo en BD que se desea buscar
-  value: string, // Valor en BD que se desea buscar
+  value: Record<string, any> | string, // Valor en BD que se desea buscar
 }
 
 export enum QueryValues {
