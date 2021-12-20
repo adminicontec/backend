@@ -11,7 +11,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { User } from '@scnode_app/models';
+import { CertificateQueue, User } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -57,7 +57,24 @@ class UserDataService {
         }, [])
       }
 
-      // TODO: Falta consultar si tiene certificaciones
+      const _certifications = await CertificateQueue.find({
+        userId: user._id,
+        status: {$in: ['Complete']}
+      })
+      .select('id userId courseId certificate')
+      .populate({path: 'courseId', select: 'id program', populate: [{
+        path: 'program', select: 'id name'
+      }]})
+
+      const certifications = _certifications.reduce((accum, element) => {
+        accum.push({
+          key: element?._id,
+          title: element?.courseId?.program?.name ||  '',
+          date: moment(element.created_at).format('YYYY-MM-DD'),
+          url: element?.certificate?.url
+        })
+        return accum
+      }, [])
 
       const userInfo = {
         avatar: userService.avatarUrl(user),
@@ -67,7 +84,8 @@ class UserDataService {
         email: (user.email) ? user.email : null,
         roles: (roles.length > 0) ? roles.join(',') : null,
         lastLogin: (user.last_login) ? moment(user.last_login).format('DD/MM/YYYY') : null,
-        hasCertifications: false
+        hasCertifications: certifications.length > 0 ? true : false,
+        certifications: certifications
       }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
