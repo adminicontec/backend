@@ -55,9 +55,10 @@ class CertificateService {
       });
 
       if (respHuella.estado == 'Error') {
+        console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'certificate.alltemplate' }
+            error_key: { key: 'certificate.generation' }
           })
       }
 
@@ -91,7 +92,7 @@ class CertificateService {
       })
 
       // usuario no existe
-      if (respDataUser.status === "error" ) return respDataUser
+      if (respDataUser.status === "error") return respDataUser
 
       // return responseUtility.buildResponseSuccess('json', null, {
       //   additional_parameters: {
@@ -136,7 +137,8 @@ class CertificateService {
       let respToken: any = await this.login();
 
       if (respToken.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.login_invalid' } })
       }
 
       console.log("Token: ");
@@ -152,9 +154,11 @@ class CertificateService {
       });
 
       if (respHuella.estado == 'Error') {
+
+        console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'certificate.alltemplate' }
+            error_key: { key: 'certificate.generation', params: {error: respHuella.resultado}}
           })
       }
       //#endregion
@@ -193,7 +197,7 @@ class CertificateService {
     if (respHuella.estado == "Error") {
       return responseUtility.buildResponseFailed('json', null,
         {
-          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respHuella.result } }
+          error_key: { key: 'certificate.login_invalid', params: { name: respHuella.result } }
         })
     }
 

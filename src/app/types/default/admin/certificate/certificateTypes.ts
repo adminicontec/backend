@@ -37,4 +37,17 @@ export interface ICertificate {
   fecha_vencimiento: Date,
   fecha_impresion: Date
 }
+
+export interface ICertificateQueue{
+  id: string,
+  userId: number,
+  courseId: number,
+  certificateType: string,
+  certificateModule: string,
+  status: string,
+  certificate: {
+    hash: string,
+    url: string
+  }
+}
 //@end

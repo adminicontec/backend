@@ -54,7 +54,7 @@ class CourseSchedulingService {
    * @returns
    */
   public findBy = async (params: IQueryFind) => {
-
+    console.log("------------ findBy -----------------");
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
@@ -188,8 +188,8 @@ class CourseSchedulingService {
       if (params.id) {
         let visibleAtMoodle = 0;
         const register: any = await CourseScheduling.findOne({ _id: params.id })
-        .populate({ path: 'schedulingStatus', select: 'id name' })
-        .lean()
+          .populate({ path: 'schedulingStatus', select: 'id name' })
+          .lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
         const prevSchedulingStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
         const changes = this.validateChanges(params, register)
@@ -201,12 +201,12 @@ class CourseSchedulingService {
           if (register.priceCOP) hasParamsCost = true
           if (register.priceUSD) hasParamsCost = true
 
-          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.cost_required' })
         } else {
           params.priceCOP = 0
           params.priceUSD = 0
         }
-        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -222,13 +222,13 @@ class CourseSchedulingService {
         await User.populate(response, {path: 'account_executive', select: 'id profile.first_name profile.last_name email'})
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
-        await User.populate(response, {path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
+        await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
         if (params.sendEmail === true || params.sendEmail === 'true') {
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado') {
-          // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
+            // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
             await this.serviceSchedulingNotification(response)
@@ -273,7 +273,7 @@ class CourseSchedulingService {
         if (moodleResponse.status === 'success') {
           console.log("update Programa Success!");
         }
-        else{
+        else {
           console.log("Error!");
         }
 
@@ -292,13 +292,13 @@ class CourseSchedulingService {
           if (params.priceCOP) hasParamsCost = true
           if (params.priceUSD) hasParamsCost = true
 
-          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, {error_key: 'course.insertOrUpdate.cost_required'})
+          if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.cost_required' })
         } else {
           params.priceCOP = 0
           params.priceUSD = 0
         }
         steps.push('8')
-        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
+        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
         let service_id = ''
         steps.push('9')
@@ -346,7 +346,7 @@ class CourseSchedulingService {
           .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
-          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email'})
+          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
@@ -405,15 +405,19 @@ class CourseSchedulingService {
             } else {
               steps.push('24-b')
               await this.delete({ id: _id })
-              return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-                steps
-              } })
+              return responseUtility.buildResponseFailed('json', null, {
+                error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
+                  steps
+                }
+              })
             }
           } else {
             await this.delete({ id: _id })
-            return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-              steps
-            } })
+            return responseUtility.buildResponseFailed('json', null, {
+              error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
+                steps
+              }
+            })
           }
         } else {
           steps.push('22-b')
@@ -438,9 +442,11 @@ class CourseSchedulingService {
     } catch (e) {
       steps.push('25')
       steps.push(e)
-      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
-        steps
-      }})
+      return responseUtility.buildResponseFailed('json', null, {
+        additional_parameters: {
+          steps
+        }
+      })
     }
   }
 
@@ -449,7 +455,7 @@ class CourseSchedulingService {
    * @param program Objeto de la modalidad
    * @returns
    */
-  public saveLocalSchedulingMode = async (schedulingMode: {value: string | number, label: string}, schedulingModeDetails: 'in_situ' | 'online' | null) => {
+  public saveLocalSchedulingMode = async (schedulingMode: { value: string | number, label: string }, schedulingModeDetails: 'in_situ' | 'online' | null) => {
     let newSchedulingMode = null
     let where = {
       moodle_id: schedulingMode.value
@@ -463,8 +469,8 @@ class CourseSchedulingService {
       }
     }
     const schedulingModeLocal = await CourseSchedulingMode.findOne(where)
-    .select('id')
-    .lean()
+      .select('id')
+      .lean()
 
     if (schedulingModeLocal) {
       newSchedulingMode = schedulingModeLocal._id
@@ -487,7 +493,7 @@ class CourseSchedulingService {
    * @param program Objeto del programa
    * @returns
    */
-  public saveLocalProgram = async (program: {value: string | number, label: string}) => {
+  public saveLocalProgram = async (program: { value: string | number, label: string }) => {
 
     let newProgram = null
     const programArr = program.label.toString().split('|')
@@ -553,7 +559,7 @@ class CourseSchedulingService {
     let notificationsByTeacher = {}
 
     for await (const course of courses) {
-      if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
+      if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
         notificationsByTeacher[course.teacher._id] = {
           teacher: {
             _id: course.teacher._id,
@@ -651,9 +657,9 @@ class CourseSchedulingService {
       email_to_notificate.push(serviceScheduler.email)
     }
 
-    const role = await Role.findOne({name: 'logistics_assistant'}).select('id')
+    const role = await Role.findOne({ name: 'logistics_assistant' }).select('id')
     if (role) {
-      const users = await User.find({roles: {$in: [role._id]}}).select('id email')
+      const users = await User.find({ roles: { $in: [role._id] } }).select('id email')
       if (users.length > 0) {
         users.map((user: any) => email_to_notificate.push(user.email))
       }
@@ -686,9 +692,9 @@ class CourseSchedulingService {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
     }).select('id startDate endDate duration course sessions teacher')
-    .populate({ path: 'course', select: 'id name code' })
-    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
-    .lean()
+      .populate({ path: 'course', select: 'id name code' })
+      .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+      .lean()
 
     for await (const course of courses) {
       if (!email_to_notificate.includes(course.teacher.email.toString())) {
@@ -734,8 +740,8 @@ class CourseSchedulingService {
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
     }).select('id user')
-    .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
-    .lean()
+      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+      .lean()
 
     for await (const enrolled of userEnrolled) {
       email_to_notificate.push(enrolled.user.email.toString())
@@ -744,9 +750,9 @@ class CourseSchedulingService {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
     }).select('id startDate endDate duration course sessions teacher')
-    .populate({ path: 'course', select: 'id name code' })
-    .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
-    .lean()
+      .populate({ path: 'course', select: 'id name code' })
+      .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+      .lean()
 
     for await (const course of courses) {
       if (!email_to_notificate.includes(course.teacher.email.toString())) {
@@ -863,7 +869,7 @@ class CourseSchedulingService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-   public sendSchedulingNotificationEmail = async (emails: Array<string>, paramsTemplate: any) => {
+  public sendSchedulingNotificationEmail = async (emails: Array<string>, paramsTemplate: any) => {
 
     try {
       const path_template = 'course/schedulingNotification'
@@ -962,7 +968,7 @@ class CourseSchedulingService {
     }
 
     if (filters.service_id) {
-      where['metadata.service_id'] = {$regex: '.*' + filters.service_id + '.*', $options: 'i'}
+      where['metadata.service_id'] = { $regex: '.*' + filters.service_id + '.*', $options: 'i' }
     }
 
     if (filters.course_scheduling_code) {
@@ -978,11 +984,11 @@ class CourseSchedulingService {
     if (filters.schedulingStatus) where['schedulingStatus'] = filters.schedulingStatus
     if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
     if (filters.regional) where['regional'] = filters.regional
-    if (filters.client) where['client'] = {$regex: '.*' + filters.client + '.*', $options: 'i'}
+    if (filters.client) where['client'] = { $regex: '.*' + filters.client + '.*', $options: 'i' }
 
 
     // if (filters.user) {
-      // where['metadata.user'] = filters.user
+    // where['metadata.user'] = filters.user
     // }
 
     let registers = []
@@ -1160,17 +1166,19 @@ class CourseSchedulingService {
 
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
-          .populate({ path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id', populate: [
-            { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
-            { path: 'schedulingMode', select: 'id name moodle_id' },
-            // { path: 'modular', select: 'id name' },
-            { path: 'program', select: 'id name moodle_id code' },
-            // { path: 'schedulingType', select: 'id name' },
-            // { path: 'schedulingStatus', select: 'id name' },
-            { path: 'regional', select: 'id name' },
-            // { path: 'city', select: 'id name' },
-            // { path: 'country', select: 'id name' },
-          ] })
+          .populate({
+            path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id', populate: [
+              { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
+              { path: 'schedulingMode', select: 'id name moodle_id' },
+              // { path: 'modular', select: 'id name' },
+              { path: 'program', select: 'id name moodle_id code' },
+              // { path: 'schedulingType', select: 'id name' },
+              // { path: 'schedulingStatus', select: 'id name' },
+              { path: 'regional', select: 'id name' },
+              // { path: 'city', select: 'id name' },
+              // { path: 'country', select: 'id name' },
+            ]
+          })
           .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
@@ -1290,9 +1298,9 @@ class CourseSchedulingService {
         'Ejecutivo': element.executive,
         'Fecha de inicio del curso': element.start_date,
         'Fecha de finalización del curso': element.end_date,
-        'Nº de horas del curso':element.course_duration,
+        'Nº de horas del curso': element.course_duration,
       })
-      cols.push({width: 20})
+      cols.push({ width: 20 })
       return accum
     }, [])
 
@@ -1307,7 +1315,7 @@ class CourseSchedulingService {
     XLSX.utils.book_append_sheet(wb, ws, 'reporte_general')
 
     // @INFO Se carga el archivo al servidor S3
-    const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `reporte_general.xlsx` } } }, {workbook: wb})
+    const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `reporte_general.xlsx` } } }, { workbook: wb })
 
     if (!send) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_upload_xlsx' })
 

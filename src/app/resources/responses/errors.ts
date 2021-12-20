@@ -1027,9 +1027,9 @@ class ErrorResponse {
           "status_code": "certificate_not_found",
           "code": 400
         },
-        "alltemplate": {
-          "message": i18nUtility.__("app_error_messages.certificate.alltemplate"),
-          "status_code": "certificate_alltemplate",
+        "generation": {
+          "message": i18nUtility.__("app_error_messages.certificate.generation"),
+          "status_code": "certificate_generation",
           "code": 400
         },
         "generation": {

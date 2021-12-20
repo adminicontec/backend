@@ -393,7 +393,8 @@
     },
     "certificate": {
       "login_invalid": "El usuario o password no válido",
-      "not_found": "El certificado no existe"
+      "not_found": "El certificado no existe",
+      "generation": "No se puede generar el certificado: :error"
     }
   },
   "passwordRecover": {
