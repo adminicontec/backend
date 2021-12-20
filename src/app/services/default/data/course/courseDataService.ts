@@ -493,6 +493,28 @@ class CourseDataService {
 
       } catch (e) { }
 
+      // @INFO Filtrar solo los cursos nuevos
+      if (params.new && registers && registers.length) {
+        const programs = registers.map((r) => r.program._id)
+        const courses = await Course.find({program: {$in: programs}}).lean()
+        registers = registers.reduce((accumCourses, schedule) => {
+          if (courses && courses.length) {
+            const course: any = courses.find((c: any) => c.program.toString() === schedule.program._id.toString())
+            if (course) {
+              const startNew = moment(course.new_start_date)
+              const endNew = moment(course.new_end_date)
+              const startPublic = moment(schedule.startPublicationDate)
+              const endPublic = moment(schedule.endPublicationDate)
+              const today = moment(new Date())
+              if (today.isBetween(startNew, endNew) && today.isBetween(startPublic, endPublic)) {
+                accumCourses.push(schedule);
+              }
+            }
+          }
+          return accumCourses;
+        }, [])
+      }
+
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           courses: [

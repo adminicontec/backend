@@ -20,6 +20,13 @@ const BannerSchema = new Schema({
     type: Schema.Types.Boolean,
     default: true,
   },
+  location: {
+    type: Schema.Types.String,
+    enum: ['students']
+  },
+  action: {
+    type: Schema.Types.String,
+  }
   // @end
 }, {
   collection: 'banners' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

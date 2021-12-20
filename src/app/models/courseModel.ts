@@ -139,6 +139,12 @@ const CourseSchema = new Schema({
   generalities: {
     type: Schema.Types.Mixed,
     required: false,
+  },
+  new_start_date: {
+    type: Schema.Types.Date
+  },
+  new_end_date: {
+    type: Schema.Types.Date
   }
   // benefits: {
   //   type: Schema.Types.Mixed,

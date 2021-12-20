@@ -11,6 +11,7 @@ export interface IFetchBanners {
   sort?: {
     field: string,
     direction: string
-  }
+  },
+  location?: 'students'
 }
 //@end
