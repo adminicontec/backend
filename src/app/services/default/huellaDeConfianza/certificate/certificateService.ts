@@ -20,7 +20,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
@@ -303,6 +303,57 @@ class CertificateService {
     }
   }
 
+  public previewCertificate = async (params: ICertificatePreview) => {
+    try {
+
+      // params.format:
+      // Imagen PNG: 1
+      // PDF: 2
+      let detailParams = {
+        id: params.hash,
+        fr: params.format,
+        pl: params.template
+      }
+      let respToken: any = await this.login();
+
+      if (respToken.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
+      }
+
+      console.log("Token: ");
+      var tokenHC = respToken.token;
+
+      // Build request for GetAllTemplate
+      let respHuella: any = await queryUtility.query({
+        method: 'get',
+        url: certificate_setup.endpoint.certificate_detail,
+        api: 'huellaDeConfianza',
+        headers: { Authorization: tokenHC },
+        params: detailParams
+      });
+
+      if (respHuella.estado == 'Error') {
+        console.log(respHuella);
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: { key: 'certificate.generation' }
+          })
+      }
+
+      // Get Certificate Detail
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          tokenHC: tokenHC,
+          preview: respHuella.resultado
+        }
+      });
+
+    }
+
+    catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   private login = async () => {
 

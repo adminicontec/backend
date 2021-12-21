@@ -90,4 +90,9 @@ export interface ICertificateQueue {
   }
 }
 
+export interface ICertificatePreview{
+  hash: string,
+  format: number,
+  template: number
+}
 //@end
