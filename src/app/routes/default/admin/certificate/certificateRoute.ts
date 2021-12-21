@@ -29,6 +29,7 @@ class CertificateRoute {
     const _route = `${prefix}${this.router_prefix}`;
     routerUtility.get(app, _route, '/alltemplates', this.instanceController.alltemplates, [], ['auth'])
     routerUtility.post(app, _route, '/create', this.instanceController.setCertificate, [], ['auth'])
+    routerUtility.post(app, _route, '/preview', this.instanceController.previewCertificate, [], ['auth'])
 
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);

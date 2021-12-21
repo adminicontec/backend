@@ -31,14 +31,18 @@ class CertificateController {
   public alltemplates = async (req: Request, res: Response) => {
 		const response = await certificateService.alltemplates(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
-
   }
 
   public setCertificate = async (req: Request, res: Response) => {
 		const response = await certificateService.setCertificate(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
-
   }
+
+  public previewCertificate = async (req: Request, res: Response) => {
+		const response = await certificateService.previewCertificate(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const certificateController = new CertificateController();
