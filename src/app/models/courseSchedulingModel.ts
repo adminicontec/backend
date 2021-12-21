@@ -129,6 +129,35 @@ const CourseSchedulingSchema = new Schema({
     ref: "User",
     required: false
   },
+  certificate_clients: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
+  certificate_students: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
+  certificate: {
+    type: Schema.Types.String
+  },
+  english_certificate: {
+    type: Schema.Types.String
+  },
+  scope: {
+    type: Schema.Types.String
+  },
+  english_scope: {
+    type: Schema.Types.String
+  },
+  certificate_icon_1: {
+    type: Schema.Types.String
+  },
+  certificate_icon_2: {
+    type: Schema.Types.String
+  },
+  certificate_icon_3: {
+    type: Schema.Types.String
+  }
   // @end
 }, {
   collection: 'course_schedulings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

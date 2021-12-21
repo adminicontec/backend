@@ -7,6 +7,7 @@ import moment from 'moment'
 // @import services
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
 // @import config
@@ -39,6 +40,8 @@ import { Console } from "console";
 
 class CourseSchedulingService {
 
+  private default_icon_path = 'certificate/icons';
+
   /*===============================================
   =            Estructura de un metodo            =
   ================================================
@@ -60,7 +63,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -124,6 +127,18 @@ class CourseSchedulingService {
 
         register.total_scheduling = total_scheduling
 
+        if (register.certificate_icon_1) {
+          register.certificate_icon_1 = this.getIconUrl(register.certificate_icon_1)
+        }
+
+        if (register.certificate_icon_2) {
+          register.certificate_icon_2 = this.getIconUrl(register.certificate_icon_2)
+        }
+
+        if (register.certificate_icon_3) {
+          register.certificate_icon_3 = this.getIconUrl(register.certificate_icon_3)
+        }
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: register
@@ -142,7 +157,7 @@ class CourseSchedulingService {
    * @param params Elementos a registrar
    * @returns
    */
-  public insertOrUpdate = async (params: ICourseScheduling) => {
+  public insertOrUpdate = async (params: ICourseScheduling, files?: any) => {
 
     let steps = [];
     try {
@@ -184,6 +199,25 @@ class CourseSchedulingService {
 
       steps.push('6')
       steps.push(params)
+
+      if (files && files.icon_1_file && typeof files.icon_1_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.icon_1_file, this.default_icon_path);
+        if (response_upload.status === 'error') return response_upload;
+        if (response_upload.hasOwnProperty('name')) params.certificate_icon_1 = response_upload.name
+      }
+
+      if (files && files.icon_2_file && typeof files.icon_2_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.icon_2_file, this.default_icon_path);
+        if (response_upload.status === 'error') return response_upload;
+        if (response_upload.hasOwnProperty('name')) params.certificate_icon_2 = response_upload.name
+      }
+
+      if (files && files.icon_3_file && typeof files.icon_3_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.icon_3_file, this.default_icon_path);
+        if (response_upload.status === 'error') return response_upload;
+        if (response_upload.hasOwnProperty('name')) params.certificate_icon_3 = response_upload.name
+      }
+
       if (params.id) {
         let visibleAtMoodle = 0;
         const register: any = await CourseScheduling.findOne({ _id: params.id })
@@ -274,6 +308,18 @@ class CourseSchedulingService {
         }
         else {
           console.log("Error!");
+        }
+
+        if (response.certificate_icon_1) {
+          response.certificate_icon_1 = this.getIconUrl(response.certificate_icon_1)
+        }
+
+        if (response.certificate_icon_2) {
+          response.certificate_icon_2 = this.getIconUrl(response.certificate_icon_2)
+        }
+
+        if (response.certificate_icon_3) {
+          response.certificate_icon_3 = this.getIconUrl(response.certificate_icon_3)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -428,6 +474,18 @@ class CourseSchedulingService {
           }
         }
 
+        if (response.certificate_icon_1) {
+          response.certificate_icon_1 = this.getIconUrl(response.certificate_icon_1)
+        }
+
+        if (response.certificate_icon_2) {
+          response.certificate_icon_2 = this.getIconUrl(response.certificate_icon_2)
+        }
+
+        if (response.certificate_icon_3) {
+          response.certificate_icon_3 = this.getIconUrl(response.certificate_icon_3)
+        }
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: {
@@ -441,6 +499,7 @@ class CourseSchedulingService {
     } catch (e) {
       steps.push('25')
       steps.push(e)
+      console.log('Error: ', e);
       return responseUtility.buildResponseFailed('json', null, {
         additional_parameters: {
           steps
@@ -949,7 +1008,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3'
     if (filters.select) {
       select = filters.select
     }
@@ -1101,6 +1160,17 @@ class CourseSchedulingService {
           if (register.metadata.user) {
             register.metadata.user.fullname = `${register.metadata.user.profile.first_name} ${register.metadata.user.profile.last_name}`
           }
+        }
+        if (register.certificate_icon_1) {
+          register.certificate_icon_1 = this.getIconUrl(register.certificate_icon_1)
+        }
+
+        if (register.certificate_icon_2) {
+          register.certificate_icon_2 = this.getIconUrl(register.certificate_icon_2)
+        }
+
+        if (register.certificate_icon_3) {
+          register.certificate_icon_3 = this.getIconUrl(register.certificate_icon_3)
         }
         // if (register.teacher && register.teacher.profile) {
         //   register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
@@ -1301,6 +1371,10 @@ class CourseSchedulingService {
       console.log('generateReport error', error)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public getIconUrl = (url: string) => {
+    return `${customs['uploads']}/${this.default_icon_path}/${url}`
   }
 
   private generatePDFReport = async (courseScheduling: any, reportData: ICourseSchedulingReportData) => {

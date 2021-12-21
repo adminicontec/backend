@@ -44,6 +44,9 @@ export interface ICourseScheduling {
   discount         : number,             // Porcentaje de descuento del precio
   endDiscountDate?: string | null
   id?: string // Identificador de la categoria
+  certificate_icon_1?: string
+  certificate_icon_2?: string
+  certificate_icon_3?: string
 }
 
 export interface ICourseSchedulingDelete {

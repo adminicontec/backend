@@ -40,7 +40,15 @@ class CourseSchedulingController {
     let params = req.getParameters.all()
     params['user'] = user_id
 
-    const response = await courseSchedulingService.insertOrUpdate(params)
+    if (params && params.program && typeof params.program === 'string') {
+      params.program = JSON.parse(params.program)
+    }
+
+    if (params && params.schedulingMode && typeof params.schedulingMode === 'string') {
+      params.schedulingMode = JSON.parse(params.schedulingMode)
+    }
+
+    const response = await courseSchedulingService.insertOrUpdate(params, req.files)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -55,7 +63,15 @@ class CourseSchedulingController {
     let params = req.getParameters.all()
     params['user'] = user_id
 
-		const response = await courseSchedulingService.insertOrUpdate(params)
+    if (params && params.program && typeof params.program === 'string') {
+      params.program = JSON.parse(params.program)
+    }
+
+    if (params && params.schedulingMode && typeof params.schedulingMode === 'string') {
+      params.schedulingMode = JSON.parse(params.schedulingMode)
+    }
+
+		const response = await courseSchedulingService.insertOrUpdate(params, req.files)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
