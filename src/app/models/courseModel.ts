@@ -35,6 +35,18 @@ const CourseSchema = new Schema({
   //   type: Schema.Types.String,
   //   required: false,
   // },
+  alternative_title: {
+    type: Schema.Types.String
+  },
+  short_description: {
+    type: Schema.Types.Mixed,
+  },
+  platform_video: {
+    type: Schema.Types.String
+  },
+  url_video: {
+    type: Schema.Types.String
+  },
   description: {
     type: Schema.Types.Mixed,
     required: true,
@@ -127,6 +139,12 @@ const CourseSchema = new Schema({
   generalities: {
     type: Schema.Types.Mixed,
     required: false,
+  },
+  new_start_date: {
+    type: Schema.Types.Date
+  },
+  new_end_date: {
+    type: Schema.Types.Date
   }
   // benefits: {
   //   type: Schema.Types.Mixed,

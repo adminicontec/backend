@@ -21,7 +21,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @end
 
 // @import types
-import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType } from '@scnode_app/types/default/data/course/courseDataTypes'
 // @end
 
 class CourseDataService {
@@ -43,7 +43,31 @@ class CourseDataService {
   public fetchCourse = async (params: IFetchCourse) => {
 
     try {
+      const slug_type = (params.slug_type) ? params.slug_type : 'course_scheduling'
+      let courseResponse = null
 
+      if (slug_type === 'course_scheduling')  {
+        courseResponse = await this.fetchCourseByCourseScheduling(params)
+      } else if (slug_type === 'program') {
+        courseResponse = await this.fetchCourseByProgram(params)
+      }
+
+      if (!courseResponse) return responseUtility.buildResponseFailed('json')
+      if (courseResponse.status === 'error') return courseResponse
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: courseResponse.course,
+        }
+      })
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private fetchCourseByCourseScheduling = async (params: IFetchCourse) => {
+    try {
       let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration'
 
       let where = {}
@@ -67,6 +91,7 @@ class CourseDataService {
 
         if (register) {
           register['enrollment_enabled'] = false
+          register['slug_type'] = 'course_scheduling'
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -75,6 +100,7 @@ class CourseDataService {
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo
+            extra_info.originalCoverUrl = extra_info.coverUrl
             extra_info.coverUrl = courseService.coverUrl(extra_info)
             register['extra_info'] = extra_info
           }
@@ -90,15 +116,58 @@ class CourseDataService {
             register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
           }
         }
+      } catch (e) {}
+
+      if (!register) return responseUtility.buildResponseFailed('json')
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        course: register
+      }})
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private fetchCourseByProgram = async (params: IFetchCourse) => {
+    try {
+      let where = {}
+
+      if (params.id) {
+        where['program'] = params.id
+      } else if (params.slug) {
+        where['program'] = params.slug
+      } else {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'course.filter_to_search_required'})
+      }
+
+      let register = null
+      try {
+
+        const schedulingExtraInfo: any = await Course.findOne(where)
+        .populate({path: 'program', select: 'id name code'})
+        .populate({path: 'schedulingMode', select: 'id name'})
+        .lean()
+
+        if (schedulingExtraInfo) {
+          register = {
+            _id: schedulingExtraInfo.program._id,
+            slug_type: 'program',
+            program: schedulingExtraInfo.program,
+            schedulingMode: schedulingExtraInfo.schedulingMode
+          }
+          let extra_info = schedulingExtraInfo
+          extra_info.originalCoverUrl = extra_info.coverUrl
+          extra_info.coverUrl = courseService.coverUrl(extra_info)
+          register['extra_info'] = extra_info
+        }
 
       } catch (e) {}
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          course: register,
-        }
-      })
+      if (!register) return responseUtility.buildResponseFailed('json')
 
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        course: register
+      }})
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -107,11 +176,12 @@ class CourseDataService {
   public generateCourseFile = async (params: IGenerateCourseFile) => {
     try {
       const courseData: any = await this.fetchCourse({
-        slug: params.slug
+        slug: params.slug,
+        slug_type: params.slug_type
       })
       if (courseData.status === 'error') return courseData
 
-      const file = await this.buildCourseFile(courseData.course)
+      const file = await this.buildCourseFile(courseData.course, params.slug_type)
 
       return file
     } catch (e) {
@@ -119,7 +189,7 @@ class CourseDataService {
     }
   }
 
-  private buildCourseFile = async (course: ICourse) => {
+  private buildCourseFile = async (course: ICourse, slug_type: ISlugType) => {
     let path = '/data/course/courseReport'
     const time = new Date().getTime()
 
@@ -155,24 +225,16 @@ class CourseDataService {
     if (course?.city?.name) {
       scheduling['city'] = course?.city?.name
     }
-
-    // TODO: Modificar formulario de capacitaciones a nivel de colaborador para que solo pida la relación con una ficha
-    // TODO: Modificar formulario de fichas para agregar los demas campos
-    // TODO: Modificar endpoint de capacitaciones para que traiga la info desde la ficha
-    // TODO: Modificar el front de capacitaciones para que lea data desde la ficha
-    // TODO: Redireccionar a pantalla del curso
-    // TODO: Modificar pantalla de curso para que reciba una ficha y no un courseScheduling
-
+    console.log('file', courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}))
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
         path,
         type: 'hbs',
         context: {
-          campus_virtual: customs['campus_virtual'],
-          logo: `${customs['campus_virtual']}/assets/ad942125ca7dbecbfbaafb19a22a1764.png`,
           title: course.program.name,
-          cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
+          // cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
+          cover_url: courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}),
           duration: course.duration ? generalUtility.getDurationFormated(course.duration, 'large') : null,
           long_description: course?.extra_info?.description?.blocks ? editorjsService.jsonToHtml(course.extra_info.description.blocks) : null,
           competencies: course?.extra_info?.competencies?.blocks ? editorjsService.jsonToHtml(course.extra_info.competencies.blocks) : null,
@@ -194,6 +256,7 @@ class CourseDataService {
       options: {
         // orientation: "landscape",
         format: "Tabloid",
+        base: `${customs['pdf_base']}/`,
         border: {
           top: "15mm",            // default is 0, units: mm, cm, in, px
           right: "15mm",
@@ -431,6 +494,28 @@ class CourseDataService {
         }
 
       } catch (e) { }
+
+      // @INFO Filtrar solo los cursos nuevos
+      if (params.new && registers && registers.length) {
+        const programs = registers.map((r) => r.program._id)
+        const courses = await Course.find({program: {$in: programs}}).lean()
+        registers = registers.reduce((accumCourses, schedule) => {
+          if (courses && courses.length) {
+            const course: any = courses.find((c: any) => c.program.toString() === schedule.program._id.toString())
+            if (course) {
+              const startNew = moment(course.new_start_date)
+              const endNew = moment(course.new_end_date)
+              const startPublic = moment(schedule.startPublicationDate)
+              const endPublic = moment(schedule.endPublicationDate)
+              const today = moment(new Date())
+              if (today.isBetween(startNew, endNew) && today.isBetween(startPublic, endPublic)) {
+                accumCourses.push(schedule);
+              }
+            }
+          }
+          return accumCourses;
+        }, [])
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

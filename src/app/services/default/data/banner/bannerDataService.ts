@@ -42,7 +42,7 @@ class BannerDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title content coverUrl isActive'
+      let select = 'id title content coverUrl isActive action location'
       if (params.select) {
         select = params.select
       }
@@ -58,6 +58,12 @@ class BannerDataService {
             {content: { $regex: '.*' + search + '.*',$options: 'i' }},
           ]
         }
+      }
+
+      if (params.location) {
+        where['location'] = params.location
+      } else {
+        where['location'] = {$exists: false}
       }
 
       if (typeof params.isActive === 'undefined' || params.isActive === true) {

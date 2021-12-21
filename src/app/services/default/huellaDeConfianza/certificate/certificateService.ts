@@ -20,10 +20,8 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate, QueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { UserType } from 'aws-sdk/clients/workdocs';
-import { substring } from 'sequelize/types/lib/operators';
 // @end
 
 class CertificateService {

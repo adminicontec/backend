@@ -41,8 +41,6 @@ class UploadService {
       ...config
     }
 
-    console.log('in uploadFile' ,defaultConfig)
-    console.log('path_upload', path_upload)
     const files_status_upload = await attachedUtility.uploadFiles(file, {
       path_upload: path_upload,
       rename: defaultConfig.rename,

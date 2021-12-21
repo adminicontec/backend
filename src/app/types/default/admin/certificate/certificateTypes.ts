@@ -46,7 +46,7 @@ export interface ICertificate {
   dato_8?: string,
   dato_9?: string,
   dato_10?: string,
-  anexos?: [
+  anexos?: {
     dato_1?: string,
     dato_2?: string,
     dato_3?: string,
@@ -57,8 +57,9 @@ export interface ICertificate {
     dato_8?: string,
     dato_9?: string,
     dato_10?: string,
-  ],
+  }
 }
+
 export interface ICertificateQueueQuery {
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina
@@ -89,11 +90,4 @@ export interface ICertificateQueue {
   }
 }
 
-export enum QueueStatus {
-  NEW = 'New',
-  IN_PROCESS = 'In-process',
-  COMPLETE = 'Complete',
-  ERROR = 'Error',
-  RE_ISSUE = 'Re-issue',
-}
 //@end

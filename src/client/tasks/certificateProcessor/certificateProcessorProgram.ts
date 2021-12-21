@@ -13,7 +13,6 @@ import { certificateService } from "@scnode_app/services/default/huellaDeConfian
 // @import types
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { QueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 // @end
 
 class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {

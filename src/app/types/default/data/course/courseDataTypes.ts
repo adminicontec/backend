@@ -39,18 +39,23 @@ export interface IFetchCourses {
   random?: {
     size?: number
   },
-  exclude?: Array<string>
+  exclude?: Array<string>,
+  new?: boolean
 }
+
+export type ISlugType = 'course_scheduling' | 'program'
 
 export interface IFetchCourse {
   id?: string,
   slug?: string
   generate_pdf?: boolean
+  slug_type?: ISlugType
 }
 
 export interface IGenerateCourseFile {
   id?: string,
   slug?: string
+  slug_type?: ISlugType
 }
 
 export interface IContentEditorJs{
@@ -72,6 +77,7 @@ export interface ICourse {
   enrollment_enabled?: boolean
   extra_info: {
     content?: Array<{category: string, data: any, name: string}>
+    originalCoverUrl?: string
     coverUrl?: string
     description?: any
     requirements?: any
