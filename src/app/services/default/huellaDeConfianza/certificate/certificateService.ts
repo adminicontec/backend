@@ -332,8 +332,7 @@ class CertificateService {
         params: detailParams
       });
 
-      if (respHuella.estado == 'Error') {
-        console.log(respHuella);
+      if (respHuella.estado == 'Error' || respHuella.status === 'error') {
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: { key: 'certificate.generation' }

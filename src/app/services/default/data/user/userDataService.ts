@@ -71,6 +71,7 @@ class UserDataService {
           key: element?._id,
           title: element?.courseId?.program?.name ||  '',
           date: moment(element.created_at).format('YYYY-MM-DD'),
+          hash: element?.certificate?.hash,
           url: element?.certificate?.url
         })
         return accum
