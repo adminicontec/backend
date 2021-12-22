@@ -4,6 +4,7 @@ const ObjectID = require('mongodb').ObjectID
 
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import { userService } from '@scnode_app/services/default/admin/user/userService';
 // @end
 
 // @import config
@@ -21,7 +22,12 @@ import {Company} from '@scnode_app/models'
 
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {ICompany, ICompanyDelete, ICompanyQuery} from '@scnode_app/types/default/admin/company/companyTypes'
+import {
+  ICompany,
+  ICompanyDelete,
+  ICompanyQuery,
+  ICompanyUsers
+} from '@scnode_app/types/default/admin/company/companyTypes'
 // @end
 
 class CompanyService {
@@ -273,6 +279,36 @@ class CompanyService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que permite listar los usuarios de una compañia
+   * @param
+   * @returns
+   */
+  public companyUsers = async (params: ICompanyUsers) => {
+
+    const companyUsersResponse: any = await userService.list({
+      role_names: 'company',
+      company: params.company,
+      pageNumber: params.pageNumber,
+      nPerPage: params.nPerPage
+    })
+
+    let response = {
+      company_users: companyUsersResponse
+    }
+
+    if (params.searchUsersAvailable) {
+      const usersAvalaibleResponse: any = await userService.list({
+        role_names: 'company',
+        without_company: true
+      })
+      response['users_available'] = usersAvalaibleResponse
+    }
+
+
+    return responseUtility.buildResponseSuccess('json', null, {additional_parameters: response})
   }
 }
 

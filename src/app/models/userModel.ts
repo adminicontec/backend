@@ -143,6 +143,10 @@ const UserSchema = new Schema({
       }
     ]
   },
+  company: {
+    type: Schema.Types.ObjectId,
+    ref: "Company"
+  },
   moodle_id: { type: Schema.Types.String }
   // @end
 }, {

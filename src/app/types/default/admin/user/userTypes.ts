@@ -91,6 +91,8 @@ export interface IUserQuery {
   search?: string, // Busca sobre los campos de la coleccion
   roles?: Array<string> | string // Roles
   role_names?: Array<string> | string // Roles
+  company?: string // Identificador de compañia
+  without_company?: boolean | string
 }
 
 export interface IUserDateTimezone {

@@ -28,4 +28,11 @@ export interface IFetchCompany {
   id?:string, // Identificador de la compañia
   slug?:string, // Slug de la compañia
 }
+
+export interface ICompanyUsers {
+  company: string
+  pageNumber?:string, // Numero de pagina
+  nPerPage?:string, // Cantidad de elementos por pagina
+  searchUsersAvailable?: boolean
+}
 //@end

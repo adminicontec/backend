@@ -424,6 +424,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           { name: 'config:is_teacher', description: 'Permiso que identifica a los docentes dentro del campus' },
           { name: 'config:is_student', description: 'Permiso que identifica a los estudiantes dentro del campus' },
           { name: 'config:is_account_executive', description: 'Permiso que identifica a los ejecutivos de cuenta dentro del campus' },
+          { name: 'config:is_company_user', description: 'Permiso que identifica a los usuarios de compañia'},
           { name: 'config:go_to_campus', description: 'Permiso que permite dar acceso al campus' },
           { name: 'config:go_to_moodle', description: 'Permiso que permite dar acceso al moodle' },
         ]
@@ -742,157 +743,169 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         ],
         moodle_id: 1
       },
+      // {
+      //   name: 'student',
+      //   description: 'Estudiante',
+      //   app_module_permissions: [
+      //     module_permission_ids['config:is_student'],
+      //     module_permission_ids['config:go_to_campus'],
+      //     module_permission_ids['config:go_to_moodle'],
+      //     module_permission_ids['permission:profile_menu_access'],
+      //     module_permission_ids['permission:publications_menu_access'],
+      //     module_permission_ids['permission:consultation_room_menu_access'],
+      //   ],
+      //   homes: [
+      //     home_ids['student']
+      //   ],
+      //   moodle_id: 5
+      // },
+      // {
+      //   name: 'teacher',
+      //   description: 'Docente',
+      //   app_module_permissions: [
+      //     module_permission_ids['config:is_teacher'],
+      //     module_permission_ids['config:go_to_campus'],
+      //     module_permission_ids['config:go_to_moodle'],
+      //     module_permission_ids['permission:profile_menu_access'],
+      //     module_permission_ids['permission:publications_menu_access'],
+      //     module_permission_ids['permission:teaching_resources_menu_access'],
+      //     module_permission_ids['permission:consultation_room_menu_access'],
+      //   ],
+      //   homes: [
+      //     home_ids['teacher']
+      //   ],
+      //   moodle_id: 4
+      // },
+      // {
+      //   name: 'scheduling_coordinator',
+      //   description: 'Coordinador de programación',
+      //   app_module_permissions: [
+      //     module_permission_ids['permission:course_scheduling_list'],
+      //     module_permission_ids['permission:course_scheduling_create'],
+      //     module_permission_ids['permission:course_scheduling_update'],
+      //     module_permission_ids['permission:course_scheduling_delete'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_list'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_create'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_update'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_delete'],
+
+      //     module_permission_ids['permission:courses_create'],
+      //     module_permission_ids['permission:courses_update'],
+      //     module_permission_ids['permission:courses_delete'],
+      //     module_permission_ids['permission:courses_list'],
+
+      //     module_permission_ids['permission:courses_menu_access'],
+      //     module_permission_ids['permission:course_scheduling_menu_access'],
+      //   ],
+      //   homes: [
+      //     home_ids['admin']
+      //   ],
+      //   moodle_id: 1
+      // },
+      // {
+      //   name: 'logistics_assistant',
+      //   description: 'Auxiliar logistico',
+      //   app_module_permissions: [
+      //     module_permission_ids['permission:course_scheduling_list'],
+      //     module_permission_ids['permission:course_scheduling_create'],
+      //     module_permission_ids['permission:course_scheduling_update'],
+      //     module_permission_ids['permission:course_scheduling_delete'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_list'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_create'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_update'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_delete'],
+
+      //     module_permission_ids['permission:courses_create'],
+      //     module_permission_ids['permission:courses_update'],
+      //     module_permission_ids['permission:courses_delete'],
+      //     module_permission_ids['permission:courses_list'],
+
+      //     module_permission_ids['permission:courses_menu_access'],
+      //     module_permission_ids['permission:course_scheduling_menu_access'],
+      //   ],
+      //   homes: [
+      //     home_ids['admin']
+      //   ],
+      //   moodle_id: 1
+      // },
+      // {
+      //   name: 'Tutor',
+      //   description: 'Encargado de crear y modificar la programación de servicios educativos.',
+      //   app_module_permissions: [
+      //     module_permission_ids['config:is_teacher'],
+      //   ],
+      //   homes: [
+      //     home_ids['teacher']
+      //   ],
+      //   moodle_id: 4
+      // },
+      // {
+      //   name: 'viewer',
+      //   description: 'Espectador del sistema',
+      //   app_module_permissions: [
+      //     module_permission_ids['permission:posts_list'],
+      //     module_permission_ids['permission:posts_viewer'],
+      //     module_permission_ids['permission:banners_list'],
+      //     module_permission_ids['permission:banners_viewer'],
+      //     module_permission_ids['permission:forums_list'],
+      //     module_permission_ids['permission:forums_viewer'],
+      //     module_permission_ids['permission:users_list'],
+      //     module_permission_ids['permission:users_viewer'],
+      //     module_permission_ids['permission:roles_list'],
+      //     module_permission_ids['permission:roles_viewer'],
+      //     module_permission_ids['permission:modules_list'],
+      //     module_permission_ids['permission:modules_viewer'],
+      //     module_permission_ids['permission:countries_list'],
+      //     module_permission_ids['permission:countries_viewer'],
+      //     module_permission_ids['permission:course_scheduling_list'],
+      //     module_permission_ids['permission:course_scheduling_viewer'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_list'],
+      //     module_permission_ids['permission:course_scheduling_enrollment_viewer'],
+      //     module_permission_ids['permission:courses_list'],
+      //     module_permission_ids['permission:courses_viewer'],
+      //     module_permission_ids['permission:companies_list'],
+      //     module_permission_ids['permission:companies_viewer'],
+      //     module_permission_ids['permission:modular_list'],
+      //     module_permission_ids['permission:modular_viewer'],
+
+      //     module_permission_ids['permission:posts_menu_access'],
+      //     module_permission_ids['permission:banners_menu_access'],
+      //     // module_permission_ids['permission:forums_menu_access'],
+      //     module_permission_ids['permission:users_menu_access'],
+      //     module_permission_ids['permission:roles_menu_access'],
+      //     module_permission_ids['permission:companies_menu_access'],
+      //     module_permission_ids['permission:courses_menu_access'],
+      //     module_permission_ids['permission:course_scheduling_menu_access'],
+      //     module_permission_ids['permission:modular_menu_access'],
+      //   ],
+      //   homes: [
+      //     home_ids['admin']
+      //   ],
+      //   moodle_id: 7
+      // },
+      // {
+      //   name: 'account_executive',
+      //   description: 'Ejecutivo de cuenta',
+      //   app_module_permissions: [
+      //     module_permission_ids['config:is_account_executive'],
+      //     module_permission_ids['permission:profile_menu_access'],
+      //     module_permission_ids['permission:publications_menu_access'],
+      //     module_permission_ids['permission:consultation_room_menu_access'],
+      //     module_permission_ids['permission:isolution_menu_access'],
+      //     // module_permission_ids['config:go_to_campus'],
+      //     // module_permission_ids['config:go_to_moodle'],
+      //   ],
+      //   homes: [
+      //     home_ids['account_executive']
+      //   ],
+      //   // moodle_id: 4
+      // },
       {
-        name: 'student',
-        description: 'Estudiante',
+        name: 'company',
+        description: 'Compañia',
         app_module_permissions: [
-          module_permission_ids['config:is_student'],
-          module_permission_ids['config:go_to_campus'],
-          module_permission_ids['config:go_to_moodle'],
+          module_permission_ids['config:is_company_user'],
           module_permission_ids['permission:profile_menu_access'],
-          module_permission_ids['permission:publications_menu_access'],
-          module_permission_ids['permission:consultation_room_menu_access'],
-        ],
-        homes: [
-          home_ids['student']
-        ],
-        moodle_id: 5
-      },
-      {
-        name: 'teacher',
-        description: 'Docente',
-        app_module_permissions: [
-          module_permission_ids['config:is_teacher'],
-          module_permission_ids['config:go_to_campus'],
-          module_permission_ids['config:go_to_moodle'],
-          module_permission_ids['permission:profile_menu_access'],
-          module_permission_ids['permission:publications_menu_access'],
-          module_permission_ids['permission:teaching_resources_menu_access'],
-          module_permission_ids['permission:consultation_room_menu_access'],
-        ],
-        homes: [
-          home_ids['teacher']
-        ],
-        moodle_id: 4
-      },
-      {
-        name: 'scheduling_coordinator',
-        description: 'Coordinador de programación',
-        app_module_permissions: [
-          module_permission_ids['permission:course_scheduling_list'],
-          module_permission_ids['permission:course_scheduling_create'],
-          module_permission_ids['permission:course_scheduling_update'],
-          module_permission_ids['permission:course_scheduling_delete'],
-          module_permission_ids['permission:course_scheduling_enrollment_list'],
-          module_permission_ids['permission:course_scheduling_enrollment_create'],
-          module_permission_ids['permission:course_scheduling_enrollment_update'],
-          module_permission_ids['permission:course_scheduling_enrollment_delete'],
-
-          module_permission_ids['permission:courses_create'],
-          module_permission_ids['permission:courses_update'],
-          module_permission_ids['permission:courses_delete'],
-          module_permission_ids['permission:courses_list'],
-
-          module_permission_ids['permission:courses_menu_access'],
-          module_permission_ids['permission:course_scheduling_menu_access'],
-        ],
-        homes: [
-          home_ids['admin']
-        ],
-        moodle_id: 1
-      },
-      {
-        name: 'logistics_assistant',
-        description: 'Auxiliar logistico',
-        app_module_permissions: [
-          module_permission_ids['permission:course_scheduling_list'],
-          module_permission_ids['permission:course_scheduling_create'],
-          module_permission_ids['permission:course_scheduling_update'],
-          module_permission_ids['permission:course_scheduling_delete'],
-          module_permission_ids['permission:course_scheduling_enrollment_list'],
-          module_permission_ids['permission:course_scheduling_enrollment_create'],
-          module_permission_ids['permission:course_scheduling_enrollment_update'],
-          module_permission_ids['permission:course_scheduling_enrollment_delete'],
-
-          module_permission_ids['permission:courses_create'],
-          module_permission_ids['permission:courses_update'],
-          module_permission_ids['permission:courses_delete'],
-          module_permission_ids['permission:courses_list'],
-
-          module_permission_ids['permission:courses_menu_access'],
-          module_permission_ids['permission:course_scheduling_menu_access'],
-        ],
-        homes: [
-          home_ids['admin']
-        ],
-        moodle_id: 1
-      },
-      {
-        name: 'Tutor',
-        description: 'Encargado de crear y modificar la programación de servicios educativos.',
-        app_module_permissions: [
-          module_permission_ids['config:is_teacher'],
-        ],
-        homes: [
-          home_ids['teacher']
-        ],
-        moodle_id: 4
-      },
-      {
-        name: 'viewer',
-        description: 'Espectador del sistema',
-        app_module_permissions: [
-          module_permission_ids['permission:posts_list'],
-          module_permission_ids['permission:posts_viewer'],
-          module_permission_ids['permission:banners_list'],
-          module_permission_ids['permission:banners_viewer'],
-          module_permission_ids['permission:forums_list'],
-          module_permission_ids['permission:forums_viewer'],
-          module_permission_ids['permission:users_list'],
-          module_permission_ids['permission:users_viewer'],
-          module_permission_ids['permission:roles_list'],
-          module_permission_ids['permission:roles_viewer'],
-          module_permission_ids['permission:modules_list'],
-          module_permission_ids['permission:modules_viewer'],
-          module_permission_ids['permission:countries_list'],
-          module_permission_ids['permission:countries_viewer'],
-          module_permission_ids['permission:course_scheduling_list'],
-          module_permission_ids['permission:course_scheduling_viewer'],
-          module_permission_ids['permission:course_scheduling_enrollment_list'],
-          module_permission_ids['permission:course_scheduling_enrollment_viewer'],
-          module_permission_ids['permission:courses_list'],
-          module_permission_ids['permission:courses_viewer'],
-          module_permission_ids['permission:companies_list'],
-          module_permission_ids['permission:companies_viewer'],
-          module_permission_ids['permission:modular_list'],
-          module_permission_ids['permission:modular_viewer'],
-
-          module_permission_ids['permission:posts_menu_access'],
-          module_permission_ids['permission:banners_menu_access'],
-          // module_permission_ids['permission:forums_menu_access'],
-          module_permission_ids['permission:users_menu_access'],
-          module_permission_ids['permission:roles_menu_access'],
-          module_permission_ids['permission:companies_menu_access'],
-          module_permission_ids['permission:courses_menu_access'],
-          module_permission_ids['permission:course_scheduling_menu_access'],
-          module_permission_ids['permission:modular_menu_access'],
-        ],
-        homes: [
-          home_ids['admin']
-        ],
-        moodle_id: 7
-      },
-      {
-        name: 'account_executive',
-        description: 'Ejecutivo de cuenta',
-        app_module_permissions: [
-          module_permission_ids['config:is_account_executive'],
-          module_permission_ids['permission:profile_menu_access'],
-          module_permission_ids['permission:publications_menu_access'],
-          module_permission_ids['permission:consultation_room_menu_access'],
-          module_permission_ids['permission:isolution_menu_access'],
-          // module_permission_ids['config:go_to_campus'],
-          // module_permission_ids['config:go_to_moodle'],
         ],
         homes: [
           home_ids['account_executive']

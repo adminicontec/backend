@@ -107,6 +107,19 @@ class CompanyController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public companyUsers = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+
+    const response = await companyService.companyUsers(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const companyController = new CompanyController();

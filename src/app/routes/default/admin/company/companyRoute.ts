@@ -29,6 +29,8 @@ class CompanyRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
+    routerUtility.post(app, _route, '/users', this.instanceController.companyUsers, [], ['auth'])
+
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'company', method: 'create', dir: 'admin/company' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])

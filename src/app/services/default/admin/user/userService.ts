@@ -125,6 +125,19 @@ class UserService {
 
       let countryCode = '';
 
+      for (const key in params) {
+        if (Object.prototype.hasOwnProperty.call(params, key)) {
+          const element = params[key];
+          if (element === 'undefined' || element === 'null') {
+            if (!params['$unset']) {
+              params['$unset'] = {}
+            }
+            params['$unset'][key] = 1
+            delete params[key];
+          }
+        }
+      }
+
       if (!params.profile) {
         params.profile = {}
       } else if (params.profile && typeof params.profile === "string") {
@@ -580,6 +593,12 @@ class UserService {
           where["roles"] = { $in: role_ids };
         }
       }
+    }
+
+    if (filters.company) {
+      where['company'] = filters.company
+    } else if (filters.without_company && (filters.without_company === true || filters.without_company === 'true')) {
+      where['company'] = {$exists: false}
     }
 
     let registers = []
