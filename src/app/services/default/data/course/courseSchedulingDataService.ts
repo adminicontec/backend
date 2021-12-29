@@ -54,6 +54,7 @@ class CourseSchedulingDataService {
         .populate({ path: 'regional', select: 'id name' })
         .populate({ path: 'city', select: 'id name' })
         .populate({ path: 'country', select: 'id name' })
+        .populate({ path: 'client', select: 'id name'})
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .select(select)
@@ -143,7 +144,7 @@ class CourseSchedulingDataService {
           total_scheduling += parseInt(element.duration)
 
           let item = {
-            client: (register.client) ? register.client : '-',
+            client: (register.client?.name) ? register.client.name : '-',
             city: (register.city && register.city.name) ? register.city.name : '-',
             scheduling_mode: (register.schedulingMode && register.schedulingMode.name) ? register.schedulingMode.name : '-',
             course_code: (element.course && element.course.code) ? element.course.code : '',
@@ -164,7 +165,7 @@ class CourseSchedulingDataService {
             total_scheduling += parseInt(session.duration)
 
             let row_content = {
-              client: (register.client) ? register.client : '',
+              client: (register.client?.name) ? register.client?.name : '',
               city: (register.city && register.city.name) ? register.city.name : '',
               scheduling_mode: (register.schedulingMode && register.schedulingMode.name) ? register.schedulingMode.name : '',
               course_code: (element.course && element.course.code) ? element.course.code : '',

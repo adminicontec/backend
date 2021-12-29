@@ -158,7 +158,8 @@ class CourseSchedulingDetailsService {
             {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
             {path: 'schedulingMode', select: 'id name'},
-            {path: 'program', select: 'id name'}
+            {path: 'program', select: 'id name'},
+            {path: 'client', select: 'id name'}
           ]})
         await CourseSchedulingSection.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
@@ -219,7 +220,8 @@ class CourseSchedulingDetailsService {
             {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
             {path: 'schedulingMode', select: 'id name'},
-            {path: 'program', select: 'id name'}
+            {path: 'program', select: 'id name'},
+            {path: 'client', select: 'id name'}
           ] })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })

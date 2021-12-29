@@ -87,7 +87,8 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.String,
   },
   client: {
-    type: Schema.Types.String,
+    type: Schema.Types.ObjectId,
+    ref: "Company",
   },
   duration: {type: Schema.Types.Number},
   in_design: {

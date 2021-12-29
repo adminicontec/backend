@@ -23,7 +23,7 @@ import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility'
 // @end
 
 // @import models
-import { City, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
+import { City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -77,6 +77,7 @@ class CourseSchedulingService {
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
           .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'client', select: 'id name'})
           .select(select)
           .lean()
 
@@ -98,6 +99,7 @@ class CourseSchedulingService {
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
           .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'client', select: 'id name'})
           .select(select)
           .lean()
 
@@ -256,6 +258,7 @@ class CourseSchedulingService {
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+        await Company.populate(response, { path: 'client', select: 'id name'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
@@ -392,6 +395,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+          .populate({ path: 'client', select: 'id name'})
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
@@ -629,7 +633,7 @@ class CourseSchedulingService {
             course_scheduling_id: courseScheduling._id,
             name: courseScheduling.program.name,
             observations: courseScheduling.observations,
-            client: (courseScheduling.client) ? courseScheduling.client : '-',
+            client: (courseScheduling.client?.name) ? courseScheduling.client?.name : '-',
             city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
             scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
             // course_code: (course.course && course.course.code) ? course.course.code : '',
@@ -1051,7 +1055,19 @@ class CourseSchedulingService {
     if (filters.schedulingStatus) where.push({$match: {schedulingStatus: ObjectID(filters.schedulingStatus)}})
     if (filters.schedulingMode) where.push({$match: {schedulingMode: ObjectID(filters.schedulingMode)}})
     if (filters.regional) where.push({$match: {regional: ObjectID(filters.regional)}})
-    if (filters.client) where.push({$match: {client: { $regex: '.*' + filters.client + '.*', $options: 'i' }}})
+    // if (filters.client) where.push({$match: {client: { $regex: '.*' + filters.client + '.*', $options: 'i' }}})
+    if (filters.client) {
+      const companies = await Company.find({name: { $regex: '.*' + filters.client + '.*', $options: 'i' }}).select('id name')
+      const company_ids = companies.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+      where.push({
+          $match: {
+            client: { $in: company_ids.map((p) => ObjectID(p)) }
+          }
+      })
+    }
     if (filters.modular) where.push({$match: {modular: ObjectID(filters.modular)}})
     if (filters.account_executive) where.push({$match: {account_executive: ObjectID(filters.account_executive)}})
     if (filters.start_date) where.push({$match: {startDate: {$gte: new Date(filters.start_date)}}})
@@ -1131,7 +1147,8 @@ class CourseSchedulingService {
           { path: 'regional', select: 'id name' },
           { path: 'city', select: 'id name' },
           { path: 'country', select: 'id name' },
-          {path: 'account_executive', select: 'id profile.first_name profile.last_name'}
+          {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
+          { path: 'client', select: 'id name'}
         ])
       } else {
         registers = await CourseScheduling.find({})
@@ -1147,6 +1164,7 @@ class CourseSchedulingService {
         .populate({ path: 'country', select: 'id name' })
         // .populate({path: 'course', select: 'id name'})
         .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+        .populate({path: 'client', select: 'id name'})
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })
@@ -1220,6 +1238,7 @@ class CourseSchedulingService {
           .populate({ path: 'regional', select: 'id name' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
+          .populate({ path: 'client', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .select(select)
@@ -1330,6 +1349,8 @@ class CourseSchedulingService {
               // { path: 'schedulingType', select: 'id name' },
               // { path: 'schedulingStatus', select: 'id name' },
               { path: 'regional', select: 'id name' },
+              { path: 'client', select: 'id name'}
+
               // { path: 'city', select: 'id name' },
               // { path: 'country', select: 'id name' },
             ]
@@ -1350,7 +1371,7 @@ class CourseSchedulingService {
             course_code: (course.course && course.course.code) ? course.course.code : '-',
             course_name: (course.course && course.course.name) ? course.course.name : '-',
             teacher_name: (course.teacher && course.teacher.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
-            client: (course.course_scheduling && course.course_scheduling.client) ? course.course_scheduling.client : '-',
+            client: (course.course_scheduling && course.course_scheduling.client?.name) ? course.course_scheduling.client.name : '-',
             scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
             regional: (course.course_scheduling && course.course_scheduling.regional && course.course_scheduling.regional.name) ? course.course_scheduling.regional.name : '-',
             executive: '-',
@@ -1394,7 +1415,7 @@ class CourseSchedulingService {
           program_name: (courseScheduling.program && courseScheduling.program.name) ? courseScheduling.program.name : '',
           service_id: (courseScheduling.metadata && courseScheduling.metadata.service_id) ? courseScheduling.metadata.service_id : '',
           regional_name: (courseScheduling.regional && courseScheduling.regional.name) ? courseScheduling.regional.name : '',
-          cliente_name: (courseScheduling.client) ? courseScheduling.client : '',
+          cliente_name: (courseScheduling.client?.name) ? courseScheduling.client?.name : '',
           schedule_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
           service_city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
           courses: reportData.courses,
