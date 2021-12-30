@@ -7,7 +7,7 @@ import { mailService } from "@scnode_app/services/default/general/mail/mailServi
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 import { userService } from '../user/userService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
-
+import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
@@ -128,6 +128,12 @@ class EnrollmentService {
           .select('')
 
           register.certificate = certificate
+          if (register?.certificate?.certificate?.pdfPath) {
+            register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath)
+          }
+          if (register?.certificate?.certificate?.imagePath) {
+            register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath)
+          }
         }
 
         count++

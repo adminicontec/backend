@@ -1341,10 +1341,10 @@ class CourseSchedulingService {
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
           .populate({
-            path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id', populate: [
+            path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id modular', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
-              // { path: 'modular', select: 'id name' },
+              { path: 'modular', select: 'id name' },
               { path: 'program', select: 'id name moodle_id code' },
               // { path: 'schedulingType', select: 'id name' },
               // { path: 'schedulingStatus', select: 'id name' },
@@ -1378,6 +1378,7 @@ class CourseSchedulingService {
             start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
             end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
             course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+            modular: (course?.course_scheduling?.modular?.name) ? course?.course_scheduling?.modular?.name : '-'
           }
 
           courses.push(item)
@@ -1471,6 +1472,7 @@ class CourseSchedulingService {
         'Nombre del programa': element.program_name,
         'Código del curso': element.course_code,
         'Nombre del curso': element.course_name,
+        'Modular': element?.modular ? element?.modular : '-',
         'Docente': element.teacher_name,
         'Cliente': element.client,
         'Modalidad': element.scheduling_mode,

@@ -4,6 +4,7 @@ import moment from 'moment'
 
 // @import services
 import {userService} from '@scnode_app/services/default/admin/user/userService'
+import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
@@ -62,18 +63,23 @@ class UserDataService {
         status: {$in: ['Complete']}
       })
       .select('id userId courseId certificate')
-      .populate({path: 'courseId', select: 'id program', populate: [{
+      .populate({path: 'courseId', select: 'id program certificate_students', populate: [{
         path: 'program', select: 'id name'
       }]})
 
       const certifications = _certifications.reduce((accum, element) => {
-        accum.push({
-          key: element?._id,
-          title: element?.courseId?.program?.name ||  '',
-          date: moment(element.created_at).format('YYYY-MM-DD'),
-          hash: element?.certificate?.hash,
-          url: element?.certificate?.url
-        })
+        if (element?.courseId?.certificate_students) {
+          accum.push({
+            key: element?._id,
+            _id: element?._id,
+            title: element?.courseId?.program?.name ||  '',
+            date: moment(element.created_at).format('YYYY-MM-DD'),
+            hash: element?.certificate?.hash,
+            url: element?.certificate?.url,
+            imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
+            pdfPath: element?.certificate?.pdfPath ? certificateService.certificateUrl(element?.certificate.pdfPath) : null,
+          })
+        }
         return accum
       }, [])
 

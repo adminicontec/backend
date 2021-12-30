@@ -391,6 +391,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'teacher', description: 'Home destinado para docentes'},
       {name: 'admin', description: 'Home destinado para administradores'},
       {name: 'account_executive', description: 'Home destinado para ejecutivos de cuenta'},
+      {name: 'company', description: 'Home destinado para usuarios de empresas'},
     ]
 
     for await (const home of homes) {
@@ -908,7 +909,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:profile_menu_access'],
         ],
         homes: [
-          home_ids['account_executive']
+          home_ids['company']
         ],
         // moodle_id: 4
       },
@@ -1061,6 +1062,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'teacher', description: 'Dashboard de docentes'},
       {name: 'guest', description: 'Landing principal'},
       {name: 'officials_landing', description: 'Landing de colaboradores'},
+      {name: 'company', description: 'Dashboard de empresas'},
       {name: 'live', description: 'En vivo'},
     ]
     for await (const postLocation of post_locations) {

@@ -91,8 +91,21 @@ export interface ICertificateQueue {
 }
 
 export interface ICertificatePreview{
+  certificate_queue: string;
   hash: string,
   format: number,
-  template: number
+  template: number,
+  updateCertificate?: boolean
+  showPreviewBase64?: boolean
+}
+
+export interface IGenerateCertificatePdf {
+  certificate: string,
+  to_file: {
+    file: {
+      name: string,   // Nombre original del archivo adjunto (Ex: car.jpg)
+    },
+    path: string // Ubicación por defecto donde se alojaran los PDF
+  }
 }
 //@end

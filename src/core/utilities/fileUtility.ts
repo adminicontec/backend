@@ -63,9 +63,9 @@ class FileUtility {
    * @param content Contenido del archivo
    * @returns
    */
-  public writeFileSync = (file_path, content) => {
+  public writeFileSync = (file_path, content, format = 'utf-8') => {
     try {
-      fs.writeFileSync(file_path,content,'utf-8');
+      fs.writeFileSync(file_path,content,format);
       return true;
     } catch (err) {
       return false;

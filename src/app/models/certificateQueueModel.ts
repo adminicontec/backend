@@ -42,6 +42,14 @@ const CertificateQueueSchema = new Schema({
       type: Schema.Types.String,
       required: false
     },
+    imagePath: {
+      type: Schema.Types.String,
+      required: false
+    },
+    pdfPath: {
+      type: Schema.Types.String,
+      required: false
+    },
     required: false,
   },
   // @end

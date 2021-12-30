@@ -1,5 +1,12 @@
 // @import_dependencies_node Import libraries
+import path from "path";
 import moment from 'moment'
+import { Base64 } from 'js-base64';
+import { host, public_dir, attached } from "@scnode_core/config/globals";
+// @end
+
+// @import config
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import services
@@ -13,18 +20,22 @@ import { certificateQueueService } from '@scnode_app/services/default/admin/cert
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { certificate_setup, program_type_collection, program_type_abbr } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
+import {fileUtility} from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
+import { CertificateQueue } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview, IGenerateCertificatePdf } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 class CertificateService {
+
+  private default_certificate_path = 'certifications'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -309,22 +320,21 @@ class CertificateService {
       // params.format:
       // Imagen PNG: 1
       // PDF: 2
-      let detailParams = {
+      const detailParams = {
         id: params.hash,
         fr: params.format,
         pl: params.template
       }
-      let respToken: any = await this.login();
+      const respToken: any = await this.login();
 
       if (respToken.status == 'error') {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
       }
 
-      console.log("Token: ");
-      var tokenHC = respToken.token;
+      const tokenHC = respToken.token;
 
       // Build request for GetAllTemplate
-      let respHuella: any = await queryUtility.query({
+      const respHuella: any = await queryUtility.query({
         method: 'get',
         url: certificate_setup.endpoint.certificate_detail,
         api: 'huellaDeConfianza',
@@ -339,11 +349,64 @@ class CertificateService {
           })
       }
 
+      if (respHuella.resultado === "") return responseUtility.buildResponseFailed('json')
+
+      if (params.updateCertificate && params.format) {
+        let updateData = null
+        if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
+          const time = new Date().getTime()
+          const resultPng: any = await this.generateCertificateFromBase64({
+            certificate: respHuella.resultado,
+            to_file: {
+              file: {
+                name: `${params.hash}_${time}.png`,
+              },
+              path: this.default_certificate_path,
+            }
+          })
+          if (resultPng.status === 'success') {
+            updateData = {
+              $set: {
+                "certificate.imagePath": resultPng.filename
+              }
+            }
+          }
+        } else if (params.format.toString() === "2") { // Si el formato es 2 (PDF) guardo el documento en el server y actualizo base de datos
+          const time = new Date().getTime()
+          const resultPdf: any = await this.generateCertificateFromBase64({
+            certificate: respHuella.resultado,
+            to_file: {
+              file: {
+                name: `${params.hash}_${time}.pdf`,
+              },
+              path: this.default_certificate_path,
+            }
+          })
+          if (resultPdf.status === 'success') {
+            updateData = {
+              $set: {
+                "certificate.pdfPath": resultPdf.filename
+              }
+            }
+          }
+        }
+        if (updateData) {
+          await CertificateQueue.findByIdAndUpdate(params.certificate_queue, updateData, { useFindAndModify: false, new: true })
+        }
+      }
+
+      const certificate = await CertificateQueue.findOne({_id: params.certificate_queue})
+
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           tokenHC: tokenHC,
-          preview: respHuella.resultado
+          preview: (params.showPreviewBase64 === true) ? respHuella.resultado : undefined,
+          certificate: {
+            url: certificate?.certificate?.url,
+            imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
+            pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
+          }
         }
       });
 
@@ -381,6 +444,54 @@ class CertificateService {
       }
     });
 
+  }
+
+  private generateCertificateFromBase64 = async (params: IGenerateCertificatePdf) => {
+    let driver = attached['driver'];
+    let attached_config = attached[driver];
+
+    const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+    let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+    if (attached_config.base_path_type === "absolute") {
+      base_path = upload_config_base_path
+    }
+
+    const path_upload = (params.to_file.path && params.to_file.path !== "") ? `pdfs/${params.to_file.path}/` : "pdfs/";
+
+    const full_path_file = `${base_path}/${path_upload}${params.to_file.file.name}`;
+    const public_path_file = `${host}/uploads/${path_upload}${params.to_file.file.name}`;
+
+    // Creando la estructura de carpetas necesaria para cargar el archivo
+    await fileUtility.createDirRecursive(full_path_file);
+
+    const fileExists = await fileUtility.fileExists(full_path_file)
+    if (fileExists) {
+      const remove = await fileUtility.removeFileSync(full_path_file)
+    }
+
+    const bin = Base64.atob(params.certificate);
+
+    try {
+      const result = await fileUtility.writeFileSync(full_path_file, bin, 'binary')
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          path: public_path_file,
+          filename: params.to_file.file.name
+        }
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un banner a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del Banner
+   */
+  public certificateUrl = (item) => {
+    return item && item !== ''
+    ? `${customs['uploads']}/pdfs/${this.default_certificate_path}/${item}`
+    : null
   }
 
 }
