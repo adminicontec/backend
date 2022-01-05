@@ -20,7 +20,7 @@ import { certificateQueueService } from '@scnode_app/services/default/admin/cert
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { certificate_setup, program_type_collection, program_type_abbr } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
-import {fileUtility} from '@scnode_core/utilities/fileUtility'
+import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
@@ -118,6 +118,13 @@ class CertificateService {
         where: [{ field: 'course_scheduling', value: params.courseId }]
       });
 
+
+      console.log('-------------------');
+      console.log(respCourse);
+      console.log('-------------------');
+      console.log(respCourseDetails);
+      console.log('-------------------');
+
       if (respCourse.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
@@ -148,8 +155,6 @@ class CertificateService {
 
       // 2. Tipo de programa
       let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
-      console.log('Program:');
-      console.log(programType);
 
       let field_dato_1 = '';
       let field_template = '';
@@ -163,29 +168,30 @@ class CertificateService {
       let schedulingType = respCourse.scheduling.schedulingType;
 
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
-        field_dato_1 = 'Asistió y aprobó el curso ' + respCourse.scheduling.program.name;
+        field_dato_1 = 'Asistió y aprobó el curso';
         field_asistio = 'Asistió al curso';
         field_template = 'CP00000001';
       }
       if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
-        field_dato_1 = 'Asistió y aprobó el programa ' + respCourse.scheduling.program.name;
+        field_dato_1 = 'Asistió y aprobó el programa';
         field_asistio = 'Asistió al programa';
 
         // Listado de Módulos (cursos) que comprende el programa
         respCourseDetails.schedulings.forEach(element => {
-          field_listado_cursos += element.course.name + '\r\n';
+          field_listado_cursos += element.course.name + '<br/>';
         });
 
         field_template = 'CP00000002';
       }
       if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-        field_dato_1 = 'Asistió y aprobó el dipĺomado ' + respCourse.scheduling.program.name;
+        field_dato_1 = 'Asistió y aprobó el dipĺomado';
         field_asistio = 'Asistió al diplomado';
         field_template = 'CP00000002';
       }
 
 
       console.log('....................................');
+      console.log('Certificado para ' + respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name);
 
       // 3. Estatus de estudiante en Moodle
       // - Asistencias
@@ -198,9 +204,6 @@ class CertificateService {
       const timeElapsed = Date.now();
       const currentDate = new Date(timeElapsed);
 
-      console.log('Intensidad:');
-      console.log(respCourse.scheduling.total_scheduling);
-
       let certificateParams: ICertificate = {
         modulo: field_template,
         numero_certificado: fielf_numero_certificado,
@@ -208,7 +211,10 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
         asistio: field_asistio,
-        certificado: respCourse.scheduling.program.name,
+        certificado: respCourse.scheduling.certificate,
+        certificado_ingles: respCourse.scheduling.english_certificate,
+        alcance: respCourse.scheduling.scope,
+        alcance_ingles: respCourse.scheduling.scope,
         intensidad: generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration),
         listado_cursos: field_listado_cursos,
         ciudad: field_ciudad,
@@ -223,8 +229,8 @@ class CertificateService {
         dato_2: moment(currentDate).locale('es').format('LL'),
       }
       //#endregion
-      console.log("Certificate Params");
-      console.log(certificateParams);
+      // console.log("Certificate Params");
+      // console.log(certificateParams);
 
       //#region Request to Create Certificate
 
@@ -395,7 +401,7 @@ class CertificateService {
         }
       }
 
-      const certificate = await CertificateQueue.findOne({_id: params.certificate_queue})
+      const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
 
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
@@ -404,8 +410,8 @@ class CertificateService {
           preview: (params.showPreviewBase64 === true) ? respHuella.resultado : undefined,
           certificate: {
             url: certificate?.certificate?.url,
-            imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
-            pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
+            imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
+            pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
           }
         }
       });
@@ -490,8 +496,8 @@ class CertificateService {
    */
   public certificateUrl = (item) => {
     return item && item !== ''
-    ? `${customs['uploads']}/pdfs/${this.default_certificate_path}/${item}`
-    : null
+      ? `${customs['uploads']}/pdfs/${this.default_certificate_path}/${item}`
+      : null
   }
 
 }
