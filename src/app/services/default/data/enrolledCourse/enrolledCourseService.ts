@@ -3,6 +3,7 @@ import moment from 'moment';
 // @end
 
 // @import services
+import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
@@ -10,11 +11,11 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {CourseSchedulingDetails, Enrollment, User} from '@scnode_app/models'
+import {CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment, User} from '@scnode_app/models'
 // @end
 
 // @import types
-import {IFetchEnrollementByUser} from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
+import {IFetchEnrollementByUser, IFetchCertifications} from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
 // @end
 
 class EnrolledCourseService {
@@ -33,7 +34,7 @@ class EnrolledCourseService {
    * @param [filters] Estructura de filtros para la consulta
    * @returns
    */
-   public fetchEnrollmentByUser = async (params: IFetchEnrollementByUser) => {
+  public fetchEnrollmentByUser = async (params: IFetchEnrollementByUser) => {
     let registers = []
     let steps = []
 
@@ -103,6 +104,78 @@ class EnrolledCourseService {
         ],
         history_courses: [],
         steps
+      }
+    })
+  }
+
+  /**
+   * Metodo que permite listar todos los registros
+   * @param [filters] Estructura de filtros para la consulta
+   * @returns
+   */
+  public fetchCertifications = async (params: IFetchCertifications) => {
+    const paging = (params.pageNumber && params.nPerPage) ? true : false
+
+    const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
+    const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
+
+    let select = 'id userId courseId certificateType certificateModule status message certificate created_at'
+
+    let where = {}
+
+    if (params.company) {
+      const course_scheduling = await CourseScheduling.find({client: params.company}).select('id')
+      const course_scheduling_ids = course_scheduling.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+      if (course_scheduling_ids.length > 0) {
+        where['courseId'] = {$in: course_scheduling_ids}
+      }
+    }
+
+    if (params.status) {
+      where['status'] = {$in: params.status}
+    }
+
+    let registers = []
+
+    try {
+      registers = await CertificateQueue.find(where)
+      .populate({path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number'})
+      .populate({path: 'courseId', select: 'id metadata program', populate: [{
+        path: 'program', select: 'id name moodle_id code'
+      }]})
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort({ startDate: -1 })
+        .select(select)
+        .lean()
+
+        for await (const register of registers) {
+          if (register.userId && register.userId.profile) {
+            register.userId.fullname = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
+          }
+
+          if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
+
+          if (register?.certificate?.pdfPath) {
+            register.certificate.pdfPath = certificateService.certificateUrl(register.certificate.pdfPath)
+          }
+          if (register?.certificate?.imagePath) {
+            register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
+          }
+        }
+    } catch (error) {}
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        certifications: [
+          ...registers
+        ],
+        total_register: (paging) ? await CertificateQueue.find(where).countDocuments() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
       }
     })
   }
