@@ -121,6 +121,18 @@ class ForumMessageService {
    */
   public getBetterMessage = async (params: IParamsGerBetterForumMessage) => {
     try{
+
+      // @INFO: Validando usuario
+      let user = null
+      if (params.user) {
+        const user_exists: any = await userService.findBy({
+          query: QueryValues.ONE,
+          where: [{field: '_id', value: params.user}]
+        })
+        if (user_exists.status === 'error') return user_exists
+        user = user_exists.user
+      }
+
       // Obtener los comentarios del foro
       const messages = await ForumMessage.aggregate([
         {
@@ -151,7 +163,8 @@ class ForumMessageService {
       let messageResponse;
       if (message) {
         messageResponse = await this.processForumMessagesData({
-          messages: message
+          messages: message,
+          user
         })
       } else {
         messageResponse = null
@@ -295,13 +308,13 @@ class ForumMessageService {
     }
 
     if (params.forum && !params.forumMessage) {
-      const totalLikes = await Like.find({user: params.posted_by._id, forumMessage: params._id})
+      const totalLikes = await Like.find({forumMessage: params._id})
       params = {
         // * Se usa el _doc porque llega de una consulta de mongo
         // @ts-ignore
         ...params._doc ? params._doc : params,
         totalLikes: totalLikes.length,
-        postedLike: totalLikes.find((l) => l.user.toString() === params.posted_by._id.toString()) ? true : false
+        postedLike: user && totalLikes.find((l) => l.user.toString() === user._id.toString()) ? true : false
       }
     }
 

@@ -460,6 +460,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:forums_delete', description: 'Eliminar foros' },
         {name: 'permission:forums_list', description: 'Ver foros' },
         {name: 'permission:forums_viewer', description: 'Consultar foros' },
+        {name: 'permission:forums_response', description: 'Consultar foros' },
         {name: 'permission:forums_menu_access', description: 'Menu de foros'},
       ] },
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
@@ -651,6 +652,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:forums_update'],
           module_permission_ids['permission:forums_delete'],
           module_permission_ids['permission:forums_list'],
+          module_permission_ids['permission:forums_response'],
           module_permission_ids['permission:users_create'],
           module_permission_ids['permission:users_update'],
           module_permission_ids['permission:users_delete'],
@@ -700,7 +702,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
-          // module_permission_ids['permission:forums_menu_access'],
+          module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:account_executives_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
@@ -760,23 +762,28 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       //   ],
       //   moodle_id: 5
       // },
-      // {
-      //   name: 'teacher',
-      //   description: 'Docente',
-      //   app_module_permissions: [
-      //     module_permission_ids['config:is_teacher'],
-      //     module_permission_ids['config:go_to_campus'],
-      //     module_permission_ids['config:go_to_moodle'],
-      //     module_permission_ids['permission:profile_menu_access'],
-      //     module_permission_ids['permission:publications_menu_access'],
-      //     module_permission_ids['permission:teaching_resources_menu_access'],
-      //     module_permission_ids['permission:consultation_room_menu_access'],
-      //   ],
-      //   homes: [
-      //     home_ids['teacher']
-      //   ],
-      //   moodle_id: 4
-      // },
+      {
+        name: 'teacher',
+        description: 'Docente',
+        app_module_permissions: [
+          module_permission_ids['config:is_teacher'],
+          module_permission_ids['config:go_to_campus'],
+          module_permission_ids['config:go_to_moodle'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:publications_menu_access'],
+          module_permission_ids['permission:teaching_resources_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
+          module_permission_ids['permission:forums_create'],
+          module_permission_ids['permission:forums_update'],
+          module_permission_ids['permission:forums_delete'],
+          module_permission_ids['permission:forums_list'],
+          module_permission_ids['permission:forums_response'],
+        ],
+        homes: [
+          home_ids['teacher']
+        ],
+        moodle_id: 4
+      },
       // {
       //   name: 'scheduling_coordinator',
       //   description: 'Coordinador de programación',
