@@ -44,6 +44,7 @@ export interface IForumMessageData {
 
 export interface IParamsGerBetterForumMessage {
   forum: string
+  user?: string
 }
 
 export interface IForumMessageDelete {
