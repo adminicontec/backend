@@ -4,6 +4,7 @@ const ObjectID = require('mongodb').ObjectID
 
 // @import services
 import {forumCategoryService} from '@scnode_app/services/default/admin/forum/forumCategoryService'
+import { forumTagsService } from '@scnode_app/services/default/admin/forum/forumTagsService'
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 // @end
 
@@ -51,11 +52,13 @@ class ForumService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title description coverUrl postDate isActive tags locations'
+      let select = 'id title description coverUrl postDate isActive tags locations created_at created_by category'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Forum.find(where)
         .populate({path: 'tags', select: 'id name'})
         .populate({path: 'locations.forumLocation', select: 'id name'})
+        .populate({path: 'created_by', select: 'id username profile'})
+        .populate({path: 'category', select: 'id name'})
         .select(select)
         .lean()
 
@@ -72,6 +75,8 @@ class ForumService {
         const register: any = await Forum.findOne(where)
         .populate({path: 'tags', select: 'id name'})
         .populate({path: 'locations.forumLocation', select: 'id name'})
+        .populate({path: 'created_by', select: 'id username profile'})
+        .populate({path: 'category', select: 'id name'})
         .select(select)
         .lean()
 
@@ -108,7 +113,7 @@ class ForumService {
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
       }
-      
+
       if (params.tags && typeof params.tags === 'string') params.tags = params.tags.split(',')
       if (params.tags && Array.isArray(params.tags)) {
         let tags = []
@@ -116,11 +121,11 @@ class ForumService {
           params.tags.map(async (t) => {
             const isObjectId = await ObjectID.isValid(t)
             if (!isObjectId) {
-              const tagExists: any = await forumCategoryService.findBy({query: QueryValues.ONE, where: [{field: 'name', value: t}]})
+              const tagExists: any = await forumTagsService.findBy({query: QueryValues.ONE, where: [{field: 'name', value: t}]})
               if (tagExists.status === 'success') {
                 tags.push(tagExists.forumCategory._id)
               } else {
-                const newTagResponse: any = await forumCategoryService.insertOrUpdate({name: t})
+                const newTagResponse: any = await forumTagsService.insertOrUpdate({name: t})
                 if (newTagResponse.status === 'success') {
                   tags.push(newTagResponse.forumCategory._id)
                 }
@@ -132,7 +137,7 @@ class ForumService {
         )
         params.tags = tags
       }
-      
+
       if (params.tags && typeof params.tags === 'string') {
         params.tags = params.tags.split(',')
       }
@@ -263,7 +268,7 @@ class ForumService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title description coverUrl postDate isActive tags locations'
+    let select = 'id title description coverUrl postDate isActive tags locations category'
     if (filters.select) {
       select = filters.select
     }
@@ -279,6 +284,13 @@ class ForumService {
           {title: { $regex: '.*' + search + '.*',$options: 'i' }},
           {description: { $regex: '.*' + search + '.*',$options: 'i' }},
         ]
+      }
+    }
+
+    if (filters.category) {
+      where = {
+        ...where,
+        category: filters.category
       }
     }
 
@@ -302,6 +314,7 @@ class ForumService {
       .select(select)
       .populate({path: 'tags', select: 'id name'})
       .populate({path: 'locations.forumLocation', select: 'id name'})
+      .populate({path: 'category', select: 'id name'})
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
       .sort({created_at: -1})

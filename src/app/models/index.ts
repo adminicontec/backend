@@ -1,4 +1,6 @@
 // @import_models
+import { LikeModel } from "@scnode_app/models/likeModel";
+import { ForumTagsModel } from "@scnode_app/models/forumTagsModel";
 import { CertificateQueueModel } from "@scnode_app/models/certificateQueueModel";
 import { TeacherProfileModel } from "@scnode_app/models/teacherProfileModel";
 import { LandingModel } from "@scnode_app/models/landingModel";
@@ -49,6 +51,8 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const Like = LikeModel
+export const ForumTags = ForumTagsModel
 export const CertificateQueue = CertificateQueueModel
 export const TeacherProfile = TeacherProfileModel
 export const Landing = LandingModel

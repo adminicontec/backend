@@ -31,6 +31,8 @@ class ForumMessageRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/send-message',this.instanceController.sendMessage,[],['auth']);
     routerUtility.delete(app,_route,'/delete/:id',this.instanceController.delete,[],['auth']);
+    routerUtility.get(app, _route, '/', this.instanceController.list, [], [])
+    routerUtility.get(app, _route, '/better-message', this.instanceController.getBetterMessage, [], [])
     // @end
   }
 }

@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 // @end
 
-const ForumCategorySchema = new Schema({
+const ForumTagsSchema = new Schema({
   // @add_schema Add schema here
   name: {
     type: Schema.Types.String,
@@ -13,23 +13,23 @@ const ForumCategorySchema = new Schema({
   }
   // @end
 }, {
-  collection: 'forum_categories' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'forum_tags' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-ForumCategorySchema.plugin(mongoose_delete,{
+ForumTagsSchema.plugin(mongoose_delete,{
   deletedAt : true,
   overrideMethods: 'all',
   indexFields: 'all'
 });
 
 // INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
-// ForumCategorySchema.methods.invalid_fields = ["field1", "field2"];
+// ForumTagsSchema.methods.invalid_fields = ["field1", "field2"];
 
 // INFO: Si desea implementar un metodo despues de guardar habilite el siguiente metodo
-// ForumCategorySchema.methods.postSave = (parameters) => {
+// ForumTagsSchema.methods.postSave = (parameters) => {
 // }
 
 
-export const ForumCategoryModel = mongoose.model('ForumCategory', ForumCategorySchema);
+export const ForumTagsModel = mongoose.model<any, any>('ForumTags', ForumTagsSchema);

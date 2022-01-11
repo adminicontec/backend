@@ -18,7 +18,7 @@ import { Forum, ForumLocation, ForumMessage } from '@scnode_app/models';
 
 // @import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {IFetchMessagesByForum, IFetchForums} from '@scnode_app/types/default/data/forum/forumDataTypes'
+import {IFetchMessagesByForum, IFetchForums, IParamsGetRelatedForums} from '@scnode_app/types/default/data/forum/forumDataTypes'
 // @end
 
 class ForumDataService {
@@ -178,6 +178,106 @@ class ForumDataService {
       return responseUtility.buildResponseFailed('json')
     }
   }
+
+  /**
+   * @INFO Obtener foros destacados (mas likes)
+   */
+  public getFeaturedForums = async () => {
+    try{
+      const forums = await Forum.aggregate([
+        {
+          $lookup: {
+            from: "forum_messages",
+            localField: "_id",
+            foreignField: "forum",
+            as: "forumMessages_doc"
+          }
+        },
+        {
+          $lookup: {
+            from: "likes",
+            localField: "forumMessages_doc._id",
+            foreignField: "forumMessage",
+            as: "likes_doc"
+          }
+        }
+      ])
+      await Forum.populate(forums, [
+        {path: 'tags', select: 'id name'},
+        {path: 'locations.forumLocation', select: 'id name'},
+      ])
+
+      // Encontrar y devolver los 5 mejores foros
+      const totalForums = 5;
+      const newForums = forums.sort((a,b) => a.likes_doc.length - b.likes_doc.length)
+      const registers = []
+      newForums.forEach((item, idx) => {
+        if (idx < totalForums) {
+          registers.push(item)
+        }
+      })
+
+      // Agregar la imagen al foro
+      for await (const register of registers) {
+        if (register.coverUrl) {
+          register.coverUrl = forumService.coverUrl(register)
+        }
+      }
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          forums: registers
+        }
+      })
+    }catch(e) {
+      console.log(e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * @INFO Obtener los foros relacionados
+   * @param params
+   * @returns
+   */
+  public getRelatedForums = async (params: IParamsGetRelatedForums) => {
+    try{
+      // Obtener el foro con el que se desea relacionar
+      const responseForum: any = await forumService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: params.forum}]})
+      if (responseForum.status === 'error') return responseForum
+      const forum = responseForum.forum
+
+      // Obtener los foros de la misma categoría a relacionar
+      const forums = await Forum.find({category: forum.category._id, _id: {$ne: params.forum}})
+
+      // TODO: Ordenar por los foros que tengan la mayor cantidad de tags que coincidan
+
+      // Devolver solo los 3 mas relacionados
+      const totalForums = 3;
+      const registers = []
+      forums.forEach((item, idx) => {
+        if (idx < totalForums) {
+          registers.push(item)
+        }
+      })
+
+      // Agregar la imagen al foro
+      for await (const register of registers) {
+        if (register.coverUrl) {
+          register.coverUrl = forumService.coverUrl(register)
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          forums: registers
+        }
+      })
+    }catch(e){
+      console.log(e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
 }
 
 export const forumDataService = new ForumDataService();

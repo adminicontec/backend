@@ -258,6 +258,12 @@
           "already_exists": "Ya existe una categoria con el nombre :name"
         }
       },
+      "tag": {
+        "not_found": "El tag de foro no ha sido encontrado",
+        "insertOrUpdate": {
+          "already_exists": "Ya existe un tag con el nombre :name"
+        }
+      },
       "location": {
         "not_found": "La ubicación de foro no ha sido encontrada",
         "insertOrUpdate": {
