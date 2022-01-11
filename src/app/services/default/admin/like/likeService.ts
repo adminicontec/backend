@@ -13,7 +13,7 @@ import { Like } from '@scnode_app/models';
 // @end
 
 // @import types
-import { IQueryFind, QueryValues } from 'app/types/default/global/queryTypes';
+import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { ILikeQuery, IParamsInsertOrUpdateLike, IParamsRemoveLike } from '@scnode_app/types/default/admin/like/likeTypes';
 // @end
 
