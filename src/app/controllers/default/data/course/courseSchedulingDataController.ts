@@ -41,6 +41,20 @@ class CourseSchedulingDataController {
     const response = await courseSchedulingDataService.fetchCourseSchedulingByProgram(params)
     return responseUtility.sendResponseFromObject(res,response);
   }
+
+  /**
+   * Metodo que permite consultar la programación
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public fetchCourseSchedulingExtend = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+    const response = await courseSchedulingDataService.fetchCourseSchedulingExtend(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 }
 
 export const courseSchedulingDataController = new CourseSchedulingDataController();

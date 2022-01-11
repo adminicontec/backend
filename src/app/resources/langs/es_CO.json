@@ -395,6 +395,7 @@
       "login_invalid": "El usuario o password no válido",
       "not_found": "El certificado no existe",
       "generation": "No se puede generar el certificado: :error",
+      "preview": "No se puede visualizar el certificado: :error",
       "requirements": {
         "program_status": "No se puede generar el certificado. El estado del programa es: :error",
         "student_status": "No se puede generar el certificado. El estudiante :name tiene el siguiente problema: :error"

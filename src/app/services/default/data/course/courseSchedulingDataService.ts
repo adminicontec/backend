@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment'
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -12,11 +13,11 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { CourseScheduling, CourseSchedulingDetails, Course } from '@scnode_app/models'
+import { CourseScheduling, CourseSchedulingDetails, Course, Enrollment } from '@scnode_app/models'
 // @end
 
 // @import types
-import {IFetchCourseSchedulingByProgram} from '@scnode_app/types/default/data/course/courseSchedulingDataTypes'
+import {IFetchCourseSchedulingByProgram, IFetchCourseSchedulingExtend} from '@scnode_app/types/default/data/course/courseSchedulingDataTypes'
 // @end
 
 class CourseSchedulingDataService {
@@ -211,6 +212,124 @@ class CourseSchedulingDataService {
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  /**
+   * Metodo que permite listar todos los registros
+   * @param [filters] Estructura de filtros para la consulta
+   * @returns
+   */
+  public fetchCourseSchedulingExtend = async (params: IFetchCourseSchedulingExtend) => {
+
+    const paging = (params.pageNumber && params.nPerPage) ? true : false
+
+    const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
+    const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
+
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3'
+    if (params.select) {
+      select = params.select
+    }
+
+    let where: object[] = []
+
+    if (params.company) where.push({$match: {client: ObjectID(params.company)}})
+    if (params.start_date) where.push({$match: {startDate: {$gte: new Date(params.start_date)}}})
+    if (params.end_date) where.push({$match: {endDate: {$lte: new Date(params.end_date)}}})
+
+    let registers = []
+    try {
+      if (where.length) {
+        const pagination = []
+        if (paging) {
+          if (pageNumber > 0) {
+            pagination.push({
+              $skip: (pageNumber - 1) * nPerPage
+            })
+          }
+          pagination.push({
+            $limit: nPerPage
+          })
+        }
+        pagination.push({
+          $sort: { startDate: -1 }
+        })
+
+        registers = await CourseScheduling.aggregate(where.concat(pagination))
+        await CourseScheduling.populate(registers, [
+          { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
+          { path: 'schedulingMode', select: 'id name moodle_id' },
+          { path: 'modular', select: 'id name' },
+          { path: 'program', select: 'id name moodle_id code' },
+          { path: 'schedulingType', select: 'id name' },
+          { path: 'schedulingStatus', select: 'id name' },
+          { path: 'regional', select: 'id name' },
+          { path: 'city', select: 'id name' },
+          { path: 'country', select: 'id name' },
+          {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
+          { path: 'client', select: 'id name'}
+        ])
+      } else {
+        registers = await CourseScheduling.find({})
+        .select(select)
+        .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'modular', select: 'id name' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'schedulingType', select: 'id name' })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
+        .populate({ path: 'regional', select: 'id name' })
+        .populate({ path: 'city', select: 'id name' })
+        .populate({ path: 'country', select: 'id name' })
+        // .populate({path: 'course', select: 'id name'})
+        .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+        .populate({path: 'client', select: 'id name'})
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort({ startDate: -1 })
+        .lean()
+      }
+
+      let participants = {}
+
+      const course_scheduling_ids = registers.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+
+      if (course_scheduling_ids.length > 0) {
+        const participantByCourseScheduling = await Enrollment.find({
+          course_scheduling: {$in: course_scheduling_ids}
+        })
+
+        for (const iterator of participantByCourseScheduling) {
+          if (iterator.course_scheduling) {
+            if (!participants[iterator.course_scheduling.toString()]) {
+              participants[iterator.course_scheduling.toString()] = []
+            }
+            participants[iterator.course_scheduling.toString()].push(iterator)
+          }
+        }
+      }
+
+      for await (const register of registers) {
+        if (register.startDate) register.startDate = moment.utc(register.startDate).format('YYYY-MM-DD')
+        if (register.endDate) register.endDate = moment.utc(register.endDate).format('YYYY-MM-DD')
+        register.duration = (register.duration) ? generalUtility.getDurationFormated(register.duration) : '0h'
+        register.participants = (participants[register._id.toString()]) ? participants[register._id.toString()].length : 0
+      }
+    } catch (e) {}
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        schedulings: [
+          ...registers
+        ],
+        total_register: (paging) ? (where.length ? (await CourseScheduling.aggregate(where)).length : await CourseScheduling.find({}).count()) : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    })
   }
 }
 

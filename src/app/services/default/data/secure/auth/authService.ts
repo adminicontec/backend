@@ -43,7 +43,7 @@ class AuthService {
    private findUserToLoginQuery = async (query) => {
 
     const user_exist = await User.findOne(query).select(
-      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id'
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company'
     )
     .populate({
       path: 'roles',
@@ -52,6 +52,7 @@ class AuthService {
         path: 'homes', select: 'id name description'
       }
     })
+    .populate({path: 'company', select: 'id name description'})
     if (!user_exist) return responseUtility.buildResponseFailed('json', null, {error_key: { key: 'auth.user_not_found' },})
 
     return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -171,7 +172,8 @@ class AuthService {
           moodle: {
             ...tokenCustom,
             moodle_id: user.moodle_id
-          }
+          },
+          company: user?.company
 				},
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,
