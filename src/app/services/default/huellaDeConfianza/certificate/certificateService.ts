@@ -117,13 +117,11 @@ class CertificateService {
         query: QueryValues.ALL,
         where: [{ field: 'course_scheduling', value: params.courseId }]
       });
-
-
-      console.log('-------------------');
-      console.log(respCourse);
-      console.log('-------------------');
-      console.log(respCourseDetails);
-      console.log('-------------------');
+      // console.log('-------------------');
+      // console.log(respCourse);
+      // console.log('-------------------');
+      // console.log(respCourseDetails);
+      // console.log('-------------------');
 
       if (respCourse.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
@@ -134,15 +132,7 @@ class CertificateService {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
       }
-
-      // return responseUtility.buildResponseSuccess('json', null, {
-      //   additional_parameters: {
-      //     tokenHC: tokenHC,
-      //     userData: respDataUser
-      //   }
-      // });
       //#endregion
-
 
       //#region Validations to generate Certificate
       //schedulingStatus
@@ -184,11 +174,10 @@ class CertificateService {
         field_template = 'CP00000002';
       }
       if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-        field_dato_1 = 'Asistió y aprobó el dipĺomado';
+        field_dato_1 = 'Asistió y aprobó el diplomado';
         field_asistio = 'Asistió al diplomado';
         field_template = 'CP00000002';
       }
-
 
       console.log('....................................');
       console.log('Certificado para ' + respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name);
@@ -229,8 +218,6 @@ class CertificateService {
         dato_2: moment(currentDate).locale('es').format('LL'),
       }
       //#endregion
-      // console.log("Certificate Params");
-      // console.log(certificateParams);
 
       //#region Request to Create Certificate
 
@@ -241,18 +228,8 @@ class CertificateService {
           { error_key: { key: 'certificate.login_invalid' } })
       }
 
-      console.log("Token: ");
       var tokenHC = respToken.token;
-
-      // let respHuella = {
-      //   info_program: {
-      //     program: respCourse.scheduling,
-      //     details: respCourseDetails.schedulings
-      //   },
-      //   params: certificateParams,
-      //   resultado: "freeze",
-      //   estado: "OK"
-      // };
+      console.log("get Token: " + tokenHC);
 
       let responseCertQueueOnError: any = await certificateQueueService.insertOrUpdate({
         id: params.certificateQueueId,
@@ -284,7 +261,6 @@ class CertificateService {
           { error_key: { key: 'certificate.generation', params: { error: respHuella.resultado } } });
       }
       //#endregion
-      // certificateConsecutive++;
       //update certificatQueue status
 
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
@@ -298,6 +274,16 @@ class CertificateService {
           url: respHuella.resultado.url
         }
       });
+
+      // // 2. Get preview of recent certificate
+      // let restPreviewCertificate: any = await this.previewCertificate({
+      //   certificate_queue: params.certificateQueueId.toString(),
+      //   hash: respHuella.resultado.certificado,
+      //   format: 2,
+      //   template: 1,
+      //   updateCertificate: true,
+      // });
+      // console.log(restPreviewCertificate);
 
 
       // Get All templates
@@ -322,6 +308,8 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
+      console.log("Params: ");
+      console.log(params);
 
       // params.format:
       // Imagen PNG: 1
@@ -347,7 +335,9 @@ class CertificateService {
         headers: { Authorization: tokenHC },
         params: detailParams
       });
-
+      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
+      console.log(respHuella.estado);
+      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
       if (respHuella.estado == 'Error' || respHuella.status === 'error') {
         return responseUtility.buildResponseFailed('json', null,
           {
@@ -355,7 +345,18 @@ class CertificateService {
           })
       }
 
-      if (respHuella.resultado === "") return responseUtility.buildResponseFailed('json')
+      if (respHuella.resultado === "") {
+        console.log("Resp from Huella: ");
+        console.log(respHuella);
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: { key: 'certificate.preview' }
+          })
+      }
+
+      //      return responseUtility.buildResponseFailed('json')
+
+      console.log("update register on certificate queue:");
 
       if (params.updateCertificate && params.format) {
         let updateData = null

@@ -1032,6 +1032,11 @@ class ErrorResponse {
           "status_code": "certificate_generation",
           "code": 400
         },
+        "preview": {
+          "message": i18nUtility.__("app_error_messages.certificate.preview"),
+          "status_code": "certificate_preview",
+          "code": 400
+        },
         "requirements": {
           "program_status": {
             "message": i18nUtility.__("app_error_messages.certificate.requirements.program_status"),
