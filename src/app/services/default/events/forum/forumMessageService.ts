@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment';
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -18,12 +19,12 @@ import {socketUtility} from '@scnode_core/utilities/socketUtility'
 // @end
 
 // @import models
-import { ForumMessage } from '@scnode_app/models';
+import { ForumMessage, Like } from '@scnode_app/models';
 // @end
 
 // @import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
-import {ISendMessage, IForumMessage, IForumMessagesData, IForumMessageDelete, IForumMessageData} from '@scnode_app/types/default/events/forum/forumMessageTypes'
+import {ISendMessage, IForumMessage, IForumMessagesData, IForumMessageDelete, IForumMessageData, IForumMessagesQuery, IParamsGerBetterForumMessage} from '@scnode_app/types/default/events/forum/forumMessageTypes'
 // @end
 
 class ForumMessageService {
@@ -86,10 +87,11 @@ class ForumMessageService {
       const {_id} = await ForumMessage.create({
         forum: params.forum,
         message,
-        posted_by: user._id
+        posted_by: user._id,
+        forumMessage: params.forumMessage
       })
       const response: any = await ForumMessage.findOne({_id})
-      .select('id posted_by message')
+      .select('id posted_by message forum forumMessage')
       .populate({path: 'posted_by', select: 'id profile.first_name profile.last_name profile.avatarImageUrl'})
       .lean()
 
@@ -110,6 +112,138 @@ class ForumMessageService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  /**
+   * @INFO Obtener la respuesta con mas likes de un foro
+   * @param params
+   * @returns
+   */
+  public getBetterMessage = async (params: IParamsGerBetterForumMessage) => {
+    try{
+      // Obtener los comentarios del foro
+      const messages = await ForumMessage.aggregate([
+        {
+          $lookup: {
+            from: "likes",
+            localField: "_id",
+            foreignField: "forumMessage",
+            as: "like_doc"
+          }
+        },
+        {
+          $match: {
+            forum: ObjectID(params.forum)
+          }
+        }
+      ])
+      await ForumMessage.populate(messages, [
+        { path: 'posted_by', select: 'id profile.first_name profile.last_name profile.avatarImageUrl' }
+      ])
+      // Obtener el mensaje con la mayor cantidad de likes
+      const message = messages.reduce((accum, item) => {
+        if (item.like_doc.length > 0 && (!accum || accum.like_doc.length < item.like_doc.length)) {
+          accum = item
+        }
+        return accum
+      }, undefined)
+
+      let messageResponse;
+      if (message) {
+        messageResponse = await this.processForumMessagesData({
+          messages: message
+        })
+      } else {
+        messageResponse = null
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          message: messageResponse
+        }
+      })
+
+    }catch(e){
+      console.log(e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite listar todos los registros
+   * @param [filters] Estructura de filtros para la consulta
+   * @returns
+   */
+   public list = async (filters: IForumMessagesQuery = {}) => {
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+
+    const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    // @INFO: Validando usuario
+    let user = null
+    if (filters.user) {
+      const user_exists: any = await userService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: '_id', value: filters.user}]
+      })
+      if (user_exists.status === 'error') return user_exists
+      user = user_exists.user
+    }
+
+    let select = 'id forum forumMessage posted_by message'
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where : any= {}
+
+    if(filters.search){
+      const search = filters.search
+      where = {
+        ...where,
+        $or:[
+          {name: { $regex: '.*' + search + '.*',$options: 'i' }},
+          {description: { $regex: '.*' + search + '.*',$options: 'i' }},
+        ]
+      }
+    }
+
+    if (filters.forum) {
+      where.forum = filters.forum;
+    }
+
+    let registersBefProcess = []
+    try {
+      registersBefProcess =  await ForumMessage.find(where)
+      .populate({path: 'posted_by', select: 'id profile.first_name profile.last_name profile.avatarImageUrl'})
+      .select(select)
+      .sort({created_at: -1})
+      .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
+      .limit(paging ? nPerPage : null)
+    } catch (e) {}
+
+    let registers = []
+    for await (let register of registersBefProcess) {
+      let messageProcess = await this.processForumMessagesData({
+        user,
+        messages: register
+      })
+      registers.push(messageProcess);
+    }
+
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        messages: [
+          ...registers
+        ],
+        total_register: (paging) ? await ForumMessage.find(where).count() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    })
   }
 
   /**
@@ -159,6 +293,18 @@ class ForumMessageService {
         params.message.dateFormated = newDate.format('hh:mm a | DD MMMM')
       }
     }
+
+    if (params.forum && !params.forumMessage) {
+      const totalLikes = await Like.find({user: params.posted_by._id, forumMessage: params._id})
+      params = {
+        // * Se usa el _doc porque llega de una consulta de mongo
+        // @ts-ignore
+        ...params._doc ? params._doc : params,
+        totalLikes: totalLikes.length,
+        postedLike: totalLikes.find((l) => l.user.toString() === params.posted_by._id.toString()) ? true : false
+      }
+    }
+
     return params
   }
 

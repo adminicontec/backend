@@ -29,6 +29,7 @@ export interface IForumQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  category?: string,
   isActive?: boolean // Estado del foro
   postDate?: string // Fecha de busqueda
   locations?: Array<string> // Lista de ubicaciones

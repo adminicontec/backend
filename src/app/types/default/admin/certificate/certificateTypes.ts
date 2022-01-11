@@ -91,7 +91,7 @@ export interface ICertificateQueue {
 }
 
 export interface ICertificatePreview{
-  certificate_queue: string;
+  certificate_queue?: string;
   hash: string,
   format: number,
   template: number,

@@ -19,4 +19,8 @@ export interface IFetchMessagesByForum {
   pageNumber?:any // Numero de pagina
   dateFilter?: any // Fecha para el filtro
 }
+
+export interface IParamsGetRelatedForums{
+  forum: string
+}
 //@end

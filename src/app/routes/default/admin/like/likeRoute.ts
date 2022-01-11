@@ -2,16 +2,16 @@
 // @end
 
 // @import_controller Import controller
-import { DefaultDataForumForumDataController as Controller } from "@scnode_app/controllers/default/data/forum/forumDataController";
+import { DefaultAdminLikeLikeController as Controller } from "@scnode_app/controllers/default/admin/like/likeController";
 // @end
 
 // @import_utilities Import utilities
 import { routerUtility } from "@scnode_core/utilities/routerUtility";
 // @end
 
-class ForumDataRoute {
+class LikeRoute {
 
-  private router_prefix: string = '/data/forum'; //Ej: /user
+  private router_prefix: string = '/admin/like'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -29,13 +29,14 @@ class ForumDataRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
-    routerUtility.get(app,_route,'/fetch-forums',this.instanceController.fetchForums,[],['auth']);
-    routerUtility.post(app,_route,'/:forum/fetch-messages',this.instanceController.fetchMessagesByForum,[],['auth']);
-    routerUtility.post(app,_route,'/fetch-featured-forums',this.instanceController.getFeaturedForums,[],[]);
-    routerUtility.get(app,_route,'/:forum/fetch-related-forums',this.instanceController.getRelatedForums,[],[]);
+    routerUtility.post(app, _route, '/create', this.instanceController.create, [], ['auth'])
+		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
+		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
+    routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
+    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
     // @end
   }
 }
 
-export const forumDataRoute = new ForumDataRoute();
-export { ForumDataRoute as DefaultDataForumForumDataRoute };
+export const likeRoute = new LikeRoute();
+export { LikeRoute as DefaultAdminLikeLikeRoute };
