@@ -15,7 +15,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @end
 
 // @import_types Import types
-import { QueryValues } from 'app/types/default/global/queryTypes';
+import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 class LikeController {
