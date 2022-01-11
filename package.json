@@ -17,6 +17,7 @@
   },
   "preferGlobal": true,
   "dependencies": {
+    "adm-zip": "^0.5.9",
     "aws-sdk": "^2.521.0",
     "basic-ftp": "^4.5.4",
     "bcrypt-nodejs": "0.0.3",

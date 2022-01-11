@@ -13,4 +13,9 @@ export interface IFetchCertifications {
   company?: string // Identificador de cliente
   status?: Array<'New' | 'In-process' | 'Complete' | 'Error' | 'Re-issue'>
 }
+
+export interface IDownloadMasiveCertifications {
+  user?: string // Identificador del usuario logueado
+  certification_queue: Array<string>
+}
 //@end

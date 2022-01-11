@@ -179,6 +179,46 @@ class EnrolledCourseService {
       }
     })
   }
+
+  public downloadMasiveCertifications = async (params) => {
+    try {
+
+      // TODO: Validar si no viene ningun certificado a generar
+
+      const certifications = await CertificateQueue.find({
+        _id: {$in: params.certification_queue}
+      })
+
+      const certification_urls = []
+
+
+      for await (const certification of certifications) {
+        if (certification.certificate?.pdfPath) {
+          const url = certificateService.getCertificatePath(certification.certificate?.pdfPath)
+          certification_urls.push(url)
+        }
+      }
+
+      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Validar error
+
+      const time = new Date().getTime()
+
+      const result = await certificateService.generateZipCertifications({
+        files: certification_urls,
+        to_file: {
+          file: {
+            name: `${time}.zip`,
+          },
+          path: certificateService.default_certificate_zip_path,
+        }
+      })
+
+      return result
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 }
 
 export const enrolledCourseService = new EnrolledCourseService();

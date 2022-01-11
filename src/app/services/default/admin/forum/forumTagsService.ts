@@ -14,7 +14,7 @@ import { ForumTags } from '@scnode_app/models';
 
 // @import types
 import { IForumTag, IParamsInsertOrUpdateForumTag, IParamsRemoveForumTag, IForumTagQuery } from '@scnode_app/types/default/admin/forum/forumTagsTypes';
-import { IQueryFind, QueryValues } from 'app/types/default/global/queryTypes';
+import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 class ForumTagsService {
