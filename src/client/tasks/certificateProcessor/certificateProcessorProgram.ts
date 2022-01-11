@@ -13,6 +13,7 @@ import { certificateService } from "@scnode_app/services/default/huellaDeConfian
 // @import types
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
+
 // @end
 
 class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
@@ -24,6 +25,8 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     // @end
+    let queuePreview = [];
+
     console.log("Init Task: Certificate Processor ");
 
     console.log("Get all items on Certificate Queue [new and re-issue status]")
@@ -38,19 +41,46 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
 
     console.log("Request for " + respQueueToProcess.certificateQueue.count + " certificates.");
 
-
     for await (const element of respQueueToProcess.certificateQueue) {
       console.log('.............................');
       console.log(element._id);
 
+      // 1. Send request to process Certificate on HdC service.
       let respSetCertificate: any = await certificateService.setCertificate({
         certificateQueueId: element._id,
         courseId: element.courseId,
         userId: element.userId
       });
-      console.log(respSetCertificate);
+
+      if (respSetCertificate.status === "error") {
+        console.log("¡Error al generar certificado!");
+        console.log(respSetCertificate);
+      }
+
+      console.log("¡Certificado generado con éxito!");
+      // console.log(respSetCertificate);
+      // console.log(respSetCertificate.responseHC.certificado);
+
+      queuePreview.push({
+        certificate_queue: element._id.toString(),
+        hash: respSetCertificate.responseHC.certificado,
+        format: 2,
+        template: 1,
+        updateCertificate: true,
+      });
     };
 
+    console.log(': - : - : - : - : - : - : - : - : - :');
+    for await (const docPreview of queuePreview){
+      console.log('Params: ');
+      console.log(docPreview);
+
+      // 2. Get preview of recent certificate
+      let restPreviewCertificate: any = await certificateService.previewCertificate(docPreview);
+      console.log(restPreviewCertificate);
+
+    }
+    console.log(': - : - : - : - : - : - : - : - : - :');
 
     return true; // Always return true | false
   }
