@@ -1076,6 +1076,13 @@ class ErrorResponse {
             "status_code": "certificate_queue_not_found",
             "code": 400
           },
+        },
+        "download_masive": {
+          "no_certificate_to_download": {
+            "message": i18nUtility.__("app_error_messages.certificate.download_masive.no_certificate_to_download"),
+            "status_code": "certificate_download_masive_no_certificate_to_download",
+            "code": 400
+          }
         }
       }
     };

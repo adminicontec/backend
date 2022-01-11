@@ -199,7 +199,7 @@ class EnrolledCourseService {
         }
       }
 
-      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Validar error
+      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate.download_masive.no_certificate_to_download'}) // TODO: Validar error
 
       const time = new Date().getTime()
 
