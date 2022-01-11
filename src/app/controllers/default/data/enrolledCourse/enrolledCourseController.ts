@@ -59,6 +59,20 @@ class EnrolledCourseController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * Metodo que permite consultar los cursos que tiene inscrito un estudiante
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public downloadMasiveCertifications = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+    // const response = await moodleEnrollmentService.fetchEnrolledCoursesByUser(params)
+    const response = await enrolledCourseService.downloadMasiveCertifications(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 
 }
 

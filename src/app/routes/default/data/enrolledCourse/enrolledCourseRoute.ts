@@ -31,6 +31,7 @@ class EnrolledCourseRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/',this.instanceController.enrolledCourses,[],['auth']);
     routerUtility.post(app,_route,'/fetch-certifications',this.instanceController.fetchCertifications,[],['auth']);
+    routerUtility.post(app,_route,'/download-masive-certifications',this.instanceController.downloadMasiveCertifications,[],['auth']);
     // @end
   }
 }

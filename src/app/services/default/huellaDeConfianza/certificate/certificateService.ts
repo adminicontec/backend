@@ -3,6 +3,7 @@ import path from "path";
 import moment from 'moment'
 import { Base64 } from 'js-base64';
 import { host, public_dir, attached } from "@scnode_core/config/globals";
+const AdmZip = require("adm-zip");
 // @end
 
 // @import config
@@ -29,13 +30,14 @@ import { CertificateQueue } from '@scnode_app/models';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview, IGenerateCertificatePdf } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 class CertificateService {
 
   private default_certificate_path = 'certifications'
+  public default_certificate_zip_path = 'certifications'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -488,6 +490,64 @@ class CertificateService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null)
     }
+  }
+
+  public generateZipCertifications = async (params: IGenerateZipCertifications) => {
+    let driver = attached['driver'];
+    let attached_config = attached[driver];
+
+    const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+    let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+    if (attached_config.base_path_type === "absolute") {
+      base_path = upload_config_base_path
+    }
+
+    const path_upload = (params.to_file.path && params.to_file.path !== "") ? `zip/${params.to_file.path}/` : "zip/";
+
+    const full_path_file = `${base_path}/${path_upload}${params.to_file.file.name}`;
+    const public_path_file = `${host}/uploads/${path_upload}${params.to_file.file.name}`;
+
+    // Creando la estructura de carpetas necesaria para cargar el archivo
+    await fileUtility.createDirRecursive(full_path_file);
+
+    const fileExists = await fileUtility.fileExists(full_path_file)
+    if (fileExists) {
+      const remove = await fileUtility.removeFileSync(full_path_file)
+    }
+
+    try {
+      const zip = new AdmZip();
+      params.files.map((item) => {
+        zip.addLocalFile(item);
+      })
+      zip.writeZip(full_path_file);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          path: public_path_file,
+          filename: params.to_file.file.name
+        }
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  public getCertificatePath = (filename: string, filePath?: string ) => {
+    const _path =  filePath || this.default_certificate_path
+    // return `${host}/uploads/${path_upload}${filename}`;
+    let driver = attached['driver'];
+    let attached_config = attached[driver];
+
+    const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+
+    let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+    if (attached_config.base_path_type === "absolute") {
+      base_path = upload_config_base_path
+    }
+
+    const path_upload = (_path && _path !== "") ? `pdfs/${_path}/` : "pdfs/";
+    return `${base_path}/${path_upload}${filename}`;
   }
 
   /**
