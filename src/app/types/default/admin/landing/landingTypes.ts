@@ -79,6 +79,12 @@ export interface ILandingDescriptiveTraining{
   attachedFile?: any // Objeto tipo file que contiene el adjunto a cargar
 }
 
+export interface ILandingForum{
+  title?: string;
+  description?: string;
+  slug?: string;
+}
+
 export interface ILanding {
   slug: string
   title_page?: string
@@ -89,6 +95,7 @@ export interface ILanding {
   references?: Array<ILandingReference>
   descriptive_training?: ILandingDescriptiveTraining
   id?: string // Identificador de la categoria
+  forums?: ILandingForum
 }
 
 export interface ILandingDelete {

@@ -33,7 +33,8 @@ import {
   ILandingOurClientDelete,
   ILandingOurClients,
   ILandingReference,
-  ILandingReferenceDelete
+  ILandingReferenceDelete,
+  ILandingForum
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -68,7 +69,7 @@ class LandingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id slug title_page title_training title_references title_posts article trainings scheduling'
+      let select = 'id slug title_page title_training title_references title_posts article trainings scheduling forums'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Landing.find(where)
           .populate({path: 'trainings.course', select: 'id program'})
@@ -684,6 +685,40 @@ class LandingService {
         references: references
       })
     } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar la seccion de foros
+   * @param params
+   * @returns
+   */
+   public insertOrUpdateForums = async (params: ILandingForum) => {
+
+    try {
+      let forums: ILandingForum = {}
+      const exists = await Landing.findOne({ slug: params.slug }).select('id forums').lean()
+      if (exists && exists.forums) {
+        forums = exists.forums
+      }else{
+        forums = {}
+      }
+
+      if (params.title) {
+        forums.title = params.title
+      }
+
+      if (params.description) {
+        forums.description = params.description
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        forums: forums
+      })
+    } catch (e) {
+      console.log(e)
       return responseUtility.buildResponseFailed('json')
     }
   }

@@ -49,6 +49,8 @@ class LandingRoute {
 
     routerUtility.post(app, _route, '/insert-or-update-reference', this.instanceController.insertOrUpdateReference, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     routerUtility.delete(app, _route, '/delete-reference/:slug/:unique', this.instanceController.deleteReference, [], ['auth'])
+
+    routerUtility.post(app, _route, '/insert-or-update-forums', this.instanceController.insertOrUpdateForums, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     // @end
   }
 }
