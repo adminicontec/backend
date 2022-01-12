@@ -123,19 +123,33 @@ class EnrolledCourseService {
 
     let where = {}
 
+    let whereCourseScheduling = {}
+
     if (params.company) {
-      const course_scheduling = await CourseScheduling.find({client: params.company}).select('id')
-      const course_scheduling_ids = course_scheduling.reduce((accum, element) => {
-        accum.push(element._id)
-        return accum
-      }, [])
-      if (course_scheduling_ids.length > 0) {
-        where['courseId'] = {$in: course_scheduling_ids}
-      }
+      whereCourseScheduling['client'] = params.company
+    }
+
+    if (params.certificate_clients) {
+      whereCourseScheduling['certificate_clients'] = true
+    }
+
+    if (params.certificate_students) {
+      whereCourseScheduling['certificate_students'] = true
     }
 
     if (params.status) {
       where['status'] = {$in: params.status}
+    }
+
+    if (Object.keys(whereCourseScheduling).length > 0) {
+      const course_scheduling = await CourseScheduling.find(whereCourseScheduling).select('id')
+      const course_scheduling_ids = course_scheduling.reduce((accum, element) => {
+        accum.push(element._id)
+        return accum
+      }, [])
+      where['courseId'] = {$in: course_scheduling_ids}
+      if (course_scheduling_ids.length > 0) {
+      }
     }
 
     let registers = []
