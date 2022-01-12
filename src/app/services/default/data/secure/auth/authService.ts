@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt-nodejs'
 // @import services
 import {userService} from '@scnode_app/services/default/admin/user/userService'
 import {mailService} from '@scnode_app/services/default/general/mail/mailService'
+import { companyService } from '@scnode_app/services/default/admin/company/companyService';
 // @end
 
 // @import utilities
@@ -52,7 +53,7 @@ class AuthService {
         path: 'homes', select: 'id name description'
       }
     })
-    .populate({path: 'company', select: 'id name description'})
+    .populate({path: 'company', select: 'id name description logo background'})
     if (!user_exist) return responseUtility.buildResponseFailed('json', null, {error_key: { key: 'auth.user_not_found' },})
 
     return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -159,6 +160,10 @@ class AuthService {
       )
     }
 
+    let company: any = user?.company
+    if (company?.logo) company.logo = companyService.logoUrl(company)
+    if (company?.background) company.background = companyService.backgroundUrl(company)
+
 		return responseUtility.buildResponseSuccess('json', null, {
 			additional_parameters: {
 				user: {
@@ -173,7 +178,7 @@ class AuthService {
             ...tokenCustom,
             moodle_id: user.moodle_id
           },
-          company: user?.company
+          company: company
 				},
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,
