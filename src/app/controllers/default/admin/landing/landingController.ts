@@ -283,6 +283,22 @@ class LandingController {
 		const response = await landingService.deleteReference(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public insertOrUpdateForums = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+
+    params['user'] = user_id
+
+		const response = await landingService.insertOrUpdateForums(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const landingController = new LandingController();
