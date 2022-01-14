@@ -202,7 +202,7 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name,
         asistio: field_asistio,
-        certificado: respCourse.scheduling.certificate,
+        certificado: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
         certificado_ingles: respCourse.scheduling.english_certificate,
         alcance: respCourse.scheduling.scope,
         alcance_ingles: respCourse.scheduling.scope,
@@ -267,7 +267,7 @@ class CertificateService {
 
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
         id: params.certificateQueueId,
-        status: 'Complete',//QueueStatus.COMPLETE,
+        status: 'Requested',// 'Complete',//QueueStatus.COMPLETE,
         message: 'Certificado generado.',
         certificateModule: field_template,
         certificateType: '',
@@ -276,17 +276,6 @@ class CertificateService {
           url: respHuella.resultado.url
         }
       });
-
-      // // 2. Get preview of recent certificate
-      // let restPreviewCertificate: any = await this.previewCertificate({
-      //   certificate_queue: params.certificateQueueId.toString(),
-      //   hash: respHuella.resultado.certificado,
-      //   format: 2,
-      //   template: 1,
-      //   updateCertificate: true,
-      // });
-      // console.log(restPreviewCertificate);
-
 
       // Get All templates
       return responseUtility.buildResponseSuccess('json', null, {
@@ -376,7 +365,8 @@ class CertificateService {
           if (resultPng.status === 'success') {
             updateData = {
               $set: {
-                "certificate.imagePath": resultPng.filename
+                "certificate.imagePath": resultPng.filename,
+                "status": 'Complete'
               }
             }
           }
@@ -394,7 +384,8 @@ class CertificateService {
           if (resultPdf.status === 'success') {
             updateData = {
               $set: {
-                "certificate.pdfPath": resultPdf.filename
+                "certificate.pdfPath": resultPdf.filename,
+                "status": 'Complete'
               }
             }
           }

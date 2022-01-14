@@ -27,7 +27,7 @@ const CertificateQueueSchema = new Schema({
   status: {
     type: Schema.Types.String,
     required: true,
-    enum: ['New', 'In-process', 'Complete', 'Error', 'Re-issue']
+    enum: ['New', 'In-process', 'Requested', 'Complete', 'Error', 'Re-issue']
   },
   message: {
     type: Schema.Types.String,
