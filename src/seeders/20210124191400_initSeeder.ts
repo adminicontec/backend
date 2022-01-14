@@ -460,6 +460,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:forums_delete', description: 'Eliminar foros' },
         {name: 'permission:forums_list', description: 'Ver foros' },
         {name: 'permission:forums_viewer', description: 'Consultar foros' },
+        {name: 'permission:forums_response', description: 'Consultar foros' },
         {name: 'permission:forums_menu_access', description: 'Menu de foros'},
       ] },
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
@@ -549,24 +550,28 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_teacher_article', description: 'Landing de docentes'},
         {name: 'permission:landings_teacher_training', description: 'Landing de docentes'},
         {name: 'permission:landings_teacher_scheduling', description: 'Landing de docentes'},
+        {name: 'permission:landings_teacher_forums', description: 'Landing de docentes'},
 
         {name: 'permission:landings_business', description: 'Landing de empresas'},
         {name: 'permission:landings_business_general_info', description: 'Landing de empresas'},
         {name: 'permission:landings_business_article', description: 'Landing de empresas'},
         {name: 'permission:landings_business_training', description: 'Landing de empresas'},
         {name: 'permission:landings_business_scheduling', description: 'Landing de empresas'},
+        {name: 'permission:landings_business_forums', description: 'Landing de empresas'},
 
         {name: 'permission:landings_officials', description: 'Landing de colaboradores'},
         {name: 'permission:landings_officials_general_info', description: 'Landing de colaboradores'},
         {name: 'permission:landings_officials_article', description: 'Landing de colaboradores'},
         {name: 'permission:landings_officials_training', description: 'Landing de colaboradores'},
         {name: 'permission:landings_officials_scheduling', description: 'Landing de colaboradores'},
+        {name: 'permission:landings_officials_forums', description: 'Landing de colaboradores'},
 
         {name: 'permission:landings_student', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_general_info', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_article', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_training', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_scheduling', description: 'Landing de estudiantes'},
+        {name: 'permission:landings_student_forums', description: 'Landing de estudiantes'},
 
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
@@ -651,6 +656,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:forums_update'],
           module_permission_ids['permission:forums_delete'],
           module_permission_ids['permission:forums_list'],
+          module_permission_ids['permission:forums_response'],
           module_permission_ids['permission:users_create'],
           module_permission_ids['permission:users_update'],
           module_permission_ids['permission:users_delete'],
@@ -700,7 +706,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
           module_permission_ids['permission:posts_menu_access'],
           module_permission_ids['permission:banners_menu_access'],
-          // module_permission_ids['permission:forums_menu_access'],
+          module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:account_executives_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
@@ -723,6 +729,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:landings_teacher_article'],
           module_permission_ids['permission:landings_teacher_training'],
           module_permission_ids['permission:landings_teacher_scheduling'],
+          module_permission_ids['permission:landings_teacher_forums'],
           module_permission_ids['permission:landings_business'],
           module_permission_ids['permission:landings_business_general_info'],
           module_permission_ids['permission:landings_business_article'],
@@ -760,23 +767,28 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       //   ],
       //   moodle_id: 5
       // },
-      // {
-      //   name: 'teacher',
-      //   description: 'Docente',
-      //   app_module_permissions: [
-      //     module_permission_ids['config:is_teacher'],
-      //     module_permission_ids['config:go_to_campus'],
-      //     module_permission_ids['config:go_to_moodle'],
-      //     module_permission_ids['permission:profile_menu_access'],
-      //     module_permission_ids['permission:publications_menu_access'],
-      //     module_permission_ids['permission:teaching_resources_menu_access'],
-      //     module_permission_ids['permission:consultation_room_menu_access'],
-      //   ],
-      //   homes: [
-      //     home_ids['teacher']
-      //   ],
-      //   moodle_id: 4
-      // },
+      {
+        name: 'teacher',
+        description: 'Docente',
+        app_module_permissions: [
+          module_permission_ids['config:is_teacher'],
+          module_permission_ids['config:go_to_campus'],
+          module_permission_ids['config:go_to_moodle'],
+          module_permission_ids['permission:profile_menu_access'],
+          module_permission_ids['permission:publications_menu_access'],
+          module_permission_ids['permission:teaching_resources_menu_access'],
+          module_permission_ids['permission:consultation_room_menu_access'],
+          module_permission_ids['permission:forums_create'],
+          module_permission_ids['permission:forums_update'],
+          module_permission_ids['permission:forums_delete'],
+          module_permission_ids['permission:forums_list'],
+          module_permission_ids['permission:forums_response'],
+        ],
+        homes: [
+          home_ids['teacher']
+        ],
+        moodle_id: 4
+      },
       // {
       //   name: 'scheduling_coordinator',
       //   description: 'Coordinador de programación',

@@ -691,6 +691,20 @@ class ErrorResponse {
             }
           }
         },
+        "tag": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.forum.tag.not_found"),
+            "status_code": "forum_tag_not_found",
+            "code": 400
+          },
+          "insertOrUpdate": {
+            "already_exists": {
+              "message": i18nUtility.__("app_error_messages.forum.tag.insertOrUpdate.already_exists"),
+              "status_code": "forum_tag_insertOrUpdate_already_exists",
+              "code": 400
+            }
+          }
+        },
         "location": {
           "not_found": {
             "message": i18nUtility.__("app_error_messages.forum.location.not_found"),
@@ -1062,6 +1076,13 @@ class ErrorResponse {
             "status_code": "certificate_queue_not_found",
             "code": 400
           },
+        },
+        "download_masive": {
+          "no_certificate_to_download": {
+            "message": i18nUtility.__("app_error_messages.certificate.download_masive.no_certificate_to_download"),
+            "status_code": "certificate_download_masive_no_certificate_to_download",
+            "code": 400
+          }
         }
       }
     };

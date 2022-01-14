@@ -32,8 +32,8 @@ class ForumRoute {
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'forum', method: 'create', dir: 'admin/forum' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
-    routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
-    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
+    routerUtility.get(app, _route, '/', this.instanceController.list, [], [])
+    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], [])
     // @end
   }
 }

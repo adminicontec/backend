@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {forumMessageService} from '@scnode_app/services/default/events/forum/forumMessageService'
+import { forumTagsService } from '@scnode_app/services/default/admin/forum/forumTagsService';
 // @end
 
 // @import_utilities Import utilities
@@ -15,9 +15,10 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @end
 
 // @import_types Import types
+import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
-class ForumMessageController {
+class ForumTagsController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -29,68 +30,62 @@ class ForumMessageController {
   constructor () {}
 
   /**
-	 * Metodo que permite generar un mensaje para un foro
+	 * Metodo que permite crear un registro
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
-	public sendMessage = async (req: Request, res: Response) => {
-    const user_id = req.user.sub
-    let params = req.getParameters.all()
-    let files = req.files
-
-    if (files && files['attachment']) {
-        params['attachment'] = files['attachment']
-    }
-
-    params['user'] = user_id
-
-    const response = await forumMessageService.sendMessage(params)
+	public create = async (req: Request, res: Response) => {
+    const response = await forumTagsService.insertOrUpdate(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
-  /**
-	 * Metodo que permite eliminar un mensaje de un foro
+	/**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public update = async (req: Request, res: Response) => {
+		const response = await forumTagsService.insertOrUpdate(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+	/**
+	 * Metodo que permite eliminar un registro
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
 	public delete = async (req: Request, res: Response) => {
-    const user_id = req.user.sub
-    let params = req.getParameters.all()
-    params['user'] = user_id
-
-    const response = await forumMessageService.delete(params)
-    return responseUtility.sendResponseFromObject(res, response)
+		const response = await forumTagsService.delete(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
   }
 
-  /**
+	/**
 	 * Metodo que permite listar los registros
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
 	public list = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-
-		const response = await forumMessageService.list(params)
+		const response = await forumTagsService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
-  /**
-	 * Metodo que permite obtener el mensaje con mas likes
+    /**
+	 * Metodo que permite obtener un unico registro
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
-	public getBetterMessage = async (req: Request, res: Response) => {
-    let params = req.getParameters.all()
-
-		const response = await forumMessageService.getBetterMessage(params)
+	public get = async (req: Request, res: Response) => {
+    const {id} = req.getParameters.all()
+		const response = await forumTagsService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
 		return responseUtility.sendResponseFromObject(res, response)
-  }
+	}
 
 }
 
-export const forumMessageController = new ForumMessageController();
-export { ForumMessageController as DefaultEventsForumForumMessageController };
+export const forumTagsController = new ForumTagsController();
+export { ForumTagsController as DefaultAdminForumForumTagsController };

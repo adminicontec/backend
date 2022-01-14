@@ -42,7 +42,7 @@ class LandingDataService {
       .populate({path: 'trainings.course', select: 'id program', populate: {
         path: 'program', select: 'id name'
       }})
-      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references')
+      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references forums')
       .lean()
 
       if (landing) {

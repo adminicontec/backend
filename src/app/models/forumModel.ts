@@ -21,9 +21,14 @@ const ForumSchema = new Schema({
   tags: [
     {
       type: Schema.Types.ObjectId,
-      ref: "ForumCategory"
+      ref: "ForumTags"
     }
   ],
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: "ForumCategory",
+    required: true
+  },
   locations: [
     {
       forumLocation: {
@@ -35,7 +40,11 @@ const ForumSchema = new Schema({
         default: 0
       }
     }
-  ]
+  ],
+  created_by: {
+    type: Schema.Types.ObjectId,
+    ref: "User"
+  }
   // @end
 }, {
   collection: 'forums' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

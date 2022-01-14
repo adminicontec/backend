@@ -56,6 +56,32 @@ class ForumDataController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * @INFO Obtener los foros destacados (con mas likes)
+   * @param req
+   * @param res
+   * @returns
+   */
+  public getFeaturedForums = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+
+    const response = await forumDataService.getFeaturedForums()
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
+  /**
+   * @INFO Obtener los foros relacionados
+   * @param req
+   * @param res
+   * @returns
+   */
+  public getRelatedForums = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+
+    const response = await forumDataService.getRelatedForums(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
 }
 
 export const forumDataController = new ForumDataController();

@@ -68,6 +68,10 @@ const LandingSchema = new Schema({
     qualification: {type: Schema.Types.String},
   }],
   title_posts: {type: Schema.Types.String},
+  forums: {
+    title: {type: Schema.Types.String},
+    description: {type: Schema.Types.String}
+  }
   // @end
 }, {
   collection: 'landings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
