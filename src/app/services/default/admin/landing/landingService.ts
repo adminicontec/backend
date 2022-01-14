@@ -641,11 +641,10 @@ class LandingService {
         references[referencesExists] = {...references[referencesExists], ...params}
       } else {
         references.push({
-          ...params
+          ...params,
+          created_at: new Date()
         })
       }
-
-      console.log('references', references)
 
       return await this.insertOrUpdate({
         slug: params.slug,

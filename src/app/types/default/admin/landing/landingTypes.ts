@@ -59,6 +59,9 @@ export interface ILandingReference{
   url?: string
   attached?: any
   coverFile?: any // Objeto tipo file que contiene el adjunto a cargar
+  created_at?: Date
+  client?: string
+  active?: boolean
 }
 
 export interface ILandingReferenceDelete{

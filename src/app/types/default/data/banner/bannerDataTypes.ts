@@ -8,6 +8,7 @@ export interface IFetchBanners {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
   isActive?: boolean // Estado del banner
+  filterByDate?: boolean // Filtrar solo los banner que estan en la fecha de publicación
   sort?: {
     field: string,
     direction: string

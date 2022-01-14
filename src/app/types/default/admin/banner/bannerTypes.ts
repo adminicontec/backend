@@ -9,6 +9,9 @@ export interface IBanner {
   isActive: boolean // Identifica si el banner esta activo
   coverFile?: any // Objeto tipo file que contiene la imagen a cargar
   id?: string // Identificador del banner
+  start_date?: Date // Fecha de inicio
+  end_date?: Date // Fecha de fin
+  location?: 'students'
 }
 
 export interface IBannerDelete {

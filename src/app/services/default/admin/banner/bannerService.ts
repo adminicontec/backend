@@ -48,7 +48,7 @@ class BannerService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title content coverUrl isActive action location'
+      let select = 'id title content coverUrl isActive action location start_date end_date'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Banner.find(where)
         .select(select)
@@ -100,6 +100,10 @@ class BannerService {
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+
+      if (params.location !== 'students') {
+        params.location = null
       }
 
       // if (params.content && typeof params.content === 'string') {
@@ -185,7 +189,7 @@ class BannerService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title content coverUrl isActive action location'
+    let select = 'id title content coverUrl isActive action location start_date end_date'
     if (filters.select) {
       select = filters.select
     }
