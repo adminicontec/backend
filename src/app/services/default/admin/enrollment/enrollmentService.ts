@@ -604,6 +604,11 @@ class EnrollmentService {
     if (dataFromWorksheet != null) {
       console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
+      const courseScheduling = await CourseScheduling.findOne({_id: params.courseScheduling})
+      .select('id account_executive')
+      .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+      .lean()
+
       let index = 1;
       for await (const element of dataFromWorksheet) {
 
@@ -646,7 +651,7 @@ class EnrollmentService {
                 educationalLevel: element['Nivel Educativo'],
                 company: element['Empresa'],
                 genre: element['Género'],
-                origin: element['Ejecutivo'],
+                origin: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null,
 
                 courseID: params.courseID,
                 rolename: 'student',
