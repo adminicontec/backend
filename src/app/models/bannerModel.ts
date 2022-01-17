@@ -22,10 +22,16 @@ const BannerSchema = new Schema({
   },
   location: {
     type: Schema.Types.String,
-    enum: ['students']
+    enum: ['students'],
   },
   action: {
     type: Schema.Types.String,
+  },
+  start_date: {
+    type: Schema.Types.Date
+  },
+  end_date: {
+    type: Schema.Types.Date
   }
   // @end
 }, {

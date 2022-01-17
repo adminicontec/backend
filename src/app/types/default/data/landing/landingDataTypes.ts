@@ -4,5 +4,6 @@
 // @add your types
 export interface IFetchLandingData {
   slug: string // Identificador del landing
+  onlyActiveReference?: boolean // Traer solo las referencias activas
 }
 //@end

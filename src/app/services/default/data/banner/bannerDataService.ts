@@ -15,6 +15,8 @@ import { Banner } from '@scnode_app/models';
 
 // @import types
 import {IFetchBanners} from '@scnode_app/types/default/data/banner/bannerDataTypes'
+import { IBanner } from '@scnode_app/types/default/admin/banner/bannerTypes';
+import moment from 'moment';
 // @end
 
 class BannerDataService {
@@ -42,7 +44,7 @@ class BannerDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title content coverUrl isActive action location'
+      let select = 'id title content coverUrl isActive action location start_date end_date'
       if (params.select) {
         select = params.select
       }
@@ -63,7 +65,7 @@ class BannerDataService {
       if (params.location) {
         where['location'] = params.location
       } else {
-        where['location'] = {$exists: false}
+        where['location'] = {$in: [undefined, null]}
       }
 
       if (typeof params.isActive === 'undefined' || params.isActive === true) {
@@ -92,6 +94,10 @@ class BannerDataService {
         }
       } catch (e) {}
 
+      if (params.filterByDate) {
+        registers = this.getValidBanners(registers)
+      }
+
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           banners: [
@@ -107,6 +113,36 @@ class BannerDataService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  /**
+   * @INFO Obtener los banner validos entre dos fechas
+   */
+  public getValidBanners = (banners: IBanner[]) => {
+    if (!banners.length) return banners
+    const newBanners: IBanner[] = []
+    banners.forEach((b) => {
+      if (b.start_date && b.end_date) {
+        const date1 = new Date(b.start_date)
+        const date2 = new Date(b.end_date)
+        if (moment().isBetween(date1, date2)) {
+          newBanners.push(b)
+        }
+      } else if (b.start_date) {
+        const date1 = new Date(b.start_date)
+        if (moment().isAfter(date1)) {
+          newBanners.push(b)
+        }
+      } else if (b.end_date) {
+        const date1 = new Date(b.end_date)
+        if (moment().isBefore(date1)) {
+          newBanners.push(b)
+        }
+      } else {
+        newBanners.push(b)
+      }
+    })
+    return newBanners
   }
 
 }

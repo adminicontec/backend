@@ -16,6 +16,7 @@ import { Landing } from '@scnode_app/models';
 
 // @import types
 import {IFetchLandingData} from '@scnode_app/types/default/data/landing/landingDataTypes'
+import { ILanding } from '@scnode_app/types/default/admin/landing/landingTypes';
 // @end
 
 class LandingDataService {
@@ -38,7 +39,7 @@ class LandingDataService {
 
     try {
 
-      const landing = await Landing.findOne({slug: params.slug})
+      const landing: ILanding = await Landing.findOne({slug: params.slug})
       .populate({path: 'trainings.course', select: 'id program', populate: {
         path: 'program', select: 'id name'
       }})
@@ -47,6 +48,7 @@ class LandingDataService {
 
       if (landing) {
         if (landing.article && landing.article.coverUrl) {
+          // @ts-ignore
           landing.article.coverFile = landingService.articleCoverUrl(landing.article)
         }
 
@@ -57,6 +59,7 @@ class LandingDataService {
         if (landing.scheduling) {
           for (const scheduling of landing.scheduling) {
             if (scheduling.attachedUrl) {
+              // @ts-ignore
               scheduling.attachedFile = landingService.schedulingAttachedUrl(scheduling)
             }
           }
@@ -75,6 +78,9 @@ class LandingDataService {
             if (reference.url) {
               reference.url = landingService.referenceImageUrl(reference.url)
             }
+          }
+          if (params.onlyActiveReference) {
+            landing.references = landing.references.filter((r) => r.active || r.active === undefined)
           }
         }
 

@@ -276,7 +276,6 @@ class ForumService {
     let where = {}
 
     if(filters.search){
-      console.log('entre search')
       const search = filters.search
       where = {
         ...where,
@@ -327,12 +326,17 @@ class ForumService {
       }
     } catch (e) {}
 
+    let totalRegisters = 0
+    if (paging) {
+      totalRegisters = await Forum.find(where).count()
+    }
+
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         forums: [
           ...registers
         ],
-        total_register: (paging) ? await Forum.find(where).count() : 0,
+        total_register: totalRegisters,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
