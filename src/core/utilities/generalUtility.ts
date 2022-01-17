@@ -292,6 +292,14 @@ class GeneralUtility {
     return username.trim().toLowerCase().replace(/ /g, "_").replace(/\./g, "").replace(/\,/g, "");
   }
 
+    /*
+    * Método que elimina caracteres en el nombre de un usuario :
+    * si existen espacios, se eliminan
+  */
+  public normalizeFullName = (firstname: string, lastname: string) => {
+    return firstname.trim().replace(/ /g, "") + lastname.trim().replace(/ /g, "");
+  }
+
   /*
     * Método que normaliza el número de documento de identidad a formato Moodle-CampusDigital:
     * si existen puntos, se eliminan
