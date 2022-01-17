@@ -351,13 +351,25 @@ class CertificateService {
 
       if (params.updateCertificate && params.format) {
         let updateData = null
+
+        const userCertificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
+
+        let respDataUser: any = await userService.findBy({
+          query: QueryValues.ONE,
+          where: [{ field: '_id', value: userCertificate.userId }]
+        })
+
+        var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
+        console.log('filename');
+        console.log(filename);
+
         if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
           const time = new Date().getTime()
           const resultPng: any = await this.generateCertificateFromBase64({
             certificate: respHuella.resultado,
             to_file: {
               file: {
-                name: `${params.hash}_${time}.png`,
+                name: `${filename}_${time}.png`,
               },
               path: this.default_certificate_path,
             }
@@ -376,7 +388,7 @@ class CertificateService {
             certificate: respHuella.resultado,
             to_file: {
               file: {
-                name: `${params.hash}_${time}.pdf`,
+                name: `${filename}_${time}.pdf`,
               },
               path: this.default_certificate_path,
             }
@@ -525,8 +537,8 @@ class CertificateService {
     }
   }
 
-  public getCertificatePath = (filename: string, filePath?: string ) => {
-    const _path =  filePath || this.default_certificate_path
+  public getCertificatePath = (filename: string, filePath?: string) => {
+    const _path = filePath || this.default_certificate_path
     // return `${host}/uploads/${path_upload}${filename}`;
     let driver = attached['driver'];
     let attached_config = attached[driver];
