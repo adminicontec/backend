@@ -17,7 +17,7 @@ import { Completionstatus } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICompletionStatus, ICompletionStatusQuery } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 // @end
 
 class CompletionstatusService {
@@ -68,7 +68,7 @@ class CompletionstatusService {
       console.log("Moodle CourseID: " + respDataCourse.courses[0].id);
     }
 
-    //#endregion  
+    //#endregion
 
     //#region [ 2. Consultar el listado de estudiantes en el curso - moodle]
     let moodleParamsEnrolledUsers = {
@@ -91,7 +91,7 @@ class CompletionstatusService {
           username: '',
           email: '',
           fullname: '',
-          documentId:'',
+          documentId: '',
           schedule: 0,
           status: false
         };
@@ -112,7 +112,7 @@ class CompletionstatusService {
             'userid': item.id
           };
           let respCourseCompletionStatus = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsCourseCompletionStatus });
-  
+
           studentData.status = respCourseCompletionStatus.completionstatus.completed;
           registers = studentDataArray;
           console.log("Status de Terminación de " + item.fullname);
@@ -168,6 +168,57 @@ class CompletionstatusService {
       }
     })
   }
+
+  public activitiesCompletion = async (params: IActivitiesCompletion) => {
+    try {
+
+      let moodleParamsActivitiesCompletion = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.getActivitiesStatus,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': params.courseID,
+        'userid': params.userID
+      }
+
+
+      let respActivitiesCompletion = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsActivitiesCompletion });
+
+      console.log(respActivitiesCompletion);
+
+      if (respActivitiesCompletion.exception) {
+        console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respActivitiesCompletion));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParamsActivitiesCompletion.wsfunction,
+              error: respActivitiesCompletion
+            }
+          });
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          completion: respActivitiesCompletion.statuses, //respMoodleEvents.events,
+        }
+      })
+
+    } catch (e) {
+      console.log(e.message);
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'calendarEvent.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
+    }
+
+  }
+
 }
 
 export const completionstatusService = new CompletionstatusService();

@@ -3,10 +3,10 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_models Import models
-import {gradesService} from '@scnode_app/services/default/moodle/grades/gradesService'
 // @end
 
 // @import_services Import services
+import {gradesService} from '@scnode_app/services/default/moodle/grades/gradesService'
 // @end
 
 // @import_utilities Import utilities

@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import_utilities Import utilities
@@ -26,22 +26,28 @@ class CertificateController {
     public methodName = (req: Request, res: Response) => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   public alltemplates = async (req: Request, res: Response) => {
-		const response = await certificateService.alltemplates(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
+    const response = await certificateService.alltemplates(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
   }
 
   public setCertificate = async (req: Request, res: Response) => {
-		const response = await certificateService.setCertificate(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
+    const response = await certificateService.setCertificate(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
   }
 
   public previewCertificate = async (req: Request, res: Response) => {
-		const response = await certificateService.previewCertificate(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
+    const response = await certificateService.previewCertificate(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public completion = async (req: Request, res: Response) => {
+    const response = await certificateService.completion(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 
 }
 

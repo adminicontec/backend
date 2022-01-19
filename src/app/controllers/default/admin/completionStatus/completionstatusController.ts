@@ -39,6 +39,13 @@ class CompletionstatusController {
     const response = await completionstatusService.list(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+
+  public activitiesCompletion = async (req: Request, res: Response) => {
+    const response = await completionstatusService.activitiesCompletion(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const completionstatusController = new CompletionstatusController();

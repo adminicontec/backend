@@ -15,6 +15,9 @@ import { userService } from '@scnode_app/services/default/admin/user/userService
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
 import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
+import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService'
+import { calendarEventsService } from '@scnode_app/services/default/moodle/calendarEvents/calendarEventsService'
+import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService'
 // @end
 
 // @import utilities
@@ -25,12 +28,12 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { CertificateQueue } from '@scnode_app/models';
+import { Enrollment, CertificateQueue } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IQueryUserToCertificate, ICertificate, IQueryCertificate, ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications, ICertificateCompletion } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
@@ -73,9 +76,7 @@ class CertificateService {
       if (respHuella.estado == 'Error') {
         console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.generation' }
-          })
+          { error_key: { key: 'certificate.generation' } })
       }
 
       // Get All templates
@@ -562,6 +563,155 @@ class CertificateService {
     return item && item !== ''
       ? `${customs['uploads']}/pdfs/${this.default_certificate_path}/${item}`
       : null
+  }
+
+
+  public completion = async (filters: ICertificateCompletion) => {
+
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id user courseID course_scheduling'
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {}
+
+    if (filters.courseID) {
+      where['courseID'] = filters.courseID
+    }
+
+    console.log("filters:");
+    console.log(filters.without_certification);
+    console.log(filters.course_scheduling);
+
+    if (filters.without_certification && filters.course_scheduling) {
+      const certifications = await CertificateQueue.find({
+        courseId: filters.course_scheduling,
+        status: { $in: ['New', 'In-process', 'Complete'] }
+      })
+        .select('id userId')
+
+      const user_ids = certifications.reduce((accum, element) => {
+        accum.push(element.userId)
+        return accum
+      }, [])
+      if (user_ids.length > 0) {
+        where['user'] = { $nin: user_ids }
+      }
+    }
+
+    console.log('Conditions:');
+    console.log(where);
+
+    let registers = []
+    try {
+      registers = await Enrollment.find(where)
+        .select(select)
+        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .lean()
+
+      let count = 1
+      for await (const register of registers) {
+        register.count = count
+        if (register.user && register.user.profile) {
+          register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
+        }
+
+        console.log("=================================");
+
+        const respUserGrades: any = await gradesService.fetchGrades({ courseID: register.courseID, userID: register.user.moodle_id });
+        const respCompletionStatus: any = await completionstatusService.activitiesCompletion({ courseID: register.courseID, userID: register.user.moodle_id });
+
+        //#region Error control
+        if (respUserGrades.error) {
+          console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respUserGrades));
+          return responseUtility.buildResponseFailed('json', null,
+            { error_key: { key: 'certificate.requirements.program_status', params: { error: respUserGrades } } });
+        }
+        if (respCompletionStatus.error) {
+          console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respCompletionStatus));
+          return responseUtility.buildResponseFailed('json', null,
+            { error_key: { key: 'certificate.requirements.program_status', params: { error: respCompletionStatus } } });
+        }
+        //#endregion Error control
+
+        console.log("General Grade and Completion for " + register.user.fullname);
+        //#region  Grades for UserName
+        let average = 0;
+        for (const grade of respUserGrades.grades) {
+          if (grade.graderaw) {
+            average += grade.graderaw;
+          }
+        }
+        average /= respUserGrades.grades.length;
+        console.log("Avg: " + average);
+        //#endregion  Grades for UserName
+
+        //#region Completion percentage
+        let completionPercentage = 0;
+        for (const completion of respCompletionStatus.completion) {
+          if (completion.state == 1) {
+            completionPercentage += 1;
+          }
+        }
+        completionPercentage /= respCompletionStatus.completion.length;
+        console.log("Completion: " + completionPercentage);
+
+        //#endregion Completion percentage
+        console.log(".................................");
+
+        register.averageGrade = average;
+        register.completion = Math.round(completionPercentage * 100);
+
+        if (register.completion == 100) {
+          if (register.averageGrade >= 70) {
+            register.attendedApproved = 'Asistió y aprobó';
+          }
+          else{
+            register.attendedApproved = 'Asistió';
+          }
+        }
+        else{
+          register.attendedApproved = 'No aprobó';
+        }
+
+        if (filters.check_certification) {
+          const certificate = await CertificateQueue.findOne({
+            userId: register.user._id,
+            courseId: register.course_scheduling,
+            status: { $in: ['New', 'In-process', 'Complete'] }
+          }).select('');
+
+          register.certificate = certificate;
+          if (register?.certificate?.certificate?.pdfPath) {
+            register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+          }
+          if (register?.certificate?.certificate?.imagePath) {
+            register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
+          }
+        }
+
+        count++
+      }
+    } catch (e) { }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        enrollment: [
+          ...registers
+        ],
+        total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    });
+
   }
 
 }
