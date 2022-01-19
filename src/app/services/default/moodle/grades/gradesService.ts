@@ -38,6 +38,7 @@ class GradesService {
       let singleGrade = {
         id: 0,
         name: '',
+        itemtype: '',
         itemmodule: '',
         cmid: 0,
         graderaw: 0,
@@ -89,6 +90,7 @@ class GradesService {
             id: element.id,
             name: element.itemname,
             itemmodule: element.itemmodule,
+            itemtype: element.itemtype,
             cmid: element.cmid,
             graderaw: element.graderaw,
             grademin: element.grademin,
