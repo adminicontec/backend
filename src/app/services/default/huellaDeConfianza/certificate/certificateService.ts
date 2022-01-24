@@ -565,7 +565,10 @@ class CertificateService {
       : null
   }
 
-
+  /**
+  * Método que consulta la lista de estudiantes que aprueban por actividades y asistencia y que serán candidatos
+  * a certificación.
+  */
   public completion = async (filters: ICertificateCompletion) => {
 
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
@@ -573,7 +576,7 @@ class CertificateService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID course_scheduling'
+    let select = 'id user courseID course_scheduling';
     if (filters.select) {
       select = filters.select
     }
@@ -583,10 +586,6 @@ class CertificateService {
     if (filters.courseID) {
       where['courseID'] = filters.courseID
     }
-
-    console.log("filters:");
-    console.log(filters.without_certification);
-    console.log(filters.course_scheduling);
 
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
@@ -604,10 +603,8 @@ class CertificateService {
       }
     }
 
-    console.log('Conditions:');
-    console.log(where);
-
     let registers = []
+    let approvedRegisters = []
     try {
       registers = await Enrollment.find(where)
         .select(select)
@@ -650,7 +647,6 @@ class CertificateService {
           }
         }
         average /= respUserGrades.grades.length;
-        console.log("Avg: " + average);
         //#endregion  Grades for UserName
 
         //#region Completion percentage
@@ -661,10 +657,8 @@ class CertificateService {
           }
         }
         completionPercentage /= respCompletionStatus.completion.length;
-        console.log("Completion: " + completionPercentage);
-
+        console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
         //#endregion Completion percentage
-        console.log(".................................");
 
         register.averageGrade = average;
         register.completion = Math.round(completionPercentage * 100);
@@ -673,11 +667,11 @@ class CertificateService {
           if (register.averageGrade >= 70) {
             register.attendedApproved = 'Asistió y aprobó';
           }
-          else{
+          else {
             register.attendedApproved = 'Asistió';
           }
         }
-        else{
+        else {
           register.attendedApproved = 'No aprobó';
         }
 
@@ -697,6 +691,10 @@ class CertificateService {
           }
         }
 
+        if (register.attendedApproved == 'Asistió y aprobó' || register.attendedApproved == 'Asistió') {
+          approvedRegisters.push(register);
+        }
+
         count++
       }
     } catch (e) { }
@@ -704,7 +702,7 @@ class CertificateService {
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         enrollment: [
-          ...registers
+          ...approvedRegisters
         ],
         total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
         pageNumber: pageNumber,
