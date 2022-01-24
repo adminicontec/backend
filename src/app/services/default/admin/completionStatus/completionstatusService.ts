@@ -180,10 +180,9 @@ class CompletionstatusService {
         'userid': params.userID
       }
 
-
       let respActivitiesCompletion = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsActivitiesCompletion });
 
-      console.log(respActivitiesCompletion);
+      //console.log(respActivitiesCompletion);
 
       if (respActivitiesCompletion.exception) {
         console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respActivitiesCompletion));

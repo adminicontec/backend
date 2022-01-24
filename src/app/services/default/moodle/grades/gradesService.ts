@@ -53,7 +53,7 @@ class GradesService {
       if (params.courseID && params.userID) {
         courseID = params.courseID;
         userID = params.userID;
-        console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
+        //console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
       }
       else {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
