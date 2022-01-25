@@ -6,6 +6,12 @@ export interface ICompletionStatus {
   courseID: number, // ID de curso
   course: string   // Nombre corto del curso
 }
+
+export interface IActivitiesCompletion {
+  courseID?: string,  // ID de curso (listado de cursos en Moodle)
+  userID?:string,     // ID de estudiante en Moodl
+}
+
 export interface ICompletionStatusQuery {
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina

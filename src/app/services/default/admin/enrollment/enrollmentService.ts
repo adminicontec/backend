@@ -103,6 +103,9 @@ class EnrollmentService {
       }
     }
 
+    console.log('Conditions:');
+    console.log(where);
+
     let registers = []
     try {
       registers = await Enrollment.find(where)

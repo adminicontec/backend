@@ -118,4 +118,16 @@ export interface IGenerateZipCertifications {
     path: string // Ubicación por defecto donde se alojaran los PDF
   }
 }
+export interface ICertificateCompletion {
+  courseID?: string,
+  course_scheduling?: string,
+  without_certification?: boolean
+  check_certification?: boolean,
+
+  pageNumber?:string, // Numero de pagina
+  nPerPage?:string, // Cantidad de elementos por pagina
+  select?: string, // Campos de la coleccion a buscar
+  search?:string, // Busca sobre los campos de la coleccion
+
+}
 //@end

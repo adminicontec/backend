@@ -38,6 +38,7 @@ class GradesService {
       let singleGrade = {
         id: 0,
         name: '',
+        itemtype: '',
         itemmodule: '',
         cmid: 0,
         graderaw: 0,
@@ -52,7 +53,7 @@ class GradesService {
       if (params.courseID && params.userID) {
         courseID = params.courseID;
         userID = params.userID;
-        console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
+        //console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
       }
       else {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
@@ -89,6 +90,7 @@ class GradesService {
             id: element.id,
             name: element.itemname,
             itemmodule: element.itemmodule,
+            itemtype: element.itemtype,
             cmid: element.cmid,
             graderaw: element.graderaw,
             grademin: element.grademin,
