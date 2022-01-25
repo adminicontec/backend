@@ -79,6 +79,12 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Country"
   },
+  address: {
+    type: Schema.Types.String,
+  },
+  classroom: {
+    type: Schema.Types.String,
+  },
   amountParticipants: {
     type: Schema.Types.Number,
     default: 0
@@ -158,6 +164,27 @@ const CourseSchedulingSchema = new Schema({
   },
   certificate_icon_3: {
     type: Schema.Types.String
+  },
+  // Material delivery
+  material_delivery: {
+    type: Schema.Types.String,
+    enum: ['digital', 'physic', 'none']
+  },
+  material_address: {
+    type: Schema.Types.String
+  },
+  material_contact_name: {
+    type: Schema.Types.String
+  },
+  material_contact_phone: {
+    type: Schema.Types.String
+  },
+  material_contact_email: {
+    type: Schema.Types.String
+  },
+  material_assistant: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
   }
   // @end
 }, {
