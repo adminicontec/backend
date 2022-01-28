@@ -571,6 +571,9 @@ class CertificateService {
   */
   public completion = async (filters: ICertificateCompletion) => {
 
+    console.log("Filters from Request:");
+    console.log(filters);
+
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -603,9 +606,46 @@ class CertificateService {
       }
     }
 
-    let registers = []
-    let approvedRegisters = []
+    let registers = [];
+    let listOfStudents = [];
+    let schedulingMode = '';
     try {
+
+      //#region Información del curso
+      let respCourse: any = await courseSchedulingService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: '_id', value: filters.course_scheduling }]
+      });
+      if (respCourse.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
+      // console.log("*********************");
+      // console.log("Data del Curso:");
+      // console.log(respCourse);
+      // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
+      schedulingMode = respCourse.scheduling.schedulingMode.name;
+      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+      }
+      console.log("*********************");
+      console.log(respCourse.scheduling.program.name);
+      console.log(respCourse.scheduling.schedulingMode.name);
+      console.log("*********************");
+
+      // Tipo de
+      let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      if (programType.abbr === program_type_abbr.curso ||
+        programType.abbr === program_type_abbr.curso_auditor) {
+
+      }
+
+      //#endregion Información del curso
+
+
       registers = await Enrollment.find(where)
         .select(select)
         .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
@@ -614,66 +654,155 @@ class CertificateService {
         .lean()
 
       let count = 1
+      console.log('total de registros: ------');
+      console.log(registers.length);
+
+
       for await (const register of registers) {
+
+        let studentProgress = {
+          status: '',
+          attended_approved: '',
+          average_grade: null,
+          completion: null,
+          assistance: null,
+          quizGrade: null
+        };
+
         register.count = count
         if (register.user && register.user.profile) {
-          register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
+          register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`
         }
 
         console.log("=================================");
+        console.log("[" + register.user.moodle_id + "] " + register.user.profile.full_name);
+        //#region ::::::::::::::::: Reglas para Formación Virtual
+        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
 
-        const respUserGrades: any = await gradesService.fetchGrades({ courseID: register.courseID, userID: register.user.moodle_id });
-        const respCompletionStatus: any = await completionstatusService.activitiesCompletion({ courseID: register.courseID, userID: register.user.moodle_id });
+          const respUserGrades: any = await gradesService.fetchGrades({ courseID: register.courseID, userID: register.user.moodle_id });
+          const respCompletionStatus: any = await completionstatusService.activitiesCompletion({ courseID: register.courseID, userID: register.user.moodle_id });
 
-        //#region Error control
-        if (respUserGrades.error) {
-          console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respUserGrades));
-          return responseUtility.buildResponseFailed('json', null,
-            { error_key: { key: 'certificate.requirements.program_status', params: { error: respUserGrades } } });
-        }
-        if (respCompletionStatus.error) {
-          console.log("Moodle: ERROR on moodleParamsActivitiesCompletion request." + JSON.stringify(respCompletionStatus));
-          return responseUtility.buildResponseFailed('json', null,
-            { error_key: { key: 'certificate.requirements.program_status', params: { error: respCompletionStatus } } });
-        }
-        //#endregion Error control
+          //#region Error control
+          if (respUserGrades.error || respCompletionStatus.error) {
+            console.log('Error with UserID: ' + register.user.moodle_id);
 
-        console.log("General Grade and Completion for " + register.user.fullname);
-        //#region  Grades for UserName
-        let average = 0;
-        for (const grade of respUserGrades.grades) {
-          if (grade.graderaw) {
-            average += grade.graderaw;
+            studentProgress.status = 'error';
+            studentProgress.attended_approved = 'error';
+            register.progress = studentProgress;
+            listOfStudents.push(register);
+            continue;
           }
-        }
-        average /= respUserGrades.grades.length;
-        //#endregion  Grades for UserName
+          //#endregion Error control
 
-        //#region Completion percentage
-        let completionPercentage = 0;
-        for (const completion of respCompletionStatus.completion) {
-          if (completion.state == 1) {
-            completionPercentage += 1;
+          console.log("General Grade and Completion for " + register.user.full_name);
+
+          //#region  Grades for UserName
+          let average = 0;
+          for (const grade of respUserGrades.grades) {
+            if (grade.graderaw) {
+              average += grade.graderaw;
+            }
           }
-        }
-        completionPercentage /= respCompletionStatus.completion.length;
-        console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
-        //#endregion Completion percentage
+          average /= respUserGrades.grades.length;
+          //#endregion  Grades for UserName
 
-        register.averageGrade = average;
-        register.completion = Math.round(completionPercentage * 100);
+          //#region Completion percentage
+          let completionPercentage = 0;
+          for (const completion of respCompletionStatus.completion) {
+            if (completion.state == 1) {
+              completionPercentage += 1;
+            }
+          }
+          completionPercentage /= respCompletionStatus.completion.length;
+          console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
+          //#endregion Completion percentage
 
-        if (register.completion == 100) {
-          if (register.averageGrade >= 70) {
-            register.attendedApproved = 'Asistió y aprobó';
+          if (studentProgress.completion == 100) {
+            if (studentProgress.average_grade >= 70) {
+              studentProgress.attended_approved = 'Asistió y aprobó';
+            }
+            else {
+              studentProgress.attended_approved = 'Asistió';
+            }
           }
           else {
-            register.attendedApproved = 'Asistió';
+            studentProgress.attended_approved = 'No aprobó';
           }
+          studentProgress.status = 'ok';
+          studentProgress.average_grade = average;
+          studentProgress.completion = Math.round(completionPercentage * 100);
+
+          register.progress = studentProgress;
+          console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
         }
-        else {
-          register.attendedApproved = 'No aprobó';
+        //#endregion Reglas para Formación Virtual
+
+        //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
+        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
+          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
+          // Presencial - Online
+          // Asistencia >= 75
+          console.log("General Assistance and Quiz grades for " + register.user.profile.full_name);
+
+          const respUserAssistances: any = await gradesService.fetchGradesByFilter({ courseID: register.courseID, userID: register.user.moodle_id, filter: ['attendance'] });
+          const respGradeQuiz: any = await gradesService.fetchGradesByFilter({ courseID: register.courseID, userID: register.user.moodle_id, filter: ['quiz'] });
+
+          //#region Error control
+          if (respUserAssistances.error || respGradeQuiz.error) {
+            console.log('Error with UserID: ' + register.user.moodle_id);
+
+            studentProgress.status = 'error';
+            studentProgress.attended_approved = 'error';
+            register.progress = studentProgress;
+            listOfStudents.push(register);
+            continue;
+          }
+          //#endregion Error control
+
+          //#region  Assistance:
+          /* Todas las asistencia debe estar igual o por encima de 75%.
+            Si alguna no cumple esta regla, no se emite Condición por Asistencia
+          */
+          let flagAssistance = true;
+          let flagQuiz = true;
+
+          for (const grade of respUserAssistances.grades) {
+            if (grade.graderaw < 75) {
+              flagAssistance = false;
+            }
+          }
+          //#endregion  Grades for UserName
+
+          //#region  Quiz:
+          /* Todas los exámenes debe estar igual o por encima de 70%.
+            Si alguna no cumple esta regla, no se emite Condición por Examen
+          */
+          for (const grade of respGradeQuiz.grades) {
+            if (grade.graderaw < 70) {
+              flagQuiz = false;
+            }
+          }
+          //#endregion  Grades for UserName
+
+          if (flagAssistance) {
+            if (flagQuiz) {
+              studentProgress.attended_approved = 'Asistió y aprobó';
+            }
+            else {
+              studentProgress.attended_approved = 'Asistió';
+            }
+          }
+          else {
+            studentProgress.attended_approved = 'No asistió';
+          }
+
+          studentProgress.status = 'ok';
+          studentProgress.assistance = flagAssistance;
+          studentProgress.quizGrade = flagQuiz;
+          register.progress = studentProgress;
+          console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
         }
+        //#endregion Reglas para Formación Presencial y en Línea
 
         if (filters.check_certification) {
           const certificate = await CertificateQueue.findOne({
@@ -691,18 +820,27 @@ class CertificateService {
           }
         }
 
-        if (register.attendedApproved == 'Asistió y aprobó' || register.attendedApproved == 'Asistió') {
-          approvedRegisters.push(register);
+        if (register.attended_approved) {
+          if (register.attended_approved == 'Asistió y aprobó' || register.attended_approved == 'Asistió') {
+            register.progress.isEnabled = 1;
+          }
+          else
+            register.progress.isEnabled = 0;
         }
-
+        listOfStudents.push(register);
         count++
+
+        // console.log('+++++++++++++++++++++++++');
+        // console.log(register);
+        // console.log('+++++++++++++++++++++++++\n');
       }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
+        schedulingMode: schedulingMode,
         enrollment: [
-          ...approvedRegisters
+          ...listOfStudents
         ],
         total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
         pageNumber: pageNumber,
