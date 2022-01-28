@@ -642,9 +642,7 @@ class CertificateService {
         programType.abbr === program_type_abbr.curso_auditor) {
 
       }
-
       //#endregion Información del curso
-
 
       registers = await Enrollment.find(where)
         .select(select)
@@ -666,7 +664,8 @@ class CertificateService {
           average_grade: null,
           completion: null,
           assistance: null,
-          quizGrade: null
+          quizGrade: null,
+          auditor: false,
         };
 
         register.count = count
@@ -718,6 +717,7 @@ class CertificateService {
           //#endregion Completion percentage
 
           if (studentProgress.completion == 100) {
+            studentProgress.status = 'ok';
             if (studentProgress.average_grade >= 70) {
               studentProgress.attended_approved = 'Asistió y aprobó';
             }
@@ -726,11 +726,14 @@ class CertificateService {
             }
           }
           else {
+            studentProgress.status = 'no';
             studentProgress.attended_approved = 'No aprobó';
           }
-          studentProgress.status = 'ok';
           studentProgress.average_grade = average;
           studentProgress.completion = Math.round(completionPercentage * 100);
+
+          // Revisión si aplica Generación de Certificvado Auditor
+          studentProgress.auditor = false;
 
           register.progress = studentProgress;
           console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
@@ -739,7 +742,8 @@ class CertificateService {
 
         //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
-          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
+          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea' ||
+          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en línea') {
           // Presencial - Online
           // Asistencia >= 75
           console.log("General Assistance and Quiz grades for " + register.user.profile.full_name);
@@ -785,6 +789,7 @@ class CertificateService {
           //#endregion  Grades for UserName
 
           if (flagAssistance) {
+            studentProgress.status = 'ok';
             if (flagQuiz) {
               studentProgress.attended_approved = 'Asistió y aprobó';
             }
@@ -793,12 +798,15 @@ class CertificateService {
             }
           }
           else {
-            studentProgress.attended_approved = 'No asistió';
+            studentProgress.status = 'no';
+            studentProgress.attended_approved = 'No aprobó';
           }
-
-          studentProgress.status = 'ok';
           studentProgress.assistance = flagAssistance;
           studentProgress.quizGrade = flagQuiz;
+
+          // Revisión si aplica Generación de Certificvado Auditor
+          studentProgress.auditor = false;
+
           register.progress = studentProgress;
           console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
         }
@@ -829,10 +837,6 @@ class CertificateService {
         }
         listOfStudents.push(register);
         count++
-
-        // console.log('+++++++++++++++++++++++++');
-        // console.log(register);
-        // console.log('+++++++++++++++++++++++++\n');
       }
     } catch (e) { }
 
