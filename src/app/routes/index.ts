@@ -1,4 +1,6 @@
 // @import_routes
+import { attachedRoute } from "@scnode_app/routes/default/admin/attached/attachedRoute";
+import { attachedCategoryRoute } from "@scnode_app/routes/default/admin/attachedCategory/attachedCategoryRoute";
 import { likeRoute } from "@scnode_app/routes/default/admin/like/likeRoute";
 import { forumTagsRoute } from "@scnode_app/routes/default/admin/forum/forumTagsRoute";
 import { uploadAssetsRoute } from "@scnode_app/routes/default/general/upload/uploadAssetsRoute";
@@ -71,6 +73,8 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    attachedRoute,
+    attachedCategoryRoute,
     likeRoute,
     forumTagsRoute,
     uploadAssetsRoute,

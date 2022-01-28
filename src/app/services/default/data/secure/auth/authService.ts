@@ -17,7 +17,7 @@ import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
 // @end
 
 // @import models
-import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory, AcademicResourceConfigCategory} from '@scnode_app/models'
+import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory, AcademicResourceConfigCategory, AttachedCategory} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -144,6 +144,9 @@ class AuthService {
     // @INFO: Consultando categorias de preguntas
     const questionCategories = await QuestionCategory.find().select('id name description config')
 
+    // @INFO: Consultando categorias de preguntas
+    const attachedCategories = await AttachedCategory.find().select('id name description config')
+
     // @INFO: Consultando los homes segun el tipo de usuario
     let home = null
     if (user.roles) {
@@ -183,6 +186,7 @@ class AuthService {
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,
         questionCategories: questionCategories,
+        attachedCategories,
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,
 			},

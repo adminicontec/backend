@@ -1,4 +1,6 @@
 // @import_models
+import { AttachedModel } from "@scnode_app/models/attachedModel";
+import { AttachedCategoryModel } from "@scnode_app/models/attachedCategoryModel";
 import { LikeModel } from "@scnode_app/models/likeModel";
 import { ForumTagsModel } from "@scnode_app/models/forumTagsModel";
 import { CertificateQueueModel } from "@scnode_app/models/certificateQueueModel";
@@ -51,6 +53,8 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const Attached = AttachedModel
+export const AttachedCategory = AttachedCategoryModel
 export const Like = LikeModel
 export const ForumTags = ForumTagsModel
 export const CertificateQueue = CertificateQueueModel

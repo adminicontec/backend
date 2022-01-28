@@ -63,7 +63,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -78,6 +78,7 @@ class CourseSchedulingService {
           // .populate({path: 'course', select: 'id name'})
           .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .populate({path: 'client', select: 'id name'})
+          .populate({ path: 'material_assistant', select: 'id profile' })
           .select(select)
           .lean()
 
@@ -100,6 +101,7 @@ class CourseSchedulingService {
           // .populate({path: 'course', select: 'id name'})
           .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
           .populate({path: 'client', select: 'id name'})
+          .populate({ path: 'material_assistant', select: 'id profile' })
           .select(select)
           .lean()
 
@@ -1012,7 +1014,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
     if (filters.select) {
       select = filters.select
     }
@@ -1148,7 +1150,8 @@ class CourseSchedulingService {
           { path: 'city', select: 'id name' },
           { path: 'country', select: 'id name' },
           {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
-          { path: 'client', select: 'id name'}
+          { path: 'client', select: 'id name'},
+          { path: 'material_assistant', select: 'id profile'},
         ])
       } else {
         registers = await CourseScheduling.find({})
@@ -1165,6 +1168,7 @@ class CourseSchedulingService {
         // .populate({path: 'course', select: 'id name'})
         .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'client', select: 'id name'})
+        .populate({ path: 'material_assistant', select: 'id profile' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })
@@ -1218,7 +1222,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
 
       let where = {}
 
@@ -1239,6 +1243,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'client', select: 'id name' })
+          .populate({ path: 'material_assistant', select: 'id profile' })
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .select(select)

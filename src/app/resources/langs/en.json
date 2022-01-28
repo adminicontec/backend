@@ -418,6 +418,16 @@
       "download_masive": {
         "no_certificate_to_download": "No encontramos certificados que puedan descargarse"
       }
+    },
+    "attached_category": {
+      "already_exists": "Ya existe una categoría con ese nombre",
+      "not_found": "La categoría no ha sido encontrada"
+    },
+    "attached": {
+      "already_exists": "El adjunto ya existe",
+      "not_found": "El adjunto no ha sido encontrado",
+      "failed_upload": "Ha ocurrido un error al subir los archivos",
+      "limit_files_exceded": "Limite de archivos excedido"
     }
   },
   "passwordRecover": {

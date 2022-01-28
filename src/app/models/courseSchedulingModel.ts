@@ -185,6 +185,11 @@ const CourseSchedulingSchema = new Schema({
   material_assistant: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  // Adjuntos
+  attachments: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached'
   }
   // @end
 }, {

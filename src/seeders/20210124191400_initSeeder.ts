@@ -30,6 +30,8 @@ import {courseSchedulingTypeService} from '@scnode_app/services/default/admin/co
 
 import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
 import { modularService } from "@scnode_app/services/default/admin/modular/modularService";
+
+import { attachedCategoryService } from '@scnode_app/services/default/admin/attachedCategory/attachedCategoryService';
 // @end
 
 // @import_utilitites Import utilities
@@ -38,6 +40,7 @@ import { modularService } from "@scnode_app/services/default/admin/modular/modul
 // @import_types Import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
 import { IModulePermission } from "@scnode_app/types/default/global/permissionTypes";
+import { IAttachedCategory } from '@scnode_app/types/default/admin/attachedCategory/attachedCategoryTypes';
 // @end
 
 class InitSeeder extends DefaultPluginsSeederSeederService {
@@ -100,6 +103,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // // @INFO: Agregando tipos de ubicaciones
     // let forum_location_ids = await this.addForumLocations()
+
+    // @INFO Agregando categorías de adjuntos
+    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -1360,6 +1366,42 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       }
     }
     return question_category_ids
+  }
+
+  private addAttachedCategories = async () => {
+    const attachedCategories: IAttachedCategory[] =[
+      {
+        name: "partial_report",
+        description: "Adjunto para reporte parcial",
+        config: {
+          limit_files: 1,
+          formats: ['xlsx', 'pdf', 'ppt'],
+          limit_size_KB: 100
+        }
+      },
+      {
+        name: "final_report",
+        description: "Adjunto para reporte final",
+        config: {
+          limit_files: 1,
+          formats: ['xlsx', 'pdf', 'ppt'],
+          limit_size_KB: 100
+        }
+      },
+      {
+        name: "course_scheduling_attachments",
+        description: "Adjuntos para la ventana de programacion",
+        config: {
+          limit_files: 3,
+          formats: ['xlsx', 'pdf', 'ppt'],
+          limit_size_KB: 100
+        }
+      }
+    ];
+
+    for await (let category of attachedCategories){
+      const categoryResponse = await attachedCategoryService.insertOrUpdate(category);
+    }
   }
 
   private addCourseScheduling = async () => {
