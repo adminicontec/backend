@@ -571,6 +571,8 @@ class CertificateService {
   */
   public completion = async (filters: ICertificateCompletion) => {
 
+    let isAuditorCerficateEnabled = false;
+
     console.log("Filters from Request:");
     console.log(filters);
 
@@ -621,9 +623,6 @@ class CertificateService {
           { error_key: { key: 'program.not_found' } })
       }
 
-      // console.log("*********************");
-      // console.log("Data del Curso:");
-      // console.log(respCourse);
       // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
       schedulingMode = respCourse.scheduling.schedulingMode.name;
       console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
@@ -638,11 +637,12 @@ class CertificateService {
 
       // Tipo de
       let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
-      if (programType.abbr === program_type_abbr.curso ||
-        programType.abbr === program_type_abbr.curso_auditor) {
-
+      if (programType.abbr === program_type_abbr.curso_auditor || programType.abbr === program_type_abbr.diplomado_auditor || programType.abbr === program_type_abbr.programa_auditor) {
+        isAuditorCerficateEnabled = true;
       }
+
       //#endregion Información del curso
+
 
       registers = await Enrollment.find(where)
         .select(select)
@@ -665,7 +665,7 @@ class CertificateService {
           completion: null,
           assistance: null,
           quizGrade: null,
-          auditor: false,
+          auditor: false
         };
 
         register.count = count
@@ -717,7 +717,6 @@ class CertificateService {
           //#endregion Completion percentage
 
           if (studentProgress.completion == 100) {
-            studentProgress.status = 'ok';
             if (studentProgress.average_grade >= 70) {
               studentProgress.attended_approved = 'Asistió y aprobó';
             }
@@ -726,14 +725,11 @@ class CertificateService {
             }
           }
           else {
-            studentProgress.status = 'no';
             studentProgress.attended_approved = 'No aprobó';
           }
+          studentProgress.status = 'ok';
           studentProgress.average_grade = average;
           studentProgress.completion = Math.round(completionPercentage * 100);
-
-          // Revisión si aplica Generación de Certificvado Auditor
-          studentProgress.auditor = false;
 
           register.progress = studentProgress;
           console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
@@ -742,8 +738,7 @@ class CertificateService {
 
         //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
-          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea' ||
-          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en línea') {
+          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
           // Presencial - Online
           // Asistencia >= 75
           console.log("General Assistance and Quiz grades for " + register.user.profile.full_name);
@@ -789,7 +784,6 @@ class CertificateService {
           //#endregion  Grades for UserName
 
           if (flagAssistance) {
-            studentProgress.status = 'ok';
             if (flagQuiz) {
               studentProgress.attended_approved = 'Asistió y aprobó';
             }
@@ -798,15 +792,12 @@ class CertificateService {
             }
           }
           else {
-            studentProgress.status = 'no';
-            studentProgress.attended_approved = 'No aprobó';
+            studentProgress.attended_approved = 'No asistió';
           }
+
+          studentProgress.status = 'ok';
           studentProgress.assistance = flagAssistance;
           studentProgress.quizGrade = flagQuiz;
-
-          // Revisión si aplica Generación de Certificvado Auditor
-          studentProgress.auditor = false;
-
           register.progress = studentProgress;
           console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
         }
@@ -837,6 +828,10 @@ class CertificateService {
         }
         listOfStudents.push(register);
         count++
+
+        // console.log('+++++++++++++++++++++++++');
+        // console.log(register);
+        // console.log('+++++++++++++++++++++++++\n');
       }
     } catch (e) { }
 
