@@ -407,7 +407,7 @@
       "preview": "No se puede visualizar el certificado: :error",
       "requirements": {
         "program_status": "No se puede generar el certificado. El estado del programa es: :error",
-        "student_status": "No se puede generar el certificado. El estudiante :name tiene el siguiente problema: :error"
+        "student_status": "No se puede generar el certificado. El estudiante :name :error. :method"
       },
       "queue": {
         "not_found": "El item de la cola de certificado no existe.",

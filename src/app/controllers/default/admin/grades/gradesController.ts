@@ -34,6 +34,11 @@ class GradesController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  public fetchGradesByFilter = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await gradesService.fetchGradesByFilter(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 }
 
 export const gradesController = new GradesController();
