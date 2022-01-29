@@ -104,7 +104,7 @@ class CertificateQueueService {
             courseId: params.courseId,
             userId: userId,
             status: params.status,
-            certificateType: '',
+            certificateType: params.certificateType,
             certificateModule: ''
            });
 

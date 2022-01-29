@@ -126,12 +126,7 @@ class CertificateService {
       // console.log(respCourseDetails);
       // console.log('-------------------');
 
-      if (respCourse.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null,
-          { error_key: { key: 'program.not_found' } })
-      }
-
-      if (respCourseDetails.status == 'error') {
+      if (respCourse.status == 'error' || respCourseDetails.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
       }
@@ -160,16 +155,36 @@ class CertificateService {
 
       let schedulingType = respCourse.scheduling.schedulingType;
 
+      console.log('....................................');
+      console.log('Certificado para ' + respDataUser.user.profile.full_name);
+
+      // 3. Estatus de estudiante en Moodle
+      // - Asistencias
+      // - Entregas de actividades completas
+
+      let isAuditorCerficateEnabled = false;
+      let studentProgress = {
+        average_grade: null,
+        completion: null,
+        assistance: null,
+        quizGrade: null,
+        auditor: false
+      };
+
+      //#region Tipo de programa
+      let programTypeName = '';
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+        programTypeName = 'curso';
         field_dato_1 = 'Asistió y aprobó el curso';
         field_asistio = 'Asistió al curso';
         field_template = 'CP00000001';
       }
       if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+        programTypeName = 'programa';
         field_dato_1 = 'Asistió y aprobó el programa';
         field_asistio = 'Asistió al programa';
 
-        // Listado de Módulos (cursos) que comprende el programa
+        // Listado de Módulos (cursos) que comprende el programa <li>
         respCourseDetails.schedulings.forEach(element => {
           field_listado_cursos += element.course.name + '<br/>';
         });
@@ -177,17 +192,147 @@ class CertificateService {
         field_template = 'CP00000002';
       }
       if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+        programTypeName = 'diplomado';
         field_dato_1 = 'Asistió y aprobó el diplomado';
         field_asistio = 'Asistió al diplomado';
         field_template = 'CP00000002';
       }
+      // console.log(programTypeName);
+      // console.log("---------------------");
+      // console.log(respDataUser);
+      // console.log(respCourse);
+      // console.log("---------------------");
 
-      console.log('....................................');
-      console.log('Certificado para ' + respDataUser.user.profile.first_name + " " + respDataUser.user.profile.last_name);
+      if (programType.abbr === program_type_abbr.curso_auditor || programType.abbr === program_type_abbr.diplomado_auditor || programType.abbr === program_type_abbr.programa_auditor) {
+        isAuditorCerficateEnabled = true;
+        // get modules need to process Second certificate
+      }
+      //#endregion Tipo de programa
 
-      // 3. Estatus de estudiante en Moodle
-      // - Asistencias
-      // - Entregas de actividades completas
+      //#region ::::::::::::::::: Reglas para Formación Virtual
+      if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
+
+        const respUserGrades: any = await gradesService.fetchGrades({ courseID: respCourse.scheduling.moodle_id, userID: respDataUser.user.moodle_id });
+        const respCompletionStatus: any = await completionstatusService.activitiesCompletion({ courseID: respCourse.scheduling.moodle_id, userID: respDataUser.user.moodle_id });
+
+        //#region Error control
+        if (respUserGrades.error || respCompletionStatus.error) {
+          console.log('Error with UserID: ' + respDataUser.user.profile.moodle_id);
+          return;
+        }
+        //#endregion Error control
+
+        console.log("General Grade and Completion for " + respDataUser.user.profile.first_name);
+
+        //#region  Grades for UserName
+        let average = 0;
+        for (const grade of respUserGrades.grades) {
+          if (grade.graderaw) {
+            average += grade.graderaw;
+          }
+        }
+        average /= respUserGrades.grades.length;
+        //#endregion  Grades for UserName
+
+        //#region Completion percentage
+        let completionPercentage = 0;
+        for (const completion of respCompletionStatus.completion) {
+          if (completion.state == 1) {
+            completionPercentage += 1;
+          }
+        }
+        completionPercentage /= respCompletionStatus.completion.length;
+        console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
+        //#endregion Completion percentage
+
+        if (studentProgress.completion == 100) {
+          if (studentProgress.average_grade >= 70) {
+            field_dato_1 = 'Asistió y aprobó el ' + programTypeName;
+          }
+          else {
+            field_dato_1 = 'Asistió al ' + programTypeName;
+          }
+          studentProgress.auditor = isAuditorCerficateEnabled;
+        }
+        else {
+          field_dato_1 = 'No aprobó';
+          // error
+          return;
+        }
+        studentProgress.average_grade = average;
+        studentProgress.completion = Math.round(completionPercentage * 100);
+
+        console.log("-->" + respDataUser.user.profile.full_name + " " + field_dato_1);
+      }
+      //#endregion Reglas para Formación Virtual
+
+
+
+      //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
+      if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
+        respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
+        // Presencial - Online
+        // Asistencia >= 75
+        console.log("General Assistance and Quiz grades for " + respDataUser.user.profile.first_name);
+
+        const respUserAssistances: any = await gradesService.fetchGradesByFilter({ courseID: respCourse.scheduling.moodle_id, userID: respDataUser.user.moodle_id, filter: ['attendance'] });
+        const respGradeQuiz: any = await gradesService.fetchGradesByFilter({ courseID: respCourse.scheduling.moodle_id, userID: respDataUser.user.moodle_id, filter: ['quiz'] });
+
+        //#region Error control
+        if (respUserAssistances.error || respGradeQuiz.error) {
+          console.log('Error with UserID: ' + respDataUser.moodle_id);
+          return;
+        }
+        //#endregion Error control
+
+        //#region  Assistance:
+        /* Todas las asistencia debe estar igual o por encima de 75%.
+          Si alguna no cumple esta regla, no se emite Condición por Asistencia
+        */
+        let flagAssistance = true;
+        let flagQuiz = true;
+
+        for (const grade of respUserAssistances.grades) {
+          if (grade.graderaw < 75) {
+            flagAssistance = false;
+          }
+        }
+        //#endregion  Grades for UserName
+
+        //#region  Quiz:
+        /* Todas los exámenes debe estar igual o por encima de 70%.
+          Si alguna no cumple esta regla, no se emite Condición por Examen
+        */
+        for (const grade of respGradeQuiz.grades) {
+          if (grade.graderaw < 70) {
+            flagQuiz = false;
+          }
+        }
+        //#endregion  Grades for UserName
+
+        if (flagAssistance) {
+          if (flagQuiz) {
+            field_dato_1 = 'Asistió y aprobó el ' + programTypeName;
+          }
+          else {
+            field_dato_1 = 'Asistió al ' + programTypeName;
+          }
+          studentProgress.auditor = isAuditorCerficateEnabled;
+        }
+        else {
+          field_dato_1 = 'No asistió';
+          // error
+          return;
+        }
+
+        studentProgress.assistance = flagAssistance;
+        studentProgress.quizGrade = flagQuiz;
+        console.log("-->" + respDataUser.user.profile.full_name + " " + field_dato_1);
+      }
+      //#endregion Reglas para Formación Presencial y en Línea
+
+
+
 
       //#endregion
 
@@ -195,7 +340,6 @@ class CertificateService {
       //#region Build the certificate Parameters
       const timeElapsed = Date.now();
       const currentDate = new Date(timeElapsed);
-
       let certificateParams: ICertificate = {
         modulo: field_template,
         numero_certificado: fielf_numero_certificado,
@@ -430,6 +574,7 @@ class CertificateService {
     }
   }
 
+  //#region Private Methods
   private login = async () => {
 
     var endpoint = certificate_setup.endpoint.signin;
@@ -496,6 +641,7 @@ class CertificateService {
       return responseUtility.buildResponseFailed('json', null)
     }
   }
+  //#endregion Private Methods
 
   public generateZipCertifications = async (params: IGenerateZipCertifications) => {
     let driver = attached['driver'];
@@ -573,6 +719,7 @@ class CertificateService {
 
     let isAuditorCerficateEnabled = false;
 
+    //#region query Filters
     console.log("Filters from Request:");
     console.log(filters);
 
@@ -607,7 +754,7 @@ class CertificateService {
         where['user'] = { $nin: user_ids }
       }
     }
-
+    //#endregion query Filters
     let registers = [];
     let listOfStudents = [];
     let schedulingMode = '';
@@ -639,6 +786,7 @@ class CertificateService {
       let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
       if (programType.abbr === program_type_abbr.curso_auditor || programType.abbr === program_type_abbr.diplomado_auditor || programType.abbr === program_type_abbr.programa_auditor) {
         isAuditorCerficateEnabled = true;
+        // get modules need to process Second certificate
       }
 
       //#endregion Información del curso
@@ -723,6 +871,7 @@ class CertificateService {
             else {
               studentProgress.attended_approved = 'Asistió';
             }
+            studentProgress.auditor = isAuditorCerficateEnabled;
           }
           else {
             studentProgress.attended_approved = 'No aprobó';
@@ -790,6 +939,7 @@ class CertificateService {
             else {
               studentProgress.attended_approved = 'Asistió';
             }
+            studentProgress.auditor = isAuditorCerficateEnabled;
           }
           else {
             studentProgress.attended_approved = 'No asistió';
