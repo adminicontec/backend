@@ -37,6 +37,12 @@ export interface IUser {
     carreer?: string,
     educationalLevel?: string,
     company?: string,
+
+    contractType?: {    // Datos solamente usados por Docentes y Tutores
+      type?: string,
+      isTeacher?: boolean,
+      isTutor?: boolean
+    },
   },
   curriculum_vitae?: {
     biography?: string, // Biografia curriculo del usuario
