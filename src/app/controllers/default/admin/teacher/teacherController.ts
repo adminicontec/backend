@@ -27,26 +27,26 @@ class TeacherController {
     public methodName = (req: Request, res: Response) => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   public massive = async (req: Request, res: Response) => {
 
     let params = req.getParameters.all()
+    console.log(params);
+
     let files = req.files
     if (files && files.hasOwnProperty('file_xlsx')) {
       params['contentFile'] = files['file_xlsx']
     } else {
       params['contentFile'] = null
     }
-
-
     const response = await teacherService.massive(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
   public list = async (req: Request, res: Response) => {
     const response = await teacherService.list(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
+    return responseUtility.sendResponseFromObject(res, response)
   }
 
 }
