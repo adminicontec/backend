@@ -8,6 +8,7 @@ import { xlsx_config, host, public_dir, attached } from '@scnode_core/config/glo
 // @end
 
 // @import_utilities Import utilities
+import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { fileUtility } from '@scnode_core/utilities/fileUtility'
 import { attachedUtility } from '@scnode_core/utilities/attached/attachedUtility'
 // @end
@@ -164,7 +165,7 @@ class XlsxUtility {
     }
     catch (e) {
       console.log('e', e.message)
-      return null
+      responseUtility.buildResponseFailed('json', e)
     }
 
   }
