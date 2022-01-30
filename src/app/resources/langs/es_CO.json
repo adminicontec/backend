@@ -409,6 +409,10 @@
       "download_masive": {
         "no_certificate_to_download": "No encontramos certificados que puedan descargarse"
       }
+    },
+    "teacher_upload" : {
+      "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
+      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
     }
   },
   "passwordRecover": {

@@ -109,7 +109,7 @@ class UserService {
    */
   public insertOrUpdate = async (params: IUser) => {
 
-    const defaultCountryCode= '6058e1f00520a25777a0eb4d';
+    const defaultCountryCode = '6058e1f00520a25777a0eb4d';
     const defaultCountryISO = 'CO';
     try {
 
@@ -152,7 +152,6 @@ class UserService {
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.profile.avatarImageUrl = response_upload.name
       }
-      console.log("Roles --> ");
       if (!params.roles) {
         // params.roles = []
       } else if (typeof params.roles === "string") {
@@ -241,6 +240,10 @@ class UserService {
             new: true,
             lean: true,
           });
+
+          console.log("Search results for : " + params.id);
+          console.log(response);
+
 
           await Role.populate(response, { path: 'roles', select: 'id name description' })
           await Country.populate(response, { path: 'profile.country', select: 'id name iso2 iso3' })
@@ -583,7 +586,7 @@ class UserService {
       if (typeof filters.role_names === "string") {
         filters.role_names = filters.role_names.split(",");
       }
-      const roles = await Role.find({name: {$in: filters.role_names}}).select('id')
+      const roles = await Role.find({ name: { $in: filters.role_names } }).select('id')
       if (roles) {
         const role_ids = roles.reduce((accum: any, element: any) => {
           accum.push(element._id)
@@ -598,7 +601,7 @@ class UserService {
     if (filters.company) {
       where['company'] = filters.company
     } else if (filters.without_company && (filters.without_company === true || filters.without_company === 'true')) {
-      where['company'] = {$exists: false}
+      where['company'] = { $exists: false }
     }
 
     let registers = []

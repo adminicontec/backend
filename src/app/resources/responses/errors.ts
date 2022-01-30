@@ -1117,6 +1117,18 @@ class ErrorResponse {
             "status_code": "attached_limit_files_exceded",
             "code": 400
           }
+        },
+        "teacher_upload": {
+          "failed_upload": {
+            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+            "status_code": "teacher_upload_failed_upload",
+            "code": 400
+          },
+          "empty_file": {
+            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+            "status_code": "teacher_upload_failed_upload",
+            "code": 400
+          },
         }
       }
     };
