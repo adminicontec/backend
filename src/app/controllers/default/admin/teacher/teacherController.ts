@@ -32,8 +32,6 @@ class TeacherController {
   public massive = async (req: Request, res: Response) => {
 
     let params = req.getParameters.all()
-    console.log(params);
-
     let files = req.files
     if (files && files.hasOwnProperty('file_xlsx')) {
       params['contentFile'] = files['file_xlsx']

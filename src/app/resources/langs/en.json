@@ -385,7 +385,8 @@
     "moodle_user": {
       "not_found": "El usuario en Moodle no ha sido encontrado",
       "insertOrUpdate": {
-        "failed": "Ya existe un usuario en Moodle :username"
+        "failed": "Ya existe un usuario en Moodle :username",
+        "error": "Error al insertar el usuario en Moodle :username"
       }
     },
     "moodle_events": {
@@ -408,6 +409,20 @@
           "failed": "Error al insertar registro en la cola de Generación de Certificados."
         }
       }
+    },
+    "attached_category": {
+      "already_exists": "Ya existe una categoría con ese nombre",
+      "not_found": "La categoría no ha sido encontrada"
+    },
+    "attached": {
+      "already_exists": "El adjunto ya existe",
+      "not_found": "El adjunto no ha sido encontrado",
+      "failed_upload": "Ha ocurrido un error al subir los archivos",
+      "limit_files_exceded": "Limite de archivos excedido"
+    },
+    "teacher_upload" : {
+      "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
+      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
     }
   },
   "passwordRecover": {

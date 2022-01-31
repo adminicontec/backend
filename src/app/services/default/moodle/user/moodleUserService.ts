@@ -151,7 +151,7 @@ class MoodleUserService {
           customFieldValue = generalUtility.unixTime(params[p]).toString();
         }
         else
-          customFieldValue = params[p].trim();
+          customFieldValue = (params[p]) ? params[p].toString().trim() : '';
 
         moodleParams[jsonPropertyName] = customFieldType;
         moodleParams[jsonPropertyValue] = customFieldValue;
@@ -167,9 +167,7 @@ class MoodleUserService {
     if (respMoodle.exception) {
       // ERROR al crear el usuario en Moodle
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-
-      //return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
-
+      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_user.insertOrUpdate.error', params: { error: respMoodle.message } } });
       // return
     }
     else {
@@ -231,7 +229,7 @@ class MoodleUserService {
           customFieldValue = generalUtility.unixTime(params[p]).toString();
         }
         else
-          customFieldValue = params[p].toString().trim();
+          customFieldValue = (params[p]) ? params[p].toString().trim() : '';
 
         moodleParams[jsonPropertyName] = customFieldType;
         moodleParams[jsonPropertyValue] = customFieldValue;
@@ -247,6 +245,7 @@ class MoodleUserService {
       if (respMoodle != null) {
         // ERROR al crear el usuario en Moodle
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_user.insertOrUpdate.error', params: { error: respMoodle.message } } });
         //return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
       }
       else {
