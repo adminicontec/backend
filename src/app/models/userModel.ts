@@ -85,17 +85,23 @@ const UserSchema = new Schema({
     doc_number: { type: Schema.Types.String },
     birthDate: { type: Schema.Types.Date },
     regional: { type: Schema.Types.String },
-    origen: { type: Schema.Types.String},
-    currentPosition: { type: Schema.Types.String},
-    carreer: { type: Schema.Types.String},
-    educationalLevel: { type: Schema.Types.String},
-    company: { type: Schema.Types.String},
+    origen: { type: Schema.Types.String },
+    currentPosition: { type: Schema.Types.String },
+    carreer: { type: Schema.Types.String },
+    educationalLevel: { type: Schema.Types.String },
+    company: { type: Schema.Types.String },
+
+    contractType: {
+      type: { type: Schema.Types.String },
+      isTeacher: { type: Schema.Types.Boolean },
+      isTutor: { type: Schema.Types.Boolean }
+    },
 
     timezone: { type: Schema.Types.String, default: 'GMT-5' },
     culture: { type: Schema.Types.String, default: 'es_CO' },
     screen_mode: { type: Schema.Types.String, default: 'light-mode' },
   },
-  short_key: {type: Schema.Types.String},
+  short_key: { type: Schema.Types.String },
   roles: [{
     type: Schema.Types.ObjectId,
     ref: "Role"

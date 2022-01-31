@@ -8,6 +8,7 @@ import { xlsx_config, host, public_dir, attached } from '@scnode_core/config/glo
 // @end
 
 // @import_utilities Import utilities
+import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { fileUtility } from '@scnode_core/utilities/fileUtility'
 import { attachedUtility } from '@scnode_core/utilities/attached/attachedUtility'
 // @end
@@ -139,7 +140,6 @@ class XlsxUtility {
 
       // Lee la primer hoja del archivo
       let location = sheet_name_list.findIndex(m => m === sheetName)
-      console.log("Sheet location: " + location);
 
       if (location != -1) {
 
@@ -151,7 +151,7 @@ class XlsxUtility {
           range.e.r = maxNrRows;
 
         var new_range = XLSX.utils.encode_range(range);
-        console.log(new_range);
+        console.log("Sheet location: " + location + ". Range: " + new_range);
 
         //console.log(workbook.Sheets[sheet_name_list[location]]);
         const xlData: any = XLSX.utils.sheet_to_json(
@@ -164,7 +164,7 @@ class XlsxUtility {
     }
     catch (e) {
       console.log('e', e.message)
-      return null
+      responseUtility.buildResponseFailed('json', e)
     }
 
   }

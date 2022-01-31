@@ -27,7 +27,7 @@ class TeacherController {
     public methodName = (req: Request, res: Response) => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   public massive = async (req: Request, res: Response) => {
 
@@ -38,15 +38,13 @@ class TeacherController {
     } else {
       params['contentFile'] = null
     }
-
-
     const response = await teacherService.massive(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
   public list = async (req: Request, res: Response) => {
     const response = await teacherService.list(req.getParameters.all())
-		return responseUtility.sendResponseFromObject(res, response)
+    return responseUtility.sendResponseFromObject(res, response)
   }
 
 }

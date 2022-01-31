@@ -1057,6 +1057,59 @@ class ErrorResponse {
             "status_code": "certificate_queue_not_found",
             "code": 400
           },
+        },
+        "download_masive": {
+          "no_certificate_to_download": {
+            "message": i18nUtility.__("app_error_messages.certificate.download_masive.no_certificate_to_download"),
+            "status_code": "certificate_download_masive_no_certificate_to_download",
+            "code": 400
+          }
+        },
+        "attached_category": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.attached_category.already_exists"),
+            "status_code": "attached_category_already_exist",
+            "code": 400
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.attached_category.not_found"),
+            "status_code": "attached_category_not_found",
+            "code": 400
+          }
+        },
+        "attached": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.attached.already_exists"),
+            "status_code": "attached_already_exist",
+            "code": 400
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.attached.not_found"),
+            "status_code": "attached_not_found",
+            "code": 400
+          },
+          "failed_upload": {
+            "message": i18nUtility.__("app_error_messages.attached.failed_upload"),
+            "status_code": "attached_failed_upload",
+            "code": 400
+          },
+          "limit_files_exceded": {
+            "message": i18nUtility.__("app_error_messages.attached.limit_files_exceded"),
+            "status_code": "attached_limit_files_exceded",
+            "code": 400
+          }
+        },
+        "teacher_upload": {
+          "failed_upload": {
+            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+            "status_code": "teacher_upload_failed_upload",
+            "code": 400
+          },
+          "empty_file": {
+            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+            "status_code": "teacher_upload_failed_upload",
+            "code": 400
+          },
         }
       }
     };
