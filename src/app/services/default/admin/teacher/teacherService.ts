@@ -28,6 +28,7 @@ import { IMassiveLoad, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 import { completionstatusController } from 'app/controllers/default/admin/completionStatus/completionstatusController';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 
 // @end
 
@@ -44,7 +45,6 @@ class TeacherService {
 
   public massive = async (params: IMassiveLoad) => {
 
-
     try {
       console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
 
@@ -58,11 +58,11 @@ class TeacherService {
 
       console.log("Process Content");
 
-      let respProcessTeacherData =  this.processTeacherData(dataWSTeachersBase);
+      let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          teacherProfile: {
+          teacherUpload: {
             respProcessTeacherData
           }
         }
@@ -134,7 +134,7 @@ class TeacherService {
   /*
   Creación de usuarios con el rol de Teacher
   */
-  private processTeacherData = async (dataWSTeachersBase: any) => {
+  private processTeacherData = async (dataWSTeachersBase: any, sheetname: string) => {
 
     let singleUserLoadContent: IUser;
     let processResult: IFileProcessResult;
@@ -159,20 +159,21 @@ class TeacherService {
 
         for await (const element of dataWSTeachersBase) {
 
-          if (element['Documento de Identidad'] != null) {
+          if (element['Documento de Identidad']) {
+
             singleUserLoadContent = {
-              username: element['Documento de Identidad'].toString(),
+              username: generalUtility.normalizeUsername(element['Documento de Identidad']),
               password: element['Documento de Identidad'].toString(),
               email: element['Correo Electrónico'],
-              phoneNumber: element['N° Celular'].toString(),
+              phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
               roles: [roles['teacher']],
               sendEmail: false, //params.sendEmail
               profile: {
                 doc_type: element['Tipo Documento'] ? element['Tipo Documento'] : 'CC',
                 doc_number: element['Documento de Identidad'],
-                first_name: element['Nombres'],
-                last_name: element['Apellidos'],
-                city: element['Ubicación'],
+                first_name: element['Nombres'].trim(),
+                last_name: element['Apellidos'].trim(),
+                city: (element['Ubicación']) ? element['Ubicación'].trim() : '',
                 country: 'Colombia',
                 regional: element['Regional'],
                 contractType: {
@@ -188,6 +189,21 @@ class TeacherService {
 
             // build process Response
             //#region   Insert User in Campus Digital and Moodle
+
+            let respCampusDataUser: any = await userService.findBy({
+              query: QueryValues.ONE,
+              where: [{ field: 'profile.doc_number', value: singleUserLoadContent.profile.doc_number }]
+            });
+
+            if (respCampusDataUser.status == "error") {
+              // USUARIO NO EXISTE EN CAMPUS VIRTUAL
+              console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+            }
+            else {
+              console.log(">>[CampusVirtual]: El usuario ya existe. Actualización de datos datos.");
+              singleUserLoadContent.id = respCampusDataUser.user._id.toString();
+              console.log(singleUserLoadContent.id);
+            }
             const respUser = await userService.insertOrUpdate(singleUserLoadContent);
             userLoadResponse.push(respUser);
             if (respUser.status == 'error') {
@@ -255,7 +271,7 @@ class TeacherService {
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            ...userLoadResponse
+            ...processResultLog
           }
         })
 
@@ -263,12 +279,14 @@ class TeacherService {
       else {
         // Return Error
         console.log('Empty Doc:  "base docentes y tutores"');
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'teacher_upload.empty_file', params: { sheetname: sheetname } } });
       }
       //#endregion dataWSDocentes
-
     }
     catch (e) {
-      return responseUtility.buildResponseFailed('json', e)
+      console.log('Error: ' + e);
+
+      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'teacher_upload.failed_upload', params: { error: e } } });
     }
     //#endregion   dataWSDocente
 
