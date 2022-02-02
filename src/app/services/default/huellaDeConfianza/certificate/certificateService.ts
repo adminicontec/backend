@@ -22,7 +22,7 @@ import { completionstatusService } from '@scnode_app/services/default/admin/comp
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { certificate_setup, program_type_collection, program_type_abbr, certificate_template } from '@scnode_core/config/globals';
+import { certificate_setup, program_type_collection, program_type_abbr, certificate_template, certificate_type } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
@@ -233,7 +233,7 @@ class CertificateService {
         //#endregion Error control
 
         console.log("Modalidad: " + respCourse.scheduling.schedulingMode.name.toLowerCase());
-        console.log("General Grade and Completion for " + respDataUser.user.profile.first_name);
+        console.log("General Grade and Completion for " + respDataUser.user.profile.full_name);
 
         //#region  Grades for UserName
         let average = 0;
@@ -256,6 +256,9 @@ class CertificateService {
         console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
         //#endregion Completion percentage
 
+        studentProgress.average_grade = average;
+        studentProgress.completion = Math.round(completionPercentage * 100);
+
         if (studentProgress.completion == 100) {
           if (studentProgress.average_grade >= 70) {
             mapping_dato_1 = 'Asistió y aprobó el ' + programTypeName;
@@ -270,9 +273,6 @@ class CertificateService {
           // error
           return;
         }
-        studentProgress.average_grade = average;
-        studentProgress.completion = Math.round(completionPercentage * 100);
-
         console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
       }
       //#endregion Reglas para Formación Virtual
@@ -386,7 +386,7 @@ class CertificateService {
       certificateParamsArray.push({
         queueData: params,
         template: mapping_template,
-        certificateType: 'académico',
+        certificateType: certificate_type.academic,
         params: certificateParams,
       });
       console.log("[1]------------------------------------------");
@@ -428,7 +428,7 @@ class CertificateService {
             userId: params.userId, // Nombre de usario
             courseId: params.courseId
           },
-          certificateType: 'auditor',
+          certificateType: certificate_type.auditor,
           template: mapping_template,
           params: auditorCertificateParams,
         });
@@ -796,7 +796,6 @@ class CertificateService {
 
       //#endregion Información del curso
 
-
       registers = await Enrollment.find(where)
         .select(select)
         .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
@@ -828,10 +827,16 @@ class CertificateService {
 
         console.log("=================================");
         console.log("[" + register.user.moodle_id + "] " + register.user.profile.full_name);
+
         //#region ::::::::::::::::: Reglas para Formación Virtual
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
 
-          const respUserGrades: any = await gradesService.fetchGrades({ courseID: register.courseID, userID: register.user.moodle_id });
+          //var filterByGrades = ['assign', 'quiz', 'forum']
+          const respUserGrades: any = await gradesService.fetchFinalGrades({
+            courseID: register.courseID,
+            userID: register.user.moodle_id,
+            filter: ['course']
+          });
           const respCompletionStatus: any = await completionstatusService.activitiesCompletion({ courseID: register.courseID, userID: register.user.moodle_id });
 
           //#region Error control
@@ -846,7 +851,7 @@ class CertificateService {
           }
           //#endregion Error control
 
-          console.log("General Grade and Completion for " + register.user.full_name);
+          console.log("General Grade and Completion for " + register.user.profile.full_name);
 
           //#region  Grades for UserName
           let average = 0;
@@ -869,6 +874,9 @@ class CertificateService {
           console.log("Avg: " + average + '\t|\t' + "Completion: " + completionPercentage);
           //#endregion Completion percentage
 
+          studentProgress.average_grade = average;
+          studentProgress.completion = Math.round(completionPercentage * 100);
+
           if (studentProgress.completion == 100) {
             if (studentProgress.average_grade >= 70) {
               studentProgress.attended_approved = 'Asistió y aprobó';
@@ -877,16 +885,15 @@ class CertificateService {
               studentProgress.attended_approved = 'Asistió';
             }
             studentProgress.auditor = isAuditorCerficateEnabled;
+            studentProgress.status = 'ok';
           }
           else {
             studentProgress.attended_approved = 'No aprobó';
+            studentProgress.status = 'no';
           }
-          studentProgress.status = 'ok';
-          studentProgress.average_grade = average;
-          studentProgress.completion = Math.round(completionPercentage * 100);
 
           register.progress = studentProgress;
-          console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
+          console.log("--> " + register.user.profile.full_name + " " + studentProgress.attended_approved);
         }
         //#endregion Reglas para Formación Virtual
 
@@ -949,15 +956,20 @@ class CertificateService {
               studentProgress.attended_approved = 'Asistió';
             }
             studentProgress.auditor = isAuditorCerficateEnabled;
+            studentProgress.status = 'ok';
           }
           else {
-            if (flagAssistanceCount > 0)
+            if (flagAssistanceCount > 0) {
               studentProgress.attended_approved = 'Asistencia parcial';
-            else
+              studentProgress.status = 'ok';
+
+            }
+            else {
               studentProgress.attended_approved = 'No asistió';
+              studentProgress.status = 'no';
+            }
           }
 
-          studentProgress.status = 'ok';
           studentProgress.assistance = flagAssistance;
           studentProgress.quizGrade = flagQuiz;
           register.progress = studentProgress;
@@ -965,6 +977,7 @@ class CertificateService {
         }
         //#endregion Reglas para Formación Presencial y en Línea
 
+        //#region Add certification to response
         if (filters.check_certification) {
           const certificate = await CertificateQueue.findOne({
             userId: register.user._id,
@@ -990,6 +1003,7 @@ class CertificateService {
         }
         listOfStudents.push(register);
         count++
+        //#endregion Add certification to response
 
         // console.log('+++++++++++++++++++++++++');
         // console.log(register);

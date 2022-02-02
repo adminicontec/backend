@@ -5,6 +5,6 @@
 export interface IMoodleGradesQuery {
   courseID?: string,    // ID de curso (listado de cursos en Moodle)
   userID?: string,       // ID de estudiante en Moodle
-  filter?: [string]
+  filter?: string[]
 }
 //@end

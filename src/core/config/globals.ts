@@ -109,4 +109,9 @@ export const certificate_template = {
   convenio_doble_logo: 'CP00000004',
   parcial: 'CP00000005',
 }
+
+export const certificate_type = {
+  academic: 'academic',
+  auditor: 'auditor',
+}
 //#endregion
