@@ -174,17 +174,20 @@ class GradesService {
             }
           });
       }
+      console.log('search by:');
+      console.log(select);
 
       respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
-        const gradeSearch = select.find(field => field == element.itemmodule);
 
-        if (gradeSearch != null) {
+        const gradeSearch = select.find(field => field == element.itemmodule);
+        console.log(gradeSearch);
+        if (gradeSearch) {
 
           singleGrade = {
             id: element.id,
             name: element.itemname,
-            itemmodule: element.itemmodule,
             itemtype: element.itemtype,
+            itemmodule: element.itemmodule,
             cmid: element.cmid,
             graderaw: element.graderaw,
             grademin: element.grademin,
@@ -194,6 +197,107 @@ class GradesService {
           responseGrades.push(singleGrade);
         }
       });
+
+      console.log('Response: ');
+      console.log(responseGrades);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          grades: responseGrades
+        }
+      })
+
+    } catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
+    }
+
+  }
+
+  public fetchFinalGrades = async (params: IMoodleGradesQuery) => {
+    try {
+
+      var select = ['course'];
+      //var select = params.filter;
+
+      let responseGrades = [];
+      let singleGrade = {
+        id: 0,
+        name: '',
+        itemtype: '',
+        itemmodule: '',
+        cmid: 0,
+        graderaw: 0,
+        grademin: 0,
+        grademax: 0,
+      }
+
+      let courseID;
+      let userID
+
+      // take any of params as Moodle query filter
+      if (params.courseID && params.userID) {
+        courseID = params.courseID;
+        userID = params.userID;
+        //console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
+      }
+      else {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
+      }
+
+      let moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.gradeReport,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': courseID,
+        'userid': userID,
+      };
+
+      let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+
+      if (respMoodleEvents.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'grades.moodle_exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
+            }
+          });
+      }
+      console.log('search by:');
+      console.log(select);
+
+      respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
+
+        const gradeSearch = select.find(field => field == element.itemtype);
+        if (gradeSearch) {
+          singleGrade = {
+            id: element.id,
+            name: element.itemname,
+            itemtype: element.itemtype,
+            itemmodule: element.itemmodule,
+            cmid: element.cmid,
+            graderaw: element.graderaw,
+            grademin: element.grademin,
+            grademax: element.grademax
+          };
+
+          responseGrades.push(singleGrade);
+        }
+      });
+
+      console.log('Response: ');
+      console.log(responseGrades);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

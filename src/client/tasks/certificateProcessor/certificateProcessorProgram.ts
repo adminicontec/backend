@@ -24,8 +24,6 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
-    let queuePreview = [];
-
     console.log("Init Task: Certificate Processor ");
 
     console.log("Get all items on Certificate Queue [new and re-issue status]")
@@ -56,19 +54,17 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
           console.log("¡Error al generar certificado!");
           console.log(respSetCertificate);
         }
+        else {
+          console.log("----------- END Process Set Certificate --------------------");
+          console.log("Certificate generation successful!");
+          respSetCertificate.respProcessSetCertificates.forEach(element => {
+            console.log("..................");
+            console.log(element.certificateQueue);
+          });
+          console.log("---------------------- ----------- ----------- ----------- --------------------");
+        }
 
-        console.log("¡Certificado generado con éxito!");
-        // console.log(respSetCertificate);
-        // console.log(respSetCertificate.responseHC.certificado);
-
-        queuePreview.push({
-          certificate_queue: element._id.toString(),
-          hash: respSetCertificate.responseHC.certificado,
-          format: 2,
-          template: 1,
-          updateCertificate: true,
-        });
-      };
+      }
 
     }
     else {

@@ -101,4 +101,17 @@ export const program_type_abbr = {
   curso_auditor: 'CA',
   sensibilizacion: 'SE'
 };
+
+export const certificate_template = {
+  curso: 'CP00000001',
+  programa_diplomado: 'CP00000002',
+  convenio_doble_logo_doble_firma: 'CP00000003',
+  convenio_doble_logo: 'CP00000004',
+  parcial: 'CP00000005',
+}
+
+export const certificate_type = {
+  academic: 'academic',
+  auditor: 'auditor',
+}
 //#endregion

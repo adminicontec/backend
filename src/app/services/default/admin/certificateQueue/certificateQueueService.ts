@@ -75,10 +75,16 @@ class CertificateQueueService {
 
     try {
       if (params.id) {
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        console.log("UPDATE certificate queue");
+        console.log(params);
+
         const register = await CertificateQueue.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
 
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
@@ -90,11 +96,13 @@ class CertificateQueueService {
         })
 
       } else {
-        console.log("Insert certificate queue");
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        console.log("INSERT certificate queue");
         console.log(params);
 
         let totalResponse = [];
 
+        // Multiple request from List in front
         for await (const userId of params.users) {
 
           const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId })
@@ -104,34 +112,52 @@ class CertificateQueueService {
             courseId: params.courseId,
             userId: userId,
             status: params.status,
-            certificateType: '',
+            certificateType: params.certificateType,
             certificateModule: ''
-           });
+          });
 
-           let certificateQueueResponse = {
+          let certificateQueueResponse = {
             _id: response.id,
             courseId: response.courseId,
             userId: response.userId,
-            certificateType: response.certificateType,
-            certificateModule: response.certificateModule,
+            // certificateType: response.certificateType,
+            // certificateModule: response.certificateModule,
             status: response.status
           }
-          totalResponse.push(certificateQueueResponse);
+
+          if (params.users.length == 1){
+            return responseUtility.buildResponseSuccess('json', null, {
+              additional_parameters: {
+                certificateQueue: certificateQueueResponse
+              }
+            });
+          }
+          else
+            totalResponse.push(certificateQueueResponse);
 
         };
 
-        // const exist = await CertificateQueue.findOne({ userid: params.userId, courseid: params.courseId })
-        // if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: params.userId, courseid: params.courseId } } })
-
-        // const response: any = await CertificateQueue.create(params)
-
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
               totalResponse
             }
           }
-        })
+        });
+
+        // const exist = await CertificateQueue.findOne({ userid: params.userId, courseid: params.courseId })
+        // if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: params.userId, courseid: params.courseId } } })
+
+        // const response: any = await CertificateQueue.create(params)
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            certificateQueue: {
+              totalResponse
+            }
+          }
+        });
       }
 
     } catch (e) {
@@ -141,7 +167,6 @@ class CertificateQueueService {
             process: 'insertOrUpdate()',
             error: e.message
           }
-
         })
     }
   }
