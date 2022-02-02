@@ -60,6 +60,13 @@ export interface ICertificate {
   }
 }
 
+export interface ISetCertificateParams {
+  queueData: IQueryUserToCertificate,
+  template: string,
+  certificateType: string,
+  params: ICertificate,
+}
+
 export interface ICertificateQueueQuery {
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina
@@ -90,7 +97,7 @@ export interface ICertificateQueue {
   }
 }
 
-export interface ICertificatePreview{
+export interface ICertificatePreview {
   certificate_queue?: string;
   hash: string,
   format: number,
@@ -124,10 +131,10 @@ export interface ICertificateCompletion {
   without_certification?: boolean
   check_certification?: boolean,
 
-  pageNumber?:string, // Numero de pagina
-  nPerPage?:string, // Cantidad de elementos por pagina
+  pageNumber?: string, // Numero de pagina
+  nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
-  search?:string, // Busca sobre los campos de la coleccion
+  search?: string, // Busca sobre los campos de la coleccion
 
 }
 //@end
