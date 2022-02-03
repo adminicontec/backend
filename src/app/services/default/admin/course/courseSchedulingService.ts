@@ -63,7 +63,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -139,8 +139,16 @@ class CourseSchedulingService {
           register.certificate_icon_2 = this.getIconUrl(register.certificate_icon_2)
         }
 
-        if (register.certificate_icon_3) {
-          register.certificate_icon_3 = this.getIconUrl(register.certificate_icon_3)
+        if (register.signature_1) {
+          register.signature_1 = this.getIconUrl(register.signature_1)
+        }
+
+        if (register.signature_2) {
+          register.signature_2 = this.getIconUrl(register.signature_2)
+        }
+
+        if (register.signature_3) {
+          register.signature_3 = this.getIconUrl(register.signature_3)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -204,6 +212,7 @@ class CourseSchedulingService {
       steps.push('6')
       steps.push(params)
 
+      // @INFO Logotipos
       if (files && files.icon_1_file && typeof files.icon_1_file === 'object') {
         const response_upload: any = await uploadService.uploadFile(files.icon_1_file, this.default_icon_path);
         if (response_upload.status === 'error') return response_upload;
@@ -216,10 +225,23 @@ class CourseSchedulingService {
         if (response_upload.hasOwnProperty('name')) params.certificate_icon_2 = response_upload.name
       }
 
-      if (files && files.icon_3_file && typeof files.icon_3_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.icon_3_file, this.default_icon_path);
+      // @INFO firmas
+      if (files && files.signature_1_file && typeof files.signature_1_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.signature_1_file, this.default_icon_path);
         if (response_upload.status === 'error') return response_upload;
-        if (response_upload.hasOwnProperty('name')) params.certificate_icon_3 = response_upload.name
+        if (response_upload.hasOwnProperty('name')) params.signature_1 = response_upload.name
+      }
+
+      if (files && files.signature_2_file && typeof files.signature_2_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.signature_2_file, this.default_icon_path);
+        if (response_upload.status === 'error') return response_upload;
+        if (response_upload.hasOwnProperty('name')) params.signature_2 = response_upload.name
+      }
+
+      if (files && files.signature_3_file && typeof files.signature_3_file === 'object') {
+        const response_upload: any = await uploadService.uploadFile(files.signature_3_file, this.default_icon_path);
+        if (response_upload.status === 'error') return response_upload;
+        if (response_upload.hasOwnProperty('name')) params.signature_3 = response_upload.name
       }
 
       if (params.id) {
@@ -323,8 +345,16 @@ class CourseSchedulingService {
           response.certificate_icon_2 = this.getIconUrl(response.certificate_icon_2)
         }
 
-        if (response.certificate_icon_3) {
-          response.certificate_icon_3 = this.getIconUrl(response.certificate_icon_3)
+        if (register.signature_1) {
+          register.signature_1 = this.getIconUrl(register.signature_1)
+        }
+
+        if (register.signature_2) {
+          register.signature_2 = this.getIconUrl(register.signature_2)
+        }
+
+        if (register.signature_3) {
+          register.signature_3 = this.getIconUrl(register.signature_3)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -488,8 +518,16 @@ class CourseSchedulingService {
           response.certificate_icon_2 = this.getIconUrl(response.certificate_icon_2)
         }
 
-        if (response.certificate_icon_3) {
-          response.certificate_icon_3 = this.getIconUrl(response.certificate_icon_3)
+        if (response.signature_1) {
+          response.signature_1 = this.getIconUrl(response.signature_1)
+        }
+
+        if (response.signature_2) {
+          response.signature_2 = this.getIconUrl(response.signature_2)
+        }
+
+        if (response.signature_3) {
+          response.signature_3 = this.getIconUrl(response.signature_3)
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -1014,7 +1052,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3'
     if (filters.select) {
       select = filters.select
     }
@@ -1191,9 +1229,18 @@ class CourseSchedulingService {
           register.certificate_icon_2 = this.getIconUrl(register.certificate_icon_2)
         }
 
-        if (register.certificate_icon_3) {
-          register.certificate_icon_3 = this.getIconUrl(register.certificate_icon_3)
+        if (register.signature_1) {
+          register.signature_1 = this.getIconUrl(register.signature_1)
         }
+
+        if (register.signature_2) {
+          register.signature_2 = this.getIconUrl(register.signature_2)
+        }
+
+        if (register.signature_3) {
+          register.signature_3 = this.getIconUrl(register.signature_3)
+        }
+
         // if (register.teacher && register.teacher.profile) {
         //   register.teacher.fullname = `${register.teacher.profile.first_name} ${register.teacher.profile.last_name}`
         // }
@@ -1222,7 +1269,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3'
 
       let where = {}
 

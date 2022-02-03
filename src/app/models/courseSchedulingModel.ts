@@ -162,7 +162,13 @@ const CourseSchedulingSchema = new Schema({
   certificate_icon_2: {
     type: Schema.Types.String
   },
-  certificate_icon_3: {
+  signature_1: {
+    type: Schema.Types.String
+  },
+  signature_2: {
+    type: Schema.Types.String
+  },
+  signature_3: {
     type: Schema.Types.String
   },
   // Material delivery
