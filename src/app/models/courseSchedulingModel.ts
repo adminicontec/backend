@@ -96,7 +96,7 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Company",
   },
-  duration: {type: Schema.Types.Number},
+  duration: { type: Schema.Types.Number },
   in_design: {
     type: Schema.Types.Boolean,
     default: false
@@ -171,6 +171,9 @@ const CourseSchedulingSchema = new Schema({
   signature_3: {
     type: Schema.Types.String
   },
+  auditor_certificate: {
+    type: Schema.Types.String
+  },
   // Material delivery
   material_delivery: {
     type: Schema.Types.String,
@@ -199,13 +202,13 @@ const CourseSchedulingSchema = new Schema({
   }
   // @end
 }, {
-  collection: 'course_schedulings' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-CourseSchedulingSchema.plugin(mongoose_delete,{
-  deletedAt : true,
+CourseSchedulingSchema.plugin(mongoose_delete, {
+  deletedAt: true,
   overrideMethods: 'all',
   indexFields: 'all'
 });
