@@ -21,7 +21,7 @@ const AttachedCategorySchema = new Schema({
     limit_size_KB: {type: Schema.Types.Number},
     formats: [{
       type: Schema.Types.String,
-      enum: ['xlsx', 'png', 'jpg', 'gif', 'pdf', 'ppt']
+      enum: ['xlsx', 'png', 'jpg', 'gif', 'pdf', 'ppt', 'docx']
     }]
   }
   // @end
