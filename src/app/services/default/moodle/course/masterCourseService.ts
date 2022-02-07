@@ -42,7 +42,8 @@ class MasterCourseService {
       displayname: "",
       categoryid: 0,
       description: "",
-      classhours: ""
+      classhours: "",
+      auditorcertificate: ''
     }
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
@@ -67,6 +68,7 @@ class MasterCourseService {
       courses.forEach(courseDetail => {
 
         const customClassHours = courseDetail.customfields.find(el => el.shortname == 'programa_horas');
+        const customAuditorCertificate = courseDetail.customfields.find(el => el.shortname == 'certificado_auditor');
 
         // compose the final response object
         singleCourse = {
@@ -77,7 +79,8 @@ class MasterCourseService {
           displayname: courseDetail.displayname,
           categoryid: courseDetail.categoryid,
           description: courseDetail.summary,
-          classhours: customClassHours.value
+          classhours: customClassHours.value,
+          auditorcertificate: customAuditorCertificate.value
         }
         responseCourses.push(singleCourse);
 
