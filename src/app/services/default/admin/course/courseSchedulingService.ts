@@ -63,7 +63,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -76,9 +76,10 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
-          .populate({path: 'client', select: 'id name'})
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'client', select: 'id name' })
           .populate({ path: 'material_assistant', select: 'id profile' })
+          .populate({ path: 'auditor_modules', select: 'id course duration', populate: { path: 'course', select: 'id name ' } })
           .select(select)
           .lean()
 
@@ -99,9 +100,10 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
-          .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
-          .populate({path: 'client', select: 'id name'})
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'client', select: 'id name' })
           .populate({ path: 'material_assistant', select: 'id profile' })
+          .populate({ path: 'auditor_modules', select: 'id course duration', populate: { path: 'course', select: 'id name moodle_id ' } })
           .select(select)
           .lean()
 
@@ -278,11 +280,11 @@ class CourseSchedulingService {
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
         await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
-        await User.populate(response, {path: 'account_executive', select: 'id profile.first_name profile.last_name email'})
+        await User.populate(response, { path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
-        await Company.populate(response, { path: 'client', select: 'id name'})
+        await Company.populate(response, { path: 'client', select: 'id name' })
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
@@ -427,7 +429,7 @@ class CourseSchedulingService {
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
-          .populate({ path: 'client', select: 'id name'})
+          .populate({ path: 'client', select: 'id name' })
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
@@ -1085,33 +1087,33 @@ class CourseSchedulingService {
         return accum
       }, [])
       where.push({
-          $match: {
-            program: { $in: program_ids.map((p) => ObjectID(p)) }
-          }
+        $match: {
+          program: { $in: program_ids.map((p) => ObjectID(p)) }
+        }
       })
     }
 
-    if (filters.schedulingType) where.push({$match: {schedulingType: ObjectID(filters.schedulingType)}})
-    if (filters.schedulingStatus) where.push({$match: {schedulingStatus: ObjectID(filters.schedulingStatus)}})
-    if (filters.schedulingMode) where.push({$match: {schedulingMode: ObjectID(filters.schedulingMode)}})
-    if (filters.regional) where.push({$match: {regional: ObjectID(filters.regional)}})
+    if (filters.schedulingType) where.push({ $match: { schedulingType: ObjectID(filters.schedulingType) } })
+    if (filters.schedulingStatus) where.push({ $match: { schedulingStatus: ObjectID(filters.schedulingStatus) } })
+    if (filters.schedulingMode) where.push({ $match: { schedulingMode: ObjectID(filters.schedulingMode) } })
+    if (filters.regional) where.push({ $match: { regional: ObjectID(filters.regional) } })
     // if (filters.client) where.push({$match: {client: { $regex: '.*' + filters.client + '.*', $options: 'i' }}})
     if (filters.client) {
-      const companies = await Company.find({name: { $regex: '.*' + filters.client + '.*', $options: 'i' }}).select('id name')
+      const companies = await Company.find({ name: { $regex: '.*' + filters.client + '.*', $options: 'i' } }).select('id name')
       const company_ids = companies.reduce((accum, element) => {
         accum.push(element._id)
         return accum
       }, [])
       where.push({
-          $match: {
-            client: { $in: company_ids.map((p) => ObjectID(p)) }
-          }
+        $match: {
+          client: { $in: company_ids.map((p) => ObjectID(p)) }
+        }
       })
     }
-    if (filters.modular) where.push({$match: {modular: ObjectID(filters.modular)}})
-    if (filters.account_executive) where.push({$match: {account_executive: ObjectID(filters.account_executive)}})
-    if (filters.start_date) where.push({$match: {startDate: {$gte: new Date(filters.start_date)}}})
-    if (filters.end_date) where.push({$match: {endDate: {$lte: new Date(filters.end_date)}}})
+    if (filters.modular) where.push({ $match: { modular: ObjectID(filters.modular) } })
+    if (filters.account_executive) where.push({ $match: { account_executive: ObjectID(filters.account_executive) } })
+    if (filters.start_date) where.push({ $match: { startDate: { $gte: new Date(filters.start_date) } } })
+    if (filters.end_date) where.push({ $match: { endDate: { $lte: new Date(filters.end_date) } } })
 
 
     // if (filters.user) {
@@ -1128,7 +1130,7 @@ class CourseSchedulingService {
             foreignField: "_id",
             as: "course_doc"
           }
-        },{
+        }, {
           $match: {
             "course_doc.name": { $regex: '.*' + filters.program_course_name + '.*', $options: 'i' }
           }
@@ -1150,8 +1152,8 @@ class CourseSchedulingService {
 
       if (programsId.length) {
         where.push({
-          $match:{
-            $or : [
+          $match: {
+            $or: [
               {
                 _id: { $in: programsId }
               },
@@ -1174,9 +1176,9 @@ class CourseSchedulingService {
     try {
       if (where.length) {
         registers = await CourseScheduling.aggregate(where)
-        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-        .limit(paging ? nPerPage : null)
-        .sort({ startDate: -1 })
+          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          .limit(paging ? nPerPage : null)
+          .sort({ startDate: -1 })
         await CourseScheduling.populate(registers, [
           { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
           { path: 'schedulingMode', select: 'id name moodle_id' },
@@ -1187,30 +1189,30 @@ class CourseSchedulingService {
           { path: 'regional', select: 'id name' },
           { path: 'city', select: 'id name' },
           { path: 'country', select: 'id name' },
-          {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
-          { path: 'client', select: 'id name'},
-          { path: 'material_assistant', select: 'id profile'},
+          { path: 'account_executive', select: 'id profile.first_name profile.last_name' },
+          { path: 'client', select: 'id name' },
+          { path: 'material_assistant', select: 'id profile' },
         ])
       } else {
         registers = await CourseScheduling.find({})
-        .select(select)
-        .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'modular', select: 'id name' })
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .populate({ path: 'schedulingType', select: 'id name' })
-        .populate({ path: 'schedulingStatus', select: 'id name' })
-        .populate({ path: 'regional', select: 'id name' })
-        .populate({ path: 'city', select: 'id name' })
-        .populate({ path: 'country', select: 'id name' })
-        // .populate({path: 'course', select: 'id name'})
-        .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
-        .populate({path: 'client', select: 'id name'})
-        .populate({ path: 'material_assistant', select: 'id profile' })
-        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-        .limit(paging ? nPerPage : null)
-        .sort({ startDate: -1 })
-        .lean()
+          .select(select)
+          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'modular', select: 'id name' })
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingType', select: 'id name' })
+          .populate({ path: 'schedulingStatus', select: 'id name' })
+          .populate({ path: 'regional', select: 'id name' })
+          .populate({ path: 'city', select: 'id name' })
+          .populate({ path: 'country', select: 'id name' })
+          // .populate({path: 'course', select: 'id name'})
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'client', select: 'id name' })
+          .populate({ path: 'material_assistant', select: 'id profile' })
+          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          .limit(paging ? nPerPage : null)
+          .sort({ startDate: -1 })
+          .lean()
       }
 
       for await (const register of registers) {
@@ -1401,7 +1403,7 @@ class CourseSchedulingService {
               // { path: 'schedulingType', select: 'id name' },
               // { path: 'schedulingStatus', select: 'id name' },
               { path: 'regional', select: 'id name' },
-              { path: 'client', select: 'id name'}
+              { path: 'client', select: 'id name' }
 
               // { path: 'city', select: 'id name' },
               // { path: 'country', select: 'id name' },

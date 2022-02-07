@@ -274,8 +274,8 @@ class GradesService {
             }
           });
       }
-      console.log('search by:');
-      console.log(select);
+      // console.log('search by:');
+      // console.log(select);
 
       respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
 
@@ -296,8 +296,8 @@ class GradesService {
         }
       });
 
-      console.log('Response: ');
-      console.log(responseGrades);
+      // console.log('Response: ');
+      // console.log(responseGrades);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

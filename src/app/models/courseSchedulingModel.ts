@@ -174,6 +174,12 @@ const CourseSchedulingSchema = new Schema({
   auditor_certificate: {
     type: Schema.Types.String
   },
+  auditor_modules: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "CourseSchedulingDetails",
+      required: false
+    }],
   // Material delivery
   material_delivery: {
     type: Schema.Types.String,
