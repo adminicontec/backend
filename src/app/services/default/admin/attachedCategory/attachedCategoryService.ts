@@ -70,6 +70,15 @@ class AttachedCategoryService {
   public insertOrUpdate = async (params: IAttachedCategory) => {
 
     try {
+
+      let category: IAttachedCategory;
+      if (params.name) {
+        category = await AttachedCategory.findOne({ name: params.name })
+        if (category) {
+          params.id = category._id
+        }
+      }
+
       if (params.id) {
         const register = await AttachedCategory.findOne({_id: params.id})
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'attached_category.not_found'})
@@ -112,6 +121,7 @@ class AttachedCategoryService {
       }
 
     } catch (e) {
+      console.log(e);
       return responseUtility.buildResponseFailed('json')
     }
   }

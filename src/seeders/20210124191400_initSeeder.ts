@@ -1393,8 +1393,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         description: "Adjuntos para la ventana de programacion",
         config: {
           limit_files: 3,
-          formats: ['xlsx', 'pdf', 'ppt'],
-          limit_size_KB: 100
+          formats: ['xlsx', 'pdf', 'ppt', 'docx'],
+          limit_size_KB: 1000
         }
       }
     ];
