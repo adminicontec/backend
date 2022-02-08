@@ -408,6 +408,7 @@ class CertificateService {
       // console.log(respCourse);
       // console.log("---------------------");
 
+
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
         // get modules need to process Second certificate
@@ -447,8 +448,6 @@ class CertificateService {
         else {
           // error
         }
-        //console.log('Rules for on Site-Online Mode:');
-        //console.log(onSiteOnlineResult);
         console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
       }
       //#endregion Reglas para Formación Presencial y en Línea
@@ -551,8 +550,6 @@ class CertificateService {
         console.log("Set Auditor Certificate: ");
         console.log(certificateParams);
         console.log("[2]------------------------------------------");
-
-        // console.log(certificateParams);
       }
       // Request to Create Certificate(s)
       let respProcessSetCertificates: any = await this.requestSetCertificate(certificateParamsArray);
@@ -747,8 +744,6 @@ class CertificateService {
 
       studentProgress.assistance = flagAssistance;
       studentProgress.quizGrade = flagQuiz;
-      //register.progress = studentProgress;
-      //console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
       return studentProgress;
     }
     catch (ex) {
@@ -808,7 +803,9 @@ class CertificateService {
         certificateType: certificateReq.certificateType,
         certificate: {
           hash: respHuella.resultado.certificado,
-          url: respHuella.resultado.url
+          url: respHuella.resultado.url,
+          title: certificateReq.params.certificado,
+          date: certificateReq.params.fecha_aprobacion
         }
       });
 

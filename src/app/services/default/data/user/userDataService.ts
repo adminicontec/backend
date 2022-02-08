@@ -72,7 +72,7 @@ class UserDataService {
           accum.push({
             key: element?._id,
             _id: element?._id,
-            title: element?.courseId?.program?.name ||  '',
+            title: element?.certificate.title ||  '',
             date: moment(element.created_at).format('YYYY-MM-DD'),
             hash: element?.certificate?.hash,
             url: element?.certificate?.url,

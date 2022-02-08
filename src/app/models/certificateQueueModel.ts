@@ -42,6 +42,14 @@ const CertificateQueueSchema = new Schema({
       type: Schema.Types.String,
       required: false
     },
+    title: {
+      type: Schema.Types.String,
+      required: false
+    },
+    date: {
+      type: Schema.Types.Date,
+      required: false
+    },
     imagePath: {
       type: Schema.Types.String,
       required: false
