@@ -205,6 +205,10 @@ const CourseSchedulingSchema = new Schema({
   attachments: {
     type: Schema.Types.ObjectId,
     ref: 'Attached'
+  },
+  attachments_student: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached'
   }
   // @end
 }, {
