@@ -49,6 +49,7 @@ export interface ICourseScheduling {
   signature_1?: string
   signature_2?: string
   signature_3?: string
+  auditor_modules?: string | Array<string>
 }
 
 export interface ICourseSchedulingDelete {

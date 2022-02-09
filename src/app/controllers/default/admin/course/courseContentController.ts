@@ -32,6 +32,11 @@ class CourseContentController {
 		const response = await courseContentService.list(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public moduleList = async (req: Request, res: Response) => {
+		const response = await courseContentService.moduleList(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const courseContentController = new CourseContentController();

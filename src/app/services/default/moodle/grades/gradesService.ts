@@ -134,6 +134,7 @@ class GradesService {
         name: '',
         itemtype: '',
         itemmodule: '',
+        iteminstance: 0,
         cmid: 0,
         graderaw: 0,
         grademin: 0,
@@ -174,13 +175,9 @@ class GradesService {
             }
           });
       }
-      console.log('search by:');
-      console.log(select);
-
       respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
-
         const gradeSearch = select.find(field => field == element.itemmodule);
-        console.log(gradeSearch);
+        //console.log(gradeSearch);
         if (gradeSearch) {
 
           singleGrade = {
@@ -188,6 +185,7 @@ class GradesService {
             name: element.itemname,
             itemtype: element.itemtype,
             itemmodule: element.itemmodule,
+            iteminstance: element.iteminstance,
             cmid: element.cmid,
             graderaw: element.graderaw,
             grademin: element.grademin,
@@ -197,9 +195,8 @@ class GradesService {
           responseGrades.push(singleGrade);
         }
       });
-
-      console.log('Response: ');
-      console.log(responseGrades);
+      // console.log('Response: ');
+      // console.log(responseGrades);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

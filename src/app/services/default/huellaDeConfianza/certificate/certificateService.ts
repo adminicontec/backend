@@ -16,8 +16,9 @@ import { courseSchedulingService } from '@scnode_app/services/default/admin/cour
 import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService'
-import { calendarEventsService } from '@scnode_app/services/default/moodle/calendarEvents/calendarEventsService'
 import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService'
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService'
+
 // @end
 
 // @import utilities
@@ -41,6 +42,8 @@ import {
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UpdateCACertificateParams } from "aws-sdk/clients/iot";
 import { certificatePreviewProcessorProgram } from "client/tasks/certificateProcessor/certificatePreviewProcessorProgram";
+import { AnyLengthString } from "aws-sdk/clients/comprehendmedical";
+import { Console } from "console";
 // @end
 
 class CertificateService {
@@ -169,12 +172,18 @@ class CertificateService {
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
       // console.log("*********************");
-      // console.log(respCourse.scheduling.program.name);
-      // console.log(respCourse.scheduling.schedulingMode.name);
+      // respCourseDetails.schedulings.forEach(element => {
+      //   console.log(element.course);
+      // });
       // console.log("*********************");
 
       // Tipo de
       const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+
+
+      // console.log("---------------------\n\r" + 'El contenido del ' + programType);
+      // console.log(respCourseDetails.schedulings);
+      // console.log('_______________________________________________________');
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
@@ -233,15 +242,30 @@ class CertificateService {
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
           respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
 
-          let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null);
+          var selectActivities = ['attendance', 'quiz'];
+          const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: selectActivities });
+
+          console.log('Grades and Assistances for ' + register.user.profile.full_name + ' in ' + respCourse.scheduling.schedulingMode.name);
+          let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
+            respListOfActivitiesInModules.courseModules);
           if (onSiteOnlineResult) {
             register.progress = onSiteOnlineResult;
+
+            if (onSiteOnlineResult.status == 'ok') {
+              // mapping_dato_1 = onSiteOnlineResult.attended_approved;
+            }
+            else if (onSiteOnlineResult.status == 'partial') {
+              // Certificado Parcial
+              console.log('CERT PARCIAL. módulos aprobados:');
+              console.log(onSiteOnlineResult.approved_modules);
+            }
+
           }
           else {
             // error
           }
-          console.log('Rules for on Site-Online Mode:');
-          console.log(onSiteOnlineResult);
+          // console.log('Rules for on Site-Online Mode:');
+          // console.log(onSiteOnlineResult);
         }
         //#endregion Reglas para Formación Presencial y en Línea
 
@@ -350,6 +374,7 @@ class CertificateService {
 
       let mapping_dato_1 = '';
       let mapping_template = '';
+      let mapping_titulo_certificado = '';
       let mapping_pais = respCourse.scheduling.country.name;
       let mapping_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
       let mapping_listado_cursos = '';
@@ -368,13 +393,13 @@ class CertificateService {
 
       let programTypeName = '';
       let isAuditorCerficateEnabled = false;
-      let studentProgress = {
-        average_grade: null,
-        completion: null,
-        assistance: null,
-        quizGrade: null,
-        auditor: false
-      };
+      // let studentProgress = {
+      //   average_grade: null,
+      //   completion: null,
+      //   assistance: null,
+      //   quizGrade: null,
+      //   auditor: false
+      // };
 
       //#region Tipo de programa
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
@@ -391,22 +416,12 @@ class CertificateService {
       }
       //#endregion Tipo de programa
 
-      //#region Listado de Módulos (cursos) que comprende el programa <li>
-      if (respCourseDetails.schedulings) {
-        mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-        mapping_listado_cursos += '<ul>'
-        respCourseDetails.schedulings.forEach(element => {
-          mapping_listado_cursos += '<li>' + element.course.name + '</li>';
-        });
-        mapping_listado_cursos += '</ul>'
-      }
-      //#endregion
-
       // console.log(programTypeName);
       // console.log("---------------------");
       // console.log(respDataUser);
       // console.log(respCourse);
       // console.log("---------------------");
+
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
@@ -434,21 +449,59 @@ class CertificateService {
       if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
         respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
 
-        let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(respCourse.scheduling.moodle_id, respDataUser.user.moodle_id, programTypeName);
+        var selectActivities = ['attendance', 'quiz'];
+        const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: respCourse.scheduling.moodle_id, moduleType: selectActivities });
+
+        let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(respCourse.scheduling.moodle_id, respDataUser.user.moodle_id,
+          programTypeName, respListOfActivitiesInModules.courseModules);
         if (onSiteOnlineResult) {
 
-          if (onSiteOnlineResult.status == 'ok')
+          if (onSiteOnlineResult.status == 'ok') {
             mapping_dato_1 = onSiteOnlineResult.attended_approved;
-            else if(onSiteOnlineResult.status == 'partial'){
-              // Certificado Parcial
 
+            mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
+            //#region Listado de Módulos (cursos) que comprende el programa <li>
+            // console.log("---------------------\n\r" + 'El contenido del ' + programTypeName);
+            // console.log(respCourseDetails.schedulings);
+            if (respCourseDetails.schedulings) {
+              mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
+              mapping_listado_cursos += '<ul>'
+              respCourseDetails.schedulings.forEach(element => {
+                mapping_listado_cursos += '<li>' + element.course.name + '</li>';
+              });
+              mapping_listado_cursos += '</ul>'
             }
+            //#endregion
+
+          }
+          else if (onSiteOnlineResult.status == 'partial') {
+            // Certificado Parcial
+            let certificateName = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
+            console.log('módulos aprobados:');
+            console.log(onSiteOnlineResult.approved_modules);
+
+            isAuditorCerficateEnabled = false; // deshabilita la solicitud de CertAuditor en caso que aplique
+
+            mapping_template = certificate_template.parcial;
+            mapping_dato_1 = 'Asistió a los cursos de';
+            mapping_titulo_certificado = 'CORRESPONDIENTE AL ' + certificateName + ', CUYA DURACIÓN TOTAL ES DE ' + generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration).toUpperCase();
+
+            //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
+            if (onSiteOnlineResult.approved_modules) {
+              //mapping_listado_cursos = 'Asistió a los cursos de<br/>';
+              mapping_listado_cursos = '<ul>'
+              onSiteOnlineResult.approved_modules.forEach(element => {
+                mapping_listado_cursos += '<li>' + element + '</li>';
+              });
+              mapping_listado_cursos += '</ul>'
+            }
+            //#endregion
+
+          }
         }
         else {
           // error
         }
-        //console.log('Rules for on Site-Online Mode:');
-        //console.log(onSiteOnlineResult);
         console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
       }
       //#endregion Reglas para Formación Presencial y en Línea
@@ -467,7 +520,7 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.full_name.toUpperCase(), // + " " + respDataUser.user.profile.last_name.toUpperCase(),
         asistio: null,
-        certificado: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+        certificado: mapping_titulo_certificado, //(respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
         certificado_ingles: '', // respCourse.scheduling.english_certificate,
         alcance: '', //respCourse.scheduling.scope,
         alcance_ingles: '', //respCourse.scheduling.scope,
@@ -551,8 +604,6 @@ class CertificateService {
         console.log("Set Auditor Certificate: ");
         console.log(certificateParams);
         console.log("[2]------------------------------------------");
-
-        // console.log(certificateParams);
       }
       // Request to Create Certificate(s)
       let respProcessSetCertificates: any = await this.requestSetCertificate(certificateParamsArray);
@@ -643,7 +694,7 @@ class CertificateService {
         studentProgress.status = 'ok';
       }
       else {
-        studentProgress.attended_approved = 'No aprobó.';
+        studentProgress.attended_approved = 'No se certifica.';
         studentProgress.status = 'no';
       }
       return studentProgress;
@@ -655,7 +706,10 @@ class CertificateService {
 
   }
 
-  private rulesForOnSiteOnlineMode = async (moodleCourseID: string, moodleUserID: string, programTypeName: string) => {
+  private rulesForOnSiteOnlineMode = async (moodleCourseID: string, moodleUserID: string,
+    programTypeName: string,
+    respListOfActivitiesInModules: any[]) => {
+
     let studentProgress = {
       status: '',
       attended_approved: '',
@@ -663,10 +717,16 @@ class CertificateService {
       completion: null,
       assistance: null,
       quizGrade: null,
+      approved_modules: [],
       auditor: false
     }
-
     try {
+      // respListOfActivitiesInModules.forEach(element => {
+      //   console.log("..............................................")
+      //   console.log('* ' + element.sectionid + ' > ' + element.sectionname);
+      //   console.log('* ' + element.instance + ' - (' + element.modname + ') - ' + element.name);
+      // });
+
       // Presencial - Online
       // Asistencia >= 75
       const respUserAssistances: any = await gradesService.fetchGradesByFilter({
@@ -702,11 +762,15 @@ class CertificateService {
 
       for (const grade of respUserAssistances.grades) {
         if (grade.graderaw < 75) {
-          flagAssistance = false;
-          break;
+          continue;
         }
+        // search the Module name by ItemInstance in respListOfActivitiesInModules
+        let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString())
+        studentProgress.approved_modules.push(itemModule.sectionname);
         flagAssistanceCount++;
       }
+      if (flagAssistanceCount < respUserAssistances.grades.length)
+        flagAssistance = false;
       //#endregion  Grades for UserName
 
       //#region  Quiz:
@@ -735,25 +799,26 @@ class CertificateService {
       }
       else {
         if (flagAssistanceCount > 0) {
-          studentProgress.attended_approved = 'Asistencia parcial';
-
+          studentProgress.attended_approved = 'Certificado parcial.';
           studentProgress.status = 'partial';
         }
         else {
-          studentProgress.attended_approved = 'No asistió.';
+          studentProgress.attended_approved = 'No se certifica.';
           studentProgress.status = 'no';
         }
       }
 
       studentProgress.assistance = flagAssistance;
       studentProgress.quizGrade = flagQuiz;
-      //register.progress = studentProgress;
-      //console.log("-->" + register.user.profile.full_name + " " + studentProgress.attended_approved);
       return studentProgress;
     }
     catch (ex) {
 
     }
+  }
+
+  private rulesForAuditorCertificate = async (moodleCourseID: string, moodleUserID: string) => {
+
   }
 
   private requestSetCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
@@ -808,7 +873,9 @@ class CertificateService {
         certificateType: certificateReq.certificateType,
         certificate: {
           hash: respHuella.resultado.certificado,
-          url: respHuella.resultado.url
+          url: respHuella.resultado.url,
+          title: certificateReq.params.certificado,
+          date: certificateReq.params.fecha_aprobacion
         }
       });
 
