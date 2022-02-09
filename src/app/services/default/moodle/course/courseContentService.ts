@@ -87,6 +87,7 @@ class CourseContentService {
     let responseCourseModules = [];
     let singleModuleCourseContent = {
       id: 0,
+      sectionid: 0,
       sectionname: '',
       instance: 0,
       modname: '',
@@ -118,12 +119,15 @@ class CourseContentService {
     respMoodle.forEach(element => {
       if (element.section != 0) {
         element.modules.forEach(module => {
-
           const moduleSearch = params.moduleType.find(field => field == module.modname);
 
-          if (moduleSearch != null) {
+          if (moduleSearch) {
+            // console.log('--------------------');
+            // console.log(JSON.stringify(module, null, 2));
+            // console.log('--------------------');
             singleModuleCourseContent = {
               id: module.id,
+              sectionid: element.id,
               sectionname: element.name,
               name: module.name,
               modname: module.modname,
