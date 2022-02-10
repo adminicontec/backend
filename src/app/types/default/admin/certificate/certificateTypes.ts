@@ -28,6 +28,7 @@ export interface ICertificate {
   alcance_ingles?: string,
   intensidad: string,
   listado_cursos?: any,
+  regional: string,
   ciudad: string,
   pais: string,
   fecha_certificado: Date,
@@ -64,7 +65,9 @@ export interface ISetCertificateParams {
   queueData: IQueryUserToCertificate,
   template: string,
   certificateType: string,
-  params: ICertificate,
+  paramsHuella: ICertificate,
+  programName: string,
+  isComplete: boolean
 }
 
 export interface ICertificateQueueQuery {
