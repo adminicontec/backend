@@ -860,14 +860,14 @@ class CourseSchedulingService {
           mailer: customs['mailer'],
           service_id: register.program.name,
           service_code: register.metadata.service_id,
-          initDate: register.startDate,
+          initDate: moment(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
         const emails: string[] = ['davidblack20101@gmail.com'];
         const mail = await mailService.sendMail({
           emails,
           mailOptions: {
-            subject: i18nUtility.__('mailer.scheduling_update.subject'),
+            subject: i18nUtility.__('mailer.scheduling_material_delivery.subject'),
             html_template: {
               path_layout: 'icontec',
               path_template: path_template,
