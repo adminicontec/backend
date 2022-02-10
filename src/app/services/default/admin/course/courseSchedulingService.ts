@@ -311,6 +311,9 @@ class CourseSchedulingService {
           }
         }
 
+        // @INFO Enviar email de entrega de materiales en físico
+        await this.sendEmailMaterialDelivery(response, prevSchedulingStatus);
+
         let regional = null;
         if (response) {
           if (response.regional && response.regional.moodle_id) {
@@ -840,6 +843,50 @@ class CourseSchedulingService {
     //   })
     // }
     return changes
+  }
+
+  /**
+   * @INFO Enviar el email de entrega de material en fisico
+   * @param response
+   * @param prevSchedulingStatus
+   */
+  private sendEmailMaterialDelivery = async (register: any, prevSchedulingStatus?: string) => {
+    try {
+      const currentStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
+      if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
+        console.log('Enviar el email');
+        let path_template = 'course/schedulingMaterialDelivery';
+        const params = {
+          mailer: customs['mailer'],
+          service_id: register.program.name,
+          service_code: register.metadata.service_id,
+          initDate: register.startDate,
+          city: register.city.name
+        }
+        const emails: string[] = ['davidblack20101@gmail.com'];
+        const mail = await mailService.sendMail({
+          emails,
+          mailOptions: {
+            subject: i18nUtility.__('mailer.scheduling_update.subject'),
+            html_template: {
+              path_layout: 'icontec',
+              path_template: path_template,
+              params
+            },
+          },
+          notification_source: `course_material_delivery_${params.service_code}`
+        })
+        console.log('Respuesta send mail: ', mail)
+        return mail
+        // service_id
+        // service_code
+        // initDate
+        // city
+      }
+    }catch(e){
+      console.log('Error send email material delivery: ', e)
+      return responseUtility.buildResponseFailed('json', null)
+    }
   }
 
   private sendServiceSchedulingUpdated = async (courseScheduling, changes) => {

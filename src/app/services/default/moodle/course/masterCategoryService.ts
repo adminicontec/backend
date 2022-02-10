@@ -53,7 +53,7 @@ class MasterCategoryService {
       console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
       let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
-      console.log('respMoodle', respMoodle);
+      // console.log('respMoodle', respMoodle);
       if (respMoodle.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
         return responseUtility.buildResponseFailed('json', null,
