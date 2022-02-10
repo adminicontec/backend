@@ -171,9 +171,11 @@ class CertificateService {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
+
       // console.log("*********************");
       // respCourseDetails.schedulings.forEach(element => {
       //   console.log(element.course);
+      //   console.log(generalUtility.getDurationFormatedForCertificate(element.duration));
       // });
       // console.log("*********************");
 
@@ -246,8 +248,9 @@ class CertificateService {
           const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: selectActivities });
 
           console.log('Grades and Assistances for ' + register.user.profile.full_name + ' in ' + respCourse.scheduling.schedulingMode.name);
+
           let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
-            respListOfActivitiesInModules.courseModules);
+            respListOfActivitiesInModules.courseModules, respCourseDetails.schedulings);
           if (onSiteOnlineResult) {
             register.progress = onSiteOnlineResult;
 
@@ -257,7 +260,10 @@ class CertificateService {
             else if (onSiteOnlineResult.status == 'partial') {
               // Certificado Parcial
               console.log('CERT PARCIAL. módulos aprobados:');
-              console.log(onSiteOnlineResult.approved_modules);
+              for (const apprMod of onSiteOnlineResult.approved_modules) {
+                console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
+
+              }
             }
 
           }
@@ -372,8 +378,10 @@ class CertificateService {
       // 2. Tipo de programa
       let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
 
+      let isComplete = true;
       let mapping_dato_1 = '';
       let mapping_template = '';
+      let mapping_intensidad = 0;
       let mapping_titulo_certificado = '';
       let mapping_pais = respCourse.scheduling.country.name;
       let mapping_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
@@ -434,7 +442,9 @@ class CertificateService {
 
         let virtualResult = await this.rulesForVirtualMode(respCourse.scheduling.moodle_id, respDataUser.user.moodle_id, programTypeName);
         if (virtualResult) {
+          isComplete = true;
           mapping_dato_1 = virtualResult.attended_approved;
+          mapping_intensidad = respCourse.scheduling.duration;
         }
         else {
           // error
@@ -453,10 +463,12 @@ class CertificateService {
         const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: respCourse.scheduling.moodle_id, moduleType: selectActivities });
 
         let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(respCourse.scheduling.moodle_id, respDataUser.user.moodle_id,
-          programTypeName, respListOfActivitiesInModules.courseModules);
+          programTypeName, respListOfActivitiesInModules.courseModules, respCourseDetails.schedulings);
+
         if (onSiteOnlineResult) {
 
           if (onSiteOnlineResult.status == 'ok') {
+            isComplete = true;
             mapping_dato_1 = onSiteOnlineResult.attended_approved;
 
             mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
@@ -467,10 +479,13 @@ class CertificateService {
               mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
               mapping_listado_cursos += '<ul>'
               respCourseDetails.schedulings.forEach(element => {
-                mapping_listado_cursos += '<li>' + element.course.name + '</li>';
+                //mapping_listado_cursos += '<li>' + element.course.name + ' %28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
+                mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+                //mapping_listado_cursos += '<li>' + element.course.name + ' %28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
               });
               mapping_listado_cursos += '</ul>'
             }
+            mapping_intensidad = respCourse.scheduling.duration;
             //#endregion
 
           }
@@ -478,8 +493,11 @@ class CertificateService {
             // Certificado Parcial
             let certificateName = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
             console.log('módulos aprobados:');
-            console.log(onSiteOnlineResult.approved_modules);
+            for (const apprMod of onSiteOnlineResult.approved_modules) {
+              console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
+            }
 
+            isComplete = false;
             isAuditorCerficateEnabled = false; // deshabilita la solicitud de CertAuditor en caso que aplique
 
             mapping_template = certificate_template.parcial;
@@ -488,12 +506,17 @@ class CertificateService {
 
             //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
             if (onSiteOnlineResult.approved_modules) {
+
+              let finalDuration = 0;
               //mapping_listado_cursos = 'Asistió a los cursos de<br/>';
               mapping_listado_cursos = '<ul>'
               onSiteOnlineResult.approved_modules.forEach(element => {
-                mapping_listado_cursos += '<li>' + element + '</li>';
+                finalDuration += element.duration;
+                mapping_listado_cursos += `<li>${element.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+                //mapping_listado_cursos += '<li>' + element.name + '%28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
               });
               mapping_listado_cursos += '</ul>'
+              mapping_intensidad = finalDuration;
             }
             //#endregion
 
@@ -518,18 +541,19 @@ class CertificateService {
         numero_certificado: mapping_numero_certificado,
         correo: respDataUser.user.email,
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
-        nombre: respDataUser.user.profile.full_name.toUpperCase(), // + " " + respDataUser.user.profile.last_name.toUpperCase(),
+        nombre: respDataUser.user.profile.full_name.toUpperCase(),
         asistio: null,
         certificado: mapping_titulo_certificado, //(respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
         certificado_ingles: '', // respCourse.scheduling.english_certificate,
         alcance: '', //respCourse.scheduling.scope,
         alcance_ingles: '', //respCourse.scheduling.scope,
-        intensidad: generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration),
+        intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
         listado_cursos: mapping_listado_cursos,
+        regional: '',
         ciudad: mapping_ciudad,
         pais: mapping_pais,
         fecha_certificado: currentDate,
-        fecha_aprobacion: respCourse.scheduling.endDate, //currentDate,
+        fecha_aprobacion: respCourse.scheduling.endDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
@@ -541,7 +565,9 @@ class CertificateService {
         queueData: params,
         template: mapping_template,
         certificateType: certificate_type.academic,
-        params: certificateParams,
+        paramsHuella: certificateParams,
+        programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+        isComplete: isComplete
       });
       console.log("[1]------------------------------------------");
       console.log("Set first Certificate: ");
@@ -551,6 +577,7 @@ class CertificateService {
       // Second certificate: auditor Certificate
       if (isAuditorCerficateEnabled) {
         // get modules need to process Second certificate
+        isComplete = true;
         let mapping_listado_modulos_auditor = '';
         let total_intensidad = 0;
         mapping_listado_modulos_auditor = 'El contenido del programa comprendió: <br/>';
@@ -576,6 +603,7 @@ class CertificateService {
           alcance_ingles: '',
           intensidad: generalUtility.getDurationFormatedForCertificate(total_intensidad),
           listado_cursos: mapping_listado_modulos_auditor,
+          regional: '',
           ciudad: mapping_ciudad,
           pais: mapping_pais,
           fecha_certificado: currentDate,
@@ -594,11 +622,13 @@ class CertificateService {
           queueData: {
             certificateQueueId: null, // as new record
             userId: params.userId, // Nombre de usario
-            courseId: params.courseId
+            courseId: params.courseId,
           },
           certificateType: certificate_type.auditor,
           template: mapping_template,
-          params: auditorCertificateParams,
+          paramsHuella: auditorCertificateParams,
+          programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+          isComplete: isComplete
         });
         console.log("[2]------------------------------------------");
         console.log("Set Auditor Certificate: ");
@@ -708,7 +738,9 @@ class CertificateService {
 
   private rulesForOnSiteOnlineMode = async (moodleCourseID: string, moodleUserID: string,
     programTypeName: string,
-    respListOfActivitiesInModules: any[]) => {
+    respListOfActivitiesInModules: any[],
+    respSchedulingsDetails: any[]
+  ) => {
 
     let studentProgress = {
       status: '',
@@ -765,8 +797,11 @@ class CertificateService {
           continue;
         }
         // search the Module name by ItemInstance in respListOfActivitiesInModules
-        let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString())
-        studentProgress.approved_modules.push(itemModule.sectionname);
+        let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
+        let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid);
+        // console.log('--------------------');
+        // console.log(durationModule.duration);
+        studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
         flagAssistanceCount++;
       }
       if (flagAssistanceCount < respUserAssistances.grades.length)
@@ -856,7 +891,7 @@ class CertificateService {
         url: certificate_setup.endpoint.create_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
-        params: JSON.stringify(certificateReq.params)
+        params: JSON.stringify(certificateReq.paramsHuella)
       });
       console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
       console.log(respHuella);
@@ -868,14 +903,14 @@ class CertificateService {
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
         id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
         status: 'Requested',
-        message: certificateReq.params.certificado,
-        certificateModule: certificateReq.params.modulo,
+        message: certificateReq.paramsHuella.certificado,
+        certificateModule: certificateReq.paramsHuella.modulo,
         certificateType: certificateReq.certificateType,
         certificate: {
           hash: respHuella.resultado.certificado,
           url: respHuella.resultado.url,
-          title: certificateReq.params.certificado,
-          date: certificateReq.params.fecha_aprobacion
+          title: (certificateReq.isComplete) ? certificateReq.paramsHuella.certificado : 'Certificado Parcial de ' + certificateReq.programName,
+          date: certificateReq.paramsHuella.fecha_aprobacion
         }
       });
 
@@ -932,8 +967,6 @@ class CertificateService {
             error_key: { key: 'certificate.preview' }
           })
       }
-
-      //      return responseUtility.buildResponseFailed('json')
 
       console.log("update register on certificate queue:");
 
