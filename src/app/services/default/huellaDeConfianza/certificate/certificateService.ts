@@ -444,6 +444,17 @@ class CertificateService {
         if (virtualResult) {
           isComplete = true;
           mapping_dato_1 = virtualResult.attended_approved;
+
+
+          if (respCourseDetails.schedulings) {
+            mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
+            mapping_listado_cursos += '<ul>'
+            respCourseDetails.schedulings.forEach(element => {
+              mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+            });
+            mapping_listado_cursos += '</ul>'
+          }
+
           mapping_intensidad = respCourse.scheduling.duration;
         }
         else {
