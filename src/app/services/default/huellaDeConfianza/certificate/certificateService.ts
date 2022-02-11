@@ -172,16 +172,8 @@ class CertificateService {
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
 
-      // console.log("*********************");
-      // respCourseDetails.schedulings.forEach(element => {
-      //   console.log(element.course);
-      //   console.log(generalUtility.getDurationFormatedForCertificate(element.duration));
-      // });
-      // console.log("*********************");
-
       // Tipo de
       const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
-
 
       // console.log("---------------------\n\r" + 'El contenido del ' + programType);
       // console.log(respCourseDetails.schedulings);
@@ -210,15 +202,16 @@ class CertificateService {
 
       for await (const register of enrollmentRegisters) {
 
-        let studentProgress = {
-          status: '',
-          attended_approved: '',
-          average_grade: null,
-          completion: null,
-          assistance: null,
-          quizGrade: null,
-          auditor: false
-        };
+        // let studentProgress = {
+        //   status: '',
+        //   attended_approved: '',
+        //   average_grade: null,
+        //   mode: respCourse.scheduling.schedulingMode.name.toLowerCase(),
+        //   completion: null,
+        //   assistance: null,
+        //   quizGrade: null,
+        //   auditor: false
+        // };
 
         register.count = count
         if (register.user && register.user.profile) {
@@ -228,8 +221,9 @@ class CertificateService {
         //#region ::::::::::::::::: Reglas para Formación Virtual
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
 
-          let virtualResult = await this.rulesForVirtualMode(register.courseID, register.user.moodle_id, null);
+          let virtualResult: any = await this.rulesForVirtualMode(register.courseID, register.user.moodle_id, null);
           if (virtualResult) {
+            virtualResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
             register.progress = virtualResult;
           }
           else {
@@ -249,9 +243,10 @@ class CertificateService {
 
           console.log('Grades and Assistances for ' + register.user.profile.full_name + ' in ' + respCourse.scheduling.schedulingMode.name);
 
-          let onSiteOnlineResult = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
+          let onSiteOnlineResult: any = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
             respListOfActivitiesInModules.courseModules, respCourseDetails.schedulings);
           if (onSiteOnlineResult) {
+            onSiteOnlineResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
             register.progress = onSiteOnlineResult;
 
             if (onSiteOnlineResult.status == 'ok') {
@@ -311,7 +306,7 @@ class CertificateService {
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
-        schedulingMode: schedulingMode,
+        schedulingMode: schedulingMode.toLowerCase(),
         enrollment: [
           ...listOfStudents
         ],
@@ -401,13 +396,6 @@ class CertificateService {
 
       let programTypeName = '';
       let isAuditorCerficateEnabled = false;
-      // let studentProgress = {
-      //   average_grade: null,
-      //   completion: null,
-      //   assistance: null,
-      //   quizGrade: null,
-      //   auditor: false
-      // };
 
       //#region Tipo de programa
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
@@ -444,7 +432,7 @@ class CertificateService {
         if (virtualResult) {
           isComplete = true;
           mapping_dato_1 = virtualResult.attended_approved;
-
+          mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
 
           if (respCourseDetails.schedulings) {
             mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
@@ -490,9 +478,7 @@ class CertificateService {
               mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
               mapping_listado_cursos += '<ul>'
               respCourseDetails.schedulings.forEach(element => {
-                //mapping_listado_cursos += '<li>' + element.course.name + ' %28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
                 mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-                //mapping_listado_cursos += '<li>' + element.course.name + ' %28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
               });
               mapping_listado_cursos += '</ul>'
             }
@@ -595,7 +581,9 @@ class CertificateService {
         mapping_listado_modulos_auditor += '<ul>'
         respCourse.scheduling.auditor_modules.forEach(element => {
           total_intensidad += element.duration;
-          mapping_listado_modulos_auditor += '<li>' + element.course.name + '</li>';
+          mapping_listado_modulos_auditor += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
+          //mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+
         });
         mapping_listado_modulos_auditor += '</ul>'
 
@@ -802,6 +790,7 @@ class CertificateService {
       let flagAssistance = true;
       let flagAssistanceCount = 0;
       let flagQuiz = true;
+      let flagQuizCount = 0;
 
       for (const grade of respUserAssistances.grades) {
         if (grade.graderaw < 75) {
@@ -825,10 +814,13 @@ class CertificateService {
       */
       for (const grade of respGradeQuiz.grades) {
         if (grade.graderaw < 70) {
-          flagQuiz = false;
-          break;
+          //flagQuiz = false;
+          continue;
         }
+        flagQuizCount++;
       }
+      if (flagQuizCount < respGradeQuiz.grades.length)
+        flagQuiz = false;
       //#endregion  Grades for UserName
 
       if (flagAssistance) {
@@ -854,8 +846,8 @@ class CertificateService {
         }
       }
 
-      studentProgress.assistance = flagAssistance;
-      studentProgress.quizGrade = flagQuiz;
+      studentProgress.assistance = `${flagAssistanceCount}/${respUserAssistances.grades.length}`;
+      studentProgress.quizGrade = `${flagQuizCount}/${respGradeQuiz.grades.length}`;
       return studentProgress;
     }
     catch (ex) {
