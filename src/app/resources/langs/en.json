@@ -456,6 +456,9 @@
     },
     "scheduling_update": {
       "subject": "Programación modificada"
+    },
+    "scheduling_material_delivery": {
+      "subject": "Entrega de normas"
     }
   }
 }

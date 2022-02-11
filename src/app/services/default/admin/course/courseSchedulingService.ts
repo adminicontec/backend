@@ -853,21 +853,20 @@ class CourseSchedulingService {
   private sendEmailMaterialDelivery = async (register: any, prevSchedulingStatus?: string) => {
     try {
       const currentStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
-      if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
-        console.log('Enviar el email');
+      if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado' && register.material_delivery === 'physic') {
         let path_template = 'course/schedulingMaterialDelivery';
         const params = {
           mailer: customs['mailer'],
           service_id: register.program.name,
           service_code: register.metadata.service_id,
-          initDate: register.startDate,
+          initDate: moment(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
         const emails: string[] = ['davidblack20101@gmail.com'];
         const mail = await mailService.sendMail({
           emails,
           mailOptions: {
-            subject: i18nUtility.__('mailer.scheduling_update.subject'),
+            subject: i18nUtility.__('mailer.scheduling_material_delivery.subject'),
             html_template: {
               path_layout: 'icontec',
               path_template: path_template,
@@ -876,12 +875,7 @@ class CourseSchedulingService {
           },
           notification_source: `course_material_delivery_${params.service_code}`
         })
-        console.log('Respuesta send mail: ', mail)
         return mail
-        // service_id
-        // service_code
-        // initDate
-        // city
       }
     }catch(e){
       console.log('Error send email material delivery: ', e)
