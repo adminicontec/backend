@@ -1,4 +1,4 @@
-<div class="img_icontec">
+{{!-- <div class="img_icontec">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
@@ -10,5 +10,31 @@
   <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
   <br><br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
+  <img src="{{params.mailer.footer_icon}}">
+</div> --}}
+
+<div class="img_icontec">
+  <img src="{{params.mailer.header_image}}">
+  <p>Notificación Inicio del servicio</p>
+</div>
+
+<div class="txt_icontec">
+  <div style="color: black;"><strong>Estimado(a) Auxiliar:</strong></div> <br>
+  <div style="color: black;">Se informa acerca del inicio del siguiente servicio:</div> <br>
+  <div style="color: black;"><strong>Programa: {{params.program_name}}</strong></div> <br>
+  <div style="color: black;"><strong>ID: {{params.service_id}}</strong></div> <br>
+  <div style="color: black;"><strong>Modalidad: {{params.modality}}</strong></div> <br>
+  <div style="color: black;"><strong>Módulo: {{params.module}}</strong></div> <br>
+  <div style="color: black;"><strong>Código: {{params.service_id}}</strong></div> <br>
+  <div style="color: black;"><strong>Duración: {{params.duration}}</strong></div> <br>
+  <div style="color: black;"><strong>Fecha Inicio: {{params.startDate}}</strong></div> <br>
+  <div style="color: black;"><strong>Fecha Fin: {{params.endDate}}</strong></div> <br>
+  <div style="color: black;"><strong>Docente: {{params.teacher}}</strong></div> <br>
+  <div style="color: black;"><strong>Observaciones: {{params.observations}}</strong></div> <br>
+  <div style="color: black;"><strong>Aplica examen: {{params.exam}}</strong></div> <br>
+  <div style="color: black;"><strong>Nombre del ejecutivo comercial: {{params.accountExecutive}}</strong></div> <br>
+  <div style="color: black;"><strong>Regional: {{params.regional}}</strong></div> <br>
+  <br><br>
+  <div style="color: black;">Lo invitamos a ingresar al campus Virtual, para que pueda realizar el seguimiento.</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

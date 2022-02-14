@@ -777,13 +777,25 @@ class CourseSchedulingService {
     if (email_to_notificate.length > 0) {
       await this.sendSchedulingNotificationEmail(email_to_notificate, {
         mailer: customs['mailer'],
-        service_id: courseScheduling.metadata.service_id,
-        program_name: courseScheduling.program.name,
         today: moment().format('YYYY-MM-DD'),
         notification_source: `scheduling_notification_${courseScheduling._id}`,
-        amount_notifications: 1
-      })
-
+        amount_notifications: 1,
+        // Información
+        program_name: courseScheduling.program.name,
+        service_id: courseScheduling.metadata.service_id,
+        modality: courseScheduling.schedulingMode.name,
+        module: courseScheduling.modular.name,
+        duration: courseScheduling.duration,
+        startDate: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+        // TODO: Poner el nombre del profesor
+        teacher: 'Profesor 1',
+        observations: courseScheduling.observations,
+        // TODO: Poner si tiene exámenes o no
+        exam: 'SI',
+        accountExecutive: courseScheduling.account_executive.profile.first_name,
+        regional: courseScheduling.regional.name
+      });
     }
   }
 
@@ -862,7 +874,7 @@ class CourseSchedulingService {
           initDate: moment(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
-        const emails: string[] = ['davidblack20101@gmail.com'];
+        const emails: string[] = [customs['mailer'].email_material_delivery];
         const mail = await mailService.sendMail({
           emails,
           mailOptions: {
