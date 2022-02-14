@@ -5,6 +5,7 @@ import moment from 'moment'
 
 // @import services
 import { userService } from '@scnode_app/services/default/admin/user/userService';
+import { surveyLogService } from '@scnode_app/services/default/admin/survey/surveyLogService';
 // @end
 
 // @import utilities
@@ -80,6 +81,10 @@ class SurveyEventService {
       let surveyRelated = null
       let surveyRelatedContent = null
 
+      // Para el log de encuestas
+      let course_scheduling: string | undefined = undefined;
+      let course_scheduling_details: string | undefined = undefined;
+
       for (const enrollment of enrollments) {
         if (!surveyAvailable) {
           // En virtual va dirigido al programa y en online y presencial a cada curso
@@ -132,6 +137,9 @@ class SurveyEventService {
                           endDate: lastSession.endDate,
                           mode_id: enrollment.course_scheduling.schedulingMode._id
                         }
+                        // Para el log de encuestas
+                        course_scheduling = enrollment.course_scheduling._id;
+                        course_scheduling_details = course._id;
                       }
                   }
                 }
@@ -153,6 +161,9 @@ class SurveyEventService {
                   endDate: enrollment.course_scheduling.endDate,
                   mode_id: enrollment.course_scheduling.schedulingMode._id
                 }
+                // Para el log de encuestas
+                course_scheduling = enrollment.course_scheduling._id;
+                course_scheduling_details = undefined;
               } else {
                 console.log('entro a virtual false')
                 // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -198,6 +209,12 @@ class SurveyEventService {
 
       if (data.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente
 
+      // @INFO: Agregar un surveyLog
+      await surveyLogService.saveLog({
+        course_scheduling,
+        course_scheduling_details
+      });
+
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         survey: data[0].survey,
         surveyRelated,
@@ -205,6 +222,7 @@ class SurveyEventService {
         academic_resource_config: data[0].academic_resource_config,
       }})
     } catch (error) {
+      console.log(error)
       return responseUtility.buildResponseFailed('json')
     }
   }
