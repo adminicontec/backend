@@ -625,6 +625,17 @@ class EnrollmentService {
         }
 
         //#region   Revisión Documento de identidad para Casos especiales
+
+        if(!element['Tipo Documento']){
+          processResult = {
+            row: index,
+            status: 'ERROR',
+            messageProcess: 'El campo Tipo Documento está vacío.',
+          }
+          errors.push(processResult);
+          continue;
+        }
+
         if (element['Documento de Identidad']) {
 
           var newUserID = generalUtility.normalizeUsername(element['Documento de Identidad']);
