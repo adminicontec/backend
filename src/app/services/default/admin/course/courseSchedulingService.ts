@@ -874,7 +874,7 @@ class CourseSchedulingService {
           initDate: moment(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
-        const emails: string[] = [customs['mailer'].email_material_delivery];
+        const emails: string[] = [customs['mailer']['email_material_delivery']];
         const mail = await mailService.sendMail({
           emails,
           mailOptions: {

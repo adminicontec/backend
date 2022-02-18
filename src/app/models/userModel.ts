@@ -90,6 +90,8 @@ const UserSchema = new Schema({
     carreer: { type: Schema.Types.String },
     educationalLevel: { type: Schema.Types.String },
     company: { type: Schema.Types.String },
+    position: { type: Schema.Types.String },
+    dependence: { type: Schema.Types.String },
 
     contractType: {
       type: { type: Schema.Types.String },
