@@ -793,8 +793,8 @@ class CourseSchedulingService {
         observations: courseScheduling.observations,
         // TODO: Poner si tiene exámenes o no
         exam: 'SI',
-        accountExecutive: courseScheduling.account_executive.profile.first_name,
-        regional: courseScheduling.regional.name
+        accountExecutive: (courseScheduling.account_executive) ?  courseScheduling.account_executive.profile.first_name : '',
+        regional: (courseScheduling.regional) ? courseScheduling.regional.name : ''
       });
     }
   }
