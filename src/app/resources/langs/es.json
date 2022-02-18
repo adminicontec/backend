@@ -426,9 +426,15 @@
       "failed_upload": "Ha ocurrido un error al subir los archivos",
       "limit_files_exceded": "Limite de archivos excedido"
     },
-    "teacher_upload" : {
+    "teacher_upload": {
       "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
       "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
+    },
+    "qualified_teacher": {
+      "not_found": "El registro de Docente Calificado no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe el Docente Calificado :user con el curso :courseCode"
+      }
     }
   },
   "passwordRecover": {

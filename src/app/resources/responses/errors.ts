@@ -561,7 +561,6 @@ class ErrorResponse {
           }
         }
       },
-
       "country": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.country.not_found"),
@@ -1118,19 +1117,34 @@ class ErrorResponse {
             "code": 400
           }
         },
-        "teacher_upload": {
-          "failed_upload": {
-            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
-            "status_code": "teacher_upload_failed_upload",
+      },
+      "teacher_upload": {
+        "failed_upload": {
+          "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+          "status_code": "teacher_upload_failed_upload",
+          "code": 400
+        },
+        "empty_file": {
+          "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
+          "status_code": "teacher_upload_failed_upload",
+          "code": 400
+        },
+      },
+      "qualified_teacher": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.qualified_teacher.not_found"),
+          "status_code": "qualified_teacher_not_found",
+          "code": 400
+        },
+        "insertOrUpdate": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.qualified_teacher.insertOrUpdate.already_exists"),
+            "status_code": "qualified_teacher_insertOrUpdate_already_exists",
             "code": 400
-          },
-          "empty_file": {
-            "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
-            "status_code": "teacher_upload_failed_upload",
-            "code": 400
-          },
+          }
         }
-      }
+      },
+
     };
     return json;
   }

@@ -1,4 +1,5 @@
 // @import_models
+import { QualifiedTeachersModel } from "@scnode_app/models/qualifiedTeachersModel";
 import { AttachedModel } from "@scnode_app/models/attachedModel";
 import { AttachedCategoryModel } from "@scnode_app/models/attachedCategoryModel";
 import { LikeModel } from "@scnode_app/models/likeModel";
@@ -53,6 +54,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const QualifiedTeachers = QualifiedTeachersModel
 export const Attached = AttachedModel
 export const AttachedCategory = AttachedCategoryModel
 export const Like = LikeModel

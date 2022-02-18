@@ -135,8 +135,8 @@ class XlsxUtility {
       const workbook = XLSX.read(buffer, { type: "buffer" });
 
       const sheet_name_list = workbook.SheetNames;
-      console.log("Available sheets: " + sheet_name_list.length);
-      console.log(sheet_name_list);
+      // console.log("Available sheets: " + sheet_name_list.length);
+      // console.log(sheet_name_list);
 
       // Lee la primer hoja del archivo
       let location = sheet_name_list.findIndex(m => m === sheetName)

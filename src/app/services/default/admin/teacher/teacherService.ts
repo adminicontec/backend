@@ -5,7 +5,6 @@
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { modularService } from '@scnode_app/services/default/admin/modular/modularService';
-import { moodleUserService } from '../../moodle/user/moodleUserService';
 // @end
 
 // @import utilities
@@ -25,9 +24,9 @@ import { TeacherProfile } from '@scnode_app/models';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
 import { IMassiveLoad, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IQualifiedTeacher } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
-import { completionstatusController } from 'app/controllers/default/admin/completionStatus/completionstatusController';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 
 // @end
@@ -51,78 +50,26 @@ class TeacherService {
       let singleProfessionalLoadContent: IQualifiedProfessional;
       let content = params.contentFile;
 
+      // 0. Extracción de Cursos y Docentes calificados
+      let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
+      let modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
+
       // 1. Extracción de información de Docentes
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
       // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
-      console.log("Process Content");
 
-      let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
+      //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
+      let respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           teacherUpload: {
-            respProcessTeacherData
+            ...respProcessQualifiedTeacherData //respProcessTeacherData
           }
         }
       })
-
-
-      //#region     dataWSProfessionals
-      try {
-        if (dataWSProfessionals != null) {
-          console.log("Documentos Profesionales calificados");
-          //console.log(dataWSProfessionals);
-
-          let indexP = 1;
-          for await (const element of dataWSProfessionals) {
-
-            singleProfessionalLoadContent = {
-              documentID: element['Documento de Identidad'],
-              email: element['Correo Electrónico'],
-              modular: element['Modular'],
-              courseCode: element['Código / Versión del Curso'],
-              versionStatus: element['Estado de la Versión'],
-              courseName: element['Nombre Curso'],
-              qualifiedDate: element['Fecha Calificación'],
-              qualifiedDocumentationDate: element['Fecha de entrega de la documentación a Calificación'],
-              qualifiedFormalizationDate: element['Fecha de Formalización de la calificación'],
-              observations: element['Observaciones'],
-              specializations: (element['Especializaciones'] != null) ? element['Especializaciones'] : "",
-            }
-
-            console.log("-----------ROW: [" + indexP + "] --------------");
-            console.log(singleProfessionalLoadContent);
-
-            //#region   ------------- MODULAR -------------
-            // 2. Insert Modular: singleProfessionalLoadContent.modular
-
-            if (singleProfessionalLoadContent.modular == null || singleProfessionalLoadContent.modular === '#N/D') {
-              // error en modular
-            }
-
-
-            const respModular: any = await modularService.insertOrUpdate({
-              name: singleProfessionalLoadContent.modular,
-              description: singleProfessionalLoadContent.modular
-            });
-
-            console.log("<<<<<<<<<<<<<<< Modular Insertion: >>>>>>>>>>>>>>>>>>>>><<");
-            console.log(respModular.modular._id + " - " + respModular.modular.name);
-            //#endregion
-
-
-          }
-        }
-        else {
-          console.log('Empty Doc:  "Profesionales calificados"');
-        }
-      }
-      catch (e) {
-        return responseUtility.buildResponseFailed('json', e)
-      }
-      //#endregion  dataWSProfessionals
 
     }
     catch (e) {
@@ -256,9 +203,9 @@ class TeacherService {
           index++
         }
 
-        console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-        console.log(processResultLog);
-        console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+        // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+        // console.log(processResultLog);
+        // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
 
         // let extError = processResultLog.filter(e => e.status === 'ERROR');
         // if (extError) {
@@ -292,6 +239,166 @@ class TeacherService {
 
   }
 
+  private processQualifiedTeacherData = async (dataWSQualifiedTeachersBase: any,
+    dataModularMigration: any,
+    sheetname: string) => {
+
+    let modularList: any = await modularService.list();
+
+    let contentRowTeacher: IQualifiedProfessional;
+    let registerQualifiedTeacher: IQualifiedTeacher;
+    let processResult: IQualifiedTeacher[] = [];
+    let newModulars = [];
+
+    try {
+
+      //#region - Update modulars from Migration
+      // Insert the new Modulars from Migration file and then update the general Modular list
+      console.log('################################################');
+      for await (const row of dataModularMigration) {
+        console.log("Search for  " + row['Modular nuevo']);
+        let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row['Modular nuevo'].toLowerCase());
+        console.log('-----------------');
+        if (!searchModular) {
+          newModulars.push({
+            anterior: row['Modular anterior'],
+            nuevo: row['Modular nuevo'],
+          });
+          // Insert new Modular:
+          const respModular: any = await modularService.insertOrUpdate({
+            name: row['Modular nuevo'],
+            description: row['Modular nuevo']
+          });
+          if (respModular.status == 'success') {
+            console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
+            modularList = await modularService.list();
+          }
+        }
+      }
+      //#endregion
+
+      //#region     dataWSProfessionals
+      // try {
+      if (dataWSQualifiedTeachersBase != null) {
+        console.log("Listado de Profesionales calificados");
+        //console.log(dataWSProfessionals);
+
+        let indexP = 5;
+        for await (const element of dataWSQualifiedTeachersBase) {
+
+          contentRowTeacher = {
+            documentID: element['Documento de Identidad'],
+            email: element['Correo Electrónico'],
+            modular: element['Modular'],
+            courseCode: element['Código / Versión del Curso'],
+            versionStatus: element['Estado de la Versión'],
+            courseName: element['Nombre Curso'],
+            qualifiedDate: element['Fecha Calificación']
+          }
+
+          console.log("-----------ROW: [" + indexP + "] --------------");
+          //console.log(contentRowTeacher);
+
+          //#region   ------------- MODULAR -------------
+          // 2. Insert Modular: singleProfessionalLoadContent.modular
+
+          if (contentRowTeacher.modular == null || contentRowTeacher.modular === '#N/D') {
+            // error en modular
+            console.log(" ERROR AT  ROW: [" + indexP + "]");
+
+            registerQualifiedTeacher = {
+              index: indexP,
+              user: contentRowTeacher.documentID,
+              modular: 'ERROR: ' + contentRowTeacher.modular,
+              courseCode: contentRowTeacher.courseCode,
+              courseName: contentRowTeacher.courseName,
+              evaluationDate: new Date(contentRowTeacher.qualifiedDate),
+              isEnabled: false,
+              status: ''
+            }
+            processResult.push(registerQualifiedTeacher);
+            indexP++
+            continue;
+          }
+
+          let modularID;
+          console.log('Find: ' + contentRowTeacher.modular);
+          let searchOldModular: any = dataModularMigration.find(field =>
+            field['Modular anterior'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+
+          if (searchOldModular) {
+            // take pair value for 'Modular nuevo' and get ModularId
+            let localModular: any = modularList.modulars.find(x =>
+              x.name.toLowerCase() == searchOldModular['Modular nuevo'].toLowerCase().trim());
+            if (localModular) {
+              // take ID
+              console.log(localModular.name);
+              console.log('*************************');
+              modularID = localModular._id;
+            }
+            else {
+              // Si no existe ni con el viejo para reemplazar, ni con el nuevo, Insertar
+              // const respModular: any = await modularService.insertOrUpdate({
+              //   name: contentRowTeacher.modular,
+              //   description: contentRowTeacher.modular
+              // });
+              // console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
+              // modularID = respModular.modular._id;
+            }
+          }
+          else {
+            let searchNewModular: any = dataModularMigration.find(field =>
+              field['Modular nuevo'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+            if (searchNewModular) {
+              console.log(searchNewModular.name);
+              console.log('*************************');
+              modularID = searchNewModular._id;
+            }
+          }
+          //#endregion
+
+          //#region  ---- Registro de Docente Calificado
+          registerQualifiedTeacher = {
+            index: indexP,
+            user: contentRowTeacher.documentID,
+            modular: (modularID) ? modularID : 'WARNING - ' + contentRowTeacher.modular,
+            courseCode: contentRowTeacher.courseCode,
+            courseName: contentRowTeacher.courseName,
+            evaluationDate: new Date(contentRowTeacher.qualifiedDate),
+            isEnabled: true,
+            status: 'active'
+          }
+          processResult.push(registerQualifiedTeacher);
+
+          //#endregion
+
+          indexP++;
+        }
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            qualifiedTeachers: [
+              ...processResult
+            ]
+            // ,
+            // total_register: (paging) ? await qualifiedTeachers.length : 0,
+            // pageNumber: pageNumber,
+            // nPerPage: nPerPage
+          }
+        })
+
+      }
+      else {
+        console.log('Empty Doc:  "Profesionales calificados"');
+      }
+    }
+    catch (e) {
+      console.log(e);
+      return responseUtility.buildResponseFailed('json', e)
+    }
+    //#endregion  dataWSProfessionals
+
+  }
+
   public list = async (filters: ITeacherQuery = {}) => {
 
     let qualifiedTeachers = [];
@@ -304,6 +411,7 @@ class TeacherService {
 
     try {
       // Consultando el ID de Permiso is_teacher
+      let counter = 1;
       let roles_ids = [];
       const permission_teacher = await AppModulePermission.findOne({ name: "config:is_teacher" }).select("_id");
 
@@ -335,35 +443,24 @@ class TeacherService {
       teachers.users.forEach(element => {
 
         let teacherData: ITeacher = {
+          position: counter,
           userData: element,
-          // user: element.username,
-          // email: element.email,
-          // phoneNumber: element.phoneNumber,
-          // firstname: element.profile.first_name,
-          // lastname: element.profile.last_name,
-          // city: element.profile.city,
-          // country: element.profile.country,
-          // regional: element.profile.regional,
 
-          // Inner query to get contractType
-          contractType: {
-            type: 'Interno',
-            isTeacher: true,
-            isTutor: false,
-          },
+          // Inner query to get Courses
           courses: [
-            {
-              modular: 'Calidad',
-              name: 'first course',
-            },
-            {
-              modular: 'Agroalimentario',
-              name: 'second course',
-            },
+            // {
+            //   modular: 'Calidad',
+            //   name: 'first course',
+            // },
+            // {
+            //   modular: 'Agroalimentario',
+            //   name: 'second course',
+            // },
           ]
         };
-
         qualifiedTeachers.push(teacherData);
+        counter++;
+
       });
 
       return responseUtility.buildResponseSuccess('json', null, {
