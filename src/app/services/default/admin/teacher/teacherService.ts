@@ -248,6 +248,7 @@ class TeacherService {
     let contentRowTeacher: IQualifiedProfessional;
     let registerQualifiedTeacher: IQualifiedTeacher;
     let processResult: IQualifiedTeacher[] = [];
+    let processError = [];
     let newModulars = [];
 
     try {
@@ -286,6 +287,8 @@ class TeacherService {
         let indexP = 5;
         for await (const element of dataWSQualifiedTeachersBase) {
 
+          let flagAddRegister = false;
+
           contentRowTeacher = {
             documentID: element['Documento de Identidad'],
             email: element['Correo Electrónico'],
@@ -305,17 +308,12 @@ class TeacherService {
             // error en modular
             console.log(" ERROR AT  ROW: [" + indexP + "]");
 
-            registerQualifiedTeacher = {
-              index: indexP,
-              user: contentRowTeacher.documentID,
-              modular: 'ERROR: ' + contentRowTeacher.modular,
-              courseCode: contentRowTeacher.courseCode,
-              courseName: contentRowTeacher.courseName,
-              evaluationDate: new Date(contentRowTeacher.qualifiedDate),
-              isEnabled: false,
-              status: ''
-            }
-            processResult.push(registerQualifiedTeacher);
+            processError.push({
+              typeError: 'ModularEmpty',
+              message: 'el valor del Modular está vacío',
+              row: indexP
+            });
+
             indexP++
             continue;
           }
@@ -331,10 +329,9 @@ class TeacherService {
               x.name.toLowerCase() == searchOldModular['Modular nuevo'].toLowerCase().trim());
             if (localModular) {
               // take ID
-              console.log('.........................');
-              console.log('OLD:\t' + localModular.name + '\t[' + localModular._id) + ']';
-              console.log('.........................');
+              // console.log('OLD:\t' + localModular.name + '\t[' + localModular._id) + ']';
               modularID = localModular._id;
+              flagAddRegister = true;
             }
             else {
               // Si no existe ni con el viejo para reemplazar, ni con el nuevo, Insertar
@@ -355,10 +352,9 @@ class TeacherService {
                 x.name.toLowerCase() == searchNewModular['Modular nuevo'].toLowerCase().trim());
               if (localModular) {
                 // take ID
-                console.log('.........................');
                 console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
-                console.log('.........................');
                 modularID = localModular._id;
+                flagAddRegister = true;
               }
             }
             else {
@@ -366,18 +362,49 @@ class TeacherService {
               console.log('Find: ' + contentRowTeacher.modular);
               console.log('normalize: [' + contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() + ']');
 
-
               console.log(" Cant't find any equivalent to [" + contentRowTeacher.modular + "]");
               console.log(searchNewModular);
+
+              processError.push({
+                typeError: 'ModularMissmatch',
+                message: 'Modular ' + contentRowTeacher.modular + ' no encontrado en hoja de Migración',
+                row: indexP
+              });
+              indexP++
+              continue;
             }
           }
+          //#endregion
+
+          //#region --------------- Get User Id from numDoc ---------------
+
+          let respCampusDataUser: any = await userService.findBy({
+            query: QueryValues.ONE,
+            where: [{ field: 'profile.doc_number', value: contentRowTeacher.documentID }]
+          });
+
+          if (respCampusDataUser.status == "error") {
+            // USUARIO NO EXISTE EN CAMPUS VIRTUAL
+            console.log(">>[CampusVirtual]: Usuario no existe. No se puede crear registro");
+            // log de error
+            processError.push({
+              typeError: 'UserNotFound',
+              message: 'Usuario ' + contentRowTeacher.documentID + ' no encontrado',
+              row: indexP
+            });
+            indexP++;
+            continue;
+          }
+
+          console.log(">>[CampusVirtual]: Usuario encontrado. Inserción de registro");
+          console.log(respCampusDataUser.user._id.toString());
           //#endregion
 
           //#region  ---- Registro de Docente Calificado
           registerQualifiedTeacher = {
             index: indexP,
-            user: contentRowTeacher.documentID,
-            modular: (modularID) ? modularID : 'WARNING - ' + contentRowTeacher.modular,
+            user: respCampusDataUser.user._id.toString(),
+            modular: modularID, //(modularID) ? modularID : 'WARNING - ' + contentRowTeacher.modular,
             courseCode: contentRowTeacher.courseCode,
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
@@ -385,15 +412,19 @@ class TeacherService {
             status: 'active'
           }
           processResult.push(registerQualifiedTeacher);
-
           //#endregion
 
           indexP++;
         }
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
+            qualifiedProcess: processResult.length,
             qualifiedTeachers: [
               ...processResult
+            ],
+            errorLog:[
+              ...processError
             ]
             // ,
             // total_register: (paging) ? await qualifiedTeachers.length : 0,
