@@ -296,7 +296,6 @@ class TeacherService {
             qualifiedDate: element['Fecha Calificación']
           }
 
-          console.log("-----------ROW: [" + indexP + "] --------------");
           //console.log(contentRowTeacher);
 
           //#region   ------------- MODULAR -------------
@@ -322,9 +321,9 @@ class TeacherService {
           }
 
           let modularID;
-          console.log('Find: ' + contentRowTeacher.modular);
+
           let searchOldModular: any = dataModularMigration.find(field =>
-            field['Modular anterior'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+            field['Modular anterior'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
 
           if (searchOldModular) {
             // take pair value for 'Modular nuevo' and get ModularId
@@ -332,8 +331,9 @@ class TeacherService {
               x.name.toLowerCase() == searchOldModular['Modular nuevo'].toLowerCase().trim());
             if (localModular) {
               // take ID
-              console.log(localModular.name);
-              console.log('*************************');
+              console.log('.........................');
+              console.log('OLD:\t' + localModular.name + '\t[' + localModular._id) + ']';
+              console.log('.........................');
               modularID = localModular._id;
             }
             else {
@@ -348,11 +348,27 @@ class TeacherService {
           }
           else {
             let searchNewModular: any = dataModularMigration.find(field =>
-              field['Modular nuevo'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+              field['Modular nuevo'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            //field['Modular nuevo'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
             if (searchNewModular) {
-              console.log(searchNewModular.name);
-              console.log('*************************');
-              modularID = searchNewModular._id;
+              let localModular: any = modularList.modulars.find(x =>
+                x.name.toLowerCase() == searchNewModular['Modular nuevo'].toLowerCase().trim());
+              if (localModular) {
+                // take ID
+                console.log('.........................');
+                console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
+                console.log('.........................');
+                modularID = localModular._id;
+              }
+            }
+            else {
+              console.log("-----------ROW: [" + indexP + "] --------------");
+              console.log('Find: ' + contentRowTeacher.modular);
+              console.log('normalize: [' + contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() + ']');
+
+
+              console.log(" Cant't find any equivalent to [" + contentRowTeacher.modular + "]");
+              console.log(searchNewModular);
             }
           }
           //#endregion
