@@ -1118,6 +1118,22 @@ class ErrorResponse {
           }
         },
       },
+      "document" : {
+        "queue": {
+          "insertOrUpdate": {
+            "failed": {
+              "message": i18nUtility.__("app_error_messages.document.queue.insertOrUpdate.failed"),
+              "status_code": "document_queue_insertOrUpdate_failed",
+              "code": 400
+            }
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.document.queue.not_found"),
+            "status_code": "document_queue_not_found",
+            "code": 400
+          },
+        },
+      },
       "teacher_upload": {
         "failed_upload": {
           "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
@@ -1127,6 +1143,11 @@ class ErrorResponse {
         "empty_file": {
           "message": i18nUtility.__("app_error_messages.teacher_upload.failed_upload"),
           "status_code": "teacher_upload_failed_upload",
+          "code": 400
+        },
+        "wrong_mime_type": {
+          "message": i18nUtility.__("app_error_messages.teacher_upload.wrong_mime_type"),
+          "status_code": "teacher_upload_wrong_mime_type",
           "code": 400
         },
       },

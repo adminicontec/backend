@@ -410,9 +410,18 @@
         "no_certificate_to_download": "No encontramos certificados que puedan descargarse"
       }
     },
+    "document": {
+      "queue": {
+        "not_found": "El item de la cola del Procesador de Documentos no existe.",
+        "insertOrUpdate": {
+          "failed": "Error al insertar registro en la cola del Procesador de Documentos."
+        }
+      }
+    },
     "teacher_upload": {
-      "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
-      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
+      "failed_upload": "Ha ocurrido un error al subir el (los) archivo(s)",
+      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname",
+      "wrong_mime_type": "El tipo de archivo no es el esperado."
     },
     "qualified_teacher": {
       "not_found": "El registro de Docente Calificado no ha sido encontrado",

@@ -1,4 +1,5 @@
 // @import_routes
+import { documentQueueRoute } from "@scnode_app/routes/default/admin/documentQueue/documentQueueRoute";
 import { qualifiedTeachersRoute } from "@scnode_app/routes/default/admin/qualifiedTeachers/qualifiedTeachersRoute";
 import { attachedRoute } from "@scnode_app/routes/default/admin/attached/attachedRoute";
 import { attachedCategoryRoute } from "@scnode_app/routes/default/admin/attachedCategory/attachedCategoryRoute";
@@ -74,6 +75,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    documentQueueRoute,
     qualifiedTeachersRoute,
     attachedRoute,
     attachedCategoryRoute,

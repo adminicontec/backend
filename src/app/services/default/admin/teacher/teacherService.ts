@@ -5,14 +5,14 @@
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { modularService } from '@scnode_app/services/default/admin/modular/modularService';
+import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
-import { campus_setup } from '@scnode_core/config/globals';
 import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
-import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
@@ -23,7 +23,7 @@ import { TeacherProfile } from '@scnode_app/models';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
-import { IMassiveLoad, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IMassiveLoad, IUploadFile, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
 import { IQualifiedTeacher } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
@@ -40,9 +40,60 @@ class TeacherService {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
+  private default_document_path = 'documents/qualified';
+
   constructor() { }
 
+
+  public upload = async (params: IUploadFile, files?: any) => {
+
+    try {
+      const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+      if (files && files.file_xlsx && typeof files.file_xlsx === 'object') {
+        if (files.file_xlsx.mimetype === mimeType) {
+          const response_upload: any = await uploadService.uploadFile(files.file_xlsx, this.default_document_path);
+
+          if (response_upload.status === 'error') return response_upload;
+
+          console.log('*********************************');
+          console.dir(response_upload, { depth: null, colors: true });
+          console.log('*********************************');
+
+          // save record on documents_queue to trigger the  documentProcessor
+          const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
+            status: 'New',
+            docPath: response_upload.path,
+            userId: params.userID
+          });
+
+          console.log('----------------------------');
+          console.dir(respDocumentQueue, { depth: null, colors: true });
+          console.log('----------------------------');
+
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              upload: respDocumentQueue.documentQueue
+            }
+          });
+        }
+        else {
+          return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'teacher_upload.wrong_mime_type' } });
+        }
+      }
+      else {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'teacher_upload.empty_file', params: { error: files } } });
+      }
+    }
+
+    catch (e) {
+      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'teacher_upload.empty_file', params: { error: e } } });
+    }
+  }
+
+
   public massive = async (params: IMassiveLoad) => {
+
 
     try {
       console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
@@ -203,19 +254,6 @@ class TeacherService {
           index++
         }
 
-        // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-        // console.log(processResultLog);
-        // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-
-        // let extError = processResultLog.filter(e => e.status === 'ERROR');
-        // if (extError) {
-        //   console.log("Log de Errores: ");
-        //   console.log(extError);
-        // }
-        // else {
-        //   console.log("Carga sin Errores.");
-        // }
-
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             ...processResultLog
@@ -310,8 +348,10 @@ class TeacherService {
 
             processError.push({
               typeError: 'ModularEmpty',
+              row: indexP,
+              col: 'Modular',
               message: 'el valor del Modular está vacío',
-              row: indexP
+              data: contentRowTeacher.modular
             });
 
             indexP++
@@ -367,8 +407,10 @@ class TeacherService {
 
               processError.push({
                 typeError: 'ModularMissmatch',
-                message: 'Modular ' + contentRowTeacher.modular + ' no encontrado en hoja de Migración',
-                row: indexP
+                message: 'Modular [' + contentRowTeacher.modular + '] no encontrado en hoja de Migración',
+                row: indexP,
+                col: 'Modular',
+                data: contentRowTeacher.modular
               });
               indexP++
               continue;
@@ -390,7 +432,9 @@ class TeacherService {
             processError.push({
               typeError: 'UserNotFound',
               message: 'Usuario ' + contentRowTeacher.documentID + ' no encontrado',
-              row: indexP
+              row: indexP,
+              col: 'Documento de Identidad',
+              data: contentRowTeacher.documentID
             });
             indexP++;
             continue;
@@ -423,7 +467,7 @@ class TeacherService {
             qualifiedTeachers: [
               ...processResult
             ],
-            errorLog:[
+            errorLog: [
               ...processError
             ]
             // ,

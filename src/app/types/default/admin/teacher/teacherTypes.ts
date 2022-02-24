@@ -57,4 +57,9 @@ export interface IMassiveLoad {
     data: Buffer,
   }
 }
+
+export interface IUploadFile {
+  userID?: string,
+  sendEmail?: boolean | 'true' | 'false', // Booleano que indica si se debe enviar notificación via email
+}
 //@end

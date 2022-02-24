@@ -29,6 +29,22 @@ class TeacherController {
 
   constructor() { }
 
+
+
+  public upload = async (req: Request, res: Response) => {
+
+    let params = req.getParameters.all()
+    let files = req.files
+    // if (files && files.hasOwnProperty('file_xlsx')) {
+    //   params['contentFile'] = files['file_xlsx']
+    // } else {
+    //   params['contentFile'] = null
+    // }
+
+    const response = await teacherService.upload(params, files)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
   public massive = async (req: Request, res: Response) => {
 
     let params = req.getParameters.all()
