@@ -36,6 +36,7 @@ class UserRoute {
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
+    routerUtility.post(app,_route,'/create-multiple',this.instanceController.createMultiple,[], ['auth']);
     // @end
   }
 }

@@ -114,6 +114,22 @@ class UserController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+  /**
+   * Metodo que permite retornar la información de un usaurio
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public createMultiple = async (req: Request, res: Response) => {
+    let file_xlsx = null
+    if (req.files && req.files.hasOwnProperty('file_xlsx')) {
+      file_xlsx = req.files.file_xlsx
+    }
+
+    const response = await userService.createMultiple(file_xlsx)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const userController = new UserController();

@@ -787,7 +787,7 @@ class CourseSchedulingService {
         amount_notifications: 1,
         // Información
         program_name: courseScheduling.program.name,
-        service_id: courseScheduling.metadata.service_id,
+        service_id: courseScheduling.metadata.service_id
       });
     }
   }
@@ -870,7 +870,7 @@ class CourseSchedulingService {
           initDate: moment(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
-        const emails: string[] = [customs['mailer'].email_material_delivery];
+        const emails: string[] = [customs['mailer']['email_material_delivery']];
         const mail = await mailService.sendMail({
           emails,
           mailOptions: {
