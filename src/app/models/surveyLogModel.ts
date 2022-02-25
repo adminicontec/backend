@@ -14,7 +14,14 @@ const SurveyLogSchema = new Schema({
   course_scheduling_details: {
     type: Schema.Types.ObjectId,
     ref: 'CourseSchedulingDetails'
-  }
+  },
+  endDate: {
+    type: Schema.Types.Date,
+  },
+  answer_users: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }]
   // @end
 }, {
   collection: 'survey_logs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

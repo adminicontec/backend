@@ -7,7 +7,8 @@ import moment from 'moment'
 // @import services
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
-import { uploadService } from '@scnode_core/services/default/global/uploadService'
+import { uploadService } from '@scnode_core/services/default/global/uploadService';
+import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 // @end
 
 // @import config
@@ -284,6 +285,7 @@ class CourseSchedulingService {
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
         await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
         await User.populate(response, { path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
+        await User.populate(response, { path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
@@ -432,6 +434,7 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingStatus', select: 'id name' })
           .populate({ path: 'regional', select: 'id name moodle_id' })
           .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
+          .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
@@ -761,6 +764,8 @@ class CourseSchedulingService {
   }
 
   private serviceSchedulingNotification = async (courseScheduling) => {
+    // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
+    return await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
     let email_to_notificate = []
     const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
     if (serviceScheduler) {
@@ -783,23 +788,14 @@ class CourseSchedulingService {
         // Información
         program_name: courseScheduling.program.name,
         service_id: courseScheduling.metadata.service_id,
-        modality: courseScheduling.schedulingMode.name,
-        module: courseScheduling.modular.name,
-        duration: courseScheduling.duration,
-        startDate: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
-        endDate: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
-        // TODO: Poner el nombre del profesor
-        teacher: 'Profesor 1',
-        observations: courseScheduling.observations,
-        // TODO: Poner si tiene exámenes o no
-        exam: 'SI',
-        accountExecutive: courseScheduling.account_executive.profile.first_name,
-        regional: courseScheduling.regional.name
       });
     }
   }
 
   private serviceSchedulingCancelled = async (courseScheduling) => {
+    // @INFO Enviar notificación de cancelado al auxiliar del servicio
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel');
+
     let email_to_notificate = []
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
@@ -896,6 +892,9 @@ class CourseSchedulingService {
   }
 
   private sendServiceSchedulingUpdated = async (courseScheduling, changes) => {
+    // @INFO Notificar al auxiliar logisto del servicio
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+
     let email_to_notificate = []
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id

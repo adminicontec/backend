@@ -7,6 +7,7 @@ import { academicResourceConfigService } from '@scnode_app/services/default/admi
 import { userService } from '@scnode_app/services/default/admin/user/userService'
 // import { academicResourceQualificationService } from '@scnode_app/services/default/lms/academicContent/events/academicResource/qualification/academicResourceQualificationService'
 import { academicResourceDataAttemptService } from '@scnode_app/services/default/data/academicContent/academicResource/academicResourceDataAttemptService'
+import { surveyLogService } from '@scnode_app/services/default/admin/survey/surveyLogService';
 // @end
 
 // @import utilities
@@ -152,7 +153,14 @@ class AcademicResourceAttemptService {
 
       if (params.results.score) results.score = params.results.score
       if (params.results.status) results.status = params.results.status
-      if (params.results.surveyRelated) results.surveyRelated = params.results.surveyRelated
+      if (params.results.surveyRelated) {
+        results.surveyRelated = params.results.surveyRelated
+        // @INFO Actualizar el log de la encuesta
+        await surveyLogService.addAttempt({
+          surveyRelated: params.results.surveyRelated,
+          userId: params.user
+        });
+      }
 
       results.time_taken += timeView
 

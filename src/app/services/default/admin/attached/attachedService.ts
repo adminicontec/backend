@@ -283,7 +283,7 @@ class AttachedService {
    * @param key
    */
   public getFileUrl = (key: string) => {
-    return `${customs['uploads']}/${this,this.attached_default_path}/${key}`;
+    return `${customs['uploads']}/${this.attached_default_path}/${key}`;
   }
 
 }

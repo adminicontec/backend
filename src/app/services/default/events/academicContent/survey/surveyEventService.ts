@@ -84,6 +84,7 @@ class SurveyEventService {
       // Para el log de encuestas
       let course_scheduling: string | undefined = undefined;
       let course_scheduling_details: string | undefined = undefined;
+      let endDateService: Date | undefined = undefined;
 
       for (const enrollment of enrollments) {
         if (!surveyAvailable) {
@@ -140,6 +141,7 @@ class SurveyEventService {
                         // Para el log de encuestas
                         course_scheduling = enrollment.course_scheduling._id;
                         course_scheduling_details = course._id;
+                        endDateService = lastSession.endDate;
                       }
                   }
                 }
@@ -164,6 +166,7 @@ class SurveyEventService {
                 // Para el log de encuestas
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
+                endDateService = enrollment.course_scheduling.endDate;
               } else {
                 console.log('entro a virtual false')
                 // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -212,7 +215,8 @@ class SurveyEventService {
       // @INFO: Agregar un surveyLog
       await surveyLogService.saveLog({
         course_scheduling,
-        course_scheduling_details
+        course_scheduling_details,
+        endDate: endDateService
       });
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
