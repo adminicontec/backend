@@ -1,6 +1,7 @@
 // @import_dependencies_node Import libraries
 import bcrypt from "bcrypt-nodejs";
 import moment from 'moment';
+import * as XLSX from "xlsx";
 const ObjectID = require('mongodb').ObjectID
 // @end
 
@@ -354,51 +355,59 @@ class UserService {
           }
 
           console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
-          var paramUserMoodle = {
-            username: params.username
-          }
-          let respMoodleSearch: any = await moodleUserService.findBy(paramUserMoodle);
-          console.log("moodleUserService()  resp:");
-          console.log(respMoodleSearch);
-          if (respMoodleSearch.status == "success") {
-            if (respMoodleSearch.user == null) {
-              console.log("Moodle: user NO exists ");
-              // [revisión[]
-              var paramsMoodleUser: IMoodleUser = {
-                city: params.profile.city,
-                country: countryCode,
-                documentNumber: params.profile.doc_number,
-                email: params.email,
-                username: params.username,
-                password: params.password,
-                phonenumber: params.phoneNumber,
-                firstname: params.profile.first_name,
-                lastname: params.profile.last_name,
-                fecha_nacimiento: params.profile.birthDate,
-                genero: params.profile.genre,
-                email_2: params.profile.alternativeEmail,
-                origen: params.profile.origen,
-                regional: params.profile.regional,
-                cargo: params.profile.currentPosition,
-                profesion: params.profile.carreer,
-                nivel_educativo: params.profile.educationalLevel,
-                empresa: params.profile.company,
-              }
-              console.log(paramsMoodleUser);
+          console.log('params.moodle', params.moodle)
+          if (!params.moodle || (params.moodle && params.moodle === 'on')) {
+            console.log('entro a guardar en moodle')
+            var paramUserMoodle = {
+              username: params.username
+            }
+            let respMoodleSearch: any = await moodleUserService.findBy(paramUserMoodle);
+            console.log("moodleUserService()  resp:");
+            console.log(respMoodleSearch);
+            if (respMoodleSearch.status == "success") {
+              if (respMoodleSearch.user == null) {
+                console.log("Moodle: user NO exists ");
+                // [revisión[]
+                var paramsMoodleUser: IMoodleUser = {
+                  city: params.profile.city,
+                  country: countryCode,
+                  documentNumber: params.profile.doc_number,
+                  email: params.email,
+                  username: params.username,
+                  password: params.password,
+                  phonenumber: params.phoneNumber,
+                  firstname: params.profile.first_name,
+                  lastname: params.profile.last_name,
+                  fecha_nacimiento: params.profile.birthDate,
+                  genero: params.profile.genre,
+                  email_2: params.profile.alternativeEmail,
+                  origen: params.profile.origen,
+                  regional: params.profile.regional,
+                  cargo: params.profile.currentPosition,
+                  profesion: params.profile.carreer,
+                  nivel_educativo: params.profile.educationalLevel,
+                  empresa: params.profile.company,
+                }
+                console.log(paramsMoodleUser);
 
-              // crear nuevo uusario en MOODLE
-              let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
-              console.log("Moodle: Usuario creado con Éxito.");
-              console.log(respMoodleInsert);
+                // crear nuevo uusario en MOODLE
+                let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
+                console.log("Moodle: Usuario creado con Éxito.");
+                console.log(respMoodleInsert);
 
-              if (respMoodleInsert.status === 'success') {
-                if (respMoodleInsert.user.id && respMoodleInsert.user.username) {
-                  await User.findByIdAndUpdate(_id, { moodle_id: respMoodleInsert.user.id }, {
-                    useFindAndModify: false,
-                    new: true,
-                    lean: true,
-                  })
-                  response.moodle_id = respMoodleInsert.user.id;
+                if (respMoodleInsert.status === 'success') {
+                  if (respMoodleInsert.user.id && respMoodleInsert.user.username) {
+                    await User.findByIdAndUpdate(_id, { moodle_id: respMoodleInsert.user.id }, {
+                      useFindAndModify: false,
+                      new: true,
+                      lean: true,
+                    })
+                    response.moodle_id = respMoodleInsert.user.id;
+                  }
+                  else {
+                    await this.delete({ id: _id })
+                    return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
+                  }
                 }
                 else {
                   await this.delete({ id: _id })
@@ -406,12 +415,8 @@ class UserService {
                 }
               }
               else {
-                await this.delete({ id: _id })
-                return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
+                console.log("Moodle: user exists with name: " + JSON.stringify(respMoodleSearch.user.fullname));
               }
-            }
-            else {
-              console.log("Moodle: user exists with name: " + JSON.stringify(respMoodleSearch.user.fullname));
             }
           }
 
@@ -702,6 +707,124 @@ class UserService {
     }
 
     return moment.utc(momentDate.format('YYYY-MM-DD HH:mm:ss'))
+  }
+
+  public createMultiple = async (file_xlsx: any) => {
+    try {
+
+      let buffer = Buffer.from(file_xlsx.data);
+      const workbook = XLSX.read(buffer, { type: "buffer" });
+
+      const sheet_name_list = workbook.SheetNames;
+      // Lee la primer hoja del archivo
+
+      const xlData: any = XLSX.utils.sheet_to_json(
+        workbook.Sheets[sheet_name_list[0]]
+      );
+
+      let errors = [];
+      let total_create = 0;
+
+      for (const key in xlData) {
+        let error_create = [];
+        let user = null;
+
+        if (!xlData[key].hasOwnProperty('roles')) {
+          error_create.push(
+            i18nUtility.i18nMessage('app_error_messages.users.createMultiple.no_role'),
+          )
+        }
+
+        if (xlData[key].hasOwnProperty("username")) {
+          user = await User.findOne({username: xlData[key].username}).select("_id");
+          if (user)
+            error_create.push(
+              i18nUtility.i18nMessage(
+                "app_error_messages.users.createMultiple.already_exists",
+                { field: 'nombre de usuario', value: xlData[key].username }
+              )
+            );
+        }
+
+        if (xlData[key].hasOwnProperty("doc_number")) {
+          user = await User.findOne({'profile.doc_number': xlData[key].doc_number}).select("_id");
+          if (user)
+            error_create.push(
+              i18nUtility.i18nMessage(
+                "app_error_messages.users.createMultiple.already_exists",
+                { field: 'numero de documento', value: xlData[key].doc_number }
+              )
+            );
+        }
+
+        let roles_list = [];
+        if (xlData[key].hasOwnProperty("roles")) {
+          let roleNames = xlData[key].roles.split(",");
+          roleNames = roleNames.map((role) => role.trim());
+
+          let roleList = await Role.find({name: {$in: roleNames}}).select("id name");
+
+          roleList.map((element) => {
+            roles_list.push(element._id)
+          }, [])
+        }
+        // Validar por RegExp el email
+        let re = new RegExp('^[a-zA-Z0-9.!#$%&*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$')
+        let email = xlData[key].email
+        email = await email.trim()
+        let emailValid = re.test(email)
+        if (!emailValid) {
+          error_create.push(
+            i18nUtility.i18nMessage(
+              "app_error_messages.users.createMultiple.invalid_email", { email })
+            )
+        }
+
+        if (error_create.length === 0) {
+          let user_data_object = {
+            username: (xlData[key].username) ? xlData[key].username.toString().trim() : '',
+            password: (xlData[key].password) ? xlData[key].password.toString().trim() : '',
+            email:  (xlData[key].email) ? xlData[key].email.toString().trim() : '',
+            moodle:  (xlData[key].moodle) ? xlData[key].moodle.toString().trim() : undefined,
+            profile: {
+              first_name: (xlData[key].first_name) ? xlData[key].first_name.toString().trim() : '',
+              last_name: (xlData[key].last_name) ? xlData[key].last_name.toString().trim() : '',
+              doc_number: (xlData[key].doc_number) ? xlData[key].doc_number.toString().trim() : '',
+              position: (xlData[key].position) ? xlData[key].position.toString().trim() : undefined,
+              dependence: (xlData[key].dependence) ? xlData[key].dependence.toString().trim() : undefined,
+            },
+            roles: xlData[key].roles ? roles_list : []
+          }
+
+          const response: any = await this.insertOrUpdate(
+            user_data_object
+          );
+          if (response.status === "error") {
+            error_create.push(response.message);
+          } else {
+            total_create++;
+          }
+        }
+        if (error_create.length > 0)
+          errors.push({
+            row: parseInt(key) + 2, // Suma 2 porque la primera fila del archivo contiene los encabezados
+            error: error_create,
+          });
+      }
+
+      return responseUtility.buildResponseSuccess("json", null, {
+        additional_parameters: {
+          errors: errors,
+          total_create: total_create,
+        },
+      });
+    } catch(e) {
+      return responseUtility.buildResponseFailed("json", null, {
+        additional_parameters: {
+          "message":e.message
+        },
+      });
+    }
   }
 
 }

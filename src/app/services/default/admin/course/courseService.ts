@@ -133,7 +133,7 @@ class CourseService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program courseType objectives content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
       if (params.select) {
         select = params.select
       }
@@ -227,13 +227,14 @@ class CourseService {
           let courseType = ''
           let courseObjectives = [];
           let courseContent = [];
+          let generalities = [];
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
           }).lean()
 
           if (schedulingExtraInfo) {
-            let extra_info = schedulingExtraInfo
+            let extra_info = schedulingExtraInfo;
             courseType = extra_info.courseType;
 
             // Objectives
@@ -253,6 +254,11 @@ class CourseService {
                 modules: blockText
               };
               courseContent.push(item);
+            });
+
+            // Generalities
+            extra_info.generalities.blocks.forEach(element => {
+              generalities.push(element.data.text);
             });
           }
 
@@ -294,6 +300,7 @@ class CourseService {
             isActive: isActive,
             objectives: courseObjectives,
             content: courseContent,
+            generalities: generalities,
           }
           listOfCourses.push(courseToExport);
         }

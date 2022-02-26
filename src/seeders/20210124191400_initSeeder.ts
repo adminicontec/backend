@@ -77,7 +77,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let course_mode_ids = await this.addCourseModesCategories()
 
     // // @INFO: Agregando regionales
-    // let regional_ids = await this.addRegionals()
+    let regional_ids = await this.addRegionals()
 
     // // @INFO: Agregando estados de programación
     // let scheduling_status_ids = await this.addCourseSchedulingStatuses()
@@ -1158,26 +1158,27 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
   private addRegionals = async () => {
 
     let regional_ids = {}
-    // const regionals = [
-    //   {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19, short_key: 'AN'},
-    //   {name: 'Sur Occidente', moodle_id: 20, short_key: 'SO'},
-    //   {name: 'Oriente', moodle_id: 21, short_key: 'OR'},
-    //   {name: 'Centro y Sur Oriente', moodle_id: 22, short_key: 'CS'},
-    //   {name: 'Caribe', moodle_id: 13, short_key: 'CA'},
-    //   {name: 'Internacional', moodle_id: 23, short_key: 'IN'},
-    // ]
-    // for await (const regional of regionals) {
-    //   const exists: any = await regionalService.findBy({
-    //     query: QueryValues.ONE,
-    //     where: [{field: 'name', value: regional.name}]
-    //   })
-    //   if (exists.status === 'success') regional['id'] = exists.regional._id
+    const regionals = [
+      {name: 'Transversal', moodle_id: 6, short_key: 'TR'},
+      {name: 'Antioquia, Chocó y Eje Cafetero', moodle_id: 19, short_key: 'AN'},
+      {name: 'Sur Occidente', moodle_id: 20, short_key: 'SO'},
+      {name: 'Oriente', moodle_id: 21, short_key: 'OR'},
+      {name: 'Centro y Sur Oriente', moodle_id: 22, short_key: 'CS'},
+      {name: 'Caribe', moodle_id: 13, short_key: 'CA'},
+      {name: 'Internacional', moodle_id: 23, short_key: 'IN'},
+    ]
+    for await (const regional of regionals) {
+      const exists: any = await regionalService.findBy({
+        query: QueryValues.ONE,
+        where: [{field: 'name', value: regional.name}]
+      })
+      if (exists.status === 'success') regional['id'] = exists.regional._id
 
-    //   const response:any = await regionalService.insertOrUpdate(regional)
-    //   if (response.status === 'success') {
-    //     regional_ids[regional.name] = response.regional._id
-    //   }
-    // }
+      const response:any = await regionalService.insertOrUpdate(regional)
+      if (response.status === 'success') {
+        regional_ids[regional.name] = response.regional._id
+      }
+    }
     return regional_ids
   }
 

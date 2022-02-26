@@ -59,6 +59,12 @@
         "already_exists": "Ya existe un home con el nombre :name"
       }
     },
+    "users": {
+      "createMultiple": {
+        "no_role": "El rol de usuario es obligatorio",
+        "already_exists": "Ya existe un usuario con :field :value"
+      }
+    },
     "user": {
       "not_found": "El usuario no ha sido encontrado",
       "insertOrUpdate": {
@@ -474,6 +480,9 @@
     },
     "scheduling_material_delivery": {
       "subject": "Entrega de normas"
+    },
+    "survey_notification": {
+      "subject": "Alerta no aplicación asistencia y/o encuesta de satisfacción del modulo"
     }
   }
 }

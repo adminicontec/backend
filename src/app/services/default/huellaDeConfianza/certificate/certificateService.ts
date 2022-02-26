@@ -925,7 +925,7 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
-      console.log("Params: ");
+      console.log("Params for Preview Certificate: ");
       console.log(params);
 
       // params.format:
@@ -1042,6 +1042,7 @@ class CertificateService {
             url: certificate?.certificate?.url,
             imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
             pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
+            date: certificate?.certificate.date
           }
         }
       });

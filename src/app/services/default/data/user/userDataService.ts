@@ -73,7 +73,7 @@ class UserDataService {
             key: element?._id,
             _id: element?._id,
             title: element?.certificate.title ||  '',
-            date: moment(element.created_at).format('YYYY-MM-DD'),
+            date: moment(element?.certificate.date).format('YYYY-MM-DD'), //moment(element.created_at).format('YYYY-MM-DD'),
             hash: element?.certificate?.hash,
             url: element?.certificate?.url,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
