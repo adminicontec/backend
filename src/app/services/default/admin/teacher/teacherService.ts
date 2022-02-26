@@ -44,7 +44,9 @@ class TeacherService {
 
   constructor() { }
 
-
+  /**
+   * Upload  of qualified teacher file and put it on a document queue
+   */
   public upload = async (params: IUploadFile, files?: any) => {
 
     try {
@@ -56,16 +58,22 @@ class TeacherService {
 
           if (response_upload.status === 'error') return response_upload;
 
-          console.log('*********************************');
-          console.dir(response_upload, { depth: null, colors: true });
-          console.log('*********************************');
+          // console.log('*********************************');
+          // console.dir(response_upload, { depth: null, colors: true });
+          // console.log('*********************************');
 
           // save record on documents_queue to trigger the  documentProcessor
           const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
             status: 'New',
+            type: 'Qualified Teacher',
             docPath: response_upload.path,
-            userId: params.userID
+            userId: params.userID,
+            sendEmail: params.sendEmail === 'true' ? true : false
           });
+
+          if (respDocumentQueue.status == 'error') {
+            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'document.queue.insertOrUpdate.failed', params: { error: respDocumentQueue.error } } });
+          }
 
           console.log('----------------------------');
           console.dir(respDocumentQueue, { depth: null, colors: true });
@@ -92,14 +100,15 @@ class TeacherService {
   }
 
 
-  public massive = async (params: IMassiveLoad) => {
+  public processFile = async (params: IMassiveLoad) => {
 
-
+    console.log(">>>>>>>>>>> Begin Massive Load of Qualified Teachers")
     try {
-      console.log(">>>>>>>>>>> Begin Massive Load of Teachers")
-
       let singleProfessionalLoadContent: IQualifiedProfessional;
       let content = params.contentFile;
+      let record = params.recordToProcess;
+
+      console.log(content);
 
       // 0. Extracción de Cursos y Docentes calificados
       let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
@@ -112,12 +121,22 @@ class TeacherService {
 
 
       //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
-      let respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+      let respProcessQualifiedTeacherData: any = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+
+      // Update processed record
+      // processError
+
+      const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
+        id: record.id,
+        status: 'Complete',
+        processLog: respProcessQualifiedTeacherData.qualifiedTeachers,
+        errorLog: respProcessQualifiedTeacherData.errorLog
+      });
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          teacherUpload: {
-            ...respProcessQualifiedTeacherData //respProcessTeacherData
+          processFile: {
+            ...respDocumentQueue //respProcessQualifiedTeacherData
           }
         }
       })

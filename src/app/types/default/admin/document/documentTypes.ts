@@ -1,6 +1,8 @@
 // @import types
 // @end
 
+import { BooleanModel } from "aws-sdk/clients/gamelift";
+
 // @add your types
 
 export interface IDocumentQueueQuery {
@@ -16,6 +18,8 @@ export interface IDocumentQueue {
   userId?: string,
   docPath?: string,
   status: string,
+  type?: string,
+  sendEmail?: boolean,
   processLog?: any,
   errorLog?: any,
 }

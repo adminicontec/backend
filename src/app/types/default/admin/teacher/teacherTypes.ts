@@ -51,6 +51,7 @@ export interface IQualifiedProfessional {
 
 export interface IMassiveLoad {
   //sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
+  recordToProcess: any,
   contentFile:           // contento of file to be processed.
   {
     name: string,

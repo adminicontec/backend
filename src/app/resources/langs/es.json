@@ -420,7 +420,7 @@
       "queue": {
         "not_found": "El item de la cola del Procesador de Documentos no existe.",
         "insertOrUpdate": {
-          "failed": "Error al insertar registro en la cola del Procesador de Documentos."
+          "failed": "Error al insertar registro en la cola del Procesador de Documentos. :error"
         }
       }
     },

@@ -21,6 +21,15 @@ const DocumentQueueSchema = new Schema({
     required: true,
     enum: ['New', 'In-process', 'Complete', 'Error']
   },
+  type: {
+    type: Schema.Types.String,
+    required: true,
+    enum: ['Qualified Teacher']
+  },
+  sendEmail:{
+    type: Schema.Types.Boolean,
+    required: true,
+  },
   processLog: {
     type: Schema.Types.Mixed
   },

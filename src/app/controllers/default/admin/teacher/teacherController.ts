@@ -32,29 +32,16 @@ class TeacherController {
 
 
   public upload = async (req: Request, res: Response) => {
-
     let params = req.getParameters.all()
     let files = req.files
-    // if (files && files.hasOwnProperty('file_xlsx')) {
-    //   params['contentFile'] = files['file_xlsx']
-    // } else {
-    //   params['contentFile'] = null
-    // }
-
     const response = await teacherService.upload(params, files)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
-  public massive = async (req: Request, res: Response) => {
+  public processFile = async (req: Request, res: Response) => {
 
     let params = req.getParameters.all()
-    let files = req.files
-    if (files && files.hasOwnProperty('file_xlsx')) {
-      params['contentFile'] = files['file_xlsx']
-    } else {
-      params['contentFile'] = null
-    }
-    const response = await teacherService.massive(params)
+    const response = await teacherService.processFile(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
