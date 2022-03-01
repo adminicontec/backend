@@ -6,14 +6,14 @@ const { Schema } = mongoose;
 
 const QualifiedTeachersSchema = new Schema({
   // @add_schema Add schema here
-  user: {
+  teacher: {
     type: Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
   modular: {
     type: Schema.Types.ObjectId,
-    ref: "Modulars",
+    ref: "Modular",
     required: true,
   },
   courseCode: {

@@ -75,6 +75,11 @@ class QualifiedTeachersController {
       return responseUtility.sendResponseFromObject(res, response)
     }
 
+    public list = async (req: Request, res: Response) => {
+      const response = await qualifiedTeachersService.list(req.getParameters.all())
+      return responseUtility.sendResponseFromObject(res, response)
+    }
+
 }
 
 export const qualifiedTeachersController = new QualifiedTeachersController();

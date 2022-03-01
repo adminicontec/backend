@@ -96,7 +96,8 @@ const UserSchema = new Schema({
     contractType: {
       type: { type: Schema.Types.String },
       isTeacher: { type: Schema.Types.Boolean },
-      isTutor: { type: Schema.Types.Boolean }
+      isTutor: { type: Schema.Types.Boolean },
+      ranking: { type: Schema.Types.String },
     },
 
     timezone: { type: Schema.Types.String, default: 'GMT-5' },

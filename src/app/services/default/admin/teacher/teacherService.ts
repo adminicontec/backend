@@ -7,6 +7,7 @@ import { userService } from '@scnode_app/services/default/admin/user/userService
 import { modularService } from '@scnode_app/services/default/admin/modular/modularService';
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
+import { qualifiedTeachersService } from "@scnode_app/services/default/admin/qualifiedTeachers/qualifiedTeachersService"
 // @end
 
 // @import utilities
@@ -197,6 +198,7 @@ class TeacherService {
                   type: element['Tipo de Vinculación'],
                   isTeacher: element['DOCENTE'] ? true : false,
                   isTutor: element['TUTOR'] ? true : false,
+                  ranking: (element['Escalafón / Contratación'])? element['Escalafón / Contratación'] : null
                 }
               }
             };
@@ -353,7 +355,7 @@ class TeacherService {
             courseCode: element['Código / Versión del Curso'],
             versionStatus: element['Estado de la Versión'],
             courseName: element['Nombre Curso'],
-            qualifiedDate: element['Fecha Calificación']
+            qualifiedDate: (element['Fecha Calificación']) ? element['Fecha Calificación'] : null
           }
 
           //console.log(contentRowTeacher);
@@ -460,13 +462,13 @@ class TeacherService {
           }
 
           console.log(">>[CampusVirtual]: Usuario encontrado. Inserción de registro");
-          console.log(respCampusDataUser.user._id.toString());
+          //console.log("::::: " + contentRowTeacher.documentID);
           //#endregion
 
           //#region  ---- Registro de Docente Calificado
           registerQualifiedTeacher = {
             index: indexP,
-            user: respCampusDataUser.user._id.toString(),
+            teacher: respCampusDataUser.user._id.toString(),
             modular: modularID, //(modularID) ? modularID : 'WARNING - ' + contentRowTeacher.modular,
             courseCode: contentRowTeacher.courseCode,
             courseName: contentRowTeacher.courseName,
@@ -474,7 +476,28 @@ class TeacherService {
             isEnabled: true,
             status: 'active'
           }
-          processResult.push(registerQualifiedTeacher);
+
+          console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
+          console.dir(registerQualifiedTeacher, { depth: null, colors: true });
+          console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
+
+          const respQualifiedTeacher: any = await qualifiedTeachersService.insertOrUpdate(registerQualifiedTeacher);
+          if (respQualifiedTeacher.status == 'error') {
+            console.log('Error insertando Docente Calificado.');
+            console.log(respQualifiedTeacher);
+
+            processError.push({
+              typeError: 'RegisterQualifiedTeacher',
+              message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
+              row: indexP,
+              col: 'Full register',
+              data: `${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
+            });
+          }
+          else {
+            console.log('Éxito insertando Docente Calificado.');
+            processResult.push(registerQualifiedTeacher);
+          }
           //#endregion
 
           indexP++;

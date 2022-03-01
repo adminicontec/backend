@@ -82,7 +82,7 @@ class DocumentQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id userId status type docPath processLog errorLog';
+      let select = 'id userId status type docPath processLog errorLog created_at updated_at';
       if (params.query === QueryValues.ALL) {
         const registers = await DocumentQueue.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {
