@@ -435,8 +435,11 @@ class EnrollmentService {
                 mailer: customs['mailer'],
                 first_name: respCampusDataUser.user.profile.first_name,
                 course_name: courseScheduling.program.name,
+                username: respCampusDataUser.username || '',
+                service_id: courseScheduling?.metadata?.service_id || '',
                 course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
                 course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                notification_source: `course_start_${ respCampusDataUser.user._id}_${courseScheduling._id}`,
                 type: 'student'
               })
             }
@@ -468,9 +471,12 @@ class EnrollmentService {
               await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                 mailer: customs['mailer'],
                 first_name: userEnrollment.profile.first_name,
+                username: userEnrollment.username || '',
                 course_name: courseScheduling.program.name,
+                service_id: courseScheduling?.metadata?.service_id || '',
                 course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
                 course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                notification_source: `course_start_${ userEnrollment._id}_${courseScheduling._id}`,
                 type: 'student'
               })
             }
@@ -557,6 +563,7 @@ class EnrollmentService {
               mailer: customs['mailer'],
               first_name: user.profile.first_name,
               course_name: course_scheduling.program.name,
+              service_id: (course_scheduling?.metadata?.service_id) ? course_scheduling?.metadata?.service_id : '-',
               notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
             })
           }

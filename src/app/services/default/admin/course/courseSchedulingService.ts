@@ -640,7 +640,7 @@ class CourseSchedulingService {
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
     }).select('id user')
-      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+      .populate({ path: 'user', select: 'id username email profile.first_name profile.last_name' })
       .lean()
 
     for await (const enrolled of userEnrolled) {
@@ -648,6 +648,8 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         first_name: enrolled.user.profile.first_name,
         course_name: courseScheduling.program.name,
+        service_id: courseScheduling?.metadata?.service_id || '',
+        username: enrolled.user.username || '',
         course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
         observations: courseScheduling.observations,
@@ -684,6 +686,11 @@ class CourseSchedulingService {
             client: (courseScheduling.client?.name) ? courseScheduling.client?.name : '-',
             city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
             scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
+            duration: (courseScheduling?.duration) ? generalUtility.getDurationFormated(courseScheduling?.duration, 'large') : '-',
+            scheduling_type: (courseScheduling?.schedulingType?.name) ? courseScheduling?.schedulingType?.name : '-',
+            amountParticipants: (courseScheduling?.amountParticipants) ? courseScheduling?.amountParticipants : '-',
+            regional: (courseScheduling?.regional?.name) ? courseScheduling?.regional?.name : '-',
+            account_executive: (courseScheduling?.account_executive?.profile?.first_name) ? `${courseScheduling?.account_executive?.profile?.first_name} ${courseScheduling?.account_executive?.profile?.last_name}` : '-',
             // course_code: (course.course && course.course.code) ? course.course.code : '',
             // course_name: (course.course && course.course.name) ? course.course.name : '',
           },
@@ -747,6 +754,7 @@ class CourseSchedulingService {
         const teacherData = notificationsByTeacher[key];
         await this.sendEnrollmentUserEmail([teacherData.teacher.email], {
           mailer: customs['mailer'],
+          subject: i18nUtility.__('mailer.enrollment_teacher.subject'),
           teacher: teacherData.teacher,
           program: teacherData.program,
           service: teacherData.service,
@@ -895,8 +903,9 @@ class CourseSchedulingService {
     }
   }
 
-  private sendServiceSchedulingUpdated = async (courseScheduling, changes) => {
-    let email_to_notificate = []
+  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: {course: any, courseSchedulingDetail: any}) => {
+    let students_to_notificate = []
+    let teachers_to_notificate = []
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
     }).select('id user')
@@ -904,37 +913,57 @@ class CourseSchedulingService {
       .lean()
 
     for await (const enrolled of userEnrolled) {
-      email_to_notificate.push(enrolled.user.email.toString())
+      students_to_notificate.push(enrolled.user.email.toString())
     }
 
-    const courses = await CourseSchedulingDetails.find({
+    const where: any = {
       course_scheduling: courseScheduling._id
-    }).select('id startDate endDate duration course sessions teacher')
+    }
+
+    if (course) {
+      where._id = course.courseSchedulingDetail._id
+    }
+
+    const courses = await CourseSchedulingDetails.find(where).select('id startDate endDate duration course sessions teacher')
       .populate({ path: 'course', select: 'id name code' })
       .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
       .lean()
 
     for await (const course of courses) {
-      if (!email_to_notificate.includes(course.teacher.email.toString())) {
-        email_to_notificate.push(course.teacher.email.toString())
+      if (!teachers_to_notificate.includes(course.teacher.email.toString())) {
+        teachers_to_notificate.push(course.teacher.email.toString())
       }
     }
 
-    if (email_to_notificate.length > 0) {
-      await this.serviceSchedulingUpdated(email_to_notificate, {
+    if (students_to_notificate.length > 0) {
+      await this.serviceSchedulingUpdated(students_to_notificate, {
+        mailer: customs['mailer'],
+        service_id: courseScheduling.metadata.service_id,
+        program_name: courseScheduling.program.name,
+        course_name: course?.course?.name || undefined,
+        notification_source: `course_updated_${courseScheduling._id}`,
+        changes,
+        type: 'student'
+      })
+    }
+    if (teachers_to_notificate.length > 0) {
+      await this.serviceSchedulingUpdated(teachers_to_notificate, {
         mailer: customs['mailer'],
         service_id: courseScheduling.metadata.service_id,
         program_name: courseScheduling.program.name,
         notification_source: `course_updated_${courseScheduling._id}`,
-        changes
+        changes,
+        type: 'teacher'
       })
-
     }
   }
 
   public serviceSchedulingUpdated = async (emails: Array<string>, paramsTemplate: any) => {
     try {
       let path_template = 'course/schedulingUpdate'
+      if (paramsTemplate.type === 'teacher') {
+        path_template = 'course/schedulingUpdateTeacher'
+      }
 
       const mail = await mailService.sendMail({
         emails,
@@ -1005,7 +1034,7 @@ class CourseSchedulingService {
       const mail = await mailService.sendMail({
         emails: [email],
         mailOptions: {
-          subject: i18nUtility.__('mailer.unenrollment_user.subject'),
+          subject: (paramsTemplate.type === 'teacher') ? i18nUtility.__('mailer.unenrollment_teacher.subject') : i18nUtility.__('mailer.unenrollment_user.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
