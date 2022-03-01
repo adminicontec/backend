@@ -158,35 +158,6 @@ class CourseContentService {
         }
       }
     }
-    /*
-        respMoodle.forEach(element => {
-          if (element.section != 0) {
-
-            element.modules.forEach(module => {
-
-              const moduleSearch = params.moduleType.find(field => field == module.modname);
-
-              if (moduleSearch) {
-                console.log('--------------------');
-                console.log(module, { depth: null, colors: true });
-                console.log('--------------------');
-                singleModuleCourseContent = {
-                  id: module.id,
-                  sectionid: element.id,
-                  sectionname: element.name,
-                  name: module.name,
-                  modname: module.modname,
-                  instance: module.instance,
-                  visible: module.visible,
-                  uservisible: module.uservisible
-                };
-                responseCourseModules.push(singleModuleCourseContent);
-              }
-            });
-
-          }
-        })
-    */
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         courseModules: responseCourseModules
