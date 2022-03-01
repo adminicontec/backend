@@ -1,15 +1,37 @@
-<div class="img_icontec">
+<div class="img_icontec" style="display: block">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
 <div class="txt_icontec">
 
-  <h2>Retiro del curso</h2><br>
+  <h2>Cancelación de servicio de educación</h2><br>
   <div>Estimado (a) {{params.first_name}}</div>
   <br>
-  <div>Usted ha sido des matriculado del curso {{params.course_name}} como docente.</div>
+  <div>Su asignación al curso {{params.course_name}} correspondiente {{params.program.name}} con identificador de servicio N° {{params.program.service_id}} ha sido cancelada. A continuación encontrara la información de la cancelación:</div>
   <br>
-  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  {{#if params.program}}
+    <div>
+      <p style="margin: 0;"><b>Duración: </b>{{params.program.duration}}</p>
+      <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
+      <p style="margin: 0;"><b>Linea: </b>{{params.program.scheduling_type}}</p>
+      <p style="margin: 0;"><b>Cantidad de participantes: </b>{{params.program.amountParticipants}}</p>
+    </div>
+    <br>
+    <div>
+      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+      <p style="margin: 0;"><b>Regional: </b>{{params.program.regional}}</p>
+      <p style="margin: 0;"><b>Ejecutivo de cuenta: </b>{{params.program.account_executive}}</p>
+    </div>
+    <br>
+  {{/if}}
+  <div><b>PROGRAMACIÓN DEL SERVICIO - CANCELADA</b></div>
+  <br>
+  <div>
+    <p style="margin: 0;"><b>Código: </b>{{params.course_code}}</p>
+    <p style="margin: 0;"><b>Curso: </b>{{params.course_name}}</p>
+  </div>
+  <br>
+  <div>En caso de cualquier inquietud comuníquese con el programador (coordinador del servicio- operación presencial/online o virtual).</div>
   <br><br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">

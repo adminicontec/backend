@@ -1,21 +1,37 @@
-<div class="img_icontec">
+<div class="img_icontec" style="display: block">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
 <div class="txt_icontec">
 
-  <h2>Inicio del curso</h2><br>
+  <h2>Inicio del curso/programa/diplomado</h2><br>
   <div>Estimado (a) {{params.first_name}}</div>
   <br>
-  <div>Usted ha sido inscrito al programa {{params.course_name}} como parte de su plan de formación.</div>
+  <div>Usted ha sido inscrito al programa {{params.course_name}} como parte de su plan de formación, con ID de servicio Nro: {{params.service_id}}</div>
   <br>
-  <div>Lo invitamos a ingresar por la siguiente dirección:<a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></div>
+  <div>La programación del curso/programa/diplomado es:</div>
   <br>
-  <div>La fecha para el curso va desde {{params.course_start}} hasta {{params.course_end}}.</div>
+  <div>Fecha de inicio: {{params.course_start}}</div>
   <br>
-  <div>Lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo</a> de ingreso al Campus Digital.</div>
+  <div>Fecha de fin: {{params.course_end}}</div>
   <br>
-  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
+  <div>En su <b>cuenta de estudiante</b> se encuentran las fechas de cada sesión de formación (Modalidad Presencial y Online) o las actividades a desarrollar  (Modalidad Virtual).</div>
+  <br>
+  <div>Por favor siga los siguientes pasos para ingresar a la <b>cuenta de estudiante</b> y posteriormente <b>al curso</b>:</div>
+  <br>
+  <div><b>PASO 1</b>: Ingrese al campus a la siguiente dirección <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></div>
+  <br>
+  <div><b>PASO 2</b>: Ingrese a la sesión en el botón de la parte derecha superior <img src="{{params.mailer.button_session}}" style="width: 100px;"> con su usuario y contraseña (revise el primer correo recibido asunto: Bienvenida al Campus Digital). Recuerde que su usuario es: {{params.username}}.</div>
+  <br>
+  <div><b>PASO 3</b>:  Dentro de su Cuenta de Estudiante revise el cuadro de programación (Modalidad Presencial y Online) o las actividades a desarrollar (Modalidad Virtual).</div>
+  <br>
+  <div><b>PASO 4</b>: Ingrese al curso en el botón de la parte superior derecha {{params.mailer.button_moodle}}</div>
+  <br>
+  <div>Para mayor información lo invitamos a consultar el siguiente <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo</a>.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo de mesa de ayuda</a>.</div>
+  <br>
+  <div>También dentro del Campus puede acceder a soporte estudiantil con la asistente virtual Daniela, en la opción 2. <img src="{{params.mailer.virtual_help}}" style="width: 100px"></div>
   <br><br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">

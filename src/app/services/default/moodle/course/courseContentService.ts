@@ -81,7 +81,9 @@ class CourseContentService {
 
   }
 
-
+  /**
+   * Module list of course content service
+   */
   public moduleList = async (params: IMoodleCourseModuleQuery = {}) => {
 
     let responseCourseModules = [];
@@ -91,6 +93,7 @@ class CourseContentService {
       sectionname: '',
       instance: 0,
       modname: '',
+      isauditorquiz: false,
       name: '',
       visible: '',
       uservisible: ''
@@ -116,32 +119,45 @@ class CourseContentService {
         });
     }
 
-    respMoodle.forEach(element => {
-      if (element.section != 0) {
-        element.modules.forEach(module => {
-          const moduleSearch = params.moduleType.find(field => field == module.modname);
+    for await (const section of respMoodle) {
+      if (section != 0) {
 
+        for await (const module of section.modules) {
+
+          const moduleSearch = params.moduleType.find(field => field == module.modname);
           if (moduleSearch) {
             // console.log('--------------------');
-            // console.log(JSON.stringify(module, null, 2));
+            // console.dir(module, { depth: null, colors: true });
             // console.log('--------------------');
+
+            console.log(': ' + module.id);
+            let moodleModuleParams = {
+              wstoken: moodle_setup.wstoken,
+              wsfunction: moodle_setup.services.courses.getModules,
+              moodlewsrestformat: moodle_setup.restformat,
+              "cmid": module.id.toString()
+            };
+            let respMoodleModules = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleModuleParams });
+            console.log('Response from modules:');
+            console.dir(respMoodleModules.cm.idnumber, { depth: null, colors: true });
+
             singleModuleCourseContent = {
               id: module.id,
-              sectionid: element.id,
-              sectionname: element.name,
+              sectionid: section.id,
+              sectionname: section.name,
               name: module.name,
               modname: module.modname,
+              isauditorquiz: (respMoodleModules.cm.idnumber.trim() == 'auditor') ? true : false,
               instance: module.instance,
               visible: module.visible,
               uservisible: module.uservisible
             };
             responseCourseModules.push(singleModuleCourseContent);
           }
-        });
 
+        }
       }
-    })
-
+    }
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         courseModules: responseCourseModules

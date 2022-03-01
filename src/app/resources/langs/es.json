@@ -460,16 +460,22 @@
       "subject": "¡Bienvenid@ al Campus Digital Icontec!"
     },
     "enrollment_user": {
-      "subject": "Inicio del curso"
+      "subject": "Inicio del curso/programa/diplomado"
+    },
+    "enrollment_teacher": {
+      "subject": "Reconfirmación de servicio de educación"
     },
     "unenrollment_user": {
-      "subject": "Retiro del curso"
+      "subject": "Retiro del programa de formación"
+    },
+    "unenrollment_teacher": {
+      "subject": "Cancelación de servicio  de educación"
     },
     "scheduling_notification": {
       "subject": "Programación confirmada"
     },
     "scheduling_cancelled_notification": {
-      "subject": "Programación cancelada"
+      "subject": "Servicio de educación cancelado"
     },
     "scheduling_update": {
       "subject": "Programación modificada"
