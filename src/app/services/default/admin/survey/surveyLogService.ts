@@ -10,10 +10,10 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 
 // @import models
 import { SurveyLog } from '@scnode_app/models';
-import { ISaveSurveyLog } from 'app/types/default/admin/survey/surveyLogTypes';
 // @end
 
 // @import types
+import { IAddAttemptSurveyLog, ISaveSurveyLog } from '@scnode_app/types/default/admin/survey/surveyLogTypes';
 // @end
 
 class SurveyLogService {
@@ -50,6 +50,37 @@ class SurveyLogService {
 
     } catch(e){
       console.log('surveyLogService => saveLog => error: ', e);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public addAttempt = async (params: IAddAttemptSurveyLog) => {
+    try{
+
+      // @INFO Validar que exista el log para la encuesta
+      if (!params.surveyRelated) return responseUtility.buildResponseFailed('json');
+      let response = await SurveyLog.findOne({course_scheduling: params.surveyRelated});
+      if (!response) {
+        response = await SurveyLog.findOne({course_scheduling_details: params.surveyRelated});
+      }
+      if (!response) return responseUtility.buildResponseFailed('json');
+
+      // @INFO Actualizar la encuesta con el nuevo usuario
+      const users: string[] = response.answer_users ? response.answer_users : [];
+      if (!users.find((u) => u.toString() === params.userId)) {
+        users.push(params.userId);
+      }
+      const responseSave = await SurveyLog.findByIdAndUpdate(response._id, {answer_users: users});
+
+      // @INFO Enviar respuesta con el log actualizado
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          surveyLog: responseSave
+        }
+      });
+
+    }catch(e) {
+      console.log('surveyLogService => addAttempt => error: ', e);
       return responseUtility.buildResponseFailed('json');
     }
   }

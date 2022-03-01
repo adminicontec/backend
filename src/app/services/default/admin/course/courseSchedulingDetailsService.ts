@@ -4,6 +4,7 @@ import moment from 'moment'
 // @end
 
 // @import services
+import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
 import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
@@ -210,6 +211,8 @@ class CourseSchedulingDetailsService {
           }
 
           if (changes.length > 0) {
+            // @INFO Notificar al auxiliar logisto del servicio
+            await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true);
             await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
               course: response.course,
               courseSchedulingDetail: register,

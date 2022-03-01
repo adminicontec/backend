@@ -1,0 +1,38 @@
+<div class="img_icontec">
+  <img src="{{params.mailer.header_image}}">
+  <p>Notificación Inicio o reprogramación del servicio</p>
+</div>
+
+<div class="txt_icontec">
+  <div style="color: black;"><strong>Estimado(a) Auxiliar {{params.assistant_name}}:</strong></div> <br>
+  <div style="color: black;">Se informa acerca del inicio o reprogramación del siguiente servicio:</div> <br>
+  <div style="color: black;"><strong>Programa: {{params.program_name}}</strong></div> <br>
+  <div style="color: black;"><strong>ID: {{params.program_code}}</strong></div> <br>
+  <div style="color: black;"><strong>Modalidad: {{params.modality}}</strong></div> <br>
+  <div style="color: black;"><strong>Módulo:</strong>
+    <table>
+      <tr>
+        <th>Modulo</th>
+        <th>Docente</th>
+      </tr>
+      {{#each params.modules}}
+      <tr>
+          <td>{{course.name}}</td>
+          <td>{{teacher.profile.first_name}} {{teacher.profile.last_name}}</td>
+      </tr>
+      {{/each}}
+    </table>
+  </div>
+  <br>
+  <div style="color: black;"><strong>Código: {{params.service_id}}</strong></div> <br>
+  <div style="color: black;"><strong>Duración: {{params.duration}}</strong></div> <br>
+  <div style="color: black;"><strong>Fecha Inicio: {{params.startDate}}</strong></div> <br>
+  <div style="color: black;"><strong>Fecha Fin: {{params.endDate}}</strong></div> <br>
+  <div style="color: black;"><strong>Observaciones: {{params.observations}}</strong></div> <br>
+  <div style="color: black;"><strong>Aplica examen: {{params.exam}}</strong></div> <br>
+  <div style="color: black;"><strong>Nombre del ejecutivo comercial: {{params.accountExecutive}}</strong></div> <br>
+  <div style="color: black;"><strong>Regional: {{params.regional}}</strong></div> <br>
+  <br><br>
+  <div style="color: black;">Lo invitamos a ingresar al campus Virtual, para que pueda realizar el seguimiento.</div>
+  <img src="{{params.mailer.footer_icon}}">
+</div>
