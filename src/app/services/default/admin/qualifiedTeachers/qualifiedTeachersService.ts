@@ -49,16 +49,24 @@ class QualifiedTeachersService {
 
     let where = {}
 
-    if (filters.search) {
-      const search = filters.search
+    if (filters.courseCode) {
+      const search = filters.courseCode
       where = {
         ...where,
         $or: [
-          { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-          { description: { $regex: '.*' + search + '.*', $options: 'i' } },
+          {
+            courseCode: { $regex: '.*' + search + '.*', $options: 'i' }
+          }
         ]
       }
     }
+
+    if (filters.teacher) {
+      where = { teacher: filters.teacher };
+    }
+
+    console.log('criteria: ');
+    console.dir(where, { depth: null, colors: true });
 
     let registers = []
     try {
@@ -76,7 +84,7 @@ class QualifiedTeachersService {
         qualifiedTeachers: [
           ...registers
         ],
-        total_register: (paging) ? await QualifiedTeachers.find(where).count() : 0,
+        total_register: (paging) ? await QualifiedTeachers.find(where).count() : registers.length,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
@@ -106,7 +114,7 @@ class QualifiedTeachersService {
       if (params.id) {
 
         const register = await QualifiedTeachers.findOne({ _id: params.id })
-        console.log(register);
+        //console.log(register);
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'qualified_teacher.not_found' })
 
         const response: any = await QualifiedTeachers.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
@@ -129,17 +137,17 @@ class QualifiedTeachersService {
       } else {
 
         // Query if User ID exists
-        console.log('User Data:');
+        //console.log('User Data:');
         const respUser = await userService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.teacher }] })
-        console.log(respUser);
+        //console.log(respUser);
         if (respUser.status == 'error') {
           return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
         }
 
         // Query if Modular ID exists
-        console.log('Modular Data:');
+        //console.log('Modular Data:');
         const respModular = await modularService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.modular }] })
-        console.log(respModular);
+        //console.log(respModular);
         if (respModular.status == 'error') {
           return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'modular.not_found' } });
         }

@@ -63,7 +63,7 @@ class DocumentQueueService {
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
-        certificateQueue: [
+        documentQueue: [
           ...registers
         ],
         total_register: (paging) ? await DocumentQueue.find(where).count() : 0,
@@ -87,7 +87,7 @@ class DocumentQueueService {
         const registers = await DocumentQueue.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            certificateQueue: registers
+            documentQueue: registers
           }
         })
       } else if (params.query === QueryValues.ONE) {
@@ -95,7 +95,7 @@ class DocumentQueueService {
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'city.not_found' })
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            certificateQueue: register
+            documentQueue: register
           }
         })
       }

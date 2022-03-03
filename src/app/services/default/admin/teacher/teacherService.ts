@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment';
 // @end
 
 // @import services
@@ -109,8 +110,6 @@ class TeacherService {
       let content = params.contentFile;
       let record = params.recordToProcess;
 
-      console.log(content);
-
       // 0. Extracción de Cursos y Docentes calificados
       let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
       let modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
@@ -198,7 +197,7 @@ class TeacherService {
                   type: element['Tipo de Vinculación'],
                   isTeacher: element['DOCENTE'] ? true : false,
                   isTutor: element['TUTOR'] ? true : false,
-                  ranking: (element['Escalafón / Contratación'])? element['Escalafón / Contratación'] : null
+                  ranking: (element['Escalafón / Contratación']) ? element['Escalafón / Contratación'] : null
                 }
               }
             };
@@ -316,9 +315,9 @@ class TeacherService {
       // Insert the new Modulars from Migration file and then update the general Modular list
       console.log('################################################');
       for await (const row of dataModularMigration) {
-        console.log("Search for  " + row['Modular nuevo']);
+        //console.log("Search for  " + row['Modular nuevo']);
         let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row['Modular nuevo'].toLowerCase());
-        console.log('-----------------');
+        //console.log('-----------------');
         if (!searchModular) {
           newModulars.push({
             anterior: row['Modular anterior'],
@@ -330,7 +329,7 @@ class TeacherService {
             description: row['Modular nuevo']
           });
           if (respModular.status == 'success') {
-            console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
+            //console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
             modularList = await modularService.list();
           }
         }
@@ -347,7 +346,14 @@ class TeacherService {
         for await (const element of dataWSQualifiedTeachersBase) {
 
           let flagAddRegister = false;
+          let stringDate = (element['Fecha Calificación']) ? element['Fecha Calificación'].toString() : null;
+          let qualifiedDate = (stringDate) ? moment(stringDate, 'DD/MM/YYYY').format('YYYY-MM-DD') : null;
 
+          console.log(`>>> Fecha calificación: ${element['Fecha Calificación']}`);
+          console.log(`>>> Fecha calificación: ${stringDate} - ${qualifiedDate}`);
+
+          // 11/12/21
+          // 14/11/21
           contentRowTeacher = {
             documentID: element['Documento de Identidad'],
             email: element['Correo Electrónico'],
@@ -355,7 +361,7 @@ class TeacherService {
             courseCode: element['Código / Versión del Curso'],
             versionStatus: element['Estado de la Versión'],
             courseName: element['Nombre Curso'],
-            qualifiedDate: (element['Fecha Calificación']) ? element['Fecha Calificación'] : null
+            qualifiedDate: qualifiedDate
           }
 
           //console.log(contentRowTeacher);
@@ -468,7 +474,7 @@ class TeacherService {
           //#region  ---- Registro de Docente Calificado
           registerQualifiedTeacher = {
             index: indexP,
-            teacher: respCampusDataUser.user._id.toString(),
+            teacher: respCampusDataUser.user._id,
             modular: modularID, //(modularID) ? modularID : 'WARNING - ' + contentRowTeacher.modular,
             courseCode: contentRowTeacher.courseCode,
             courseName: contentRowTeacher.courseName,
@@ -478,7 +484,7 @@ class TeacherService {
           }
 
           console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
-          console.dir(registerQualifiedTeacher, { depth: null, colors: true });
+          console.log(registerQualifiedTeacher); //, { depth: null, colors: true });
           console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
 
           const respQualifiedTeacher: any = await qualifiedTeachersService.insertOrUpdate(registerQualifiedTeacher);

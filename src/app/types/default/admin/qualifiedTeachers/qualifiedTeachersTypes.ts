@@ -27,5 +27,7 @@ export interface IQualifiedTeacherQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+  courseCode?:string, // Busca sobre los campos de la coleccion
+  teacher?:string, // Busca sobre los campos de la coleccion
 }
 //@end
