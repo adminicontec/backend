@@ -21,8 +21,8 @@ export interface IUser {
   lockoutEnabled?: boolean,
   accessFailedCount?: number,
   profile?: {
-    doc_type?:string,
-    doc_number?:string,
+    doc_type?: string,
+    doc_number?: string,
     first_name?: string, // Nombres del usuario
     last_name?: string, // Apellidos del usuario
     avatarImageUrl?: string, // Avatar del usuario
@@ -34,7 +34,7 @@ export interface IUser {
     genre?: string,
     alternativeEmail?: string,
 
-    currentPosition?:string,
+    currentPosition?: string,
     carreer?: string,
     educationalLevel?: string,
     company?: string,
@@ -42,7 +42,8 @@ export interface IUser {
     contractType?: {    // Datos solamente usados por Docentes y Tutores
       type?: string,
       isTeacher?: boolean,
-      isTutor?: boolean
+      isTutor?: boolean,
+      ranking: string
     },
   },
   curriculum_vitae?: {
@@ -56,7 +57,7 @@ export interface IUser {
   createdBy?: string,
   lastModifiedBy?: string,
   avatar?: string, // Objeto de clase File que posee el archivo que sera cargado al servidor
-  moodle_id?:number,
+  moodle_id?: number,
   sendEmail?: boolean // Booleano que identifica si se va a enviar notificación de creación
   id?: string // Identificador del permiso
 }

@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment';
 // @end
 
 // @import services
@@ -36,7 +37,6 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
-import moment from 'moment';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 // @end
