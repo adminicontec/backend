@@ -202,19 +202,24 @@ class MoodleUserService {
     var jsonPropertyValue = 'users[0][customfields][0][value]';
     var customFieldValue = '';
 
+    console.log(`Check if Password must be updated: ${params.password}`);
+
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
       wsfunction: moodle_setup.services.users.update,
       moodlewsrestformat: moodle_setup.restformat,
       'users[0][id]': params.id,
       'users[0][email]': params.email,
-      //'users[0][password]': params.password,
       'users[0][firstname]': params.firstname,
       'users[0][lastname]': params.lastname,
       'users[0][city]': params.city,
       'users[0][country]': params.country,
       'users[0][phone1]': params.phonenumber,
     };
+
+    if (params.password) {
+      moodleParams['users[0][password]'] = params.password;
+    }
 
     for (let p in params) {
 
