@@ -30,7 +30,11 @@ class CertificateQueueController {
   constructor() { }
 
   public create = async (req: Request, res: Response) => {
-    const response = await certificateQueueService.insertOrUpdate(req.getParameters.all())
+    const user_id = req.user.sub;
+    let params = req.getParameters.all();
+    console.log(user_id);
+    params['auxiliar'] = user_id;
+    const response = await certificateQueueService.insertOrUpdate(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
