@@ -46,10 +46,10 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
       });
 
-    if (respDocumentQueue.certificateQueue[0]) {
-      console.log(respDocumentQueue.certificateQueue);
+    if (respDocumentQueue.documentQueue[0]) {
+      console.log(respDocumentQueue.documentQueue);
 
-      console.log("Type of Document: " + respDocumentQueue.certificateQueue[0].type);
+      console.log("Type of Document: " + respDocumentQueue.documentQueue[0].type);
 
       //#region *** Path to open the file ***
       let driver = attached['driver'];
@@ -63,7 +63,7 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
       //#endregion
 
       //console.log(base_path);
-      let docPath = respDocumentQueue.certificateQueue[0].docPath;
+      let docPath = respDocumentQueue.documentQueue[0].docPath;
       let filePath = `${base_path}/${docPath}`
 
       if (filePath && fileUtility.fileExists(filePath) === true) {
@@ -72,7 +72,7 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
 
         if (contentFile && contentFile.length > 0) {
           let params: any = {
-            recordToProcess: respDocumentQueue.certificateQueue[0],
+            recordToProcess: respDocumentQueue.documentQueue[0],
             contentFile: { name: 'excel', data: contentFile }
           };
 
