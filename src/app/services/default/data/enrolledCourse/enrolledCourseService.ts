@@ -119,7 +119,7 @@ class EnrolledCourseService {
     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-    let select = 'id userId courseId certificateType certificateModule status message certificate created_at'
+    let select = 'id userId courseId auxiliar certificateType certificateModule status message certificate created_at'
 
     let where = {}
 
@@ -157,6 +157,7 @@ class EnrolledCourseService {
     try {
       registers = await CertificateQueue.find(where)
       .populate({path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number'})
+      .populate({path: 'auxiliar', select: 'id profile.first_name profile.last_name'})
       .populate({path: 'courseId', select: 'id metadata program', populate: [{
         path: 'program', select: 'id name moodle_id code'
       }]})
@@ -170,6 +171,10 @@ class EnrolledCourseService {
           if (register.userId && register.userId.profile) {
             register.userId.fullname = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
           }
+          if (register.auxiliar && register.auxiliar.profile) {
+            register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
+          }
+
 
           if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
 
