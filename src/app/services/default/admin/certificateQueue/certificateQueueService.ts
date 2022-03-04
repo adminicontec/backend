@@ -99,18 +99,20 @@ class CertificateQueueService {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("INSERT certificate queue");
         console.log(params);
+        console.log(params.auxiliar);
 
         let totalResponse = [];
 
         // Multiple request from List in front
         for await (const userId of params.users) {
 
-          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId })
+          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
 
           const response: any = await CertificateQueue.create({
             courseId: params.courseId,
             userId: userId,
+            auxiliar: params.auxiliar,
             status: params.status,
             certificateType: params.certificateType,
             certificateModule: ''
@@ -120,12 +122,13 @@ class CertificateQueueService {
             _id: response.id,
             courseId: response.courseId,
             userId: response.userId,
+            auxiliar: response.auxiliar,
             // certificateType: response.certificateType,
             // certificateModule: response.certificateModule,
             status: response.status
           }
 
-          if (params.users.length == 1){
+          if (params.users.length == 1) {
             return responseUtility.buildResponseSuccess('json', null, {
               additional_parameters: {
                 certificateQueue: certificateQueueResponse
@@ -184,7 +187,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId status certificateType certificateModule certificate'
+    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate'
     if (filters.select) {
       select = filters.select
     }
@@ -229,7 +232,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId status certificateType certificateModule certificate'
+    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate'
     if (filters.select) {
       select = filters.select
     }

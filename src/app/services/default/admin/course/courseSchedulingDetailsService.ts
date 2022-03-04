@@ -154,13 +154,17 @@ class CourseSchedulingDetailsService {
           new: true,
           lean: true,
         })
+
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
             {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
             {path: 'schedulingMode', select: 'id name'},
+            {path: 'schedulingType', select: 'id name'},
+            {path: 'regional', select: 'id name'},
             {path: 'program', select: 'id name'},
-            {path: 'client', select: 'id name'}
+            {path: 'client', select: 'id name'},
+            {path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
           ]})
         await CourseSchedulingSection.populate(response, { path: 'course', select: 'id name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
@@ -184,6 +188,22 @@ class CourseSchedulingDetailsService {
               mailer: customs['mailer'],
               first_name: register.teacher.profile.first_name,
               course_name: register.course.name,
+              course_code: register.course.code,
+              program: {
+                _id: response.course_scheduling.program._id,
+                course_scheduling_id: response.course_scheduling._id,
+                service_id: (response.course_scheduling?.metadata?.service_id) ? response.course_scheduling?.metadata?.service_id : '-',
+                name: response.course_scheduling.program.name,
+                observations: response.course_scheduling.observations,
+                client: (response.course_scheduling.client?.name) ? response.course_scheduling.client?.name : '-',
+                city: (response.course_scheduling.city && response.course_scheduling.city.name) ? response.course_scheduling.city.name : '-',
+                scheduling_mode: (response.course_scheduling.schedulingMode && response.course_scheduling.schedulingMode.name) ? response.course_scheduling.schedulingMode.name : '-',
+                duration: (response.course_scheduling?.duration) ? generalUtility.getDurationFormated(response.course_scheduling?.duration, 'large') : '-',
+                scheduling_type: (response.course_scheduling?.schedulingType?.name) ? response.course_scheduling?.schedulingType?.name : '-',
+                amountParticipants: (response.course_scheduling?.amountParticipants) ? response.course_scheduling?.amountParticipants : '-',
+                regional: (response.course_scheduling?.regional?.name) ? response.course_scheduling?.regional?.name : '-',
+                account_executive: (response.course_scheduling?.account_executive?.profile?.first_name) ? `${response.course_scheduling?.account_executive?.profile?.first_name} ${response.course_scheduling?.account_executive?.profile?.last_name}` : '-',
+              },
               type: 'teacher',
               notification_source: `course_teacher_remove_${register.teacher._id}_${response._id}`,
               // amount_notifications: 1
@@ -193,17 +213,10 @@ class CourseSchedulingDetailsService {
           if (changes.length > 0) {
             // @INFO Notificar al auxiliar logisto del servicio
             await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true);
-            await courseSchedulingService.serviceSchedulingUpdated(
-              [response.teacher.email],
-              {
-                mailer: customs['mailer'],
-                service_id: response.course_scheduling.metadata.service_id,
-                program_name: response.course_scheduling.program.name,
-                course_name: response.course.name,
-                notification_source: `course_updated_${response._id}`,
-                changes
-              }
-            )
+            await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
+              course: response.course,
+              courseSchedulingDetail: register,
+            })
           }
         }
 
@@ -219,12 +232,15 @@ class CourseSchedulingDetailsService {
 
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
-          .populate({ path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode', populate: [
+          .populate({ path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
             {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
             {path: 'schedulingMode', select: 'id name'},
+            {path: 'schedulingType', select: 'id name'},
+            {path: 'regional', select: 'id name'},
             {path: 'program', select: 'id name'},
-            {path: 'client', select: 'id name'}
+            {path: 'client', select: 'id name'},
+            {path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
           ] })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })

@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_services Import services
-import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService'
+import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService'
 // @end
 
 // @import_utilities Import utilities
@@ -18,7 +18,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 // @end
 
-class CertificateQueueController {
+class DocumentQueueController {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -27,14 +27,11 @@ class CertificateQueueController {
     public methodName = (req: Request, res: Response) => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor() { }
+  constructor () {}
+
 
   public create = async (req: Request, res: Response) => {
-    const user_id = req.user.sub;
-    let params = req.getParameters.all();
-    console.log(user_id);
-    params['auxiliar'] = user_id;
-    const response = await certificateQueueService.insertOrUpdate(params)
+    const response = await documentQueueService.insertOrUpdate(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -45,22 +42,22 @@ class CertificateQueueController {
    * @returns
    */
   public update = async (req: Request, res: Response) => {
-    const response = await certificateQueueService.insertOrUpdate(req.getParameters.all())
+    const response = await documentQueueService.insertOrUpdate(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
   public list = async (req: Request, res: Response) => {
-    const response = await certificateQueueService.list(req.getParameters.all())
+    const response = await documentQueueService.list(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
 
   public fetchByStatus = async (req: Request, res: Response) => {
     const { status } = req.getParameters.all()
-    const response = await certificateQueueService.findBy({ query: QueryValues.ALL, where: [{ field: 'status', value: status }] })
+    const response = await documentQueueService.findBy({ query: QueryValues.ALL, where: [{ field: 'status', value: status }] })
     return responseUtility.sendResponseFromObject(res, response)
   }
 
 }
 
-export const certificateQueueController = new CertificateQueueController();
-export { CertificateQueueController as DefaultAdminCertificateQueueCertificateQueueController };
+export const documentQueueController = new DocumentQueueController();
+export { DocumentQueueController as DefaultAdminDocumentQueueDocumentQueueController };

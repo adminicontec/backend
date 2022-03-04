@@ -90,10 +90,12 @@ export interface ICertificateQueue {
   courseId?: string,
   users?: Array<string>,
   userId?: string,
+  auxiliar?: string,
   certificateType?: string,
   certificateModule?: string,
   status: string,
   message: string,
+  downloadDate?: Date,
   certificate?: {
     hash: string,
     url: string,

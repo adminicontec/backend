@@ -422,6 +422,14 @@
         "no_certificate_to_download": "No encontramos certificados que puedan descargarse"
       }
     },
+    "document": {
+      "queue": {
+        "not_found": "El item de la cola del Procesador de Documentos no existe.",
+        "insertOrUpdate": {
+          "failed": "Error al insertar registro en la cola del Procesador de Documentos. :error"
+        }
+      }
+    },
     "attached_category": {
       "already_exists": "Ya existe una categoría con ese nombre",
       "not_found": "La categoría no ha sido encontrada"
@@ -432,9 +440,16 @@
       "failed_upload": "Ha ocurrido un error al subir los archivos",
       "limit_files_exceded": "Limite de archivos excedido"
     },
-    "teacher_upload" : {
-      "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
-      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
+    "teacher_upload": {
+      "failed_upload": "Ha ocurrido un error al subir el (los) archivo(s)",
+      "empty_file": "El archivo se encuentra vacío en la hoja :sheetname",
+      "wrong_mime_type": "El tipo de archivo no es el esperado."
+    },
+    "qualified_teacher": {
+      "not_found": "El registro de Docente Calificado no ha sido encontrado",
+      "insertOrUpdate": {
+        "already_exists": "Ya existe el Docente Calificado :user con el curso :courseCode"
+      }
     }
   },
   "passwordRecover": {
@@ -445,16 +460,22 @@
       "subject": "¡Bienvenid@ al Campus Digital Icontec!"
     },
     "enrollment_user": {
-      "subject": "Inicio del curso"
+      "subject": "Inicio del curso/programa/diplomado"
+    },
+    "enrollment_teacher": {
+      "subject": "Reconfirmación de servicio de educación"
     },
     "unenrollment_user": {
-      "subject": "Retiro del curso"
+      "subject": "Retiro del programa de formación"
+    },
+    "unenrollment_teacher": {
+      "subject": "Cancelación de servicio  de educación"
     },
     "scheduling_notification": {
       "subject": "Programación confirmada"
     },
     "scheduling_cancelled_notification": {
-      "subject": "Programación cancelada"
+      "subject": "Servicio de educación cancelado"
     },
     "scheduling_update": {
       "subject": "Programación modificada"

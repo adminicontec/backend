@@ -42,6 +42,14 @@ class FileUtility {
     }
   }
 
+  public readFileSyncBuffer = (file_path) => {
+    try {
+      return fs.readFileSync(file_path);
+    } catch (e) {
+      return null
+    }
+  }
+
   /**
    * Metodo que permite eliminar un archivo de forma sincrona
    * @param file_path Ruta del archivo que se desea eliminar

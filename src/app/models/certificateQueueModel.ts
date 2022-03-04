@@ -16,6 +16,11 @@ const CertificateQueueSchema = new Schema({
     ref: "CourseScheduling",
     required: true
   },
+  auxiliar: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
   certificateType: {
     type: Schema.Types.String,
     required: false
@@ -31,6 +36,10 @@ const CertificateQueueSchema = new Schema({
   },
   message: {
     type: Schema.Types.String,
+    required: false
+  },
+  downloadDate: {
+    type: Schema.Types.Date,
     required: false
   },
   certificate: {

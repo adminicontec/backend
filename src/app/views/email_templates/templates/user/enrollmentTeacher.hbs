@@ -1,26 +1,45 @@
-<div class="img_icontec">
+<div class="img_icontec" style="display: block">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
 <div class="txt_icontec">
 
-  <h2>Inicio del curso</h2><br>
+  <h2>Reconfirmación de servicio de educación</h2><br>
   <div>Estimado (a) {{params.teacher.first_name}}</div>
   <br>
-  <div>Usted ha sido inscrito al programa {{params.program.name}} con identificador de servicio {{params.service.service_id}} como docente.</div>
+  <div>Usted ha sido asignado como docente al programa {{params.program.name}} con ID de servicio N° {{params.service.service_id}}, con los siguientes datos:</div>
   <br>
-  {{#if params.has_sessions}}
-  <div>Recuerde crear las sesiones de Webex según la programación.</div>
-  <br>
-  {{/if}}
   {{#if params.program}}
     <div>
-      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+      <p style="margin: 0;"><b>Duración: </b>{{params.program.duration}}</p>
       <p style="margin: 0;"><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
-      <p style="margin: 0;"><b>Ciudad: </b>{{params.program.city}}</p>
+      <p style="margin: 0;"><b>Linea: </b>{{params.program.scheduling_type}}</p>
+      <p style="margin: 0;"><b>Cantidad de participantes: </b>{{params.program.amountParticipants}}</p>
+    </div>
+    <br>
+    <div>
+      <p style="margin: 0;"><b>Cliente: </b>{{params.program.client}}</p>
+      <p style="margin: 0;"><b>Regional: </b>{{params.program.regional}}</p>
+      <p style="margin: 0;"><b>Ejecutivo de cuenta: </b>{{params.program.account_executive}}</p>
     </div>
     <br>
   {{/if}}
+  <div>Para ingresar al campus acceda al link <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>. Consulte el <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo</a> podrá conocer como ingresar a su sesión docente y posteriormente al curso.</div>
+  <br>
+  <div>En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.help_desk}}/kb/faq.php?id=1#:~:text=Instructivo%20para%20LMS.pdf">instructivo de mesa de ayuda</a>.</div>
+  <br>
+  <div>
+    <p style="margin: 0;"><b>NOTAS IMPORTANTES: </b></p>
+    <div>
+      <p style="margin: 0;">Recuerde crear las sesiones de Webex, 24 horas antes del inicio del servicio.</p>
+      <p style="margin: 0;">Registre la asistencia en la plataforma</p>
+      <p style="margin: 0;">Motive a los estudiantes en la aplicación de la encuesta de satisfacción. 15 Minutos antes de finalizar la ultima sesión de cada curso. La encuesta está habilitada en el Campus digital en la Cuenta de Estudiante.</p>
+    </div>
+  </div>
+  <br>
+  <div>
+    <p style="margin: 0;"><b>PROGRAMACIÓN DEL SERVICIO: </b></p>
+  </div>
   {{#each params.courses}}
     <div>
       <p style="margin: 0;"><b>Código: </b>{{this.course_code}}</p>
@@ -28,31 +47,44 @@
     </div>
     <br>
     {{#if this.sessions}}
-      <div>A continuación la programación:</div>
-      {{#each this.sessions}}
-        <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
-          <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.start_date}}</p>
-          <p style="margin: 0;"><b>Duración: </b>{{this.duration}}</p>
-          <p style="margin: 0;"><b>Horario: </b>{{this.schedule}}</p>
-        </div>
-      {{/each}}
+      <table border="1">
+        <thead>
+          <th>Fecha</th>
+          <th>Hora de inicio</th>
+          <th>Nro de horas</th>
+        </thead>
+        <tbody>
+          {{#each this.sessions}}
+            <tr>
+              <td>{{this.start_date}}</td>
+              <td>{{this.schedule}}</td>
+              <td>{{this.duration}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
     {{/if}}
     {{#if this.info}}
-      <div>A continuación la programación:</div>
-      <div style="margin-bottom: 10px; border: 1px solid #0091d4;padding: 12px;border-radius: 3px;font-size: 12px;">
-        <p style="margin: 0;"><b>Fecha de inicio: </b>{{this.info.start_date}}</p>
-        <p style="margin: 0;"><b>Duración: </b>{{this.info.duration}}</p>
-      </div>
+      <table border="1">
+        <thead>
+          <th>Fecha</th>
+          <th>Nro de horas</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{this.info.start_date}}</td>
+            <td>{{this.info.duration}}</td>
+          </tr>
+        </tbody>
+      </table>
     {{/if}}
   {{/each}}
   <br>
   {{#if params.program.observations}}
   <div>{{params.program.observations}}</div>
-  {{/if}}
-  <div>Lo invitamos a ingresar por la siguiente dirección:<a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></div>
   <br>
-  <div>En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</div>
-  <br><br>
+  {{/if}}
+  <br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 </div>

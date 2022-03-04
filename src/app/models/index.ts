@@ -1,4 +1,6 @@
 // @import_models
+import { DocumentQueueModel } from "@scnode_app/models/documentQueueModel";
+import { QualifiedTeachersModel } from "@scnode_app/models/qualifiedTeachersModel";
 import { SurveyLogModel } from "@scnode_app/models/surveyLogModel";
 import { AttachedModel } from "@scnode_app/models/attachedModel";
 import { AttachedCategoryModel } from "@scnode_app/models/attachedCategoryModel";
@@ -54,6 +56,8 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const DocumentQueue = DocumentQueueModel
+export const QualifiedTeachers = QualifiedTeachersModel
 export const SurveyLog = SurveyLogModel
 export const Attached = AttachedModel
 export const AttachedCategory = AttachedCategoryModel
