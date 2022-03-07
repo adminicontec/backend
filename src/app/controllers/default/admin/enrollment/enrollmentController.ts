@@ -75,7 +75,13 @@ class EnrollmentController {
 
     let params = req.getParameters.all()
     let files = req.files
-    if (files && files.hasOwnProperty('file_xlsx')) {
+    // if (files && files.hasOwnProperty('file_xlsx')) {
+    //   params['contentFile'] = files['file_xlsx']
+    // } else {
+    //   params['contentFile'] = null
+    // }
+
+    if (files && Object.prototype.hasOwnProperty.call(files, 'file_xlsx')) {
       params['contentFile'] = files['file_xlsx']
     } else {
       params['contentFile'] = null
