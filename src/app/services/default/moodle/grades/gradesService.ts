@@ -121,25 +121,17 @@ class GradesService {
     }
 
   }
-
+  /**
+   * Obtiene las calificaciones de un curso filtradas por items específicos.
+   * @param params
+   * @returns
+   */
   public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
     try {
 
       //var select = ['assign', 'quiz', 'forum'];
       var select = params.filter;
-
-      let responseGrades = [];
-      let singleGrade = {
-        id: 0,
-        name: '',
-        itemtype: '',
-        itemmodule: '',
-        iteminstance: 0,
-        cmid: 0,
-        graderaw: 0,
-        grademin: 0,
-        grademax: 0,
-      }
+      let userGradesData = [];
 
       let courseID;
       let userID
@@ -148,7 +140,6 @@ class GradesService {
       if (params.courseID && params.userID) {
         courseID = params.courseID;
         userID = params.userID;
-        //console.log("Calificaciones para el curso " + courseID + " y usuario " + userID);
       }
       else {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
@@ -175,32 +166,58 @@ class GradesService {
             }
           });
       }
-      respMoodleEvents.usergrades[0].gradeitems.forEach(element => {
-        const gradeSearch = select.find(field => field == element.itemmodule);
-        //console.log(gradeSearch);
-        if (gradeSearch) {
 
-          singleGrade = {
-            id: element.id,
-            name: element.itemname,
-            itemtype: element.itemtype,
-            itemmodule: element.itemmodule,
-            iteminstance: element.iteminstance,
-            cmid: element.cmid,
-            graderaw: element.graderaw,
-            grademin: element.grademin,
-            grademax: element.grademax
-          };
+      console.log("Items: " + respMoodleEvents.usergrades.length);
+      for (const usergrade of respMoodleEvents.usergrades) {
 
-          responseGrades.push(singleGrade);
+        console.log(`Grades for: ${usergrade.userfullname}`);
+        let userData = {
+          userid: usergrade.userid,
+          userfullname: usergrade.userfullname
         }
-      });
-      // console.log('Response: ');
-      // console.log(responseGrades);
+        //let userGrades = [];
+        let singleGrade = {
+          id: 0,
+          name: '',
+          itemtype: '',
+          itemmodule: '',
+          iteminstance: 0,
+          cmid: 0,
+          graderaw: 0,
+          grademin: 0,
+          grademax: 0,
+        }
+
+        let itemType = {};
+        select.forEach(f => {
+          itemType[f] = [];
+        })
+
+        usergrade.gradeitems.forEach(element => {
+          const gradeSearch = select.find(field => field == element.itemmodule);
+          if (gradeSearch) {
+            singleGrade = {
+              id: element.id,
+              name: element.itemname,
+              itemtype: element.itemtype,
+              itemmodule: element.itemmodule,
+              iteminstance: element.iteminstance,
+              cmid: element.cmid,
+              graderaw: element.graderaw,
+              grademin: element.grademin,
+              grademax: element.grademax
+            };
+            itemType[element.itemmodule].push(singleGrade);
+          }
+        });
+        userGradesData.push(
+          { userData, itemType }
+        );
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          grades: responseGrades
+          grades: userGradesData
         }
       })
 
@@ -214,9 +231,7 @@ class GradesService {
             error: e.message
           }
         });
-
     }
-
   }
 
   public fetchFinalGrades = async (params: IMoodleGradesQuery) => {
