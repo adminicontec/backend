@@ -196,126 +196,129 @@ class CertificateService {
         .lean()
 
       let count = 1
-      console.log('total de registros: ------');
-      console.log(enrollmentRegisters.length);
-
-
+      console.log("total de estudiantes: " + enrollmentRegisters.length);
 
       //#region Revisión de Grades para too el curso
-      console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
-      var selectActivitiesTest = ['attendance', 'quiz'];
+      console.log('→→→→→→→→→→→→→→' + schedulingMode.toLowerCase() + '→→→→→→→→→→→→→→→→→→→→→→');
+      var selectActivitiesTest = ['attendance', 'quiz', 'course'];
       const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: selectActivitiesTest });
 
-      let onSiteOnlineResultTest: any = await this.rulesForOnSiteOnlineModeCompleteList(filters.courseID, null,
+      let onSiteOnlineResultTest: any = await this.rulesForOnSiteOnlineModeCompleteList(filters.courseID,
+        selectActivitiesTest,
+        schedulingMode.toLowerCase(),
+        null,
         respListOfActivitiesInModulesTest.courseModules, respCourseDetails.schedulings);
 
       console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
       //#endregion
+      listOfStudents.push(onSiteOnlineResultTest);
+
+
+      // for await (const register of enrollmentRegisters) {
+
+      //   // let studentProgress = {
+      //   //   status: '',
+      //   //   attended_approved: '',
+      //   //   average_grade: null,
+      //   //   mode: respCourse.scheduling.schedulingMode.name.toLowerCase(),
+      //   //   completion: null,
+      //   //   assistance: null,
+      //   //   quizGrade: null,
+      //   //   auditor: false
+      //   // };
+
+      //   register.count = count
+      //   if (register.user && register.user.profile) {
+      //     register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`
+      //   }
+
+      //   //#region ::::::::::::::::: Reglas para Formación Virtual
+      //   if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
+
+      //     let virtualResult: any = await this.rulesForVirtualMode(register.courseID, register.user.moodle_id, null);
+      //     if (virtualResult) {
+      //       virtualResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
+      //       register.progress = virtualResult;
+      //     }
+      //     else {
+      //       // error
+      //     }
+      //     console.log('Rules for virtual Mode:');
+      //     console.log(virtualResult);
+      //   }
+      //   //#endregion Reglas para Formación Virtual
+
+      //   //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
+      //   if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
+      //     respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
+
+      //     var selectActivities = ['attendance', 'quiz'];
+      //     const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: selectActivities });
+
+      //     console.log('Grades and Assistances for ' + register.user.profile.full_name + ' in ' + respCourse.scheduling.schedulingMode.name);
+
+      //     let onSiteOnlineResult: any = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
+      //       respListOfActivitiesInModules.courseModules, respCourseDetails.schedulings);
+      //     if (onSiteOnlineResult) {
+      //       onSiteOnlineResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
+      //       register.progress = onSiteOnlineResult;
+
+      //       if (onSiteOnlineResult.status == 'ok') {
+      //         // mapping_dato_1 = onSiteOnlineResult.attended_approved;
+      //       }
+      //       else if (onSiteOnlineResult.status == 'partial') {
+      //         // Certificado Parcial
+      //         console.log('CERT PARCIAL. módulos aprobados:');
+      //         for (const apprMod of onSiteOnlineResult.approved_modules) {
+      //           console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
+
+      //         }
+      //       }
+
+      //     }
+      //     else {
+      //       // error
+      //     }
+      //     // console.log('Rules for on Site-Online Mode:');
+      //     // console.log(onSiteOnlineResult);
+      //   }
+      //   //#endregion Reglas para Formación Presencial y en Línea
+
+      //   //#region Add certification to response
+      //   if (filters.check_certification) {
+      //     const certificate = await CertificateQueue.findOne({
+      //       userId: register.user._id,
+      //       courseId: register.course_scheduling,
+      //       status: { $in: ['New', 'In-process', 'Complete'] }
+      //     }).select('');
+
+      //     register.certificate = certificate;
+      //     if (register?.certificate?.certificate?.pdfPath) {
+      //       register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+      //     }
+      //     if (register?.certificate?.certificate?.imagePath) {
+      //       register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
+      //     }
+      //   }
+
+      //   if (register.attended_approved) {
+      //     if (register.attended_approved == 'Asistió y aprobó' || register.attended_approved == 'Asistió') {
+      //       register.progress.isEnabled = 1;
+      //     }
+      //     else
+      //       register.progress.isEnabled = 0;
+      //   }
+      //   listOfStudents.push(register);
+      //   count++
+      //   //#endregion Add certification to response
+
+      //   // console.log('+++++++++++++++++++++++++');
+      //   // console.log(register);
+      //   // console.log('+++++++++++++++++++++++++\n');
+      // }
 
 
 
-      for await (const register of enrollmentRegisters) {
-
-        // let studentProgress = {
-        //   status: '',
-        //   attended_approved: '',
-        //   average_grade: null,
-        //   mode: respCourse.scheduling.schedulingMode.name.toLowerCase(),
-        //   completion: null,
-        //   assistance: null,
-        //   quizGrade: null,
-        //   auditor: false
-        // };
-
-        register.count = count
-        if (register.user && register.user.profile) {
-          register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`
-        }
-
-        //#region ::::::::::::::::: Reglas para Formación Virtual
-        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
-
-          let virtualResult: any = await this.rulesForVirtualMode(register.courseID, register.user.moodle_id, null);
-          if (virtualResult) {
-            virtualResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
-            register.progress = virtualResult;
-          }
-          else {
-            // error
-          }
-          console.log('Rules for virtual Mode:');
-          console.log(virtualResult);
-        }
-        //#endregion Reglas para Formación Virtual
-
-        //#region ::::::::::::::::: Reglas para Formación Presencial y en Línea
-        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
-          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
-
-          var selectActivities = ['attendance', 'quiz'];
-          const respListOfActivitiesInModules: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: selectActivities });
-
-          console.log('Grades and Assistances for ' + register.user.profile.full_name + ' in ' + respCourse.scheduling.schedulingMode.name);
-
-          let onSiteOnlineResult: any = await this.rulesForOnSiteOnlineMode(register.courseID, register.user.moodle_id, null,
-            respListOfActivitiesInModules.courseModules, respCourseDetails.schedulings);
-          if (onSiteOnlineResult) {
-            onSiteOnlineResult.mode = respCourse.scheduling.schedulingMode.name.toLowerCase();
-            register.progress = onSiteOnlineResult;
-
-            if (onSiteOnlineResult.status == 'ok') {
-              // mapping_dato_1 = onSiteOnlineResult.attended_approved;
-            }
-            else if (onSiteOnlineResult.status == 'partial') {
-              // Certificado Parcial
-              console.log('CERT PARCIAL. módulos aprobados:');
-              for (const apprMod of onSiteOnlineResult.approved_modules) {
-                console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
-
-              }
-            }
-
-          }
-          else {
-            // error
-          }
-          // console.log('Rules for on Site-Online Mode:');
-          // console.log(onSiteOnlineResult);
-        }
-        //#endregion Reglas para Formación Presencial y en Línea
-
-        //#region Add certification to response
-        if (filters.check_certification) {
-          const certificate = await CertificateQueue.findOne({
-            userId: register.user._id,
-            courseId: register.course_scheduling,
-            status: { $in: ['New', 'In-process', 'Complete'] }
-          }).select('');
-
-          register.certificate = certificate;
-          if (register?.certificate?.certificate?.pdfPath) {
-            register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
-          }
-          if (register?.certificate?.certificate?.imagePath) {
-            register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
-          }
-        }
-
-        if (register.attended_approved) {
-          if (register.attended_approved == 'Asistió y aprobó' || register.attended_approved == 'Asistió') {
-            register.progress.isEnabled = 1;
-          }
-          else
-            register.progress.isEnabled = 0;
-        }
-        listOfStudents.push(register);
-        count++
-        //#endregion Add certification to response
-
-        // console.log('+++++++++++++++++++++++++');
-        // console.log(register);
-        // console.log('+++++++++++++++++++++++++\n');
-      }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -872,21 +875,14 @@ class CertificateService {
 
 
   private rulesForOnSiteOnlineModeCompleteList = async (moodleCourseID: string,
+    moduleType: any[],
+    schedulingMode: string,
     programTypeName: string,
     respListOfActivitiesInModules: any[],
     respSchedulingsDetails: any[]
   ) => {
 
-    let studentProgress = {
-      status: '',
-      attended_approved: '',
-      average_grade: null,
-      completion: null,
-      assistance: null,
-      quizGrade: null,
-      approved_modules: [],
-      auditor: false
-    }
+    console.log("────────────────────" + schedulingMode + "──────────────────────────────────");
     try {
       // respListOfActivitiesInModules.forEach(element => {
       //   console.log("..............................................")
@@ -894,149 +890,140 @@ class CertificateService {
       //   console.log('* ' + element.instance + ' - (' + element.modname + ') - ' + element.name);
       // });
 
+      let listOfStudentProgress = [];
+
       // Presencial - Online
       // Asistencia >= 75
       const respUserAssistances: any = await gradesService.fetchGradesByFilter({
         courseID: moodleCourseID,
         userID: '0',
-        filter: ['attendance', 'quiz']
+        filter: moduleType//['attendance', 'quiz']
       });
 
       if (respUserAssistances.error) {
         console.log(`Error with Course ID: ${moodleCourseID}`);
 
-        studentProgress.status = 'error';
-        studentProgress.attended_approved = 'error';
-        return studentProgress;
+        // studentProgress.status = 'error';
+        // studentProgress.attended_approved = 'error';
+        // return studentProgress;
+        return null;
       }
 
-      console.log('æææææææææææ');
-      console.dir(respUserAssistances, { depth: null, colors: true });
+      for await (const student of respUserAssistances.grades) {
 
-      for (const usergrades of respUserAssistances.grades) {
-        console.log(`Progress for: ${respUserAssistances.userData.userfullname}`);
-
-        //#region  Assistance:
-        /* Todas las asistencia debe estar igual o por encima de 75%.
-          Si alguna no cumple esta regla, no se emite Condición por Asistencia
-        */
-        let flagAssistance = true;
-        let flagAssistanceCount = 0;
-        let flagQuiz = true;
-        let flagQuizCount = 0;
-/*
-        for (const grade of usergrades.responseGrades) {
-
-
-
-          if (grade.graderaw < 75) {
-            continue;
-          }
-          // search the Module name by ItemInstance in respListOfActivitiesInModules
-          let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
-          let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid);
-          // console.log('--------------------');
-          // console.log(durationModule.duration);
-          studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
-          flagAssistanceCount++;
+        let programTypeText;
+        let studentProgress = {
+          status: '',
+          attended_approved: '',
+          average_grade: null,
+          completion: null,
+          assistance: null,
+          quizGrade: null,
+          approved_modules: [],
+          auditor: false
         }
-        if (flagAssistanceCount < respUserAssistances.grades.length)
-          flagAssistance = false;
 
+        console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+        console.log(`Progress for: ${student.userData.userfullname}`);
+        console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
 
+        if (schedulingMode == 'presencial' || schedulingMode == 'en linea') {
+
+          //#region  Assistance:
+          /* Todas las asistencia debe estar igual o por encima de 75%.
+            Si alguna no cumple esta regla, no se emite Condición por Asistencia
           */
-        //#endregion  Grades for UserName
+          let flagAssistance = true;
+          let flagAssistanceCount = 0;
+          let flagQuiz = true;
+          let flagQuizCount = 0;
 
+          console.log('======>');
+          console.dir(student.itemType.attendance, { depth: null });
+
+          for (const grade of student.itemType.attendance) {
+            console.log(grade.graderaw);
+
+            if (grade.graderaw < 75) {
+              continue;
+            }
+            // search the Module name by ItemInstance in respListOfActivitiesInModules
+            let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
+            let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid);
+
+            studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
+            flagAssistanceCount++;
+          }
+          if (flagAssistanceCount < student.itemType.attendance.length)
+            flagAssistance = false;
+          //#endregion  Assistance:
+
+          //#region Quiz
+          /* Todas los exámenes debe estar igual o por encima de 70%.
+            Si alguna no cumple esta regla, no se emite Condición por Examen
+          */
+          if (student.itemType.quiz.length > 0) {
+            for (const grade of student.itemType.quiz) {
+              if (grade.graderaw < 70) {
+                //flagQuiz = false;
+                continue;
+              }
+              flagQuizCount++;
+            }
+            if (flagQuizCount < student.itemType.quiz.length)
+              flagQuiz = false;
+          }
+          else
+            flagQuiz = false;
+          //#endregion Quiz
+
+          if (flagAssistance) {
+            if (flagQuiz) {
+              programTypeText = (programTypeName) ? ' el ' + programTypeName : '.';
+              studentProgress.attended_approved = 'Asistió y aprobó' + programTypeText;
+            }
+            else {
+              programTypeText = (programTypeName) ? ' al ' + programTypeName : '.';
+              studentProgress.attended_approved = 'Asistió' + programTypeText;
+            }
+            //studentProgress.auditor = isAuditorCerficateEnabled;
+            studentProgress.status = 'ok';
+          }
+          else {
+            if (flagAssistanceCount > 0) {
+              studentProgress.attended_approved = 'Certificado parcial.';
+              studentProgress.status = 'partial';
+            }
+            else {
+              studentProgress.attended_approved = 'No se certifica.';
+              studentProgress.status = 'no';
+            }
+          }
+        }
+
+
+        // Si la modalidad es VIRTUAL, aplica esta regla
+        if (schedulingMode == 'virtual') {
+          const respCompletionStatus: any = await completionstatusService.activitiesCompletion({
+            courseID: moodleCourseID, //register.courseID,
+            userID: student.userData.userid, //register.user.moodle_id
+          });
+
+          console.log(`Completion for: ${student.userData.userfullname}`);
+          console.log(respCompletionStatus);
+        }
+
+        //#region Assign
+
+        //#endregion Assign
+        student.studentProgress = studentProgress;
+        listOfStudentProgress.push({ student });
       }
 
+      //console.dir(listOfStudentProgress, { depth: null, colors: true });
+      console.log("──────────────────────────────────────────────────────────");
 
-
-      // const respGradeQuiz: any = await gradesService.fetchGradesByFilter({
-      //   courseID: moodleCourseID,
-      //   userID: '0',
-      //   filter: ['quiz']
-      // });
-      // let programTypeText;
-
-
-      // //#region Error control
-      // if (respUserAssistances.error || respGradeQuiz.error) {
-      //   console.log('Error with UserID: ');
-
-      //   studentProgress.status = 'error';
-      //   studentProgress.attended_approved = 'error';
-      //   return studentProgress;
-      // }
-      // //#endregion Error control
-
-      // //#region  Assistance:
-      // /* Todas las asistencia debe estar igual o por encima de 75%.
-      //   Si alguna no cumple esta regla, no se emite Condición por Asistencia
-      // */
-      // let flagAssistance = true;
-      // let flagAssistanceCount = 0;
-      // let flagQuiz = true;
-      // let flagQuizCount = 0;
-
-      // for (const grade of respUserAssistances.grades) {
-      //   if (grade.graderaw < 75) {
-      //     continue;
-      //   }
-      //   // search the Module name by ItemInstance in respListOfActivitiesInModules
-      //   let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
-      //   let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid);
-      //   // console.log('--------------------');
-      //   // console.log(durationModule.duration);
-      //   studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
-      //   flagAssistanceCount++;
-      // }
-      // if (flagAssistanceCount < respUserAssistances.grades.length)
-      //   flagAssistance = false;
-      // //#endregion  Grades for UserName
-
-      // //#region  Quiz:
-      // /* Todas los exámenes debe estar igual o por encima de 70%.
-      //   Si alguna no cumple esta regla, no se emite Condición por Examen
-      // */
-      // for (const grade of respGradeQuiz.grades) {
-      //   if (grade.graderaw < 70) {
-      //     //flagQuiz = false;
-      //     continue;
-      //   }
-      //   flagQuizCount++;
-      // }
-      // if (flagQuizCount < respGradeQuiz.grades.length)
-      //   flagQuiz = false;
-      // //#endregion  Grades for UserName
-
-      // if (flagAssistance) {
-      //   if (flagQuiz) {
-      //     programTypeText = (programTypeName) ? ' el ' + programTypeName : '.';
-      //     studentProgress.attended_approved = 'Asistió y aprobó' + programTypeText;
-      //   }
-      //   else {
-      //     programTypeText = (programTypeName) ? ' al ' + programTypeName : '.';
-      //     studentProgress.attended_approved = 'Asistió' + programTypeText;
-      //   }
-      //   //studentProgress.auditor = isAuditorCerficateEnabled;
-      //   studentProgress.status = 'ok';
-      // }
-      // else {
-      //   if (flagAssistanceCount > 0) {
-      //     studentProgress.attended_approved = 'Certificado parcial.';
-      //     studentProgress.status = 'partial';
-      //   }
-      //   else {
-      //     studentProgress.attended_approved = 'No se certifica.';
-      //     studentProgress.status = 'no';
-      //   }
-      // }
-
-      // studentProgress.assistance = `${flagAssistanceCount}/${respUserAssistances.grades.length}`;
-      // studentProgress.quizGrade = `${flagQuizCount}/${respGradeQuiz.grades.length}`;
-
-
-      return studentProgress;
+      return listOfStudentProgress;
     }
     catch (ex) {
 

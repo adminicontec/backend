@@ -130,7 +130,7 @@ class CourseContentService {
             // console.dir(module, { depth: null, colors: true });
             // console.log('--------------------');
 
-            console.log(': ' + module.id);
+            //console.log(': ' + module.id);
             let moodleModuleParams = {
               wstoken: moodle_setup.wstoken,
               wsfunction: moodle_setup.services.courses.getModules,
@@ -138,8 +138,8 @@ class CourseContentService {
               "cmid": module.id.toString()
             };
             let respMoodleModules = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleModuleParams });
-            console.log('Response from modules:');
-            console.dir(respMoodleModules.cm.idnumber, { depth: null, colors: true });
+            //console.log('Response from modules:');
+            //console.dir(respMoodleModules.cm.idnumber, { depth: null, colors: true });
 
             singleModuleCourseContent = {
               id: module.id,
