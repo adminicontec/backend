@@ -86,7 +86,7 @@ const UserSchema = new Schema({
     birthDate: { type: Schema.Types.Date },
     regional: { type: Schema.Types.String },
     origen: { type: Schema.Types.String },
-    currentPosition: { type: Schema.Types.String },
+    currentPosition: { type: Schema.Types.String }, // Aca va la posición que tiene el usuario en la empresa
     carreer: { type: Schema.Types.String },
     educationalLevel: { type: Schema.Types.String },
     company: { type: Schema.Types.String },
