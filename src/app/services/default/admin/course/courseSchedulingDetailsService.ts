@@ -166,7 +166,7 @@ class CourseSchedulingDetailsService {
             {path: 'client', select: 'id name'},
             {path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
           ]})
-        await CourseSchedulingSection.populate(response, { path: 'course', select: 'id name moodle_id' })
+        await CourseSchedulingSection.populate(response, { path: 'course', select: 'id code name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
 
@@ -181,6 +181,45 @@ class CourseSchedulingDetailsService {
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           if ((register.teacher && register.teacher._id && params.teacher) && register.teacher._id.toString() !== params.teacher.toString()) {
+
+            const courses = []
+
+            if (register.sessions.length === 0) {
+
+              let item = {
+                course_code: (register.course && register.course.code) ? register.course.code : '',
+                course_name: (register.course && register.course.name) ? register.course.name : '',
+                info: {
+                  start_date: (register.startDate) ? moment.utc(register.startDate).format('DD/MM/YYYY') : '',
+                  end_date: (register.endDate) ? moment.utc(register.endDate).format('DD/MM/YYYY') : '',
+                  duration: (register.duration) ? generalUtility.getDurationFormated(register.duration) : '0h',
+                  schedule: '-',
+                }
+              }
+              courses.push(item)
+            } else {
+              let item = {
+                course_code: (register.course && register.course.code) ? register.course.code : '',
+                course_name: (register.course && register.course.name) ? register.course.name : '',
+                sessions: []
+              }
+              register.sessions.map((session) => {
+                let schedule = ''
+                if (session.startDate && session.duration) {
+                  let endDate = moment(session.startDate).add(session.duration, 'seconds')
+                  schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+                }
+                let session_data = {
+                  start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+                  duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+                  schedule: schedule,
+                }
+                item.sessions.push({ ...session_data })
+              })
+              courses.push(item)
+            }
+
+
             // @INFO: Notificación al docente asignado
             await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, null)
             // @INFO: Notificación al docente cuando este fue cambiado
@@ -204,9 +243,9 @@ class CourseSchedulingDetailsService {
                 regional: (response.course_scheduling?.regional?.name) ? response.course_scheduling?.regional?.name : '-',
                 account_executive: (response.course_scheduling?.account_executive?.profile?.first_name) ? `${response.course_scheduling?.account_executive?.profile?.first_name} ${response.course_scheduling?.account_executive?.profile?.last_name}` : '-',
               },
+              courses,
               type: 'teacher',
               notification_source: `course_teacher_remove_${register.teacher._id}_${response._id}`,
-              // amount_notifications: 1
             })
           }
 
@@ -257,16 +296,6 @@ class CourseSchedulingDetailsService {
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, 1)
-          // await courseSchedulingService.sendEnrollmentUserEmail([response.teacher.email], {
-          //   mailer: customs['mailer'],
-          //   first_name: response.teacher.profile.first_name,
-          //   course_name: response.course_scheduling.program.name,
-          //   course_start: moment.utc(response.course_scheduling.startDate).format('YYYY-MM-DD'),
-          //   course_end: moment.utc(response.course_scheduling.endDate).format('YYYY-MM-DD'),
-          //   type: 'teacher',
-          //   notification_source: `course_start_${response.teacher._id}_${response._id}`,
-          //   amount_notifications: 1
-          // })
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -312,13 +341,58 @@ class CourseSchedulingDetailsService {
       ((register.number_of_sessions && params.number_of_sessions) && params.number_of_sessions.toString() !== register.number_of_sessions.toString()) ||
       sessionsChange.length > 0
     ) {
-      let message = `Las siguientes sesiones han sido modificadas:<ul>`
-      params.sessions.map((session) => {
-        if (session.hasChanges === 'on') {
-          message += `<li>Fecha de inicio: ${moment(session.startDate).format('DD/MM/YYYY hh:mm a')}<br>Duración: ${generalUtility.getDurationFormated(session.duration)}</li>`
+      let message = `La programación de sesiones ha cambiado:<br><br>`
+      message += `<p>Programación anterior</p>`
+      message += `<table border="1">`;
+      message += `  <thead>`;
+      message += `    <th>Fecha</th>`;
+      message += `    <th>Horario</th>`;
+      message += `    <th>Nro de horas</th>`;
+      message += `  </thead>`;
+      message += `  <tbody>`;
+      register.sessions.map((session) => {
+        let schedule = ''
+        if (session.startDate && session.duration) {
+          let endDate = moment(session.startDate).add(session.duration, 'seconds')
+          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
         }
+        message += `      <tr>`;
+        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${schedule}</td>`;
+        message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
+        duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+        message += `      </tr>`;
       })
-      message += `</ul>`
+      message += `  </tbody>`;
+      message += `</table>`;
+
+      message += `<p>Nueva programación</p>`
+      message += `<table border="1">`;
+      message += `  <thead>`;
+      message += `    <th>Fecha</th>`;
+      message += `    <th>Horario</th>`;
+      message += `    <th>Nro de horas</th>`;
+      message += `  </thead>`;
+      message += `  <tbody>`;
+      params.sessions.map((session) => {
+        let schedule = ''
+        if (session.startDate && session.duration) {
+          let endDate = moment(session.startDate).add(session.duration, 'seconds')
+          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+        }
+        message += `      <tr>`;
+        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${schedule}</td>`;
+        message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
+        message += `      </tr>`;
+      })
+      message += `  </tbody>`;
+      message += `</table>`;
+      // params.sessions.map((session) => {
+      //   if (session.hasChanges === 'on') {
+      //     message += `<li>Fecha de inicio: ${moment(session.startDate).format('DD/MM/YYYY hh:mm a')}<br>Duración: ${generalUtility.getDurationFormated(session.duration)}</li>`
+      //   }
+      // })
       changes.push({
         message
       })
