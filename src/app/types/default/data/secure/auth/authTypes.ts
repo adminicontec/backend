@@ -13,6 +13,7 @@ export interface UserFields {
   profile: any,
   roles: Array<any>
   moodle_id: string
+  show_profile_interaction?: boolean
   company?: Record<any, string> | null | undefined
 }
 

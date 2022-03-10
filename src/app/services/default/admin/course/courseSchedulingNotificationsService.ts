@@ -4,6 +4,7 @@ import moment from 'moment';
 
 // @import services
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 // @end
 
 // @import utilities
@@ -56,6 +57,9 @@ class CourseSchedulingNotificationsService {
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
 
+      // @INFO Obtener si el servicio aplica para examen o no
+      const exam: boolean = await this.verifyCourseSchedulingExercise(modules);
+
       if (email_to_notificate.length > 0) {
         const params = {
           mailer: customs['mailer'],
@@ -72,8 +76,7 @@ class CourseSchedulingNotificationsService {
           startDate: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
           endDate: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
           observations: courseScheduling.observations,
-          // TODO: Poner si tiene exámenes o no
-          exam: 'SI',
+          exam: exam ? 'SI' : 'NO',
           accountExecutive: courseScheduling.account_executive.profile.first_name,
           regional: courseScheduling.regional.name
         };
@@ -113,6 +116,9 @@ class CourseSchedulingNotificationsService {
       courseSchedulingDetails = await this.getCourseSchedulingDetailsFromId(courseSchedulingDetailsId);
     }
 
+    // @INFO Verificar si el courseSchedulingDetails aplica para examen
+    const exam = await this.verifyCourseSchedulingDetailsExercise(courseSchedulingDetails);
+
     try {
       let path_template = 'survey/surveyNotification';
       const params = {
@@ -128,8 +134,7 @@ class CourseSchedulingNotificationsService {
         endDate: moment(courseSchedulingDetails.endDate).format('YYYY-MM-DD'),
         teacher: `${courseSchedulingDetails.teacher.profile.first_name} ${courseSchedulingDetails.teacher.profile.last_name}`,
         observations: courseScheduling.observations,
-        // TODO: Poner si tiene exámenes o no
-        exam: 'SI',
+        exam: exam ? 'SI' : 'NO',
         accountExecutive: courseScheduling.account_executive.profile.first_name,
         regional: courseScheduling.regional.name
       }
@@ -161,7 +166,7 @@ class CourseSchedulingNotificationsService {
   private getModulesOfCourseScheduling = async (courseScheduling: any) => {
     const response = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
     .populate({path: 'teacher', select: 'profile'})
-    .populate({path: 'course', select: 'name'})
+    .populate({path: 'course', select: 'name code id'})
     .lean();
     if (response) {
       return response;
@@ -200,7 +205,7 @@ class CourseSchedulingNotificationsService {
   private getCourseSchedulingDetailsFromId = async (id: string) => {
     const courseSchedulingDetails = await CourseSchedulingDetails.findOne({_id: id})
     .populate({ path: 'teacher', select: 'id profile' })
-    .populate({path: 'course', select: 'name'})
+    .populate({path: 'course', select: 'name code id'})
     .lean();
     return courseSchedulingDetails;
   }
@@ -215,6 +220,50 @@ class CourseSchedulingNotificationsService {
       _seconds = Number(_seconds);
     }
     return `${Math.trunc((_seconds/60)/60)}h`
+  }
+
+  /**
+   * @INFO Verificar si un servicio aplica para examen
+   * @param courseScheduling : Módulos del servicio
+   */
+  private verifyCourseSchedulingExercise = async (modules: any[]): Promise<boolean> => {
+    let response: boolean = false;
+    if (modules && modules.length) {
+      for await (let module of modules) {
+        if (!response) {
+          const verify = await this.verifyCourseSchedulingDetailsExercise(module);
+          if (verify) {
+            response = true;
+          }
+        }
+      }
+    }
+    return response;
+  }
+
+  /**
+   * @INFO Verificar si un modulo del servicio tiene examen
+   * @param module : Objeto de courseSchedulingDetails
+   */
+  private verifyCourseSchedulingDetailsExercise = async (module: any): Promise<boolean> => {
+    if (!module || !module.course || !module.course.code) return false;
+    const exams: any = await this.getCourseExamList(module.course.code);
+    if (exams && exams.courseModules && exams.courseModules.length) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * @INFO Obtener los exámenes de un curso en moodle
+   * @param courseId
+   * @param moduleType
+   */
+  private getCourseExamList = async (courseID: string) => {
+    const moduleType: string[] = ['quiz'];
+    const response = await courseContentService.moduleList({courseID, moduleType});
+    return response;
   }
 
 

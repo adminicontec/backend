@@ -86,7 +86,7 @@ const UserSchema = new Schema({
     birthDate: { type: Schema.Types.Date },
     regional: { type: Schema.Types.String },
     origen: { type: Schema.Types.String },
-    currentPosition: { type: Schema.Types.String },
+    currentPosition: { type: Schema.Types.String }, // Aca va la posición que tiene el usuario en la empresa
     carreer: { type: Schema.Types.String },
     educationalLevel: { type: Schema.Types.String },
     company: { type: Schema.Types.String },
@@ -156,7 +156,12 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Company"
   },
-  moodle_id: { type: Schema.Types.String }
+  moodle_id: { type: Schema.Types.String },
+  // Interacciones
+  show_profile_interaction: {
+    type: Schema.Types.Boolean,
+    default: true
+  }
   // @end
 }, {
   collection: 'users', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

@@ -39,7 +39,7 @@ class CourseSchedulingDataService {
   public fetchCourseSchedulingByProgram = async (params: IFetchCourseSchedulingByProgram) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address'
 
       let where = {
         moodle_id: params.moodle_id
@@ -56,6 +56,7 @@ class CourseSchedulingDataService {
         .populate({ path: 'city', select: 'id name' })
         .populate({ path: 'country', select: 'id name' })
         .populate({ path: 'client', select: 'id name'})
+        .populate({ path: 'contact', select: 'id profile email' })
         // .populate({path: 'course', select: 'id name'})
         // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .select(select)
@@ -226,7 +227,7 @@ class CourseSchedulingDataService {
     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student contact logistics_supply certificate_address'
     if (params.select) {
       select = params.select
     }
@@ -267,7 +268,8 @@ class CourseSchedulingDataService {
           { path: 'city', select: 'id name' },
           { path: 'country', select: 'id name' },
           {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
-          { path: 'client', select: 'id name'}
+          { path: 'client', select: 'id name'},
+          { path: 'contact', select: 'id profile email'},
         ])
       } else {
         registers = await CourseScheduling.find({})
@@ -284,6 +286,7 @@ class CourseSchedulingDataService {
         // .populate({path: 'course', select: 'id name'})
         .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
         .populate({path: 'client', select: 'id name'})
+        .populate({ path: 'contact', select: 'id profile email' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })

@@ -96,6 +96,10 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Company",
   },
+  contact: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
   duration: { type: Schema.Types.Number },
   in_design: {
     type: Schema.Types.Boolean,
@@ -180,6 +184,11 @@ const CourseSchedulingSchema = new Schema({
       ref: "CourseSchedulingDetails",
       required: false
     }],
+  logistics_supply: {
+    type: Schema.Types.String,
+    enum: ['business', 'icontec']
+  },
+  certificate_address: {type: Schema.Types.String},
   // Material delivery
   material_delivery: {
     type: Schema.Types.String,
