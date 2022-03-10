@@ -951,6 +951,7 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         service_id: courseScheduling.metadata.service_id,
         program_name: courseScheduling.program.name,
+        course_name: course?.course?.name || undefined,
         notification_source: `course_updated_${courseScheduling._id}`,
         changes,
         type: 'teacher'

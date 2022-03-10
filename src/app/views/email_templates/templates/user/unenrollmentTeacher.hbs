@@ -26,10 +26,49 @@
   {{/if}}
   <div><b>PROGRAMACIÓN DEL SERVICIO - CANCELADA</b></div>
   <br>
-  <div>
+  {{!-- <div>
     <p style="margin: 0;"><b>Código: </b>{{params.course_code}}</p>
     <p style="margin: 0;"><b>Curso: </b>{{params.course_name}}</p>
-  </div>
+  </div> --}}
+  {{#each params.courses}}
+    <div>
+      <p style="margin: 0;"><b>Código: </b>{{this.course_code}}</p>
+      <p style="margin: 0;"><b>Curso: </b>{{this.course_name}}</p>
+    </div>
+    <br>
+    {{#if this.sessions}}
+      <table border="1">
+        <thead>
+          <th>Fecha</th>
+          <th>Horario</th>
+          <th>Nro de horas</th>
+        </thead>
+        <tbody>
+          {{#each this.sessions}}
+            <tr>
+              <td>{{this.start_date}}</td>
+              <td>{{this.schedule}}</td>
+              <td>{{this.duration}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{/if}}
+    {{#if this.info}}
+      <table border="1">
+        <thead>
+          <th>Fecha</th>
+          <th>Nro de horas</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{this.info.start_date}}</td>
+            <td>{{this.info.duration}}</td>
+          </tr>
+        </tbody>
+      </table>
+    {{/if}}
+  {{/each}}
   <br>
   <div>En caso de cualquier inquietud comuníquese con el programador (coordinador del servicio- operación presencial/online o virtual).</div>
   <br><br>
