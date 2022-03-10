@@ -167,15 +167,16 @@ class GradesService {
           });
       }
 
-      console.log("Items: " + respMoodleEvents.usergrades.length);
       for (const usergrade of respMoodleEvents.usergrades) {
+        let itemType = {};
+        select.forEach(f => {
+          itemType[f] = [];
+        })
 
-        console.log(`Grades for: ${usergrade.userfullname}`);
         let userData = {
           userid: usergrade.userid,
           userfullname: usergrade.userfullname
         }
-        //let userGrades = [];
         let singleGrade = {
           id: 0,
           name: '',
@@ -187,11 +188,6 @@ class GradesService {
           grademin: 0,
           grademax: 0,
         }
-
-        let itemType = {};
-        select.forEach(f => {
-          itemType[f] = [];
-        })
 
         usergrade.gradeitems.forEach(element => {
           const gradeSearch = select.find(field => field == element.itemmodule);
@@ -208,6 +204,22 @@ class GradesService {
               grademax: element.grademax
             };
             itemType[element.itemmodule].push(singleGrade);
+          }
+          // it applies only for finalGrade on Course
+          const gradeSearchInType = select.find(field => field == element.itemtype);
+          if (gradeSearchInType) {
+            singleGrade = {
+              id: element.id,
+              name: element.itemname,
+              itemtype: element.itemtype,
+              itemmodule: element.itemtype,
+              iteminstance: element.iteminstance,
+              cmid: element.cmid,
+              graderaw: element.graderaw,
+              grademin: element.grademin,
+              grademax: element.grademax
+            };
+            itemType[element.itemtype].push(singleGrade);
           }
         });
         userGradesData.push(
@@ -327,7 +339,6 @@ class GradesService {
             error: e.message
           }
         });
-
     }
 
   }

@@ -8,7 +8,7 @@ import { mailService } from "@scnode_app/services/default/general/mail/mailServi
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 import { userService } from '../user/userService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
-import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { moodleUserService } from '../../moodle/user/moodleUserService';
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
@@ -60,6 +60,7 @@ class EnrollmentService {
    */
   public list = async (filters: IEnrollmentQuery = {}) => {
 
+    console.log('»» enrollment');
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -90,16 +91,16 @@ class EnrollmentService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: {$in: ['New', 'In-process', 'Complete']}
+        status: { $in: ['New', 'In-process', 'Complete'] }
       })
-      .select('id userId')
+        .select('id userId')
 
       const user_ids = certifications.reduce((accum, element) => {
         accum.push(element.userId)
         return accum
       }, [])
       if (user_ids.length > 0) {
-        where['user'] = {$nin: user_ids}
+        where['user'] = { $nin: user_ids }
       }
     }
 
@@ -117,31 +118,45 @@ class EnrollmentService {
 
       let count = 1
       for await (const register of registers) {
-        register.count = count
+
         if (register.user && register.user.profile) {
+          register.count = count
           register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
-        }
 
-        if (filters.check_certification) {
-          const certificate = await CertificateQueue.findOne({
-            userId: register.user._id,
-            courseId: register.course_scheduling,
-            status: {$in: ['New', 'In-process', 'Complete']}
-          })
-          .select('')
+          if (filters.check_certification) {
+            const certificate = await CertificateQueue.findOne({
+              userId: register.user._id,
+              courseId: register.course_scheduling,
+              status: { $in: ['New', 'In-process', 'Complete'] }
+            })
+              .select('')
 
-          register.certificate = certificate
-          if (register?.certificate?.certificate?.pdfPath) {
-            register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath)
+            register.certificate = certificate
+            if (register?.certificate?.certificate?.pdfPath) {
+              register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath)
+            }
+            if (register?.certificate?.certificate?.imagePath) {
+              register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath)
+            }
           }
-          if (register?.certificate?.certificate?.imagePath) {
-            register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath)
-          }
+          count++
         }
-
-        count++
+        else {
+          console.log('Error with profile:');
+          console.log(register);
+        }
       }
-    } catch (e) { }
+    } catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'enrollment.exception',
+          additional_parameters: {
+            process: 'list()',
+            error: e.message
+          }
+        });
+    }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
@@ -435,11 +450,11 @@ class EnrollmentService {
                 mailer: customs['mailer'],
                 first_name: respCampusDataUser.user.profile.first_name,
                 course_name: courseScheduling.program.name,
-                username: respCampusDataUser.username || '',
+                username: respCampusDataUser.username || '',
                 service_id: courseScheduling?.metadata?.service_id || '',
                 course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
                 course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
-                notification_source: `course_start_${ respCampusDataUser.user._id}_${courseScheduling._id}`,
+                notification_source: `course_start_${respCampusDataUser.user._id}_${courseScheduling._id}`,
                 type: 'student'
               })
             }
@@ -471,12 +486,12 @@ class EnrollmentService {
               await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                 mailer: customs['mailer'],
                 first_name: userEnrollment.profile.first_name,
-                username: userEnrollment.username || '',
+                username: userEnrollment.username || '',
                 course_name: courseScheduling.program.name,
                 service_id: courseScheduling?.metadata?.service_id || '',
                 course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
                 course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
-                notification_source: `course_start_${ userEnrollment._id}_${courseScheduling._id}`,
+                notification_source: `course_start_${userEnrollment._id}_${courseScheduling._id}`,
                 type: 'student'
               })
             }
@@ -614,10 +629,10 @@ class EnrollmentService {
     if (dataFromWorksheet != null) {
       console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
-      const courseScheduling = await CourseScheduling.findOne({_id: params.courseScheduling})
-      .select('id account_executive')
-      .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
-      .lean()
+      const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
+        .select('id account_executive')
+        .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+        .lean()
 
       let index = 1;
       for await (const element of dataFromWorksheet) {
@@ -633,7 +648,7 @@ class EnrollmentService {
 
         //#region   Revisión Documento de identidad para Casos especiales
 
-        if(!element['Tipo Documento']){
+        if (!element['Tipo Documento']) {
           processResult = {
             row: index,
             status: 'ERROR',
