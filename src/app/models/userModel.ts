@@ -156,7 +156,12 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Company"
   },
-  moodle_id: { type: Schema.Types.String }
+  moodle_id: { type: Schema.Types.String },
+  // Interacciones
+  show_profile_interaction: {
+    type: Schema.Types.Boolean,
+    default: true
+  }
   // @end
 }, {
   collection: 'users', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
