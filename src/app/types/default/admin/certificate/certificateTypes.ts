@@ -133,7 +133,7 @@ export interface IGenerateZipCertifications {
   }
 }
 export interface ICertificateCompletion {
-  courseID?: string,
+  courseID?: string,  //moodle_ID
   course_scheduling?: string,
   without_certification?: boolean
   check_certification?: boolean,

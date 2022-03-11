@@ -17,6 +17,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseQuery, IMoodleCourseModuleQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { modularMiddleware } from 'app/middlewares/admin/modular/modularMiddleware';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
 // @end
 
 class CourseContentService {
@@ -130,7 +131,7 @@ class CourseContentService {
             // console.dir(module, { depth: null, colors: true });
             // console.log('--------------------');
 
-            console.log(': ' + module.id);
+            //console.log(': ' + module.id);
             let moodleModuleParams = {
               wstoken: moodle_setup.wstoken,
               wsfunction: moodle_setup.services.courses.getModules,
@@ -138,8 +139,8 @@ class CourseContentService {
               "cmid": module.id.toString()
             };
             let respMoodleModules = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleModuleParams });
-            console.log('Response from modules:');
-            console.dir(respMoodleModules.cm.idnumber, { depth: null, colors: true });
+            //console.log('Response from modules:');
+            //console.dir(respMoodleModules.cm.idnumber, { depth: null, colors: true });
 
             singleModuleCourseContent = {
               id: module.id,
@@ -154,7 +155,6 @@ class CourseContentService {
             };
             responseCourseModules.push(singleModuleCourseContent);
           }
-
         }
       }
     }
@@ -163,7 +163,6 @@ class CourseContentService {
         courseModules: responseCourseModules
       }
     })
-
   }
 }
 

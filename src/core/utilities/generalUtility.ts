@@ -295,9 +295,12 @@ class GeneralUtility {
     /*
     * Método que elimina caracteres en el nombre de un usuario :
     * si existen espacios, se eliminan
+    * Si existen caracteres acentuados, se reemplaza por su vocal sin acento
+    * Si existen Ñ, se convierte a N
   */
   public normalizeFullName = (firstname: string, lastname: string) => {
-    return firstname.trim().replace(/ /g, "") + lastname.trim().replace(/ /g, "");
+    return firstname.trim().replace(/ /g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    + lastname.trim().replace(/ /g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
 
   /*

@@ -30,6 +30,7 @@ class GradesRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/',this.instanceController.fetchGrades,[],['auth']);
+    routerUtility.post(app,_route,'/filter',this.instanceController.fetchGradesByFilter,[],['auth']);
     // @end
   }
 }
