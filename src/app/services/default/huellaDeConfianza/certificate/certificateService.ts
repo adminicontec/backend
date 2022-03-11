@@ -1057,7 +1057,8 @@ class CertificateService {
         users: [certificateReq.queueData.userId],
         certificateType: certificateReq.certificateType,
         status: 'In-process',
-        message: ''
+        message: '',
+        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
       });
 
       console.log("--> After Insert/update cerfificateQueue:");
@@ -1085,6 +1086,7 @@ class CertificateService {
         message: certificateReq.paramsHuella.certificado,
         certificateModule: certificateReq.paramsHuella.modulo,
         certificateType: certificateReq.certificateType,
+        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
         certificate: {
           hash: respHuella.resultado.certificado,
           url: respHuella.resultado.url,
