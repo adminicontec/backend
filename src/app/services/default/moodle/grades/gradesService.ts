@@ -188,6 +188,8 @@ class GradesService {
           grademin: 0,
           grademax: 0,
         }
+        // console.log('+++++++++++++++++++++++++++++++++');
+        // console.log(usergrade);
 
         usergrade.gradeitems.forEach(element => {
           const gradeSearch = select.find(field => field == element.itemmodule);
