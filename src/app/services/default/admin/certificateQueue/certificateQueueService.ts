@@ -90,7 +90,8 @@ class CertificateQueueService {
             certificateQueue: {
               _id: response._id,
               status: response.status,
-              certificate: response.certificate
+              certificate: response.certificate,
+              auxiliar: response.auxiliar
             }
           }
         })
