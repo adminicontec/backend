@@ -42,9 +42,13 @@ class CertificateQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId status certificateType certificateModule certificate';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificate';
       if (params.query === QueryValues.ALL) {
-        const registers = await CertificateQueue.find(where).select(select)
+        const registers = await CertificateQueue.find(where)
+        .select(select)
+        .populate({ path: 'userId', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+        .populate({ path: 'auxiliar', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' });
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: registers
@@ -100,7 +104,7 @@ class CertificateQueueService {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("INSERT certificate queue");
         console.log(params);
-        console.log(params.auxiliar);
+        console.log("AuxiliarID:" + params.auxiliar);
 
         let totalResponse = [];
 

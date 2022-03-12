@@ -645,6 +645,7 @@ class CertificateService {
             certificateQueueId: null, // as new record
             userId: params.userId, // Nombre de usario
             courseId: params.courseId,
+            auxiliarId: params.auxiliarId
           },
           certificateType: certificate_type.auditor,
           template: mapping_template,
@@ -1058,7 +1059,7 @@ class CertificateService {
         certificateType: certificateReq.certificateType,
         status: 'In-process',
         message: '',
-        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
+        auxiliar: certificateReq.queueData.auxiliarId,
       });
 
       console.log("--> After Insert/update cerfificateQueue:");
@@ -1086,7 +1087,7 @@ class CertificateService {
         message: certificateReq.paramsHuella.certificado,
         certificateModule: certificateReq.paramsHuella.modulo,
         certificateType: certificateReq.certificateType,
-        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
+        auxiliar: certificateReq.queueData.auxiliarId,
         certificate: {
           hash: respHuella.resultado.certificado,
           url: respHuella.resultado.url,

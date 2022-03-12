@@ -28,7 +28,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
 
     console.log("Get all items on Certificate Queue [new and re-issue status]")
     const select = ["New", "Re-issue"];
-    // QueueStatus.COMPLETE.toString()
+
     let respQueueToProcess: any = await certificateQueueService.
       findBy({
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
@@ -42,12 +42,14 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
       for await (const element of respQueueToProcess.certificateQueue) {
         console.log('.............................');
         console.log(element._id);
+        console.log(`Liberado por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
 
         // 1. Send request to process Certificate on HdC service.
         let respSetCertificate: any = await certificateService.setCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
-          userId: element.userId
+          userId: element.userId._id,
+          auxiliarId: element.auxiliar._id
         });
 
         if (respSetCertificate.status === "error") {

@@ -10,8 +10,9 @@ export interface IQueryCertificate {
 
 export interface IQueryUserToCertificate {
   certificateQueueId: string,
-  userId: string, // Nombre de usario
-  courseId: string
+  userId: string, // ID de usario
+  courseId: string, // ID de curso
+  auxiliarId: string // ID de Auxiliar qué liberó el certificado
 }
 
 
