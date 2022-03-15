@@ -609,6 +609,23 @@ class UserService {
       where['company'] = { $exists: false }
     }
 
+    let typeOfSort;
+    if (filters.sort) {
+      if (filters.sort == 'first_name') {
+        typeOfSort = { 'profile.first_name': 1 };
+      }
+      if (filters.sort == 'last_name') {
+        typeOfSort = { 'profile.last_name': 1 };
+      }
+      if (filters.sort == 'username') {
+        typeOfSort = { 'username': 1 };
+      }
+    }
+
+    console.log('SORT:');
+    console.log(filters.sort);
+    console.log(typeof filters.sort);
+
     let registers = []
     try {
       registers = await User.find(where)
@@ -617,6 +634,7 @@ class UserService {
         .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
+        .sort( typeOfSort ? typeOfSort : {})
         .lean()
 
       for await (const register of registers) {
@@ -736,7 +754,7 @@ class UserService {
         }
 
         if (xlData[key].hasOwnProperty("username")) {
-          user = await User.findOne({username: xlData[key].username}).select("_id");
+          user = await User.findOne({ username: xlData[key].username }).select("_id");
           if (user)
             error_create.push(
               i18nUtility.i18nMessage(
@@ -747,7 +765,7 @@ class UserService {
         }
 
         if (xlData[key].hasOwnProperty("doc_number")) {
-          user = await User.findOne({'profile.doc_number': xlData[key].doc_number}).select("_id");
+          user = await User.findOne({ 'profile.doc_number': xlData[key].doc_number }).select("_id");
           if (user)
             error_create.push(
               i18nUtility.i18nMessage(
@@ -762,7 +780,7 @@ class UserService {
           let roleNames = xlData[key].roles.split(",");
           roleNames = roleNames.map((role) => role.trim());
 
-          let roleList = await Role.find({name: {$in: roleNames}}).select("id name");
+          let roleList = await Role.find({ name: { $in: roleNames } }).select("id name");
 
           roleList.map((element) => {
             roles_list.push(element._id)
@@ -777,15 +795,15 @@ class UserService {
           error_create.push(
             i18nUtility.i18nMessage(
               "app_error_messages.users.createMultiple.invalid_email", { email })
-            )
+          )
         }
 
         if (error_create.length === 0) {
           let user_data_object = {
             username: (xlData[key].username) ? xlData[key].username.toString().trim() : '',
             password: (xlData[key].password) ? xlData[key].password.toString().trim() : '',
-            email:  (xlData[key].email) ? xlData[key].email.toString().trim() : '',
-            moodle:  (xlData[key].moodle) ? xlData[key].moodle.toString().trim() : undefined,
+            email: (xlData[key].email) ? xlData[key].email.toString().trim() : '',
+            moodle: (xlData[key].moodle) ? xlData[key].moodle.toString().trim() : undefined,
             profile: {
               first_name: (xlData[key].first_name) ? xlData[key].first_name.toString().trim() : '',
               last_name: (xlData[key].last_name) ? xlData[key].last_name.toString().trim() : '',
@@ -818,10 +836,10 @@ class UserService {
           total_create: total_create,
         },
       });
-    } catch(e) {
+    } catch (e) {
       return responseUtility.buildResponseFailed("json", null, {
         additional_parameters: {
-          "message":e.message
+          "message": e.message
         },
       });
     }

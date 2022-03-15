@@ -101,6 +101,7 @@ export interface IUserQuery {
   role_names?: Array<string> | string // Roles
   company?: string // Identificador de compañia
   without_company?: boolean | string
+  sort?: string
 }
 
 export interface IUserDateTimezone {
