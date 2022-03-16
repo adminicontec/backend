@@ -456,6 +456,9 @@
     "subject": "Solicitud de recuperación de contraseña"
   },
   "mailer": {
+    "participant_certificated_notification": {
+      "subject": "Notificación para Descarga de Certificado"
+    },
     "welcome_user": {
       "subject": "¡Bienvenid@ al Campus Digital Icontec!"
     },
