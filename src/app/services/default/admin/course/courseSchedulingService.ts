@@ -21,6 +21,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility'
+import { mapUtility } from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
@@ -1483,44 +1484,99 @@ class CourseSchedulingService {
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
           .populate({
-            path: 'course_scheduling', select: 'id program client schedulingMode regional metadata moodle_id modular', populate: [
+            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
               { path: 'modular', select: 'id name' },
               { path: 'program', select: 'id name moodle_id code' },
-              // { path: 'schedulingType', select: 'id name' },
-              // { path: 'schedulingStatus', select: 'id name' },
+              { path: 'schedulingType', select: 'id name' },
+              { path: 'schedulingStatus', select: 'id name' },
               { path: 'regional', select: 'id name' },
-              { path: 'client', select: 'id name' }
-
-              // { path: 'city', select: 'id name' },
+              { path: 'client', select: 'id name' },
+              { path: 'city', select: 'id name' },
+              { path: 'account_executive', select: 'id profile.first_name profile.last_name' }
               // { path: 'country', select: 'id name' },
             ]
           })
           .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.city profile.regional profile.contractType' })
           .select(select)
           .lean()
 
+        const courseSchedulings = mapUtility.removeDuplicated(detailSessions.reduce((accum, element) => {
+          if (element?.course_scheduling?._id) {
+            accum.push(element.course_scheduling._id)
+          }
+          return accum
+        }, []))
+
+        let participantsByProgram = {}
+
+        if (courseSchedulings.length > 0) {
+          const enrolledByProgramQuery = await Enrollment.aggregate([
+            {
+              $match: { course_scheduling: {$in: courseSchedulings} }
+            },
+            {
+              $group: { _id: "$course_scheduling", count: { $sum: 1} }
+            }
+          ])
+          if (enrolledByProgramQuery.length > 0) {
+            participantsByProgram = enrolledByProgramQuery.reduce((accum, element) => {
+              if (!accum[element._id.toString()]) {
+                accum[element._id.toString()] = element.count;
+              }
+              return accum
+            }, {})
+          }
+        }
+
         detailSessions.map((course, index) => {
           let duration_scheduling = parseInt(course.duration)
+
+          if (course.sessions && course.sessions.length > 0) {
+            duration_scheduling = 0;
+            course.sessions.map((session) => {
+              duration_scheduling += parseInt(session.duration)
+            })
+          }
+
+          let teacher_type = '-';
+          if (course?.teacher?.profile?.contractType) {
+            if (course?.teacher?.profile?.contractType?.isTeacher === true) {
+              teacher_type = 'Docente'
+            } else if (course?.teacher?.profile?.contractType?.isTutor === true) {
+              teacher_type = 'Tutor'
+            }
+          }
+
           let item = {
-            service_id: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.service_id) ? course.course_scheduling.metadata.service_id : '-',
-            service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
-            program_code: (course.course_scheduling && course.course_scheduling.program && course.course_scheduling.program.code) ? course.course_scheduling.program.code : '-',
-            program_name: (course.course_scheduling && course.course_scheduling.program && course.course_scheduling.program.name) ? course.course_scheduling.program.name : '-',
+            service_id: (course?.course_scheduling?.metadata?.service_id) ? course.course_scheduling.metadata.service_id : '-',
+            course_scheduling_status: (course?.course_scheduling?.schedulingStatus?.name) ? course?.course_scheduling?.schedulingStatus?.name : '-',
+            modular: (course?.course_scheduling?.modular?.name) ? course?.course_scheduling?.modular?.name : '-',
+            program_code: (course?.course_scheduling?.program?.code) ? course.course_scheduling.program.code : '-',
+            program_name: (course?.course_scheduling?.program?.name) ? course.course_scheduling.program.name : '-',
+            course_scheduling_type: (course?.course_scheduling?.schedulingType?.name) ? course?.course_scheduling?.schedulingType?.name : '-',
+            scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
             course_code: (course.course && course.course.code) ? course.course.code : '-',
             course_name: (course.course && course.course.name) ? course.course.name : '-',
-            teacher_name: (course.teacher && course.teacher.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
-            client: (course.course_scheduling && course.course_scheduling.client?.name) ? course.course_scheduling.client.name : '-',
-            scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
-            regional: (course.course_scheduling && course.course_scheduling.regional && course.course_scheduling.regional.name) ? course.course_scheduling.regional.name : '-',
-            executive: '-',
+            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
             start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
             end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
-            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-            modular: (course?.course_scheduling?.modular?.name) ? course?.course_scheduling?.modular?.name : '-'
+            start_month: (course.startDate) ? moment.utc(course.startDate).format('MM') : '',
+            start_year: (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '',
+            teacher_name: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
+            teacher_type,
+            teacher_city: (course.teacher?.profile?.city) ? course.teacher.profile.city : '-',
+            teacher_regional: (course.teacher?.profile?.regional) ? course.teacher.profile.regional : '-',
+            city: (course?.course_scheduling?.city?.name) ? course.course_scheduling.city.name : '-',
+            regional: (course?.course_scheduling?.regional?.name) ? course.course_scheduling.regional.name : '-',
+            participants: (participantsByProgram[course?.course_scheduling?._id]) ? participantsByProgram[course?.course_scheduling._id] : 0,
+            observations: (course?.course_scheduling?.observations) ? course.course_scheduling.observations : '-',
+            executive: (course?.course_scheduling?.account_executive?.profile) ? `${course.course_scheduling.account_executive.profile.first_name} ${course.course_scheduling.account_executive.profile.last_name}` : '-',
+            client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
+            service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
           }
 
           courses.push(item)
@@ -1609,20 +1665,33 @@ class CourseSchedulingService {
     let reportData = courses.reduce((accum, element) => {
       accum.push({
         'ID del servicio': element.service_id,
-        'Coordinador Servicio': element.service_user,
+        'Estado': element.course_scheduling_status,
+        'Modular': element?.modular ? element?.modular : '-',
         'Código del programa': element.program_code,
         'Nombre del programa': element.program_name,
+        'Tipo de servicio': element.course_scheduling_type,
+        'Modalidad': element.scheduling_mode,
         'Código del curso': element.course_code,
         'Nombre del curso': element.course_name,
-        'Modular': element?.modular ? element?.modular : '-',
-        'Docente': element.teacher_name,
-        'Cliente': element.client,
-        'Modalidad': element.scheduling_mode,
-        'Regional': element.regional,
-        'Ejecutivo': element.executive,
+        'Nº de horas del curso': element.course_duration,
         'Fecha de inicio del curso': element.start_date,
         'Fecha de finalización del curso': element.end_date,
-        'Nº de horas del curso': element.course_duration,
+        'Mes': element.start_month,
+        'Año': element.start_year,
+        'Docente': element.teacher_name,
+        'Tipo de docente': element.teacher_type,
+        'Ciudad origen docente': element.teacher_city,
+        'Regional docente': element.teacher_regional,
+        'Ciudad del servicio': element.city,
+        'Regional del servicio': element.regional,
+        'Participantes': element.participants,
+        'Observaciones': element.observations,
+        'Cantidad de reprogramaciones': 0, // TODO: Este dato aun no se puede sacar
+        'Tipo de reprogramaciones': '-', // TODO: Este dato aun no se puede sacar
+        'Nombre del ejecutivo de cuenta': element.executive,
+        'Empresa': element.client,
+        // 'Modalidad horario': '', // TODO: Ver donde esta este campo
+        // 'Coordinador Servicio': element.service_user,
       })
       cols.push({ width: 20 })
       return accum
