@@ -256,7 +256,8 @@ class CompanyService {
       .select(select)
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
       .limit(paging ? nPerPage : null)
-      .sort({created_at: -1})
+      //.sort({created_at: -1})
+      .sort({ name: 1 })
       .lean()
 
       for await (const register of registers) {
