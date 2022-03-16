@@ -31,6 +31,7 @@ class CertificateRoute {
     routerUtility.post(app, _route, '/create', this.instanceController.setCertificate, [], ['auth'])
     routerUtility.post(app, _route, '/preview', this.instanceController.previewCertificate, [], ['auth'])
     routerUtility.post(app, _route, '/completion', this.instanceController.completion, [], ['auth'])
+    routerUtility.post(app, _route, '/rulesforcompletion', this.instanceController.rulesForCompletion, [], ['auth'])
 
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);

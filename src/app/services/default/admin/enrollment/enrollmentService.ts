@@ -119,6 +119,7 @@ class EnrollmentService {
       let count = 1
       for await (const register of registers) {
 
+
         if (register.user && register.user.profile) {
           register.count = count
           register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
@@ -144,6 +145,11 @@ class EnrollmentService {
         else {
           console.log('Error with profile:');
           console.log(register);
+
+          var i = registers.indexOf( register );
+          if ( i !== -1 ) {
+            registers.splice( i, 1 );
+        }
         }
       }
     } catch (e) {
