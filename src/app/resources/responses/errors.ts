@@ -795,6 +795,11 @@ class ErrorResponse {
         }
       },
       "program": {
+        'general_error': {
+          "message": i18nUtility.__("app_error_messages.program.general_error"),
+          "status_code": "program_general_error",
+          "code": 400
+        },
         'not_found': {
           "message": i18nUtility.__("app_error_messages.program.not_found"),
           "status_code": "program_not_found",

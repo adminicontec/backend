@@ -407,6 +407,7 @@
       }
     },
     "teacher_upload" : {
+      "general_error": "Se ha presentado un error con los programas: :error",
       "failed_upload": "Ha ocurrido un error al subir los archivos: :error",
       "empty_file": "El archivo se encuentra vacío en la hoja :sheetname"
     }
