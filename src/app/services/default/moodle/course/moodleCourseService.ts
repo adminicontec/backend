@@ -147,8 +147,8 @@ class MoodleCourseService {
       moodlewsrestformat: moodle_setup.restformat,
       'courses[0][id]': params.id,
       'courses[0][categoryid]': params.categoryId,
-      'courses[0][startdate]': generalUtility.unixTimeOffset( new Date(params.startDate).toISOString(), 5),
-      'courses[0][enddate]': generalUtility.unixTimeOffset( new Date(params.endDate).toISOString(), 5, true),
+      'courses[0][startdate]': generalUtility.unixTimeOffset(new Date(params.startDate).toISOString(), 5),
+      'courses[0][enddate]': generalUtility.unixTimeOffset(new Date(params.endDate).toISOString(), 5, true),
       'courses[0][visible]': params.visible,
       'courses[0][idnumber]': params.shortName,
       'courses[0][customfields][0][shortname]': 'programa_horas',
@@ -200,7 +200,7 @@ class MoodleCourseService {
       'categoryid': params.categoryId,
       'shortname': params.shortName,
       'fullname': params.fullName,
-      'visible':params.visible, // la copia queda oculta en su creación.
+      'visible': params.visible, // la copia queda oculta en su creación.
       'options[0][name]': 'users',
       'options[0][value]': 0,
     };
@@ -247,6 +247,10 @@ class MoodleCourseService {
     console.log("Resultados de copia: ");
     console.log(respMoodle);
     console.log("============");
+
+    if (respMoodle.status == 'error') {
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+    }
 
     // Take dates and update course data:
     params.id = respMoodle.id;
