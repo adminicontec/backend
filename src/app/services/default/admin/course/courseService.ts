@@ -221,16 +221,19 @@ class CourseService {
           .sort(sort)
           .lean()
 
-        console.log('===============================');
-        console.log('Cursos Programados');
-        console.dir(registers, { depth: 1 });
-        console.log('===============================');
+        // console.log('===============================');
+        // console.log('Cursos Programados');
+        // console.dir(registers, { depth: 1 });
+        // console.log('===============================');
 
         for await (const register of registers) {
           let isActive = false;
           let courseType = ''
           let courseObjectives = [];
           let courseContent = [];
+
+          console.log("»»»»»»»»»»»»");
+          console.log("Data for: " + register.program.name);
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -242,7 +245,9 @@ class CourseService {
 
             // Objectives
             extra_info.objectives.blocks.forEach(element => {
-              courseObjectives.push(element.data.items[0]);
+              if (element.data.items) {
+                courseObjectives.push(element.data.items[0]);
+              }
             });;
 
             // Course content
