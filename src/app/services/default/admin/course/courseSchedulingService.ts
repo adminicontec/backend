@@ -1196,6 +1196,7 @@ class CourseSchedulingService {
     if (filters.schedulingStatus) where.push({ $match: { schedulingStatus: ObjectID(filters.schedulingStatus) } })
     if (filters.schedulingMode) where.push({ $match: { schedulingMode: ObjectID(filters.schedulingMode) } })
     if (filters.regional) where.push({ $match: { regional: ObjectID(filters.regional) } })
+    if (filters.company) where.push({ $match: { client: ObjectID(filters.company) } })
     // if (filters.client) where.push({$match: {client: { $regex: '.*' + filters.client + '.*', $options: 'i' }}})
     if (filters.client) {
       const companies = await Company.find({ name: { $regex: '.*' + filters.client + '.*', $options: 'i' } }).select('id name')

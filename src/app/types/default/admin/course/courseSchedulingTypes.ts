@@ -75,6 +75,7 @@ export interface ICourseSchedulingQuery {
   modular?: string
   program_course_name?: string
   account_executive?: string // Buscar solo resultados de ese accountExecutive
+  company?: string
 }
 
 export interface ICourseSchedulingReport {
