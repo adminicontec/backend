@@ -304,6 +304,7 @@
       }
     },
     "program": {
+      "general_error": "Se ha presentado un error con los programas: :error",
       "not_found": "El programa no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un programa con el nombre :name"
@@ -425,7 +426,6 @@
       }
     },
     "teacher_upload": {
-      "general_error": "Se ha presentado un error con los programas: :error",
       "failed_upload": "Ha ocurrido un error al subir el (los) archivo(s)",
       "empty_file": "El archivo se encuentra vacío en la hoja :sheetname",
       "wrong_mime_type": "El tipo de archivo no es el esperado."
