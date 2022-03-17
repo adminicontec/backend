@@ -441,6 +441,7 @@
       "limit_files_exceded": "Limite de archivos excedido"
     },
     "teacher_upload": {
+      "general_error": "Se ha presentado un error con los programas: :error",
       "failed_upload": "Ha ocurrido un error al subir el (los) archivo(s)",
       "empty_file": "El archivo se encuentra vacío en la hoja :sheetname",
       "wrong_mime_type": "El tipo de archivo no es el esperado."
@@ -450,6 +451,7 @@
       "insertOrUpdate": {
         "already_exists": "Ya existe el Docente Calificado :user con el curso :courseCode"
       }
+      
     }
   },
   "passwordRecover": {
