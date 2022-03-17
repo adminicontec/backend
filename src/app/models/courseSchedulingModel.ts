@@ -53,6 +53,9 @@ const CourseSchedulingSchema = new Schema({
     ref: "CourseSchedulingStatus",
     required: true
   },
+  confirmed_date: {
+    type: Schema.Types.Date
+  },
   startDate: {
     type: Schema.Types.Date,
     required: true,
@@ -216,6 +219,10 @@ const CourseSchedulingSchema = new Schema({
     ref: 'Attached'
   },
   attachments_student: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached'
+  },
+  business_report: {
     type: Schema.Types.ObjectId,
     ref: 'Attached'
   }

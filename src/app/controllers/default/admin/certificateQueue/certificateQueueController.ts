@@ -60,6 +60,12 @@ class CertificateQueueController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public certificateGeneratedByMonth = async (req: Request, res: Response) => {
+    const params = req.getParameters.all()
+    const response = await certificateQueueService.certificateGeneratedByMonth(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const certificateQueueController = new CertificateQueueController();

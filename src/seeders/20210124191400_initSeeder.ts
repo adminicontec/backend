@@ -1390,6 +1390,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         }
       },
       {
+        name: "business_report",
+        description: "Informe empresarial",
+        config: {
+          limit_files: 1,
+          formats: ['xlsx', 'pdf', 'ppt'],
+          limit_size_KB: 200
+        }
+      },
+      {
         name: "course_scheduling_attachments",
         description: "Adjuntos para la ventana de programacion",
         config: {

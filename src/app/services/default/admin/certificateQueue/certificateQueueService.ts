@@ -15,7 +15,12 @@ import { CertificateQueue } from '@scnode_app/models'
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICertificate, ICertificateQueue, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import moment from 'moment';
 // @end
+
+interface ParamsCertificateGeneratedByMonth{
+  months?: number;    // Numero de meses a filtrar (por defecto últimos 12)
+}
 
 class CertificateQueueService {
 
@@ -270,6 +275,49 @@ class CertificateQueueService {
     })
   }
 
+  /**
+   * @INFO Obtener el numero de certificados emitidos por mes (últimos 12 meses por defecto)
+   * @returns
+   */
+   public certificateGeneratedByMonth = async (params?: ParamsCertificateGeneratedByMonth) => {
+    try{
+      // Fechas para filtrar
+      const startDate = new Date();
+      startDate.setMonth(params.months ? startDate.getMonth() - params.months : startDate.getMonth() - 12);
+      const endDate = new Date();
+
+      // Obtener los certificados generados por mes
+      const certificatesGeneratedResponse = await CertificateQueue.find({'certificate.date': {$gte: startDate, $lt: endDate}, status: 'Complete'});
+      let certificatesGenerated: {date_ms: number, certificates: number, dateFormated: string}[] = [];
+      if (certificatesGeneratedResponse && certificatesGeneratedResponse?.length) {
+        certificatesGeneratedResponse.forEach((certificate: any) => {
+          const dateFormated = moment(certificate.certificate.date).format('YYYY-MM');
+          const idx = certificatesGenerated.findIndex((cc) => cc.dateFormated === dateFormated);
+          if (idx >= 0) {
+            certificatesGenerated[idx].certificates += 1;
+          } else {
+            certificatesGenerated.push({
+              date_ms: (new Date(certificate.certificate.date)).getTime(),
+              certificates: 1,
+              dateFormated
+            });
+          }
+        });
+      }
+
+      // Ordenar el array
+      certificatesGenerated = certificatesGenerated.sort((a,b) => a.date_ms - b.date_ms);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificatesGenerated,
+        }
+      })
+    }catch(e){
+      console.log('courseSchedulingDataService => schedulingConfirmedByMonth error: ', e);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
 
 }
 

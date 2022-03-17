@@ -13,11 +13,11 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { CourseScheduling, CourseSchedulingDetails, Course, Enrollment } from '@scnode_app/models'
+import { CourseScheduling, CourseSchedulingDetails, Course, Enrollment, CourseSchedulingStatus } from '@scnode_app/models'
 // @end
 
 // @import types
-import {IFetchCourseSchedulingByProgram, IFetchCourseSchedulingExtend} from '@scnode_app/types/default/data/course/courseSchedulingDataTypes'
+import {IFetchCourseSchedulingByProgram, IFetchCourseSchedulingExtend, ParamsSchedulingConfirmedByMonth} from '@scnode_app/types/default/data/course/courseSchedulingDataTypes'
 // @end
 
 class CourseSchedulingDataService {
@@ -39,7 +39,7 @@ class CourseSchedulingDataService {
   public fetchCourseSchedulingByProgram = async (params: IFetchCourseSchedulingByProgram) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report'
 
       let where = {
         moodle_id: params.moodle_id
@@ -227,7 +227,7 @@ class CourseSchedulingDataService {
     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student contact logistics_supply certificate_address'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student contact logistics_supply certificate_address business_report'
     if (params.select) {
       select = params.select
     }
@@ -333,6 +333,65 @@ class CourseSchedulingDataService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * @INFO Obtener el numero de servicios confirmados por mes (últimos 12 meses por defecto)
+   * @returns
+   */
+  public schedulingConfirmedByMonth = async (params?: ParamsSchedulingConfirmedByMonth) => {
+    try{
+      // Fechas para filtrar
+      const startDate = new Date();
+      startDate.setMonth(params.months ? startDate.getMonth() - params.months : startDate.getMonth() - 12);
+      const endDate = new Date();
+
+      // Obtener los servicios confirmados por mes
+      const coursesConfirmedResponse = await CourseScheduling.find({confirmed_date: {$gte: startDate, $lt: endDate}});
+      let coursesConfirmed: {date_ms: number, courses: number, dateFormated: string}[] = [];
+      if (coursesConfirmedResponse && coursesConfirmedResponse?.length) {
+        coursesConfirmedResponse.forEach((course: any) => {
+          const dateFormated = moment(course.confirmed_date).format('YYYY-MM');
+          const idx = coursesConfirmed.findIndex((cc) => cc.dateFormated === dateFormated);
+          if (idx >= 0) {
+            coursesConfirmed[idx].courses += 1;
+          } else {
+            coursesConfirmed.push({
+              date_ms: (new Date(course.confirmed_date)).getTime(),
+              courses: 1,
+              dateFormated
+            });
+          }
+        });
+      }
+
+      // Obtener los servicios que están confirmados pero no tienen fechas de confirmación
+      let coursesWithoutDate: number = 0;
+      const confirmedStatus = await CourseSchedulingStatus.findOne({name: 'Confirmado'});
+      const executedStatus = await CourseSchedulingStatus.findOne({name: 'Ejecutado'});
+      if (confirmedStatus && executedStatus) {
+        const coursesResponse = await CourseScheduling.find({
+          confirmed_date: {$exists: false},
+          schedulingStatus: {$in: [confirmedStatus._id, executedStatus._id]}
+        });
+        if (coursesResponse && coursesResponse.length) {
+          coursesWithoutDate = coursesResponse.length;
+        }
+      }
+
+      // Ordenar el array
+      coursesConfirmed = coursesConfirmed.sort((a,b) => a.date_ms - b.date_ms);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          coursesConfirmed,
+          coursesWithoutDate
+        }
+      })
+    }catch(e){
+      console.log('courseSchedulingDataService => schedulingConfirmedByMonth error: ', e);
+      return responseUtility.buildResponseFailed('json');
+    }
   }
 }
 

@@ -31,6 +31,7 @@ class CourseSchedulingDataRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/fetch-course-scheduling-by-program/:moodle_id',this.instanceController.fetchCourseSchedulingByProgram,[],['auth']);
     routerUtility.post(app,_route,'/fetch-course-scheduling-extend',this.instanceController.fetchCourseSchedulingExtend,[],['auth']);
+    routerUtility.post(app,_route,'/fetch-course-confirmed-by-month',this.instanceController.schedulingConfirmedByMonth,[],['auth']);
     // @end
   }
 }

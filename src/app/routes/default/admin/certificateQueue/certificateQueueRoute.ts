@@ -33,6 +33,7 @@ class CertificateQueueRoute {
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'certificateQueue', method: 'create', dir: 'admin/certificateQueue' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.post(app, _route, '/fetchByStatus', this.instanceController.fetchByStatus, [], ['auth'])
+		routerUtility.post(app, _route, '/fetch-certificate-generated-by-month', this.instanceController.certificateGeneratedByMonth, [], ['auth'])
     //
     // @end
   }

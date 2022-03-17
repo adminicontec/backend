@@ -55,6 +55,20 @@ class CourseSchedulingDataController {
     const response = await courseSchedulingDataService.fetchCourseSchedulingExtend(params)
     return responseUtility.sendResponseFromObject(res,response);
   }
+
+  /**
+   * Metodo que permite consultar los servicios confirmados por mes
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public schedulingConfirmedByMonth = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+    const response = await courseSchedulingDataService.schedulingConfirmedByMonth(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
 }
 
 export const courseSchedulingDataController = new CourseSchedulingDataController();

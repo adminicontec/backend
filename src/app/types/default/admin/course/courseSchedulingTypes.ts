@@ -22,6 +22,7 @@ export interface ICourseScheduling {
   program: {value: number, label: string} | string // Identificador del programa
   schedulingType: string // Identificador del tipo de programación
   schedulingStatus: string //Identificador del estado de programación
+  confirmed_date: Date | null;
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
   regional?: string // Regional de la programación

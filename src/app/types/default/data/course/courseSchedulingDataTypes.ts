@@ -32,4 +32,8 @@ export interface IFetchCourseSchedulingExtend {
   account_executive?: string // Buscar solo resultados de ese accountExecutive
   company?: string // Identificador de cliente
 }
+
+export interface ParamsSchedulingConfirmedByMonth{
+  months?: number;    // Numero de meses a filtrar (por defecto últimos 12)
+}
 //@end
