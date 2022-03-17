@@ -232,9 +232,9 @@ class CertificateService {
         respCourse.scheduling.auditor_modules
       );
 
-      console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
+      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
       // console.dir(studentProgressList, { depth: null });
-      console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
+      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
       //listOfStudents.push(studentProgressList);
 
 
@@ -245,47 +245,54 @@ class CertificateService {
 
       for await (const register of enrollmentRegisters) {
 
-        register.count = count
+        register.count = count;
+
+        console.log("~~~~~~~~~~~~~");
+        console.log("Counter:" + count);
+
         if (register.user && register.user.profile) {
-          register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`
-        }
+          register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`;
 
-        console.log('++++++++++++++++++++++++++');
-        console.log(`Fetch grades for: ${register.user.moodle_id}`);
-        let studentProgress = studentProgressList.find(f => f.student.userData.userid == register.user.moodle_id);
-        if (studentProgress) {
-          console.log('──·─···─·──');
-          console.dir(studentProgress.student.studentProgress, { depth: null });
-          console.log('──·─···─·──');
-          register.progress = studentProgress.student.studentProgress;
-        }
+          console.log('++++++++++++++++++++++++++');
+          console.log(`Fetch grades for: ${register.user.moodle_id} - ${register.user.profile.full_name}`);
+          console.dir(register.user, {depth: null});
+          console.log('++++++++++++++++++++++++++');
 
-        //#region Add certification to response
-        if (filters.check_certification) {
-          const certificate = await CertificateQueue.findOne({
-            userId: register.user._id,
-            courseId: register.course_scheduling,
-            status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
-          }).select('');
-
-          register.certificate = certificate;
-          if (register?.certificate?.certificate?.pdfPath) {
-            register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+          let studentProgress = studentProgressList.find(f => f.student.userData.userid == register.user.moodle_id);
+          if (studentProgress) {
+            console.log('──·─···─·──');
+            console.dir(studentProgress.student.studentProgress, { depth: null });
+            console.log('──·─···─·──');
+            register.progress = studentProgress.student.studentProgress;
           }
-          if (register?.certificate?.certificate?.imagePath) {
-            register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
-          }
-        }
 
-        if (register.attended_approved) {
-          if (register.attended_approved == 'Asistió y aprobó' || register.attended_approved == 'Asistió') {
-            register.progress.isEnabled = 1;
+          //#region Add certification to response
+          if (filters.check_certification) {
+            const certificate = await CertificateQueue.findOne({
+              userId: register.user._id,
+              courseId: register.course_scheduling,
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+            }).select('');
+
+            register.certificate = certificate;
+            if (register?.certificate?.certificate?.pdfPath) {
+              register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+            }
+            if (register?.certificate?.certificate?.imagePath) {
+              register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
+            }
           }
-          else
-            register.progress.isEnabled = 0;
+
+          if (register.attended_approved) {
+            if (register.attended_approved == 'Asistió y aprobó' || register.attended_approved == 'Asistió') {
+              register.progress.isEnabled = 1;
+            }
+            else
+              register.progress.isEnabled = 0;
+          }
+          listOfStudents.push(register);
+          count++
         }
-        listOfStudents.push(register);
-        count++
         //#endregion Add certification to response
 
         // console.log('+++++++++++++++++++++++++');
@@ -319,6 +326,181 @@ class CertificateService {
     });
 
   }
+
+
+  public rulesForCompletion = async (filters: ICertificateCompletion) => {
+
+    let count = 1
+    let isAuditorCerficateEnabled = false;
+
+    //#region query Filters
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id user courseID course_scheduling';
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {}
+
+    if (filters.courseID) {
+      where['courseID'] = filters.courseID
+    }
+
+    if (filters.without_certification && filters.course_scheduling) {
+      const certifications = await CertificateQueue.find({
+        courseId: filters.course_scheduling,
+        status: { $in: ['New', 'In-process', 'Complete'] }
+      })
+        .select('id userId')
+
+      const user_ids = certifications.reduce((accum, element) => {
+        accum.push(element.userId)
+        return accum
+      }, [])
+      if (user_ids.length > 0) {
+        where['user'] = { $nin: user_ids }
+      }
+    }
+    //#endregion query Filters
+    let enrollmentRegisters = [];
+    let listOfStudents = [];
+    let schedulingMode = '';
+    try {
+
+      //#region Información del curso
+      let respCourse: any = await courseSchedulingService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: '_id', value: filters.course_scheduling }]
+      });
+      if (respCourse.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
+      //  course Scheduling Details data
+      let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
+        query: QueryValues.ALL,
+        where: [{ field: 'course_scheduling', value: filters.course_scheduling }]
+      });
+
+      // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
+      schedulingMode = respCourse.scheduling.schedulingMode.name;
+      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+      }
+
+      // Tipo de
+      const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+
+      // console.log("---------------------\n\r" + 'El contenido del ' + programType);
+      // console.log(respCourseDetails.schedulings);
+      // console.log('_______________________________________________________');
+
+      if (respCourse.scheduling.auditor_certificate) {
+        isAuditorCerficateEnabled = true;
+        // get modules need to process Second certificate
+        console.log(`Módulos para Segundo Certificado: \"${respCourse.scheduling.auditor_certificate}\"`);
+        respCourse.scheduling.auditor_modules.forEach(element => {
+          console.log(`→ ${element.course.name}`);
+        });
+      }
+
+      //#endregion Información del curso
+
+      enrollmentRegisters = await Enrollment.find(where)
+        .select(select)
+        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .lean();
+
+      console.log("Total de estudiantes: " + enrollmentRegisters.length);
+
+      //#region Revisión de Progreso en Actividades para todo el curso
+      console.log(`→→ Modalidad: ${schedulingMode.toLowerCase()}`);
+      const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: this.selectActivitiesTest });
+
+      // console.log("««««««««««««««« »»»»»»»»»»»»»»»»»»»»»»»");
+      // console.log("List of Activities in Modules: ");
+      // console.dir(respListOfActivitiesInModulesTest, {depth: null, colors: true});
+      // console.log("««««««««««««««« »»»»»»»»»»»»»»»»»»»»»»»");
+
+      if (respListOfActivitiesInModulesTest.status == "error") {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+      }
+
+      if (respCourse.scheduling.auditor_certificate) {
+        isAuditorCerficateEnabled = true;
+        // get modules need to process Second certificate
+      }
+
+      let studentProgressList: any = await this.rulesForCompleteProgress(
+        filters.courseID,
+        this.selectActivitiesTest,
+        schedulingMode.toLowerCase(),
+        null,
+        respListOfActivitiesInModulesTest.courseModules,
+        respCourseDetails.schedulings,
+        isAuditorCerficateEnabled,
+        respCourse.scheduling.auditor_modules
+      );
+
+      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
+      // console.dir(studentProgressList, { depth: null });
+      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
+      if (studentProgressList)
+        listOfStudents.push(studentProgressList);
+      else {
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'grades.exception',
+            additional_parameters: {
+              process: 'completion()',
+              error: 'empty list'
+            }
+          });
+      }
+
+
+      //#region  Reglas para Certificado de Auditor
+
+
+      //#endregion
+
+    }
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'completion()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        schedulingMode: schedulingMode.toLowerCase(),
+        isAuditorCerficateEnabled: isAuditorCerficateEnabled,
+        completion: [
+          ...listOfStudents
+        ],
+        total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    });
+
+  }
+
 
 
   /**
@@ -645,6 +827,7 @@ class CertificateService {
             certificateQueueId: null, // as new record
             userId: params.userId, // Nombre de usario
             courseId: params.courseId,
+            auxiliarId: params.auxiliarId
           },
           certificateType: certificate_type.auditor,
           template: mapping_template,
@@ -715,6 +898,10 @@ class CertificateService {
         return null;
       }
 
+      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+      // console.dir(respUserGrades.grades, {depth: null});
+      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+
       for await (const student of respUserGrades.grades) {
 
         let programTypeText;
@@ -731,9 +918,9 @@ class CertificateService {
           auditorGrade: null
         }
 
-        // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
-        // console.log(`Progress for: ${student.userData.userfullname}`);
-        // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+        console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+        console.log(`Progress for: ${student.userData.userfullname}`);
+        console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
 
         //#region REGLAS PARA PRESENCIAL Y EN LINEA
 
@@ -774,7 +961,7 @@ class CertificateService {
               }
             }
           }
-          if(flagAssistanceCount == 0){
+          if (flagAssistanceCount == 0) {
             flagAssistance = false;
           }
 
@@ -826,12 +1013,12 @@ class CertificateService {
           studentProgress.quizGrade = (student.itemType.quiz.length != 0) ? `${flagQuizCount}/${student.itemType.quiz.length}` : '-';
 
 
-          // console.log(`\t» Attendance:        ${studentProgress.assistance}`);
-          // console.log(`\t» Exam:              ${studentProgress.quizGrade}`);
-          // console.log(`\t» Certificate:       ${studentProgress.attended_approved}`);
-          // console.log(`\t» Examn Certificate:  `);
-          // console.log(`\t» Second Certificate: `);
-          // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
+          console.log(`\t» Attendance:        ${studentProgress.assistance}`);
+          console.log(`\t» Exam:              ${studentProgress.quizGrade}`);
+          console.log(`\t» Certificate:       ${studentProgress.attended_approved}`);
+          console.log(`\t» Examn Certificate:  `);
+          console.log(`\t» Second Certificate: `);
+          console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
           //#endregion :::::::::::: Certification resolution ::::::::::::
         }
         //#endregion REGLAS PARA PRESENCIAL Y EN LINEA
@@ -886,12 +1073,12 @@ class CertificateService {
             studentProgress.status = 'no';
           }
 
-          // console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
-          // console.log(`\t» Completion:          ${studentProgress.completion}%`);
-          // console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
-          // console.log(`\t» Examn Certificate:   `);
-          // console.log(`\t» Second Certificate:  `);
-          // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
+          console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
+          console.log(`\t» Completion:          ${studentProgress.completion}%`);
+          console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
+          console.log(`\t» Examn Certificate:   `);
+          console.log(`\t» Second Certificate:  `);
+          console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
           //#endregion :::::::::::: Certification resolution ::::::::::::
         }
         //#endregion REGLAS PARA VIRTUAL
@@ -998,23 +1185,27 @@ class CertificateService {
 
 
           let auditorQuizModule = respListOfActivitiesInModules.find(field => field.isauditorquiz == true);
-          if (student.itemType.quiz.length > 0) {
+          console.log("auditorQuizModule");
+          console.log(auditorQuizModule);
+          if (auditorQuizModule) {
+            if (student.itemType.quiz.length > 0) {
 
-            let quizGrade = student.itemType.quiz.find(field => field.cmid == auditorQuizModule.id)
-            console.log('Auditor Quiz grade:');
-            console.log(quizGrade.graderaw);
-            studentProgress.auditorGrade = quizGrade.graderaw;
-            if (quizGrade.graderaw >= 70) {
-              programTypeText = (programTypeName) ? ' el ' : '.';
-              studentProgress.auditor = true;
-              studentProgress.auditorCertificate = 'Asistió y aprobó' + programTypeText;
+              let quizGrade = student.itemType.quiz.find(field => field.cmid == auditorQuizModule.id)
+              console.log('Auditor Quiz grade:');
+              console.log(quizGrade.graderaw);
+              studentProgress.auditorGrade = quizGrade.graderaw;
+              if (quizGrade.graderaw >= 70) {
+                programTypeText = (programTypeName) ? ' el ' : '.';
+                studentProgress.auditor = true;
+                studentProgress.auditorCertificate = 'Asistió y aprobó' + programTypeText;
+              }
+              else {
+                studentProgress.auditor = false;
+                studentProgress.auditorCertificate = 'No se certifica.';
+              }
+              console.log(`\t» Auditor grade:         ${studentProgress.auditorGrade}`);
+              console.log(`\t» Second Certificate:  ${studentProgress.auditorCertificate}`);
             }
-            else {
-              studentProgress.auditor = false;
-              studentProgress.auditorCertificate = 'No se certifica.';
-            }
-            console.log(`\t» Auditor grade:         ${studentProgress.auditorGrade}`);
-            console.log(`\t» Second Certificate:  ${studentProgress.auditorCertificate}`);
           }
         }
         //#endregion REGLAS PARA CERTIFICADO DE AUDITOR
@@ -1026,7 +1217,18 @@ class CertificateService {
 
       return listOfStudentProgress;
     }
-    catch (ex) {
+    catch (e) {
+
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'rulesForCompleteProgress()',
+            error: e.message
+          }
+        });
+
 
     }
   }
@@ -1058,7 +1260,7 @@ class CertificateService {
         certificateType: certificateReq.certificateType,
         status: 'In-process',
         message: '',
-        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
+        auxiliar: certificateReq.queueData.auxiliarId,
       });
 
       console.log("--> After Insert/update cerfificateQueue:");
@@ -1086,7 +1288,7 @@ class CertificateService {
         message: certificateReq.paramsHuella.certificado,
         certificateModule: certificateReq.paramsHuella.modulo,
         certificateType: certificateReq.certificateType,
-        auxiliar: '615dee985b0ba09b27cd3fd8',//responseCertificateQueue.auxiliar,
+        auxiliar: certificateReq.queueData.auxiliarId,
         certificate: {
           hash: respHuella.resultado.certificado,
           url: respHuella.resultado.url,

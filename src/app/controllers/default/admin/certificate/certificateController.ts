@@ -48,6 +48,10 @@ class CertificateController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public rulesForCompletion = async (req: Request, res: Response) => {
+    const response = await certificateService.rulesForCompletion(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 
 }
 
