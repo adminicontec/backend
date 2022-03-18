@@ -6,8 +6,9 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { moodle_setup } from '@scnode_core/config/globals';
+import { moodle_setup, external_api } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
+
 // @end
 
 // @import models
@@ -49,16 +50,17 @@ class MasterCategoryService {
         "criteria[0][value]": "master",
       };
 
-
       console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
       let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
       // console.log('respMoodle', respMoodle);
       if (respMoodle.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'moodle.exception', params: { error: respMoodle.message } }
+            error_key: { key: 'moodle.exception', params: { error: respMoodle.message } },
+            additional_parameters: { moodleParams: moodleParams }
           }
         )
       }
@@ -66,9 +68,14 @@ class MasterCategoryService {
       if (respMoodle.status === 'error') {
         // ERROR al consultar las categorías de curso en Moodle
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        let moodleApi =  external_api['moodle'].url;
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'moodle.error', params: { error: respMoodle.message } }
+            error_key: { key: 'moodle.error', params: { error: respMoodle.message } },
+            additional_parameters: {
+              url: moodleApi,
+              moodleParams: moodleParams
+            }
           }
         )
       }
@@ -121,12 +128,12 @@ class MasterCategoryService {
       let singleCategory = {
         id: 0,
         name: '',
-        idnumber:'',
+        idnumber: '',
         parent: 0,
         description: '',
         subcat: {
-          id:0,
-          name:''
+          id: 0,
+          name: ''
         }
       }
 
@@ -137,16 +144,17 @@ class MasterCategoryService {
         moodlewsrestformat: moodle_setup.restformat
       };
 
-
       console.log("--------------- Fetch categories in Moodle : ---------------------------");
 
       let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
       //console.log('respMoodle', respMoodle);
       if (respMoodle.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'moodle.exception', params: { error: respMoodle.message } }
+            error_key: { key: 'moodle.exception', params: { error: respMoodle.message } },
+            additional_parameters: { moodleParams: moodleParams }
           }
         )
       }
@@ -156,7 +164,8 @@ class MasterCategoryService {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
         return responseUtility.buildResponseFailed('json', null,
           {
-            error_key: { key: 'moodle.error', params: { error: respMoodle.message } }
+            error_key: { key: 'moodle.error', params: { error: respMoodle.message } },
+            additional_parameters: { moodleParams: moodleParams }
           }
         )
       }
@@ -179,8 +188,8 @@ class MasterCategoryService {
             name: element.name,
             idnumber: element.idnumber,
             parent: element.parent,
-            description: element.description.replace( /(<([^>]+)>)/ig, ''),
-            subcat:null
+            description: element.description.replace(/(<([^>]+)>)/ig, ''),
+            subcat: null
           }
           responseCategories.push(singleCategory);
         })
