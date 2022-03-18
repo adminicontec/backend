@@ -112,7 +112,12 @@ class CertificateService {
   public completion = async (filters: ICertificateCompletion) => {
 
     let count = 1
+    let enrollmentRegisters = [];
+    let listOfStudents = [];
+    let schedulingMode = '';
     let isAuditorCerficateEnabled = false;
+    let previewCertificateParams;
+    let currentDate = new Date(Date.now());
 
     //#region query Filters
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
@@ -146,9 +151,6 @@ class CertificateService {
       }
     }
     //#endregion query Filters
-    let enrollmentRegisters = [];
-    let listOfStudents = [];
-    let schedulingMode = '';
     try {
 
       //#region Información del curso
@@ -175,12 +177,37 @@ class CertificateService {
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
 
-      // Tipo de
+      //#region Tipo de programa
       const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      let programTypeName;
+
+      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+        programTypeName = 'curso';
+      }
+      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+        programTypeName = 'programa';
+      }
+      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+        programTypeName = 'diplomado';
+      }
+      //#endregion Tipo de programa
 
       // console.log("---------------------\n\r" + 'El contenido del ' + programType);
       // console.log(respCourseDetails.schedulings);
       // console.log('_______________________________________________________');
+
+
+      let mapping_listado_cursos;
+      let mapping_listado_modulos_auditor = '';
+
+      if (respCourseDetails.schedulings) {
+        mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
+        mapping_listado_cursos += '<ul>'
+        respCourseDetails.schedulings.forEach(element => {
+          mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+        });
+        mapping_listado_cursos += '</ul>'
+      }
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
@@ -189,6 +216,37 @@ class CertificateService {
         respCourse.scheduling.auditor_modules.forEach(element => {
           console.log(`→ ${element.course.name}`);
         });
+
+        let total_intensidad = 0;
+        mapping_listado_modulos_auditor = 'El contenido del programa comprendió: <br/>';
+        mapping_listado_modulos_auditor += '<ul>'
+        respCourse.scheduling.auditor_modules.forEach(element => {
+          total_intensidad += element.duration;
+          mapping_listado_modulos_auditor += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
+          //mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+
+        });
+        mapping_listado_modulos_auditor += '</ul>'
+      }
+
+      // let regionalName = respCourse.scheduling;
+      // console.log("↓↓←←←←");
+      // console.log(regionalName);
+      // console.log("↓↓←←←←");
+
+      previewCertificateParams = {
+        certificado: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+        certificado_auditor: (respCourse.scheduling.auditor_certificate) ? respCourse.scheduling.auditor_certificate : null,
+        intensidad: generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration),
+        listado_cursos: mapping_listado_cursos,
+        listado_modulos_auditor: mapping_listado_modulos_auditor,
+        regional: null, //respCourse.scheduling.regional.name,
+        ciudad: (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '',
+        pais: respCourse.scheduling.country.name,
+        fecha_certificado: currentDate,
+        fecha_aprobacion: respCourse.scheduling.endDate,
+        fecha_impresion: currentDate,
+        dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
       }
 
       //#endregion Información del curso
@@ -255,7 +313,7 @@ class CertificateService {
 
           console.log('++++++++++++++++++++++++++');
           console.log(`Fetch grades for: ${register.user.moodle_id} - ${register.user.profile.full_name}`);
-          console.dir(register.user, {depth: null});
+          console.dir(register.user, { depth: null });
           console.log('++++++++++++++++++++++++++');
 
           let studentProgress = studentProgressList.find(f => f.student.userData.userid == register.user.moodle_id);
@@ -315,6 +373,7 @@ class CertificateService {
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         schedulingMode: schedulingMode.toLowerCase(),
+        previewCertificateParams: previewCertificateParams,
         isAuditorCerficateEnabled: isAuditorCerficateEnabled,
         enrollment: [
           ...listOfStudents
@@ -669,8 +728,7 @@ class CertificateService {
 
             mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
             //#region Listado de Módulos (cursos) que comprende el programa <li>
-            // console.log("---------------------\n\r" + 'El contenido del ' + programTypeName);
-            // console.log(respCourseDetails.schedulings);
+
             if (respCourseDetails.schedulings) {
               mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
               mapping_listado_cursos += '<ul>'
