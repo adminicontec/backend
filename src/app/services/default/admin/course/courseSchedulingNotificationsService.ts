@@ -36,7 +36,7 @@ class CourseSchedulingNotificationsService {
    */
   public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean) => {
     try {
-      let email_to_notificate = []
+      let email_to_notificate: {email: string, name: string}[] = []
 
       if (populate) {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
@@ -45,20 +45,35 @@ class CourseSchedulingNotificationsService {
       // @INFO Notificar al administrador
       const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
       if (serviceScheduler && (type === 'started')) {
-        email_to_notificate.push(serviceScheduler.email)
+        email_to_notificate.push({
+          email: serviceScheduler.email,
+          name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`
+        })
+      }
+
+      // @INFO Notificar al administrador
+      const accountExecutive = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
+      if (accountExecutive && (type === 'started')) {
+        email_to_notificate.push({
+          email: accountExecutive.email,
+          name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`
+        })
       }
 
       // @INFO: Solo enviar al responsable del servicio
       const logisticAssistant = courseScheduling.material_assistant;
       if (logisticAssistant && logisticAssistant.email) {
-        email_to_notificate.push(logisticAssistant.email);
+        email_to_notificate.push({
+          email: logisticAssistant.email,
+          name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`
+        });
       }
 
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
 
       // @INFO Obtener si el servicio aplica para examen o no
-      const exam: boolean = await this.verifyCourseSchedulingExercise(modules);
+      const exam: boolean = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id, modules);
 
       if (email_to_notificate.length > 0) {
         const params = {
@@ -83,19 +98,25 @@ class CourseSchedulingNotificationsService {
 
         const path_template = type === 'started' || type === 'modify' ? 'course/startedServiceToAssistant' : 'course/cancelServiceToAssistant'
 
-        const mail = await mailService.sendMail({
-          emails: email_to_notificate,
-          mailOptions: {
-            subject: i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject'),
-            html_template: {
-              path_layout: 'icontec',
-              path_template: path_template,
-              params: { ...params }
+        let mail: any = undefined;
+        for await (let emailNotificate of email_to_notificate) {
+          mail = await mailService.sendMail({
+            emails: [emailNotificate.email],
+            mailOptions: {
+              subject: i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject'),
+              html_template: {
+                path_layout: 'icontec',
+                path_template: path_template,
+                params: {
+                  ...params,
+                  assistant_name: emailNotificate.name
+                }
+              },
+              amount_notifications: null
             },
-            amount_notifications: null
-          },
-          notification_source: params.notification_source
-        })
+            notification_source: params.notification_source
+          })
+        }
         return mail
 
       }
@@ -117,7 +138,7 @@ class CourseSchedulingNotificationsService {
     }
 
     // @INFO Verificar si el courseSchedulingDetails aplica para examen
-    const exam = await this.verifyCourseSchedulingDetailsExercise(courseSchedulingDetails);
+    const exam = await this.verifyCourseSchedulingDetailsExercise(courseScheduling.moodle_id, courseSchedulingDetails);
 
     try {
       let path_template = 'survey/surveyNotification';
@@ -166,7 +187,7 @@ class CourseSchedulingNotificationsService {
   private getModulesOfCourseScheduling = async (courseScheduling: any) => {
     const response = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
     .populate({path: 'teacher', select: 'profile'})
-    .populate({path: 'course', select: 'name code id'})
+    .populate({path: 'course', select: 'name code moodle_id id'})
     .lean();
     if (response) {
       return response;
@@ -205,7 +226,7 @@ class CourseSchedulingNotificationsService {
   private getCourseSchedulingDetailsFromId = async (id: string) => {
     const courseSchedulingDetails = await CourseSchedulingDetails.findOne({_id: id})
     .populate({ path: 'teacher', select: 'id profile' })
-    .populate({path: 'course', select: 'name code id'})
+    .populate({path: 'course', select: 'name code moodle_id id'})
     .lean();
     return courseSchedulingDetails;
   }
@@ -226,12 +247,12 @@ class CourseSchedulingNotificationsService {
    * @INFO Verificar si un servicio aplica para examen
    * @param courseScheduling : Módulos del servicio
    */
-  private verifyCourseSchedulingExercise = async (modules: any[]): Promise<boolean> => {
+  private verifyCourseSchedulingExercise = async (moodle_id: string, modules: any[]): Promise<boolean> => {
     let response: boolean = false;
     if (modules && modules.length) {
       for await (let module of modules) {
         if (!response) {
-          const verify = await this.verifyCourseSchedulingDetailsExercise(module);
+          const verify = await this.verifyCourseSchedulingDetailsExercise(moodle_id, module);
           if (verify) {
             response = true;
           }
@@ -245,9 +266,10 @@ class CourseSchedulingNotificationsService {
    * @INFO Verificar si un modulo del servicio tiene examen
    * @param module : Objeto de courseSchedulingDetails
    */
-  private verifyCourseSchedulingDetailsExercise = async (module: any): Promise<boolean> => {
-    if (!module || !module.course || !module.course.code) return false;
-    const exams: any = await this.getCourseExamList(module.course.code);
+  private verifyCourseSchedulingDetailsExercise = async (moodle_id: string, module: any): Promise<boolean> => {
+    if (!module || !module.course || !module.course.moodle_id) return false;
+    const exams: any = await this.getCourseExamList(moodle_id);
+    // const exams: any = await this.getCourseExamList(module.course.moodle_id);
     if (exams && exams.courseModules && exams.courseModules.length) {
       return true;
     } else {

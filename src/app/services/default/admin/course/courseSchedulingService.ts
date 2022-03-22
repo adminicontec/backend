@@ -182,7 +182,11 @@ class CourseSchedulingService {
       const user: any = await User.findOne({ _id: params.user }).select('id short_key')
       steps.push('1')
 
-      if (params.auditor_modules && typeof params.auditor_modules === 'string') params.auditor_modules = params.auditor_modules.split(',')
+      if (params.auditor_modules && typeof params.auditor_modules === 'string' && params.auditor_modules.length) {
+        params.auditor_modules = params.auditor_modules.split(',');
+      } else {
+        delete params.auditor_modules;
+      }
 
       if (typeof params.in_design === "string") {
         if (params.in_design === "0") params.in_design = false
