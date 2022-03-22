@@ -310,6 +310,7 @@
       }
     },
     "program": {
+      "general_error": "Se ha presentado un error con los programas: :error",
       "not_found": "El programa no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un programa con el nombre :name"
@@ -450,6 +451,7 @@
       "insertOrUpdate": {
         "already_exists": "Ya existe el Docente Calificado :user con el curso :courseCode"
       }
+
     }
   },
   "passwordRecover": {

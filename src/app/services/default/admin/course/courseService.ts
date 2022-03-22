@@ -221,6 +221,10 @@ class CourseService {
           .sort(sort)
           .lean()
 
+        // console.log('===============================');
+        // console.log('Cursos Programados');
+        // console.dir(registers, { depth: 1 });
+        // console.log('===============================');
 
         for await (const register of registers) {
           let isActive = false;
@@ -229,9 +233,12 @@ class CourseService {
           let courseContent = [];
           let generalities = [];
 
+          console.log("»»»»»»»»»»»»");
+          console.log("Data for: " + register.program.name);
+
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
-          }).lean()
+          }).lean();
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo;
@@ -239,7 +246,9 @@ class CourseService {
 
             // Objectives
             extra_info.objectives.blocks.forEach(element => {
-              courseObjectives.push(element.data.items[0]);
+              if (element.data.items) {
+                courseObjectives.push(element.data.items[0]);
+              }
             });;
 
             // Course content
@@ -305,7 +314,8 @@ class CourseService {
           listOfCourses.push(courseToExport);
         }
       } catch (e) {
-        return responseUtility.buildResponseFailed('json')
+        console.log('Error: ' + e);
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -320,8 +330,10 @@ class CourseService {
       })
     }
     catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      console.log('Error: ' + e);
+      return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
     }
+
 
   }
 
