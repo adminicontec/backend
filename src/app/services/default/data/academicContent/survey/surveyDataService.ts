@@ -38,6 +38,27 @@ class SurveyDataService {
 
   constructor () {}
 
+  public generalSurveyReport = async (params: any) => {
+    try {
+      const time = new Date().getTime()
+
+      // @INFO: Se define el formato del reporte, xlsx por defecto
+      const output_format: any = params.output_format ? params.output_format : 'xlsx'
+      const title: any = params.title ? params.title : `reporte_satisfaccion_${time}`
+
+
+      // TODO: Recibir fecha de inicio y fin como parametro
+      // TODO: Consultar las modalidades que tengan encuesta configurada (surveyModel - status)
+      // TODO: De cada modalidad consultar las programaciones, extraer la data
+      // TODO: De cada programación consultar las encuestas hechas
+
+
+      return responseUtility.buildResponseSuccess('json')
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
   /**
    * Metodo que permite consultar si una encuesta esta disponible
    * @param params

@@ -41,7 +41,7 @@ class NotificationEventService {
       const path_template = 'course/participantCertificated'
 
       const paramsTemplate = {
-        user_name: `${user.profile.first_name}`,
+        user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         program_name: courseScheduling?.program?.name || '-',
         amount_notifications: 1,
         notification_source: `participant_certificated_${user._id}_${courseScheduling._id}`
