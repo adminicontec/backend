@@ -1,7 +1,8 @@
 // @import_services Import Services
 import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plugins/tasks/taskService";
 import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
-import { certificateService } from "@scnode_app/services/default/huellaDeConfianza/certificate/certificateService"
+import { certificateService } from "@scnode_app/services/default/huellaDeConfianza/certificate/certificateService";
+import { notificationEventService } from "@scnode_app/services/default/events/notifications/notificationEventService";
 // @end
 
 // @import_models Import models
@@ -63,6 +64,23 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
             console.log("..................");
             console.log(element.certificateQueue);
           });
+          console.log("---------------------- ----------- ----------- ----------- --------------------");
+          console.log("Envío de notificaciones");
+
+          const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+            participantId: element.userId._id,
+            courseSchedulingId: element.courseId
+          });
+
+          console.log('Envío de notificación a Estudiante:');
+          console.log(notificationResponse);
+
+          const notificationResponseAuxiliar = await notificationEventService.sendNotificationParticipantCertificated({
+            participantId: element.auxiliar._id,
+            courseSchedulingId: element.courseId
+          });
+          console.log('Envío de notificación a Estudiante:');
+          console.log(notificationResponseAuxiliar);
           console.log("---------------------- ----------- ----------- ----------- --------------------");
         }
 
