@@ -283,11 +283,12 @@ class CertificateService {
         filters.courseID,
         this.selectActivitiesTest,
         schedulingMode.toLowerCase(),
-        null,
+        programTypeName,//null,
         respListOfActivitiesInModulesTest.courseModules,
         respCourseDetails.schedulings,
         isAuditorCerficateEnabled,
-        respCourse.scheduling.auditor_modules
+        respCourse.scheduling.auditor_modules,
+        false
       );
 
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
@@ -372,7 +373,7 @@ class CertificateService {
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
-        schedulingMode: schedulingMode.toLowerCase(),
+        schedulingMode: schedulingMode,
         previewCertificateParams: previewCertificateParams,
         isAuditorCerficateEnabled: isAuditorCerficateEnabled,
         enrollment: [
@@ -453,8 +454,20 @@ class CertificateService {
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
       }
 
-      // Tipo de
+      //#region Tipo de programa
       const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      let programTypeName;
+
+      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+        programTypeName = 'curso';
+      }
+      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+        programTypeName = 'programa';
+      }
+      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+        programTypeName = 'diplomado';
+      }
+      //#endregion Tipo de programa
 
       // console.log("---------------------\n\r" + 'El contenido del ' + programType);
       // console.log(respCourseDetails.schedulings);
@@ -503,11 +516,13 @@ class CertificateService {
         filters.courseID,
         this.selectActivitiesTest,
         schedulingMode.toLowerCase(),
-        null,
+        programTypeName,
         respListOfActivitiesInModulesTest.courseModules,
         respCourseDetails.schedulings,
         isAuditorCerficateEnabled,
-        respCourse.scheduling.auditor_modules
+        respCourse.scheduling.auditor_modules,
+        false,
+        filters.userMoodleID
       );
 
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
@@ -684,6 +699,7 @@ class CertificateService {
         respCourseDetails.schedulings,
         reviewAuditorCerficateRules,
         respCourse.scheduling.auditor_modules,
+        true,
         respDataUser.user.moodle_id);
 
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
@@ -924,6 +940,7 @@ class CertificateService {
     respSchedulingsDetails: any[],
     reviewAuditorCerficateRulesEnabled: bool,
     auditorModules: any[],
+    isForCertificate: bool,
     userMoodleID?: string
   ) => {
 
@@ -935,6 +952,7 @@ class CertificateService {
       //   console.log('* ' + element.instance + ' - (' + element.modname + ') - ' + element.name);
       // });
       // console.log("===========================================")
+      console.log("programTypeName: " + programTypeName)
 
       let listOfStudentProgress = [];
 
@@ -1000,6 +1018,9 @@ class CertificateService {
             // console.log(grade.graderaw);
 
             if (grade.graderaw) {
+              console.log("Grade: " + grade.name);
+              console.log("\t\t" + grade.graderaw);
+
               if (grade.graderaw < 75) {
                 flagAssistance = false;
                 continue;
@@ -1017,6 +1038,12 @@ class CertificateService {
                 studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
                 flagAssistanceCount++;
               }
+            }
+            else{
+              flagAssistance = false;
+              console.log("Grade: " + grade.name);
+              console.log("\t\t--");
+              console.log("\t\t--");
             }
           }
           if (flagAssistanceCount == 0) {
@@ -1045,14 +1072,24 @@ class CertificateService {
           //#endregion :::::::::::: Quiz ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
+          console.log("Total attendance: " + flagAssistance);
           if (flagAssistance) {
-            if (flagQuiz) {
+            if (flagQuiz && (programTypeName !== 'diplomado')) {
               programTypeText = (programTypeName) ? ' el ' : '.';
-              studentProgress.attended_approved = 'Asistió y aprobó' + programTypeText;
+
+              if (isForCertificate)
+                studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
+              else
+                studentProgress.attended_approved = 'Asistencia y aprobación.';
             }
             else {
               programTypeText = (programTypeName) ? ' al ' : '.';
-              studentProgress.attended_approved = 'Asistió' + programTypeText;
+              //studentProgress.attended_approved = 'Asistió' + programTypeText;
+              if (isForCertificate)
+                studentProgress.attended_approved = 'Asistió al'; // + programTypeText;
+              else
+                studentProgress.attended_approved = 'Asistencia.';
+
             }
             //studentProgress.auditor = isAuditorCerficateEnabled;
             studentProgress.status = 'ok';
@@ -1115,13 +1152,21 @@ class CertificateService {
 
           //#region :::::::::::: Certification resolution ::::::::::::
           if (studentProgress.completion == 100) {
-            if (studentProgress.average_grade >= 70) {
+            if (studentProgress.average_grade >= 70 && (programTypeName !== 'diplomado')) {
               programTypeText = (programTypeName) ? ' el ' : '.';
-              studentProgress.attended_approved = 'Asistió y aprobó' + programTypeText;
+
+              if (isForCertificate)
+                studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
+              else
+                studentProgress.attended_approved = 'Asistencia y aprobación.'
             }
             else {
               programTypeText = (programTypeName) ? ' al ' : '.';
-              studentProgress.attended_approved = 'Asistió' + programTypeText;
+              if (isForCertificate)
+                studentProgress.attended_approved = 'Asistió al '; //+ programTypeText;
+              else
+                studentProgress.attended_approved = 'Asistencia.'
+
             }
             //studentProgress.auditor = isAuditorCerficateEnabled;
             studentProgress.status = 'ok';
@@ -1192,17 +1237,17 @@ class CertificateService {
               }
             }
 
-            if (element.modname == 'assign') {
-              let gradeAssign = student.itemType.assign.find(x => x.cmid == element.id);
-              if (gradeAssign) {
-                console.log(`* ${element.name}: ${gradeAssign.graderaw}`);
+            // if (element.modname == 'assign') {
+            //   let gradeAssign = student.itemType.assign.find(x => x.cmid == element.id);
+            //   if (gradeAssign) {
+            //     console.log(`* ${element.name}: ${gradeAssign.graderaw}`);
 
-                if (gradeAssign.graderaw < 70) {
-                  break;
-                }
-                auditorActivitiesCounter++;
-              }
-            }
+            //     if (gradeAssign.graderaw < 70) {
+            //       break;
+            //     }
+            //     auditorActivitiesCounter++;
+            //   }
+            // }
           }
 
           console.log(`Qty Activities accepted: ${auditorActivitiesCounter} / ${auditorActivities.length}`)
@@ -1255,7 +1300,10 @@ class CertificateService {
               if (quizGrade.graderaw >= 70) {
                 programTypeText = (programTypeName) ? ' el ' : '.';
                 studentProgress.auditor = true;
-                studentProgress.auditorCertificate = 'Asistió y aprobó' + programTypeText;
+                if (isForCertificate)
+                  studentProgress.auditorCertificate = 'Asistió y aprobó el ';// + programTypeText;
+                else
+                  studentProgress.auditorCertificate = 'Asistencia y aprobación.';
               }
               else {
                 studentProgress.auditor = false;

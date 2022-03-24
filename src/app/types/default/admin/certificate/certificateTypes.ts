@@ -138,6 +138,7 @@ export interface ICertificateCompletion {
   course_scheduling?: string,
   without_certification?: boolean
   check_certification?: boolean,
+  userMoodleID?: string,
 
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina
