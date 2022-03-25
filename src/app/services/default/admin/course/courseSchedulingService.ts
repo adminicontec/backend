@@ -894,7 +894,7 @@ class CourseSchedulingService {
           mailer: customs['mailer'],
           service_id: register.program.name,
           service_code: register.metadata.service_id,
-          initDate: moment(register.startDate).format('YYYY-MM-DD'),
+          initDate: moment.utc(register.startDate).format('YYYY-MM-DD'),
           city: register.city.name
         }
         const emails: string[] = [customs['mailer']['email_material_delivery']];

@@ -78,7 +78,7 @@ class CourseSchedulingNotificationsService {
       if (email_to_notificate.length > 0) {
         const params = {
           mailer: customs['mailer'],
-          today: moment().format('YYYY-MM-DD'),
+          today: moment.utc().format('YYYY-MM-DD'),
           notification_source: `scheduling_notification_${type}_assistant_${courseScheduling._id}`,
           // Información
           assistant_name: `${courseScheduling.material_assistant.profile.first_name} ${courseScheduling.material_assistant.profile.last_name}`,
@@ -88,8 +88,8 @@ class CourseSchedulingNotificationsService {
           modality: courseScheduling.schedulingMode.name,
           modules: modules,
           duration: this.formatSecondsToHours(courseScheduling.duration),
-          startDate: moment(courseScheduling.startDate).format('YYYY-MM-DD'),
-          endDate: moment(courseScheduling.endDate).format('YYYY-MM-DD'),
+          startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+          endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
           observations: courseScheduling.observations,
           exam: exam ? 'SI' : 'NO',
           accountExecutive: courseScheduling.account_executive.profile.first_name,
@@ -151,8 +151,8 @@ class CourseSchedulingNotificationsService {
         modality: courseScheduling.schedulingMode.name,
         module: courseSchedulingDetails.course.name,
         duration: this.formatSecondsToHours(courseSchedulingDetails.duration),
-        startDate: moment(courseSchedulingDetails.startDate).format('YYYY-MM-DD'),
-        endDate: moment(courseSchedulingDetails.endDate).format('YYYY-MM-DD'),
+        startDate: moment.utc(courseSchedulingDetails.startDate).format('YYYY-MM-DD'),
+        endDate: moment.utc(courseSchedulingDetails.endDate).format('YYYY-MM-DD'),
         teacher: `${courseSchedulingDetails.teacher.profile.first_name} ${courseSchedulingDetails.teacher.profile.last_name}`,
         observations: courseScheduling.observations,
         exam: exam ? 'SI' : 'NO',
