@@ -304,7 +304,8 @@ class UserService {
             additional_parameters: {
               user: {
                 ...response,
-              }
+                passwordUpdated: (params.passwordHash) ? true : false
+              },
             }
           })
         }

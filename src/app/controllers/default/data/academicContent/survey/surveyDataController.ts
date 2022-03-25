@@ -43,6 +43,22 @@ class SurveyDataController {
     const response = await surveyDataService.generateReport(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+   * Metodo que permite generar el reporte de encuestas
+   * @param req
+   * @param res
+   * @returns
+   */
+   public generalSurveyReport = async (req: Request, res: Response) => {
+
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await surveyDataService.generalSurveyReport(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const surveyDataController = new SurveyDataController();
