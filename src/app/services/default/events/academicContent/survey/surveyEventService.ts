@@ -65,7 +65,8 @@ class SurveyEventService {
 
       const surveyAnswered = await AcademicResourceAttempt.find({
         user: params.user,
-        'results.surveyRelated': {$exists: true}
+        'results.surveyRelated': {$exists: true},
+        'results.status': 'ended'
       }).select('id results.surveyRelated')
       .lean()
 

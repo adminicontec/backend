@@ -36,17 +36,28 @@ export interface IAnswersChoiseSimple {
   unique: string,
   title: string,
   total_answers: number,
+  average?: number,
 }
 export interface ISectionQuestionsChoiceSimple {
   _id: string
   title: string
   answers:  Record<string, IAnswersChoiseSimple>
   total_answers: number,
+  average?: number,
 }
 
 export interface IReportSurvey {
   section_questions_range: ISectionQuestionsRange[]
   section_questions_open: Record<string, ISectionQuestionsOpen>
   section_questions_choice_simple: Record<string, ISectionQuestionsChoiceSimple>
+}
+
+export interface IGeneralReportSurvey {
+  title: string;
+  scheduling: any[]
+  questionsRange: any[]
+  questionsWithOptions: any
+  totalSurvey: number,
+  isVirtual: boolean
 }
 //@end
