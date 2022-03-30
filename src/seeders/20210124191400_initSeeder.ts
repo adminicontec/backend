@@ -548,7 +548,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:survey_create', description: 'Crear contenido'},
         {name: 'permission:survey_update', description: 'Actualizar contenido'},
         {name: 'permission:survey_delete', description: 'Eliminar contenido'},
-        {name: 'permission:survey_menu_access', description: 'Menu de encuesta'}
+        {name: 'permission:survey_menu_access', description: 'Menu de encuesta'},
+        {name: 'permission:survey_report', description: 'Generar reporte de satisfacción'}
       ]},
       {name: 'module:landings', description: 'Modulo que permite la administración de secciones publicas', permissions: [
         {name: 'permission:landings_teacher', description: 'Landing de docentes'},
@@ -727,6 +728,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:survey_create'],
           module_permission_ids['permission:survey_update'],
           module_permission_ids['permission:survey_delete'],
+          module_permission_ids['permission:survey_report'],
 
           // @INFO Permisos para el modulo landings
           module_permission_ids['permission:landings_menu_access'],
