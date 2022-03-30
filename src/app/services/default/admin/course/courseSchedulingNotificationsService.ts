@@ -35,6 +35,7 @@ class CourseSchedulingNotificationsService {
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
   public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean) => {
+    return;
     try {
       let email_to_notificate: {email: string, name: string}[] = []
 
@@ -131,6 +132,7 @@ class CourseSchedulingNotificationsService {
    * @param courseSchedulingDetails
    */
   public sendSurveyAssistanceNotification = async (courseSchedulingId: string, courseSchedulingDetailsId?: string) => {
+    return;
     const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
     let courseSchedulingDetails;
     if (courseSchedulingDetailsId) {
