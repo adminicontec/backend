@@ -2,7 +2,7 @@
 import * as XLSX from "xlsx";
 const ObjectID = require('mongodb').ObjectID
 import {decode} from 'html-entities';
-import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility'
+import moment from "moment";
 // @end
 
 // @import services
@@ -10,7 +10,9 @@ import {academicResourceService} from '@scnode_app/services/default/admin/academ
 // @end
 
 // @import utilities
+import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility'
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { generalUtility } from "@scnode_core/utilities/generalUtility";
 // @end
 
 // @import models
@@ -26,8 +28,6 @@ import {
   IGeneralReportSurvey,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
 import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey } from '@scnode_app/models';
-import moment from "moment";
-import { generalUtility } from "core/utilities/generalUtility";
 // @end
 
 class SurveyDataService {
