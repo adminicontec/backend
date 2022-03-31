@@ -39,13 +39,13 @@ class PostController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('cover')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'cover')) {
       params['coverFile'] = files['cover']
     }
-    if (files && files.hasOwnProperty('brochure')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'brochure')) {
       params['brochureFile'] = files['brochure']
     }
-    if (files && files.hasOwnProperty('researchFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'researchFile')) {
       params['researchFile'] = files['researchFile']
     }
 
@@ -63,13 +63,13 @@ class PostController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('cover')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'cover')) {
       params['coverFile'] = files['cover']
     }
-    if (files && files.hasOwnProperty('brochure')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'brochure')) {
       params['brochureFile'] = files['brochure']
     }
-    if (files && files.hasOwnProperty('researchFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'researchFile')) {
       params['researchFile'] = files['researchFile']
     }
 

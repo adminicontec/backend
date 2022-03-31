@@ -67,7 +67,7 @@ class CourseController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('cover')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'cover')) {
       params['coverFile'] = files['cover']
     }
 
@@ -85,7 +85,7 @@ class CourseController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('cover')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'cover')) {
       params['coverFile'] = files['cover']
     }
 

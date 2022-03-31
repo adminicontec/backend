@@ -111,7 +111,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('cover')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'cover')) {
       params['coverFile'] = files['cover']
     }
 
@@ -132,7 +132,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('attached')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attached')) {
       params['attachedFile'] = files['attached']
     }
 
@@ -168,7 +168,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('attached')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attached')) {
       params['attachedFile'] = files['attached']
     }
 
@@ -204,7 +204,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('attached')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attached')) {
       params['attachedFile'] = files['attached']
     }
 
@@ -240,7 +240,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('attachedFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attachedFile')) {
       params['attachedFile'] = files['attachedFile']
     }
 
@@ -261,7 +261,7 @@ class LandingController {
 
     params['user'] = user_id
 
-    if (files && files.hasOwnProperty('attached')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attached')) {
       params['coverFile'] = files['attached']
     }
 

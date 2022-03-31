@@ -98,7 +98,7 @@ class AcademicResourceAttemptService {
 
       // @INFO Si tiene un adjunto lo subo
       let newFile: any = undefined
-      // if (files && files.hasOwnProperty('file')) {
+      // if (files && Object.prototype.hasOwnProperty.call(files, 'file')) {
       //   const response_upload: any = await uploadService.uploadFile(
       //     files['file'],
       //     this.academicResourceAttemptFileUrl
