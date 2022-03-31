@@ -50,7 +50,8 @@ class SurveyDataService {
       const output_format: any = params.output_format ? params.output_format : 'xlsx'
       const title: any = params.title ? params.title : `reporte_satisfaccion_${time}`
 
-      // TODO: Recibir fecha de inicio y fin como parametro
+      const reportStartDate = params.startDate || undefined
+      const reportEndDate = params.endDate || undefined
 
       // @INFO: Consultando encuestas programadas
       const courseSchedulingModes = await CourseSchedulingMode.find({moodle_id: {$exists: true}}).select('id name')
@@ -137,10 +138,20 @@ class SurveyDataService {
           }
 
           if (questions.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'survey.report.questions_not_found'})
+
+          const questionException = [
+            '6154e630dc0dee747875b0c2'
+          ]
+
           const question_ids = questions.reduce((acumm, element) => {
-            acumm.push(element.question)
+            if (!questionException.includes(element.question.toString())) {
+              acumm.push(element.question)
+            }
             return acumm
           }, [])
+
+
+
           const questionMongo = await Question.find({_id: {$in: question_ids}})
           .populate({path: 'question_category', select: 'id name description config'})
 
@@ -152,6 +163,8 @@ class SurveyDataService {
           for (const question of questions) {
             if (questionMongo_byIds[question.question]) {
               question.question = questionMongo_byIds[question.question]
+            } else {
+              delete question.question
             }
           }
 
@@ -163,70 +176,72 @@ class SurveyDataService {
           const section_questions_open: Record<string, ISectionQuestionsOpen> = {}
           const section_questions_choice_simple:  Record<string, ISectionQuestionsChoiceSimple> = {}
           for (const question of questions) {
-            let item_questions_range: ISectionQuestionsRange = {
-              _id: question.question._id,
-              title: this.htmlEntitiesToUTF(question.question.content),
-              questions: {},
-              average: 0,
-            }
-            if (question.childs) {
-              for (const child of question.childs) {
-                if (!question_by_category[child.question._id]) {
-                  question_by_category[child.question._id] = child.question.question_category.name
-                }
-                if (child.question.question_category.name === 'select-range') {
-                  if (!item_questions_range.questions[child.question._id]) {
-                    item_questions_range.questions[child.question._id] = {
-                      _id: child.question._id,
-                      title: this.htmlEntitiesToUTF(child.question.content),
-                      average: 0,
-                      total_answers: 0,
-                      answers: {
-                        total: 0,
-                        list: []
+            if (question?.question?._id) {
+              let item_questions_range: ISectionQuestionsRange = {
+                _id: question.question._id,
+                title: this.htmlEntitiesToUTF(question.question.content),
+                questions: {},
+                average: 0,
+              }
+              if (question.childs) {
+                for (const child of question.childs) {
+                  if (!question_by_category[child.question._id]) {
+                    question_by_category[child.question._id] = child.question.question_category.name
+                  }
+                  if (child.question.question_category.name === 'select-range') {
+                    if (!item_questions_range.questions[child.question._id]) {
+                      item_questions_range.questions[child.question._id] = {
+                        _id: child.question._id,
+                        title: this.htmlEntitiesToUTF(child.question.content),
+                        average: 0,
+                        total_answers: 0,
+                        answers: {
+                          total: 0,
+                          list: []
+                        }
+                      }
+                      reportQuestions[child.question._id] = item_questions_range.questions[child.question._id]
+                    }
+                  } else if (child.question.question_category.name === 'open-answer') {
+                    if (!section_questions_open[child.question._id]) {
+                      section_questions_open[child.question._id] = {
+                        _id: child.question._id,
+                        title: this.htmlEntitiesToUTF(child.question.content),
+                        answers: []
                       }
                     }
-                    reportQuestions[child.question._id] = item_questions_range.questions[child.question._id]
-                  }
-                } else if (child.question.question_category.name === 'open-answer') {
-                  if (!section_questions_open[child.question._id]) {
-                    section_questions_open[child.question._id] = {
-                      _id: child.question._id,
-                      title: this.htmlEntitiesToUTF(child.question.content),
-                      answers: []
-                    }
-                  }
-                } else if (child.question.question_category.name === 'multiple-choice-unique-answer') {
-                  if (!section_questions_choice_simple[child.question._id]) {
-                    const _item_multiple: ISectionQuestionsChoiceSimple = {
-                      _id: child.question._id,
-                      title: this.htmlEntitiesToUTF(child.question.content),
-                      answers: {},
-                      total_answers: 0,
-                      average: 0,
-                    }
+                  } else if (child.question.question_category.name === 'multiple-choice-unique-answer') {
+                    if (!section_questions_choice_simple[child.question._id]) {
+                      const _item_multiple: ISectionQuestionsChoiceSimple = {
+                        _id: child.question._id,
+                        title: this.htmlEntitiesToUTF(child.question.content),
+                        answers: {},
+                        total_answers: 0,
+                        average: 0,
+                      }
 
-                    if (child.question.answers) {
-                      for (const _ans of child.question.answers) {
-                        if (!_item_multiple['answers'][_ans.unique]) {
-                          _item_multiple['answers'][_ans.unique] = {
-                            unique: _ans.unique,
-                            title: this.htmlEntitiesToUTF(_ans.content),
-                            total_answers: 0,
-                            average: 0,
+                      if (child.question.answers) {
+                        for (const _ans of child.question.answers) {
+                          if (!_item_multiple['answers'][_ans.unique]) {
+                            _item_multiple['answers'][_ans.unique] = {
+                              unique: _ans.unique,
+                              title: this.htmlEntitiesToUTF(_ans.content),
+                              total_answers: 0,
+                              average: 0,
+                            }
                           }
                         }
                       }
+                      // reportQuestions[child.question._id] = {..._item_multiple, hasOptions: true}
+                      reportQuestions[child.question._id] = _item_multiple
+                      section_questions_choice_simple[child.question._id] = _item_multiple
                     }
-                    // reportQuestions[child.question._id] = {..._item_multiple, hasOptions: true}
-                    reportQuestions[child.question._id] = _item_multiple
-                    section_questions_choice_simple[child.question._id] = _item_multiple
                   }
                 }
               }
-            }
-            if (Object.keys(item_questions_range.questions).length > 0) {
-              section_questions_range.push(item_questions_range)
+              if (Object.keys(item_questions_range.questions).length > 0) {
+                section_questions_range.push(item_questions_range)
+              }
             }
           }
 
@@ -234,38 +249,50 @@ class SurveyDataService {
             if (courseSchedulingModesInfoByName['Presencial']) {
               let report: any = {
                 title: courseSchedulingModesInfoByName['Presencial'].name,
+                queryRange: {
+                  reportStartDate,
+                  reportEndDate
+                },
                 scheduling: [],
                 questionsRange: section_questions_range.map((i) => i),
                 questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
                 totalSurvey: 0,
                 isVirtual: false
               }
-              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['Presencial'], courseSchedulingStatusInfo)
+              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['Presencial'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
               reportData.push(report)
             }
 
             if (courseSchedulingModesInfoByName['En linea']) {
               let report: any = {
                 title: courseSchedulingModesInfoByName['En linea'].name,
+                queryRange: {
+                  reportStartDate,
+                  reportEndDate
+                },
                 scheduling: [],
                 questionsRange: section_questions_range.map((i) => i),
                 questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
                 totalSurvey: 0,
                 isVirtual: false
               }
-              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['En linea'], courseSchedulingStatusInfo)
+              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['En linea'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
               reportData.push(report)
             }
           } else {
             let report: any = {
               title: modality.name,
+              queryRange: {
+                reportStartDate,
+                reportEndDate
+              },
               scheduling: [],
               questionsRange: JSON.parse(JSON.stringify(section_questions_range)),
               questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
               totalSurvey: 0,
               isVirtual: true
             }
-            report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo)
+            report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
             report.scheduling = await this.getSurveyDataByScheduligs(report.scheduling, {
               questionByCategory: question_by_category,
               questionsRange: report.questionsRange,
@@ -303,16 +330,22 @@ class SurveyDataService {
     }
   }
 
-  private getSchedulingsByModality = async (modality, courseSchedulingStatusInfo) => {
+  private getSchedulingsByModality = async (modality, courseSchedulingStatusInfo, options: {reportStartDate: string | undefined, reportEndDate: string | undefined}) => {
     const schedulings = []
-    const courseSchedulings = await CourseScheduling.find({
+    let where: any = {
       schedulingMode: modality._id,
       schedulingStatus: {$in: [
         courseSchedulingStatusInfo['Confirmado']._id,
         courseSchedulingStatusInfo['Ejecutado']._id,
         courseSchedulingStatusInfo['Cancelado']._id,
       ]}
-    })
+    }
+
+    if (options?.reportStartDate && options?.reportEndDate) {
+      where['startDate'] = {$gte: new Date(`${options.reportStartDate}T00:00:00Z`), $lte: new Date(`${options.reportEndDate}T23:59:59Z`)}
+    }
+
+    const courseSchedulings = await CourseScheduling.find(where)
     .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
     .populate({path: 'schedulingMode', select: 'id name'})
     .populate({path: 'modular', select: 'id name'})
@@ -554,8 +587,26 @@ class SurveyDataService {
         let row = 0;
         let countCol = 0
         const merge = []
+        const headerRange = []
         const headerTop = []
         const headerMain = []
+        const sheetData = []
+
+        if (report?.queryRange?.reportStartDate && report?.queryRange?.reportEndDate) {
+          sheetData.push(['PERIODO DE CONSULTA', ''])
+          sheetData.push(['Fecha 1', report?.queryRange?.reportStartDate])
+          sheetData.push(['Fecha 2', report?.queryRange?.reportEndDate])
+          sheetData.push([])
+
+          let itemMerge = {}
+          itemMerge['s'] = {r: row, c: 0}
+          itemMerge['e'] = {r: row, c: 1}
+          merge.push(itemMerge)
+          row++;
+          row++;
+          row++;
+          row++;
+        }
 
         headerMain.push('Identificador servicio')
         if (!report.isVirtual) headerMain.push('Docente')
@@ -603,7 +654,7 @@ class SurveyDataService {
             let itemMerge = {}
             const question = report.questionsWithOptions[questionId];
             headerTop.push(question.title)
-            itemMerge['s'] = {r: 0, c: countCol}
+            itemMerge['s'] = {r: row, c: countCol}
 
             for (const answerId in question.answers) {
               if (Object.prototype.hasOwnProperty.call(question.answers, answerId)) {
@@ -615,7 +666,7 @@ class SurveyDataService {
             for (let index = 0; index < Object.keys(question.answers).length-1; index++) {
               headerTop.push("")
             }
-            itemMerge['e'] = {r: 0, c: countCol-1}
+            itemMerge['e'] = {r: row, c: countCol-1}
 
             if (Object.keys(itemMerge).length > 0) {
               merge.push(itemMerge)
@@ -627,7 +678,10 @@ class SurveyDataService {
         headerMain.push('PROMEDIO GENERAL')
         // console.log('headerMain', headerMain)
 
-        const sheetData = []
+
+        if (headerRange.length > 0) {
+          sheetData.push(headerRange)
+        }
         sheetData.push(headerTop)
         row++
         sheetData.push(headerMain)
@@ -673,7 +727,7 @@ class SurveyDataService {
               for (const answerId in question.answers) {
                 if (Object.prototype.hasOwnProperty.call(question.answers, answerId)) {
                   const answer = question.answers[answerId];
-                  item.push(answer.average && answer.total_answers ? `${answer.average}% | ${answer.total_answers}` : '-');
+                  item.push(answer.average ? `${answer.average}%` : '-');
                 }
               }
             }

@@ -54,6 +54,10 @@ export interface IReportSurvey {
 
 export interface IGeneralReportSurvey {
   title: string;
+  queryRange: {
+    reportStartDate: string | undefined,
+    reportEndDate: string | undefined
+  },
   scheduling: any[]
   questionsRange: any[]
   questionsWithOptions: any
