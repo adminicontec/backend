@@ -3,7 +3,7 @@ import moment from 'moment';
 // @end
 
 // @import services
-import {certificateService} from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
@@ -11,11 +11,11 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment, User} from '@scnode_app/models'
+import { CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment, User } from '@scnode_app/models'
 // @end
 
 // @import types
-import {IFetchEnrollementByUser, IFetchCertifications} from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
+import { IFetchEnrollementByUser, IFetchCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
 // @end
 
 class EnrolledCourseService {
@@ -27,7 +27,7 @@ class EnrolledCourseService {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   /**
    * Metodo que permite listar todos los registros
@@ -46,10 +46,12 @@ class EnrolledCourseService {
       const enrolled = await Enrollment.find({
         user: params.user
       }).select('id course_scheduling')
-      .populate({ path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
-        {path: 'program', select: 'id name code moodle_id'}
-      ] })
-      .lean()
+        .populate({
+          path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
+            { path: 'program', select: 'id name code moodle_id' }
+          ]
+        })
+        .lean()
       steps.push('2')
       steps.push(enrolled)
 
@@ -70,10 +72,12 @@ class EnrolledCourseService {
       const courses = await CourseSchedulingDetails.find({
         teacher: params.user
       }).select('id course_scheduling')
-      .populate({ path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
-        {path: 'program', select: 'id name code moodle_id'}
-      ] })
-      .lean()
+        .populate({
+          path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
+            { path: 'program', select: 'id name code moodle_id' }
+          ]
+        })
+        .lean()
       steps.push('4')
       steps.push(courses)
 
@@ -114,8 +118,8 @@ class EnrolledCourseService {
    * @returns
    */
   public fetchCertifications = async (params: IFetchCertifications) => {
-    const paging = (params.pageNumber && params.nPerPage) ? true : false
 
+    const paging = (params.pageNumber && params.nPerPage) ? true : false
     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
@@ -129,6 +133,10 @@ class EnrolledCourseService {
       whereCourseScheduling['client'] = params.company
     }
 
+    if (params.search) {
+      whereCourseScheduling['metadata.service_id'] = params.search;
+    }
+
     if (params.certificate_clients) {
       whereCourseScheduling['certificate_clients'] = true
     }
@@ -138,7 +146,7 @@ class EnrolledCourseService {
     }
 
     if (params.status) {
-      where['status'] = {$in: params.status}
+      where['status'] = { $in: params.status }
     }
 
     if (Object.keys(whereCourseScheduling).length > 0) {
@@ -147,7 +155,7 @@ class EnrolledCourseService {
         accum.push(element._id)
         return accum
       }, [])
-      where['courseId'] = {$in: course_scheduling_ids}
+      where['courseId'] = { $in: course_scheduling_ids }
       if (course_scheduling_ids.length > 0) {
       }
     }
@@ -156,11 +164,13 @@ class EnrolledCourseService {
 
     try {
       registers = await CertificateQueue.find(where)
-      .populate({path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number'})
-      .populate({path: 'auxiliar', select: 'id profile.first_name profile.last_name'})
-      .populate({path: 'courseId', select: 'id metadata program', populate: [{
-        path: 'program', select: 'id name moodle_id code'
-      }]})
+        .populate({ path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number' })
+        .populate({ path: 'auxiliar', select: 'id profile.first_name profile.last_name' })
+        .populate({
+          path: 'courseId', select: 'id metadata program', populate: [{
+            path: 'program', select: 'id name moodle_id code'
+          }]
+        })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .sort({ startDate: -1 })
@@ -168,24 +178,24 @@ class EnrolledCourseService {
         .lean()
 
         for await (const register of registers) {
-          if (register.userId && register.userId.profile) {
-            register.userId.fullname = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
-          }
-          if (register.auxiliar && register.auxiliar.profile) {
-            register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
-          }
-
-
-          if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
-
-          if (register?.certificate?.pdfPath) {
-            register.certificate.pdfPath = certificateService.certificateUrl(register.certificate.pdfPath)
-          }
-          if (register?.certificate?.imagePath) {
-            register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
-          }
+        if (register.userId && register.userId.profile) {
+          register.userId.fullname = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
         }
-    } catch (error) {}
+        if (register.auxiliar && register.auxiliar.profile) {
+          register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
+        }
+
+
+        if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
+
+        if (register?.certificate?.pdfPath) {
+          register.certificate.pdfPath = certificateService.certificateUrl(register.certificate.pdfPath)
+        }
+        if (register?.certificate?.imagePath) {
+          register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
+        }
+      }
+    } catch (error) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
@@ -205,7 +215,7 @@ class EnrolledCourseService {
       // TODO: Validar si no viene ningun certificado a generar
 
       const certifications = await CertificateQueue.find({
-        _id: {$in: params.certification_queue}
+        _id: { $in: params.certification_queue }
       })
 
       const certification_urls = []
@@ -218,7 +228,7 @@ class EnrolledCourseService {
         }
       }
 
-      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate.download_masive.no_certificate_to_download'}) // TODO: Validar error
+      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.download_masive.no_certificate_to_download' }) // TODO: Validar error
 
       const time = new Date().getTime()
 

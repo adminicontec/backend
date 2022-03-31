@@ -50,7 +50,8 @@ class CertificateService {
   private default_certificate_path = 'certifications'
   public default_certificate_zip_path = 'certifications'
   private selectActivitiesTest = ['attendance', 'assign', 'quiz', 'course'];
-
+  private default_logo_path = 'certificate/icons';
+  private default_signature_path = 'certificate/signatures';
   /*===============================================
   =            Estructura de un metodo            =
   ================================================
@@ -607,11 +608,11 @@ class CertificateService {
         query: QueryValues.ALL,
         where: [{ field: 'course_scheduling', value: params.courseId }]
       });
-      // console.log('-------------------');
+      // console.log('--------respCourse----------');
       // console.log(respCourse);
       // console.log('-------------------');
       // console.log(respCourseDetails);
-      // console.log('-------------------');
+      // console.log('--------respCourseDetails----------');
 
       if (respCourse.status == 'error' || respCourseDetails.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
@@ -619,8 +620,51 @@ class CertificateService {
       }
 
       const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: respCourse.scheduling.moodle_id, moduleType: this.selectActivitiesTest });
+      //#endregion
+
+      //#region Load Logos from CourseScheduling settings
+      //#region Base Path
+      let driver = attached['driver'];
+      let attached_config = attached[driver];
+      const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+
+      let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+      if (attached_config.base_path_type === "absolute") {
+        base_path = upload_config_base_path
+      }
+      //#endregion Base Path
+
+      console.log(`Check for Logos and Signature:`);
+
+      //      if (respCourse.scheduling.certificate_icon_1 && fileUtility.fileExists(respCourse.scheduling.certificate_icon_1) === true) {
+
+      if (respCourse.scheduling.path_certificate_icon_1) {
+        console.log(`Logo 1: ${respCourse.scheduling.path_certificate_icon_1}`);
+
+        let filePath = `${base_path}/${this.default_logo_path}/${respCourse.scheduling.path_certificate_icon_1}`
+        console.log(filePath);
+
+        if (fileUtility.fileExists(filePath) === true) {
+          console.log(`fileExists!!`);
+
+          const contentFile = fileUtility.readFileSyncBuffer(filePath);
+          console.log(contentFile);
+          if (contentFile && contentFile.length > 0) {
+            const dataArray =  Buffer.from( contentFile);
+            var arrByte= Uint8Array.from(dataArray);
+            //const bin = Base64.btoa(arrByte);
+          }
+        }
+      }
+
+      // return responseUtility.buildResponseSuccess('json', null, {
+      //   additional_parameters: {
+      //     respCourse //respProcessSetCertificates
+      //   }
+      // })
 
       //#endregion
+
 
       //#region Validations to generate Certificate
       //schedulingStatus
@@ -1039,7 +1083,7 @@ class CertificateService {
                 flagAssistanceCount++;
               }
             }
-            else{
+            else {
               flagAssistance = false;
               console.log("Grade: " + grade.name);
               console.log("\t\t--");
