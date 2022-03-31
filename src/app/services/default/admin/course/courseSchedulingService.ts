@@ -138,22 +138,27 @@ class CourseSchedulingService {
         register.total_scheduling = total_scheduling
 
         if (register.certificate_icon_1) {
-          register.certificate_icon_1 = this.getIconUrl(register.certificate_icon_1)
+          register.path_certificate_icon_1 = register.certificate_icon_1;
+          register.certificate_icon_1 = this.getIconUrl(register.certificate_icon_1);
         }
 
         if (register.certificate_icon_2) {
+          register.path_certificate_icon_2 = register.certificate_icon_2;
           register.certificate_icon_2 = this.getIconUrl(register.certificate_icon_2)
         }
 
         if (register.signature_1) {
+          register.path_signature_1 = register.signature_1;
           register.signature_1 = this.getIconUrl(register.signature_1)
         }
 
         if (register.signature_2) {
+          register.path_signature_2 = register.signature_2;
           register.signature_2 = this.getIconUrl(register.signature_2)
         }
 
         if (register.signature_3) {
+          register.path_signature_3 = register.signature_3;
           register.signature_3 = this.getIconUrl(register.signature_3)
         }
 

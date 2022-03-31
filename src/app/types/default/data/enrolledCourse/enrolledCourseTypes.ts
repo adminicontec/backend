@@ -10,7 +10,8 @@ export interface IFetchCertifications {
   user?: string // Identificador del usuario logueado
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina
-  company?: string // Identificador de cliente
+  company?: string, // Identificador de cliente
+  search?:string, // Identificador de Servicio
   status?: Array<'New' | 'In-process' | 'Complete' | 'Error' | 'Re-issue'>
   certificate_clients?: boolean
   certificate_students?: boolean
