@@ -35,7 +35,7 @@ class CourseSchedulingNotificationsService {
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
   public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean) => {
-    return;
+    if (type === 'modify') return;
     try {
       let email_to_notificate: {email: string, name: string}[] = []
 
@@ -97,6 +97,7 @@ class CourseSchedulingNotificationsService {
           regional: courseScheduling.regional.name
         };
 
+        // @ts-ignore
         const path_template = type === 'started' || type === 'modify' ? 'course/startedServiceToAssistant' : 'course/cancelServiceToAssistant'
 
         let mail: any = undefined;
@@ -104,6 +105,7 @@ class CourseSchedulingNotificationsService {
           mail = await mailService.sendMail({
             emails: [emailNotificate.email],
             mailOptions: {
+              // @ts-ignore
               subject: i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject'),
               html_template: {
                 path_layout: 'icontec',
@@ -132,7 +134,6 @@ class CourseSchedulingNotificationsService {
    * @param courseSchedulingDetails
    */
   public sendSurveyAssistanceNotification = async (courseSchedulingId: string, courseSchedulingDetailsId?: string) => {
-    return;
     const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
     let courseSchedulingDetails;
     if (courseSchedulingDetailsId) {
