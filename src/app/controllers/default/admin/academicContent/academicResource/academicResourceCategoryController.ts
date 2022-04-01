@@ -10,7 +10,7 @@ import {academicResourceCategoryService} from '@scnode_app/services/default/admi
 // @end
 
 // @import_utilities Import utilities
-import { responseUtility } from "@scnode_core/utilities/responseUtility";
+import { responseUtility  } from "@scnode_core/utilities/responseUtility";
 import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @end
 

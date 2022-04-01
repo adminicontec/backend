@@ -37,7 +37,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import {
   IQueryUserToCertificate, ICertificate, IQueryCertificate,
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
-  ICertificateCompletion, ISetCertificateParams
+  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UpdateCACertificateParams } from "aws-sdk/clients/iot";
@@ -585,6 +585,9 @@ class CertificateService {
   public setCertificate = async (params: IQueryUserToCertificate) => {
 
     try {
+      let logoDataArray: ILogoInformation[] = [];
+      let signatureDataArray: ISignatureInformation[] = [];
+
       //#region  querying data for user to Certificate, param: username
       let respDataUser: any = await userService.findBy({
         query: QueryValues.ONE,
@@ -636,33 +639,53 @@ class CertificateService {
 
       console.log(`Check for Logos and Signature:`);
 
-      //      if (respCourse.scheduling.certificate_icon_1 && fileUtility.fileExists(respCourse.scheduling.certificate_icon_1) === true) {
-
-      if (respCourse.scheduling.path_certificate_icon_1) {
-        console.log(`Logo 1: ${respCourse.scheduling.path_certificate_icon_1}`);
-
-        let filePath = `${base_path}/${this.default_logo_path}/${respCourse.scheduling.path_certificate_icon_1}`
-        console.log(filePath);
-
-        if (fileUtility.fileExists(filePath) === true) {
-          console.log(`fileExists!!`);
-
-          const contentFile = fileUtility.readFileSyncBuffer(filePath);
-          console.log(contentFile);
-          if (contentFile && contentFile.length > 0) {
-            const dataArray =  Buffer.from( contentFile);
-            var arrByte= Uint8Array.from(dataArray);
-            //const bin = Base64.btoa(arrByte);
-          }
-        }
+      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1);
+      if (logoImage64_1) {
+        logoDataArray.push({
+          imageBase64: logoImage64_1,
+          companyName: 'Primera compañía'
+        });
+        console.log(`Logo for: ${logoDataArray[0].companyName}`);
       }
 
-      // return responseUtility.buildResponseSuccess('json', null, {
-      //   additional_parameters: {
-      //     respCourse //respProcessSetCertificates
-      //   }
-      // })
+      let logoImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_2);
+      if (logoImage64_2) {
+        logoDataArray.push({
+          imageBase64: logoImage64_2,
+          companyName: 'Segunda compañía'
+        });
+        console.log(`Logo for: ${logoDataArray[1].companyName}`);
+      }
 
+      let signatureImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_1);
+      if (signatureImage64_1) {
+        signatureDataArray.push({
+          imageBase64: signatureImage64_1,
+          signatoryName: 'Primer firmante',
+          signatoryPosition: 'Cargo 1er',
+        });
+        console.log(`Signature : ${signatureDataArray[0].signatoryName}`);
+      }
+
+      let signatureImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_2);
+      if (signatureImage64_2) {
+        signatureDataArray.push({
+          imageBase64: signatureImage64_2,
+          signatoryName: 'Segundo firmante',
+          signatoryPosition: 'Cargo 2ndo',
+        });
+        console.log(`Signature : ${signatureDataArray[1].signatoryName}`);
+      }
+
+      let signatureImage64_3 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_3);
+      if (signatureImage64_3) {
+        signatureDataArray.push({
+          imageBase64: signatureImage64_3,
+          signatoryName: 'Tercer firmante',
+          signatoryPosition: 'Cargo 3er',
+        });
+        console.log(`Signature : ${signatureDataArray[2].signatoryName}`);
+      }
       //#endregion
 
 
@@ -718,6 +741,17 @@ class CertificateService {
         programTypeName = 'diplomado';
         mapping_template = certificate_template.programa_diplomado;
       }
+
+      if (logoDataArray.length != 0) {
+        if (signatureDataArray.length != 0) {
+          mapping_template = certificate_template.convenio_doble_logo_doble_firma;
+        }
+        else{
+          mapping_template = certificate_template.convenio_doble_logo;
+        }
+      }
+
+      console.log("Choosen template: " + mapping_template);
       //#endregion Tipo de programa
 
       // console.log(programTypeName);
@@ -880,6 +914,13 @@ class CertificateService {
         fecha_impresion: currentDate,
         dato_1: mapping_dato_1,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+        dato_3: (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].imageBase64 : null,
+        dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
+        dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
+        dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
+        dato_7: (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].companyName : null,
+        dato_8: (logoDataArray.length != 0 && logoDataArray[1]) ? logoDataArray[1].imageBase64 : null,
+
       }
       certificateParamsArray.push({
         queueData: params,
@@ -1720,6 +1761,28 @@ class CertificateService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null)
     }
+  }
+
+
+  private encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
+
+    if (imagePath) {
+      console.log(`Image path: ${imagePath}`);
+
+      let filePath = `${base_path}/${this.default_logo_path}/${imagePath}`;
+      console.log(filePath);
+
+      if (fileUtility.fileExists(filePath) === true) {
+        console.log(`fileExists!!`);
+
+        const contentFile = fileUtility.readFileSyncBuffer(filePath);
+        if (contentFile && contentFile.length > 0) {
+          const dataArray = Buffer.from(contentFile);
+          return dataArray.toString('base64');
+        }
+      }
+    }
+    return null;
   }
 
   //#endregion Private Methods

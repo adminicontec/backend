@@ -39,7 +39,7 @@ class UserController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('avatar')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'avatar')) {
       params['avatar'] = files['avatar']
     } else {
       params['avatar'] = null
@@ -59,7 +59,7 @@ class UserController {
 		let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('avatar')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'avatar')) {
       params['avatar'] = files['avatar']
     } else {
       params['avatar'] = null

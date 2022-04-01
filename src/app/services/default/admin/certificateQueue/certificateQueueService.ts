@@ -158,19 +158,6 @@ class CertificateQueueService {
             }
           }
         });
-
-        // const exist = await CertificateQueue.findOne({ userid: params.userId, courseid: params.courseId })
-        // if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: params.userId, courseid: params.courseId } } })
-
-        // const response: any = await CertificateQueue.create(params)
-        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            certificateQueue: {
-              totalResponse
-            }
-          }
-        });
       }
 
     } catch (e) {
