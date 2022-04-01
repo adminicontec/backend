@@ -122,7 +122,8 @@ class UserController {
    */
    public createMultiple = async (req: Request, res: Response) => {
     let file_xlsx = null
-    if (req.files && req.files.hasOwnProperty('file_xlsx')) {
+
+    if (req.files && Object.prototype.hasOwnProperty.call(req.files, 'file_xlsx')) {
       file_xlsx = req.files.file_xlsx
     }
 
