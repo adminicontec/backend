@@ -39,11 +39,11 @@ class CompanyController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('logoFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'logoFile')) {
       params['logoFile'] = files['logoFile']
     }
 
-    if (files && files.hasOwnProperty('backgroundFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'backgroundFile')) {
       params['backgroundFile'] = files['backgroundFile']
     }
 
@@ -61,11 +61,11 @@ class CompanyController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('logoFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'logoFile')) {
       params['logoFile'] = files['logoFile']
     }
 
-    if (files && files.hasOwnProperty('backgroundFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'backgroundFile')) {
       params['backgroundFile'] = files['backgroundFile']
     }
 

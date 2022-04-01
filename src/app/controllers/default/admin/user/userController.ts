@@ -39,7 +39,7 @@ class UserController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('avatar')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'avatar')) {
       params['avatar'] = files['avatar']
     } else {
       params['avatar'] = null
@@ -59,7 +59,7 @@ class UserController {
 		let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('avatar')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'avatar')) {
       params['avatar'] = files['avatar']
     } else {
       params['avatar'] = null
@@ -122,7 +122,8 @@ class UserController {
    */
    public createMultiple = async (req: Request, res: Response) => {
     let file_xlsx = null
-    if (req.files && req.files.hasOwnProperty('file_xlsx')) {
+
+    if (req.files && Object.prototype.hasOwnProperty.call(req.files, 'file_xlsx')) {
       file_xlsx = req.files.file_xlsx
     }
 

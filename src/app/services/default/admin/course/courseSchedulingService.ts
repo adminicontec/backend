@@ -891,7 +891,6 @@ class CourseSchedulingService {
    * @param prevSchedulingStatus
    */
   private sendEmailMaterialDelivery = async (register: any, prevSchedulingStatus?: string) => {
-    return;
     try {
       const currentStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
       if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado' && register.material_delivery === 'physic') {

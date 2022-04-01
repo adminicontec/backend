@@ -32,7 +32,7 @@ class UploadAssetsController {
     let params = req.getParameters.all()
     let files = req.files
 
-    if (files && files.hasOwnProperty('assetFile')) {
+    if (files && Object.prototype.hasOwnProperty.call(files, 'assetFile')) {
       params['asset'] = files['assetFile']
     } else {
       params['asset'] = null

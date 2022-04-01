@@ -9,6 +9,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 
 // @import types
 import {HttpStructure, OptionsRequestPromise} from "@scnode_core/types/default/query/httpTypes"
+const https = require('https');
 // @end
 
 class HttpClientUtility {
@@ -20,7 +21,12 @@ class HttpClientUtility {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  private httpsAgent = undefined;
+  constructor() {
+    this.httpsAgent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+  }
 
   /**
    * Metodo que envia peticiones HTTP por el metodo GET
@@ -84,6 +90,8 @@ class HttpClientUtility {
       uri    : uri,
       json   : true,
       headers: {},
+      httpsAgent: this.httpsAgent,
+      strictSSL: false
     };
 
     Object.assign(options,options_method);
@@ -134,6 +142,7 @@ class HttpClientUtility {
    * @returns  [json] Objeto en formato JSON
    */
   private processErrorResponse = (err) => {
+    console.log('HTTP:ERROR', err)
     if (err.error) {
       if (typeof err.error === 'object') {
         const error = err.error;
