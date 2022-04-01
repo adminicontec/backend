@@ -144,6 +144,5 @@ export interface ICertificateCompletion {
   nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
-
 }
 //@end

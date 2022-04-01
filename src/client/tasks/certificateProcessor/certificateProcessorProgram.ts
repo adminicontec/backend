@@ -14,7 +14,6 @@ import { notificationEventService } from "@scnode_app/services/default/events/no
 // @import types
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
-
 // @end
 
 class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
@@ -29,7 +28,6 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
 
     console.log("Get all items on Certificate Queue [new and re-issue status]")
     const select = ["New", "Re-issue"];
-
     let respQueueToProcess: any = await certificateQueueService.
       findBy({
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
