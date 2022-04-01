@@ -91,6 +91,7 @@ class HttpClientUtility {
       json   : true,
       headers: {},
       httpsAgent: this.httpsAgent,
+      strictSSL: false
     };
 
     Object.assign(options,options_method);
