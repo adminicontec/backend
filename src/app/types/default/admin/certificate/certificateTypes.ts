@@ -146,4 +146,14 @@ export interface ICertificateCompletion {
   search?: string, // Busca sobre los campos de la coleccion
 
 }
+
+export interface ILogoInformation{
+  imageBase64: string,
+  companyName: string
+}
+export interface ISignatureInformation{
+  imageBase64: string,
+  signatoryName: string,
+  signatoryPosition: string
+}
 //@end
