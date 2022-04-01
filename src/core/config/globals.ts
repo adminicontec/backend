@@ -108,6 +108,8 @@ export const certificate_template = {
   convenio_doble_logo_doble_firma: 'CP00000003',
   convenio_doble_logo: 'CP00000004',
   parcial: 'CP00000005',
+  parcial_doble_logo_doble_firma: 'CP00000006',
+  parcial_doble_logo: 'CP00000007',
 }
 
 export const certificate_type = {

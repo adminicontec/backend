@@ -134,7 +134,8 @@ class EnrolledCourseService {
     }
 
     if (params.search) {
-      whereCourseScheduling['metadata.service_id'] = params.search;
+       whereCourseScheduling['metadata.service_id'] = params.search;
+      //where['userId.username'] = { $regex: '.*' + params.search + '.*',$options: 'i' };
     }
 
     if (params.certificate_clients) {
