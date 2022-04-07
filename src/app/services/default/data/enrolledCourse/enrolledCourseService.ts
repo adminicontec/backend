@@ -61,7 +61,8 @@ class EnrolledCourseService {
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
-              startDate: e.course_scheduling.startDate
+              startDate: e.course_scheduling.startDate,
+              courseScheduling: e.course_scheduling._id,
             })
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
@@ -87,7 +88,8 @@ class EnrolledCourseService {
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
-              startDate: e.course_scheduling.startDate
+              startDate: e.course_scheduling.startDate,
+              courseScheduling: e.course_scheduling._id,
             })
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
