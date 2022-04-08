@@ -148,7 +148,7 @@ class MoodleCourseService {
       'courses[0][id]': params.id,
       'courses[0][categoryid]': params.categoryId,
       'courses[0][startdate]': generalUtility.unixTimeOffset(new Date(params.startDate).toISOString(), 5),
-      'courses[0][enddate]': generalUtility.unixTimeOffset(new Date(params.endDate).toISOString(), 5, true),
+      'courses[0][enddate]': generalUtility.unixTimeOffset(new Date(params.endDate).toISOString(), 5),
       'courses[0][visible]': params.visible,
       'courses[0][idnumber]': params.shortName,
       'courses[0][customfields][0][shortname]': 'programa_horas',
