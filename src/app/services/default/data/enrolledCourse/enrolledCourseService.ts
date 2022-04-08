@@ -61,7 +61,8 @@ class EnrolledCourseService {
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
-              startDate: e.course_scheduling.startDate
+              startDate: e.course_scheduling.startDate,
+              courseScheduling: e.course_scheduling._id,
             })
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
@@ -87,7 +88,8 @@ class EnrolledCourseService {
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
-              startDate: e.course_scheduling.startDate
+              startDate: e.course_scheduling.startDate,
+              courseScheduling: e.course_scheduling._id,
             })
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
@@ -125,7 +127,7 @@ class EnrolledCourseService {
 
     let select = 'id userId courseId auxiliar certificateType certificateModule status message certificate created_at'
 
-    let where = {}
+    let _where = [];
 
     let whereCourseScheduling = {}
 
@@ -134,7 +136,19 @@ class EnrolledCourseService {
     }
 
     if (params.search) {
-       whereCourseScheduling['metadata.service_id'] = params.search;
+      //  whereCourseScheduling['metadata.service_id'] = params.search;
+       _where.push({
+        $lookup: {
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "user_doc"
+        }
+       },{
+         $match: {
+           'user_doc.profile.doc_number': { $regex: '.*' + params.search + '.*',$options: 'i' }
+         }
+       })
       //where['userId.username'] = { $regex: '.*' + params.search + '.*',$options: 'i' };
     }
 
@@ -147,7 +161,12 @@ class EnrolledCourseService {
     }
 
     if (params.status) {
-      where['status'] = { $in: params.status }
+      _where.push({
+        $match: {
+          "status": { $in: params.status }
+        }
+      })
+      // _where['status'] = { $in: params.status }
     }
 
     if (Object.keys(whereCourseScheduling).length > 0) {
@@ -156,7 +175,12 @@ class EnrolledCourseService {
         accum.push(element._id)
         return accum
       }, [])
-      where['courseId'] = { $in: course_scheduling_ids }
+      _where.push({
+        $match: {
+          "courseId": { $in: course_scheduling_ids }
+        }
+      })
+      // _where['courseId'] = { $in: course_scheduling_ids }
       if (course_scheduling_ids.length > 0) {
       }
     }
@@ -164,26 +188,56 @@ class EnrolledCourseService {
     let registers = []
 
     try {
-      registers = await CertificateQueue.find(where)
-        .populate({ path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number' })
-        .populate({ path: 'auxiliar', select: 'id profile.first_name profile.last_name' })
-        .populate({
+      // registers = await CertificateQueue.find(_where)
+      //   .populate({ path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number' })
+      //   .populate({ path: 'auxiliar', select: 'id profile.first_name profile.last_name' })
+      //   .populate({
+      //     path: 'courseId', select: 'id metadata program', populate: [{
+      //       path: 'program', select: 'id name moodle_id code'
+      //     }]
+      //   })
+      //   .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+      //   .limit(paging ? nPerPage : null)
+      //   .sort({ startDate: -1 })
+      //   .select(select)
+      //   .lean()
+      registers = await CertificateQueue.aggregate(_where)
+      .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+      .limit(paging ? nPerPage : null)
+      .sort({ startDate: -1 })
+
+      await CertificateQueue.populate(registers, [
+        { path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number' },
+        { path: 'auxiliar', select: 'id profile.first_name profile.last_name' },
+        {
           path: 'courseId', select: 'id metadata program', populate: [{
             path: 'program', select: 'id name moodle_id code'
           }]
-        })
-        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-        .limit(paging ? nPerPage : null)
-        .sort({ startDate: -1 })
-        .select(select)
-        .lean()
+        }
+      ])
 
-        for await (const register of registers) {
+      const newRegisters = [];
+      for await (let registerInit of registers) {
+        let register = registerInit._doc ? {...registerInit._doc} : {...registerInit}
         if (register.userId && register.userId.profile) {
-          register.userId.fullname = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
+          register = {
+            ...register,
+            userId: {
+              ...register.userId._doc ? register.userId._doc : register.userId,
+              fullname:  `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
+            }
+          }
+          // register.userId['fullname'] = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
         }
         if (register.auxiliar && register.auxiliar.profile) {
-          register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
+          register = {
+            ...register,
+            auxiliar: {
+              ...register.auxiliar._doc ? register.auxiliar._doc : register.auxiliar,
+              fullname:  `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
+            }
+          }
+          // register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
         }
 
 
@@ -195,7 +249,13 @@ class EnrolledCourseService {
         if (register?.certificate?.imagePath) {
           register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
         }
+
+        newRegisters.push(register);
       }
+
+      registers = newRegisters
+
+      console.log('Registros: ', registers)
     } catch (error) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -203,7 +263,8 @@ class EnrolledCourseService {
         certifications: [
           ...registers
         ],
-        total_register: (paging) ? await CertificateQueue.find(where).countDocuments() : 0,
+        // total_register: (paging) ? await CertificateQueue.find(_where).countDocuments() : 0,
+        total_register: (paging) ? (_where.length ? (await CertificateQueue.aggregate(_where)).length : 0) : 0,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
