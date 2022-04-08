@@ -272,9 +272,12 @@ class CourseService {
           }
 
           // course Is Active given end date
-          let current = moment();
+          let current = new Date();
+          let startDate = new Date(register.startPublicationDate);
+          let endDate = new Date(register.endPublicationDate);
+
           if (register.hasCost) {
-            if (current.isBetween(register.startPublicationDate, register.endPublicationDate))
+            if (current.valueOf() >= startDate.valueOf() && current.valueOf() <= endDate.valueOf())
               isActive = true;
             else
               isActive = false;
@@ -282,7 +285,7 @@ class CourseService {
           else {
             isActive = false;
           }
-          //console.log("Course is active: " + isActive);
+          console.log("Course is active: " + isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,

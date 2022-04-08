@@ -273,12 +273,12 @@ class CourseSchedulingService {
 
         let paramsStatus: any = undefined;
         if (params.schedulingStatus) {
-          paramsStatus = await CourseSchedulingStatus.findOne({_id: params.schedulingStatus})
+          paramsStatus = await CourseSchedulingStatus.findOne({ _id: params.schedulingStatus })
         }
 
         // @INFO Obtener la fecha de confirmación del servicio
         let confirmed_date: Date | null = null;
-        if (paramsStatus && paramsStatus.name === 'Confirmado' && prevSchedulingStatus !== 'Confirmado'){
+        if (paramsStatus && paramsStatus.name === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
           confirmed_date = new Date();
           params.confirmed_date = confirmed_date;
         }
@@ -296,6 +296,11 @@ class CourseSchedulingService {
           params.priceUSD = 0
         }
         if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
+
+        params.endDate = moment(params.endDate + "T23:59:59Z");
+        params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
+        params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
+        params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -444,8 +449,24 @@ class CourseSchedulingService {
           service_id,
           year: moment().format('YYYY')
         }
-        steps.push('15')
-        steps.push(params)
+
+        params.endDate = moment(params.endDate + "T23:59:59Z");
+        params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
+        params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
+        params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
+
+        console.log("==> ==> =>");
+        console.log(params.endDate);
+        console.log(params.endDiscountDate);
+        console.log("==> ==> =>");
+        steps.push('14-1');
+        steps.push(params.endDate);
+        steps.push(params.endDiscountDate);
+        steps.push(params.endPublicationDate);
+        steps.push(params.enrollmentDeadline);
+
+        steps.push('15');
+        steps.push(params);
 
         const { _id } = await CourseScheduling.create(params)
         steps.push('16')
@@ -676,7 +697,7 @@ class CourseSchedulingService {
         first_name: enrolled.user.profile.first_name,
         course_name: courseScheduling.program.name,
         service_id: courseScheduling?.metadata?.service_id || '',
-        username: enrolled.user.username || '',
+        username: enrolled.user.username || '',
         course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
         observations: courseScheduling.observations,
@@ -917,13 +938,13 @@ class CourseSchedulingService {
         })
         return mail
       }
-    }catch(e){
+    } catch (e) {
       console.log('Error send email material delivery: ', e)
       return responseUtility.buildResponseFailed('json', null)
     }
   }
 
-  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: {course: any, courseSchedulingDetail: any}) => {
+  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any }) => {
     await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
 
     let students_to_notificate = []
@@ -962,7 +983,7 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         service_id: courseScheduling.metadata.service_id,
         program_name: courseScheduling.program.name,
-        course_name: course?.course?.name || undefined,
+        course_name: course?.course?.name || undefined,
         notification_source: `course_updated_${courseScheduling._id}`,
         changes,
         type: 'student'
@@ -973,7 +994,7 @@ class CourseSchedulingService {
         mailer: customs['mailer'],
         service_id: courseScheduling.metadata.service_id,
         program_name: courseScheduling.program.name,
-        course_name: course?.course?.name || undefined,
+        course_name: course?.course?.name || undefined,
         notification_source: `course_updated_${courseScheduling._id}`,
         changes,
         type: 'teacher'
@@ -1538,10 +1559,10 @@ class CourseSchedulingService {
         if (courseSchedulings.length > 0) {
           const enrolledByProgramQuery = await Enrollment.aggregate([
             {
-              $match: { course_scheduling: {$in: courseSchedulings} }
+              $match: { course_scheduling: { $in: courseSchedulings } }
             },
             {
-              $group: { _id: "$course_scheduling", count: { $sum: 1} }
+              $group: { _id: "$course_scheduling", count: { $sum: 1 } }
             }
           ])
           if (enrolledByProgramQuery.length > 0) {
