@@ -431,9 +431,17 @@ class CourseSchedulingService {
         service_id += `${currentDate.format('YYMMDD')}`
         steps.push('12')
 
-        let countRegisters = await CourseScheduling.count()
-        countRegisters += 1
+        const countRegistersArr = await CourseScheduling.aggregate([
+          {
+            $group: { _id: null, count: { $sum: 1} }
+          },
+          {
+            $project: {_id: 0}
+          }
+        ])
+        let countRegisters = (countRegistersArr && countRegistersArr[0]) ? countRegistersArr[0].count + 1 : 1
         steps.push('13')
+        steps.push(countRegisters)
         service_id += `${generalUtility.formatNumberWithZero(countRegisters, 4)}`
         steps.push('14')
         steps.push(service_id)
@@ -1284,6 +1292,7 @@ class CourseSchedulingService {
     let registers = []
     try {
       if (where.length) {
+        where.push({$match: {deleted: false}})
         registers = await CourseScheduling.aggregate(where)
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
