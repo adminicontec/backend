@@ -136,7 +136,10 @@ class EnrolledCourseService {
     }
 
     if (params.search) {
-      //  whereCourseScheduling['metadata.service_id'] = params.search;
+       whereCourseScheduling['metadata.service_id'] = params.search;
+    }
+
+    if (params.searchDoc) {
        _where.push({
         $lookup: {
           from: "users",
@@ -146,10 +149,9 @@ class EnrolledCourseService {
         }
        },{
          $match: {
-           'user_doc.profile.doc_number': { $regex: '.*' + params.search + '.*',$options: 'i' }
+           'user_doc.profile.doc_number': { $regex: '.*' + params.searchDoc + '.*',$options: 'i' }
          }
        })
-      //where['userId.username'] = { $regex: '.*' + params.search + '.*',$options: 'i' };
     }
 
     if (params.certificate_clients) {
@@ -166,7 +168,6 @@ class EnrolledCourseService {
           "status": { $in: params.status }
         }
       })
-      // _where['status'] = { $in: params.status }
     }
 
     if (Object.keys(whereCourseScheduling).length > 0) {
@@ -180,7 +181,6 @@ class EnrolledCourseService {
           "courseId": { $in: course_scheduling_ids }
         }
       })
-      // _where['courseId'] = { $in: course_scheduling_ids }
       if (course_scheduling_ids.length > 0) {
       }
     }

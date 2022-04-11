@@ -12,6 +12,7 @@ export interface IFetchCertifications {
   nPerPage?:string, // Cantidad de elementos por pagina
   company?: string, // Identificador de cliente
   search?:string, // Identificador de Servicio
+  searchDoc?: string, // Documento de identidad del usuario
   status?: Array<'New' | 'In-process' | 'Complete' | 'Error' | 'Re-issue'>
   certificate_clients?: boolean
   certificate_students?: boolean
