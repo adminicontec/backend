@@ -56,13 +56,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let country_ids = await this.addCountries()
 
     // // @INFO: Agregando homes
-    let home_ids = await this.addHomes()
+    // let home_ids = await this.addHomes()
 
     // // @INFO: Agregando modulos y permisos
-    let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
+    // let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
 
     // // @INFO: Agregando roles
-    let role_ids = await this.addRoles(module_permission_ids, home_ids)
+    // let role_ids = await this.addRoles(module_permission_ids, home_ids)
 
     // // @INFO: Agregando usuarios
     // let user_ids = await this.addUsers(role_ids)
@@ -71,13 +71,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let post_type_ids = await this.addPostTypes()
 
     // @INFO: Agregando tipos de ubicaciones
-    let post_location_ids = await this.addPostLocations()
+    // let post_location_ids = await this.addPostLocations()
 
     // // @INFO: Agregando modos de cursos
     // let course_mode_ids = await this.addCourseModesCategories()
 
     // // @INFO: Agregando regionales
-    let regional_ids = await this.addRegionals()
+    // let regional_ids = await this.addRegionals()
 
     // // @INFO: Agregando estados de programación
     // let scheduling_status_ids = await this.addCourseSchedulingStatuses()
@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    await this.addAttachedCategories();
+    // await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
