@@ -124,7 +124,6 @@ class TeacherService {
       // 3. Extracción de Tutores calificados
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
-
       let respProcessQualifiedTeacherData: any = {}
       let respProcessQualifiedTutorData: any = {}
       //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');

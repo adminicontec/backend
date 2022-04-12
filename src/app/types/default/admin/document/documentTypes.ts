@@ -11,6 +11,7 @@ export interface IDocumentQueueQuery {
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
   status?: string,
+  id?: string
 }
 
 export interface IDocumentQueue {
