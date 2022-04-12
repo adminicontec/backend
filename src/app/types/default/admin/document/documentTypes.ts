@@ -22,6 +22,8 @@ export interface IDocumentQueue {
   sendEmail?: boolean,
   processLog?: any,
   errorLog?: any,
+  processLogTutor?: any,
+  errorLogTutor?: any,
 }
 
 export interface IDocumentQueueDelete {

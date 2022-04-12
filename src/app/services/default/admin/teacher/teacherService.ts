@@ -112,16 +112,28 @@ class TeacherService {
 
       // 0. Extracción de Cursos y Docentes calificados
       let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
-      let modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
+      let modularMigration = []
+      if (dataModularMigration) {
+        modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
+      }
 
       // 1. Extracción de información de Docentes
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
       // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
+      // 3. Extracción de Tutores calificados
+      let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
 
+      let respProcessQualifiedTeacherData: any = {}
+      let respProcessQualifiedTutorData: any = {}
       //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
-      let respProcessQualifiedTeacherData: any = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+      if (dataWSProfessionals) {
+        respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+      }
+      if (dataWSTutores) {
+        respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+      }
 
       // Update processed record
       // processError
@@ -129,8 +141,10 @@ class TeacherService {
       const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
         id: record.id,
         status: 'Complete',
-        processLog: respProcessQualifiedTeacherData.qualifiedTeachers,
-        errorLog: respProcessQualifiedTeacherData.errorLog
+        processLog: respProcessQualifiedTeacherData?.qualifiedTeachers,
+        errorLog: respProcessQualifiedTeacherData?.errorLog,
+        processLogTutor: respProcessQualifiedTutorData?.qualifiedTeachers,
+        errorLogTutor: respProcessQualifiedTutorData?.errorLog
       });
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -143,6 +157,7 @@ class TeacherService {
 
     }
     catch (e) {
+      console.log('error', e)
       return responseUtility.buildResponseFailed('json', e)
     }
 
@@ -378,7 +393,7 @@ class TeacherService {
               row: indexP,
               col: 'Modular',
               message: 'el valor del Modular está vacío',
-              data: contentRowTeacher.modular
+              data: element
             });
 
             indexP++
@@ -497,7 +512,7 @@ class TeacherService {
               message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
               row: indexP,
               col: 'Full register',
-              data: `${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
+              data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
             });
           }
           else {

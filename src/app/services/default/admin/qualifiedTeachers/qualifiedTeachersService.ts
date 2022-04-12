@@ -154,7 +154,7 @@ class QualifiedTeachersService {
 
         // Query as unique register
         const respQualifiedTeacher = await QualifiedTeachers.findOne({ teacher: params.teacher, courseCode: params.courseCode })
-        if (respQualifiedTeacher) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'qualified_teacher.insertOrUpdate.already_exists', params: { teacher: params.teacher, courseCode: params.courseCode } } })
+        if (respQualifiedTeacher) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'qualified_teacher.insertOrUpdate.already_exists', params: { user: params.teacher, courseCode: params.courseCode } } })
 
         const response: any = await QualifiedTeachers.create(params)
 
