@@ -11,6 +11,7 @@ export interface IDocumentQueueQuery {
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
   status?: string,
+  id?: string
 }
 
 export interface IDocumentQueue {
@@ -22,6 +23,8 @@ export interface IDocumentQueue {
   sendEmail?: boolean,
   processLog?: any,
   errorLog?: any,
+  processLogTutor?: any,
+  errorLogTutor?: any,
 }
 
 export interface IDocumentQueueDelete {

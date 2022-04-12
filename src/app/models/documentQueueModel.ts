@@ -36,6 +36,12 @@ const DocumentQueueSchema = new Schema({
   errorLog: {
     type: Schema.Types.Mixed
   },
+  processLogTutor: {
+    type: Schema.Types.Mixed
+  },
+  errorLogTutor: {
+    type: Schema.Types.Mixed
+  },
 
   // @end
 }, {

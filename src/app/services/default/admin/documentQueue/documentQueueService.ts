@@ -36,7 +36,7 @@ class DocumentQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id userId status type docPath processLog errorLog'
+    let select = 'id userId status type docPath processLog errorLog processLogTutor errorLogTutor'
     if (filters.select) {
       select = filters.select
     }
@@ -51,6 +51,10 @@ class DocumentQueueService {
           { name: { $regex: '.*' + search + '.*', $options: 'i' } },
         ]
       }
+    }
+
+    if (filters.id) {
+      where['_id'] = filters.id
     }
 
     let registers = []
@@ -126,6 +130,8 @@ class DocumentQueueService {
               sendEmail: response.sendEmail,
               processLog: (response.processLog) ? response.processLog : null,
               errorLog: (response.errorLog) ? response.errorLog : null,
+              processLogTutor: (response.processLogTutor) ? response.processLogTutor : null,
+              errorLogTutor: (response.errorLogTutor) ? response.errorLogTutor : null,
             }
           }
         })
@@ -144,6 +150,8 @@ class DocumentQueueService {
               sendEmail: response.sendEmail,
               processLog: (response.processLog) ? response.processLog : null,
               errorLog: (response.errorLog) ? response.errorLog : null,
+              processLogTutor: (response.processLogTutor) ? response.processLogTutor : null,
+              errorLogTutor: (response.errorLogTutor) ? response.errorLogTutor : null,
             }
           }
         })
