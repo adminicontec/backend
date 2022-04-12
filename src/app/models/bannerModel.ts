@@ -22,7 +22,7 @@ const BannerSchema = new Schema({
   },
   location: {
     type: Schema.Types.String,
-    enum: ['students'],
+    enum: ['students', null],
   },
   action: {
     type: Schema.Types.String,
