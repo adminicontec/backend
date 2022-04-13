@@ -9,6 +9,11 @@ export interface ICourseSchedulingDetailSession {
 }
 
 export interface ICourseSchedulingDetail {
+  logReprograming?: {
+    count?: number,
+    log: {reason: string, date: any}[]
+  }
+  reprograming?: string
   user: string // Identificador del usuario logueado
   course?: {value: number, label: string} | string // Curso de la programación
   schedulingMode: {value: number, label: string} | string // Identificador del modo de programación

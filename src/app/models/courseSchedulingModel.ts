@@ -6,6 +6,31 @@ const { Schema } = mongoose;
 
 const CourseSchedulingSchema = new Schema({
   // @add_schema Add schema here
+  logReprograming: {
+    count: {
+      type: Schema.Types.Number,
+      require: false,
+      default: 0
+    },
+    log: [
+      {
+        reason: {
+          type: Schema.Types.String,
+        },
+        source: {
+          identifier: {
+            type: Schema.Types.String,
+          },
+          sourceType: {
+            type: Schema.Types.String,
+          }
+        },
+        date: {
+          type: Schema.Types.Date,
+        }
+      }
+    ]
+  },
   metadata: {
     user: {
       type: Schema.Types.ObjectId,

@@ -156,7 +156,7 @@ class CourseSchedulingDetailsService {
         })
 
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming', populate: [
             {path: 'city', select: 'id name'},
             {path: 'schedulingStatus', select: 'id name'},
             {path: 'schedulingMode', select: 'id name'},
@@ -257,6 +257,21 @@ class CourseSchedulingDetailsService {
               courseSchedulingDetail: register,
             })
           }
+        }
+
+        if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
+          const logReprograming = courseSchedulingService.addReprogramingLog(params.reprograming, response.course_scheduling, {identifier: response._id, sourceType: 'course_scheduling_detail'});
+          await CourseScheduling.findByIdAndUpdate(
+            response.course_scheduling._id,
+            {
+              logReprograming
+            },
+            {
+              useFindAndModify: false,
+              new: true,
+              lean: true,
+            }
+          )
         }
 
         return responseUtility.buildResponseSuccess('json', null, {

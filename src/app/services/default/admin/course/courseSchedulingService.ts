@@ -35,7 +35,8 @@ import {
   ICourseSchedulingDelete,
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
-  ICourseSchedulingReportData
+  ICourseSchedulingReportData,
+  ReprogramingLabels
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { Console } from "console";
 // @end
@@ -301,6 +302,10 @@ class CourseSchedulingService {
         params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
         params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
         params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
+
+        if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
+          params.logReprograming = this.addReprogramingLog(params.reprograming, register, {identifier: register._id, sourceType: 'course_scheduling'});
+        }
 
         const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -614,6 +619,24 @@ class CourseSchedulingService {
         }
       })
     }
+  }
+
+  public addReprogramingLog = (reprograming: string, courseScheduling: any, source: {identifier: string, sourceType: string}) => {
+    let logReprograming = {
+      count: 0,
+      log: []
+    }
+    if (courseScheduling?.logReprograming) {
+      if (courseScheduling?.logReprograming?.count) logReprograming.count = courseScheduling?.logReprograming?.count
+      if (courseScheduling?.logReprograming?.log) logReprograming.log = courseScheduling?.logReprograming?.log
+    }
+    logReprograming.count = logReprograming.count + 1,
+    logReprograming.log.push({
+      reason: reprograming,
+      source,
+      date: new Date()
+    })
+    return logReprograming
   }
 
   /**
@@ -1536,7 +1559,7 @@ class CourseSchedulingService {
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
           .populate({
-            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive', populate: [
+            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
               { path: 'modular', select: 'id name' },
@@ -1603,6 +1626,19 @@ class CourseSchedulingService {
             }
           }
 
+          let reprogramingCount = 0
+          let reprogramingTypes = []
+          if (course.course_scheduling?.logReprograming) {
+            reprogramingTypes = course.course_scheduling?.logReprograming.log.reduce((accum, element) => {
+              // TODO: Definir si las reprogramaciones son por modulo o por programación
+              if (element?.source?.sourceType === 'course_scheduling_detail' && element?.source?.identifier === course._id.toString()) {
+                accum.push(ReprogramingLabels[element.reason])
+                reprogramingCount++;
+              }
+              return accum;
+            }, [])
+          }
+
           let item = {
             service_id: (course?.course_scheduling?.metadata?.service_id) ? course.course_scheduling.metadata.service_id : '-',
             course_scheduling_status: (course?.course_scheduling?.schedulingStatus?.name) ? course?.course_scheduling?.schedulingStatus?.name : '-',
@@ -1629,6 +1665,8 @@ class CourseSchedulingService {
             executive: (course?.course_scheduling?.account_executive?.profile) ? `${course.course_scheduling.account_executive.profile.first_name} ${course.course_scheduling.account_executive.profile.last_name}` : '-',
             client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
             service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
+            reprogramingCount,
+            reprogramingTypes
           }
 
           courses.push(item)
@@ -1738,8 +1776,8 @@ class CourseSchedulingService {
         'Regional del servicio': element.regional,
         'Participantes': element.participants,
         'Observaciones': element.observations,
-        'Cantidad de reprogramaciones': 0, // TODO: Este dato aun no se puede sacar
-        'Tipo de reprogramaciones': '-', // TODO: Este dato aun no se puede sacar
+        'Cantidad de reprogramaciones': element.reprogramingCount,
+        'Tipo de reprogramaciones': element.reprogramingTypes.join(','),
         'Nombre del ejecutivo de cuenta': element.executive,
         'Empresa': element.client,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo

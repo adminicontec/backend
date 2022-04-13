@@ -8,6 +8,11 @@ export interface ICourseSchedulingSession {
 }
 
 export interface ICourseScheduling {
+  logReprograming?: {
+    count?: number,
+    log: {reason: string, date: any}[]
+  }
+  reprograming?: string
   disabledCreateMasterMoodle?: boolean
   metadata?: {
     user: string // Identificador del usuario que genera el registro
@@ -90,5 +95,11 @@ export interface ICourseSchedulingReportData {
   courses: Array<any>,
   total_scheduling: number
   scheduling_free: number
+}
+
+export enum ReprogramingLabels {
+  client = 'Solicitud del cliente',
+  account_executive = 'Ejecutivo de cuenta',
+  internal = 'Operaciones Icontec',
 }
 //@end
