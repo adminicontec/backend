@@ -191,7 +191,11 @@ class PostDataService {
       if (params.locations) {
         let locations = await PostLocation.find({'name': {$in: params.locations}}).select('id')
         locations = locations.map((l) => l._id)
-        where['locations.postLocation'] = {$in: locations}
+        if (params.locationsGrouped) {
+          where['locations.postLocation'] = {$all: locations}
+        } else  {
+          where['locations.postLocation'] = {$in: locations}
+        }
       }
 
       if (params.tags && Array.isArray(params.tags) && params.tags.length > 0) {
