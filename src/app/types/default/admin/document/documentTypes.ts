@@ -12,6 +12,11 @@ export interface IDocumentQueueQuery {
   search?: string, // Busca sobre los campos de la coleccion
   status?: string,
   id?: string
+  sort?: {
+    field: string,
+    direction: string
+  },
+  document_type?: string
 }
 
 export interface IDocumentQueue {
