@@ -600,6 +600,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:publications', description: 'Modulo que permite la administración de publicaciones', permissions: [
         {name: 'permission:publications_menu_access', description: 'Menu de publicaciones'}
+      ]},
+      {name: 'module:document_processor', description: 'Modulo que permite la administración de la cola de documentos', permissions: [
+        {name: 'permission:document_processor_delete', description: 'Eliminar documento en cola'},
+        {name: 'permission:document_processor_list', description: 'Ver cola de documentos'},
       ]}
     ]
 

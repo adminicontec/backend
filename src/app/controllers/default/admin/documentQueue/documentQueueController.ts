@@ -57,6 +57,16 @@ class DocumentQueueController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite eliminar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public delete = async (req: Request, res: Response) => {
+		const response = await documentQueueService.delete(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const documentQueueController = new DocumentQueueController();
