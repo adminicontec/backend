@@ -364,7 +364,7 @@ class SurveyDataService {
 
     let courseSchedulingDetails = undefined;
 
-    if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(modality.name)) {
+    // if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(modality.name)) {
       if (courseSchedulingIds.length > 0) {
         const details = await CourseSchedulingDetails.find({
           course_scheduling: {$in: courseSchedulingIds}
@@ -385,7 +385,7 @@ class SurveyDataService {
           return accum
         }, {})
       }
-    }
+    // }
 
     let participantsByProgram = {}
 
@@ -463,8 +463,13 @@ class SurveyDataService {
           }
         }
       } else if (courseScheduling.schedulingMode.name === 'Virtual') {
-        let schedulingItem: any = JSON.parse(JSON.stringify(itemBase));
-        schedulings.push(schedulingItem)
+        if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
+          const courses = courseSchedulingDetails[courseScheduling._id.toString()]
+          const lastCourse = courses[courses.length - 1];
+          let schedulingItem: any = JSON.parse(JSON.stringify(itemBase));
+          schedulingItem.teacher = (lastCourse?.teacher?.profile) ? `${lastCourse?.teacher.profile?.first_name} ${lastCourse?.teacher.profile?.last_name}` : '-';
+          schedulings.push(schedulingItem)
+        }
       }
     }
 
@@ -609,7 +614,7 @@ class SurveyDataService {
         }
 
         headerMain.push('Identificador servicio')
-        if (!report.isVirtual) headerMain.push('Docente')
+        headerMain.push('Docente')
         headerMain.push('Modular')
         headerMain.push('Código del programa')
         headerMain.push('Programa')
@@ -692,7 +697,7 @@ class SurveyDataService {
         for (const scheduling of report.scheduling) {
           let item = []
           item.push(scheduling.rowIndex);
-          if (!report.isVirtual) item.push(scheduling.teacher || '-');
+          item.push(scheduling.teacher || '-');
           item.push(scheduling.modular);
           item.push(scheduling.programCode);
           item.push(scheduling.programName);

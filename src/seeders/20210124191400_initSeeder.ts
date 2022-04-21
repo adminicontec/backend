@@ -58,8 +58,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // // @INFO: Agregando homes
     // let home_ids = await this.addHomes()
 
-    // // @INFO: Agregando modulos y permisos
-    // let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
+    // @INFO: Agregando modulos y permisos
+    let {module_ids, module_permission_ids} = await this.addAppModulesAndPermissions()
 
     // // @INFO: Agregando roles
     // let role_ids = await this.addRoles(module_permission_ids, home_ids)
@@ -487,6 +487,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:qualifiedTeacher_list', description: 'Ver docentes'},
         {name: 'permission:qualifiedTeacher_viewer', description: 'Consultar docentes'},
         {name: 'permission:qualifiedTeacher_menu_access', description: 'Menu de docentes'},
+        {name: 'permission:qualifiedTeacher_upload_bulk', description: 'Carga masiva de docentes calificados'},
       ]},
       {name: 'module:roles', description: 'Módulo que permite administrar los roles', permissions: [
         {name: 'permission:roles_create', description: 'Crear roles'},
@@ -525,6 +526,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_list', description: 'Ver programas'},
         {name: 'permission:course_scheduling_viewer', description: 'Consultar programas'},
         {name: 'permission:course_scheduling_menu_access', description: 'Menu de programas'},
+        {name: 'permission:course_scheduling_reprogramming', description: 'Solicitar reprogramación'},
       ]},
       {name: 'module:course_scheduling_enrollment', description: 'Módulo que permite administrar los programas', permissions: [
         {name: 'permission:course_scheduling_enrollment_create', description: 'Crear programas'},
@@ -598,6 +600,10 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:publications', description: 'Modulo que permite la administración de publicaciones', permissions: [
         {name: 'permission:publications_menu_access', description: 'Menu de publicaciones'}
+      ]},
+      {name: 'module:document_processor', description: 'Modulo que permite la administración de la cola de documentos', permissions: [
+        {name: 'permission:document_processor_delete', description: 'Eliminar documento en cola'},
+        {name: 'permission:document_processor_list', description: 'Ver cola de documentos'},
       ]}
     ]
 

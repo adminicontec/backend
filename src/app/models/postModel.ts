@@ -84,7 +84,7 @@ const PostSchema = new Schema({
     },
     platform: {
       type: Schema.Types.String,
-      enum: ['youtube', 'vimeo']
+      enum: ['youtube', 'vimeo', 'web']
     }
   },
   researchUrl: {

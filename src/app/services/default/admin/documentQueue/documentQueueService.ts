@@ -1,6 +1,10 @@
 // @import_dependencies_node Import libraries
 // @end
 
+// @import config
+import { customs } from '@scnode_core/config/globals'
+// @end
+
 // @import services
 // @end
 
@@ -57,12 +61,30 @@ class DocumentQueueService {
       where['_id'] = filters.id
     }
 
+    if (filters.document_type) {
+      where['type'] = filters.document_type
+    }
+
+    let sort = null
+    if (filters.sort) {
+      sort = {}
+      sort[filters.sort.field] = filters.sort.direction
+    }
+
     let registers = []
     try {
       registers = await DocumentQueue.find(where)
         .select(select)
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
+        .sort(sort)
+        .lean()
+
+      for await (const register of registers) {
+        if (register.docPath) {
+          register.fileUrl = this.fileUrl(register)
+        }
+      }
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -75,6 +97,16 @@ class DocumentQueueService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un banner a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del Banner
+   */
+  public fileUrl = ({ docPath }) => {
+    return docPath && docPath !== ''
+    ? `${customs['uploads']}/${docPath}`
+    : null
   }
 
 

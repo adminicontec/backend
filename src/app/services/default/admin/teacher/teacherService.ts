@@ -124,14 +124,28 @@ class TeacherService {
       // 3. Extracción de Tutores calificados
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
+      let errorLog = []
+      let processLog = []
       let respProcessQualifiedTeacherData: any = {}
       let respProcessQualifiedTutorData: any = {}
       //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
       if (dataWSProfessionals) {
         respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+        if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+        }
+        if (respProcessQualifiedTeacherData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+        }
       }
       if (dataWSTutores) {
         respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+        if (respProcessQualifiedTutorData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
+        }
+        if (respProcessQualifiedTutorData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
+        }
       }
 
       // Update processed record
@@ -140,10 +154,10 @@ class TeacherService {
       const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
         id: record.id,
         status: 'Complete',
-        processLog: respProcessQualifiedTeacherData?.qualifiedTeachers,
-        errorLog: respProcessQualifiedTeacherData?.errorLog,
-        processLogTutor: respProcessQualifiedTutorData?.qualifiedTeachers,
-        errorLogTutor: respProcessQualifiedTutorData?.errorLog
+        processLog: processLog,
+        errorLog: errorLog,
+        // processLogTutor: respProcessQualifiedTutorData?.qualifiedTeachers,
+        // errorLogTutor: respProcessQualifiedTutorData?.errorLog
       });
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -560,7 +574,7 @@ class TeacherService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    console.log("Enter to Teacher service");
+    // console.log("Enter to Teacher service");
 
     try {
       // Consultando el ID de Permiso is_teacher
@@ -591,7 +605,7 @@ class TeacherService {
         return responseUtility.buildResponseFailed('json')
 
 
-      console.log(teachers.users);
+      // console.log(teachers.users);
 
       teachers.users.forEach(element => {
 
@@ -621,9 +635,9 @@ class TeacherService {
           qualifiedTeachers: [
             ...qualifiedTeachers
           ],
-          total_register: (paging) ? await qualifiedTeachers.length : 0,
-          pageNumber: pageNumber,
-          nPerPage: nPerPage
+          total_register: (paging) ? teachers.total_register : 0,
+          pageNumber: teachers.pageNumber,
+          nPerPage: teachers.nPerPage
         }
       })
 
