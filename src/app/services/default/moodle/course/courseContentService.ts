@@ -148,7 +148,7 @@ class CourseContentService {
               sectionname: section.name,
               name: module.name,
               modname: module.modname,
-              isauditorquiz: (respMoodleModules.cm.idnumber) ? ((respMoodleModules.cm.idnumber.trim() == 'auditor') ? true : false) : false,
+              isauditorquiz: (respMoodleModules && respMoodleModules.cm && respMoodleModules.cm.idnumber) ? ((respMoodleModules.cm.idnumber.trim() == 'auditor') ? true : false) : false,
               instance: module.instance,
               visible: module.visible,
               uservisible: module.uservisible

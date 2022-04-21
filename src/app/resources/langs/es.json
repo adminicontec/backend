@@ -488,6 +488,15 @@
     "scheduling_material_delivery": {
       "subject": "Entrega de normas"
     },
+    "scheduling_exam_to_assistance": {
+      "subject": "Activación de examen"
+    },
+    "scheduling_certificate": {
+      "subject": "Emisión de certificados"
+    },
+    "scheduling_reminder_certificate": {
+      "subject": "Certificados no descargados"
+    },
     "survey_notification": {
       "subject": "Alerta no aplicación asistencia y/o encuesta de satisfacción del modulo"
     }

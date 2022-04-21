@@ -6,12 +6,16 @@
   <div style="color: black;"><strong>Programa: {{params.program_name}}</strong></div> <br>
   <div style="color: black;"><strong>ID: {{params.service_id}}</strong></div> <br>
   <div style="color: black;"><strong>Modalidad: {{params.modality}}</strong></div> <br>
+  {{#if params.courseSchedulingDetails}}
   <div style="color: black;"><strong>Módulo: {{params.module}}</strong></div> <br>
+  {{/if}}
   <div style="color: black;"><strong>Código: {{params.service_id}}</strong></div> <br>
   <div style="color: black;"><strong>Duración: {{params.duration}}</strong></div> <br>
   <div style="color: black;"><strong>Fecha Inicio: {{params.startDate}}</strong></div> <br>
   <div style="color: black;"><strong>Fecha Fin: {{params.endDate}}</strong></div> <br>
+  {{#if params.courseSchedulingDetails}}
   <div style="color: black;"><strong>Docente: {{params.teacher}}</strong></div> <br>
+  {{/if}}
   <div style="color: black;"><strong>Observaciones: {{params.observations}}</strong></div> <br>
   <div style="color: black;"><strong>Aplica examen: {{params.exam}}</strong></div> <br>
   <div style="color: black;"><strong>Nombre del ejecutivo comercial: {{params.accountExecutive}}</strong></div> <br>

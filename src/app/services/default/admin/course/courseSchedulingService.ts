@@ -976,7 +976,7 @@ class CourseSchedulingService {
   }
 
   public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any }) => {
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'modify', undefined, changes);
 
     let students_to_notificate = []
     let teachers_to_notificate = []
