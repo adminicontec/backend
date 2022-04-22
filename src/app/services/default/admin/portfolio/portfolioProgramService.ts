@@ -241,22 +241,24 @@ class PortfolioProgramService {
         let processLog: any[] = [];
         let errorLog: any[] = [];
         for await (let program of dataPrograms) {
-          const idx = organizedData.findIndex((d) => d.code === program['Código del Programa']);
-          if (idx >= 0) {
-            organizedData[idx].courses.push({
-              name: program['Curso'],
-              code: program['Código']
-            });
-          } else {
-            organizedData.push({
-              name: program['Programa'],
-              code: program['Código del Programa'],
-              modular: program['Modular nuevo'],
-              courses: [{
+          if (program['Código del Programa'] && program['Código del Programa'][0] !== 'E') {
+            const idx = organizedData.findIndex((d) => d.code === program['Código del Programa']);
+            if (idx >= 0) {
+              organizedData[idx].courses.push({
                 name: program['Curso'],
                 code: program['Código']
-              }]
-            })
+              });
+            } else {
+              organizedData.push({
+                name: program['Programa'],
+                code: program['Código del Programa'],
+                modular: program['Modular nuevo'],
+                courses: [{
+                  name: program['Curso'],
+                  code: program['Código']
+                }]
+              })
+            }
           }
         };
 
