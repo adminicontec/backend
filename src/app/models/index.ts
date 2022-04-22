@@ -1,4 +1,5 @@
 // @import_models
+import { PortfolioProgramModel } from "@scnode_app/models/portfolioProgramModel";
 import { DocumentQueueModel } from "@scnode_app/models/documentQueueModel";
 import { QualifiedTeachersModel } from "@scnode_app/models/qualifiedTeachersModel";
 import { SurveyLogModel } from "@scnode_app/models/surveyLogModel";
@@ -56,6 +57,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const PortfolioProgram = PortfolioProgramModel
 export const DocumentQueue = DocumentQueueModel
 export const QualifiedTeachers = QualifiedTeachersModel
 export const SurveyLog = SurveyLogModel

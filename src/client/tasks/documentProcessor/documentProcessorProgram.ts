@@ -11,6 +11,7 @@ import { host, public_dir, attached } from "@scnode_core/config/globals";
 import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plugins/tasks/taskService";
 import { teacherService } from '@scnode_app/services/default/admin/teacher/teacherService'
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
+import { portfolioProgramService } from '@scnode_app/services/default/admin/portfolio/portfolioProgramService';
 
 // @end
 
@@ -76,7 +77,17 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
             contentFile: { name: 'excel', data: contentFile }
           };
 
-          const response = await teacherService.processFile(params);
+          let response: any;
+          switch(respDocumentQueue.documentQueue[0].type) {
+            case 'Qualified Teacher':
+              response = await teacherService.processFile(params);
+              break;
+            case 'Portfolio':
+              response = await portfolioProgramService.processFile(params);
+              break;
+            default:
+              break;
+          }
           console.log(response);
         }
         else {

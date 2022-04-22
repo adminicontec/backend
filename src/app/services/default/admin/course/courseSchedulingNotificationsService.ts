@@ -43,7 +43,7 @@ class CourseSchedulingNotificationsService {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
       }
 
-      // @INFO Notificar al administrador
+      // @INFO Notificar al programador
       const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
       if (serviceScheduler && (type === 'started')) {
         email_to_notificate.push({
@@ -52,7 +52,7 @@ class CourseSchedulingNotificationsService {
         })
       }
 
-      // @INFO Notificar al administrador
+      // @INFO Notificar al ejecutivo de cuenta
       const accountExecutive = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
       if (accountExecutive) {
         email_to_notificate.push({
@@ -61,7 +61,7 @@ class CourseSchedulingNotificationsService {
         })
       }
 
-      // @INFO: Solo enviar al responsable del servicio
+      // @INFO: Solo enviar al auxiliar logístico
       const logisticAssistant = courseScheduling.material_assistant;
       if (logisticAssistant && logisticAssistant.email) {
         email_to_notificate.push({

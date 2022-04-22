@@ -480,6 +480,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:account_executives', description: 'Módulo que permite administrar los ejecutivos de cuenta', permissions: [
         {name: 'permission:account_executives_menu_access', description: 'Menu de ejecutivos de cuenta'},
       ]},
+      {name: 'module:portfolio', description: 'Módulo que permite administrar el portafolio', permissions: [
+        {name: 'permission:portfolio_menu_access', description: 'Menu de portafolio'},
+      ]},
       {name: 'module:qualifiedTeacher', description: 'Módulo que permite administrar los docentes y tutores', permissions: [
         {name: 'permission:qualifiedTeacher_create', description: 'Crear docentes'},
         {name: 'permission:qualifiedTeacher_update', description: 'Editar docentes'},
@@ -722,6 +725,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:account_executives_menu_access'],
+          module_permission_ids['permission:portfolio_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],
