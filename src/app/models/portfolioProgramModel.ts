@@ -19,6 +19,10 @@ const PortfolioProgramSchema = new Schema({
     type: Schema.Types.String,
     required: true
   },
+  hours: {
+    type: Schema.Types.Number,
+    required: true
+  },
   courses: [{
     name: {
       type: Schema.Types.String,

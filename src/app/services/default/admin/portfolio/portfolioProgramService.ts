@@ -12,6 +12,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 
 // @import models
 import { PortfolioProgram, Modular } from '@scnode_app/models'
+// import { Model } from 'mongoose'
 // @end
 
 // @import types
@@ -19,6 +20,9 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { IPortfolioProgram, IPortfolioProgramDelete, IPortfolioProgramProcessFile, IPortfolioProgramQuery } from '@scnode_app/types/default/admin/portfolio/portfolioProgramTypes';
 import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
 // @end
+
+// let algo: Model<{algo: string}>;
+// algo.collection()
 
 class PortfolioProgramService {
 
@@ -46,7 +50,7 @@ class PortfolioProgramService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name code modular courses'
+      let select = 'id name code modular hours courses'
       if (params.query === QueryValues.ALL) {
         const registers = await PortfolioProgram.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -91,6 +95,7 @@ class PortfolioProgramService {
               name: response.name,
               code: response.code,
               modular: response.modular,
+              hours: response.hours,
               courses: response.courses
             }
           }
@@ -106,6 +111,7 @@ class PortfolioProgramService {
               name: response.name,
               code: response.code,
               modular: response.modular,
+              hours: response.hours,
               courses: response.courses
             }
           }
@@ -147,7 +153,7 @@ class PortfolioProgramService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name code modular courses'
+    let select = 'id name code modular hours courses'
     if (filters.select) {
       select = filters.select
     }
@@ -169,6 +175,13 @@ class PortfolioProgramService {
       where = {
         ...where,
         modular: { $regex: '.*' + filters.modular + '.*',$options: 'i' },
+      }
+    }
+
+    if (filters.code) {
+      where = {
+        ...where,
+        code: { $regex: '.*' + filters.code + '.*',$options: 'i' },
       }
     }
 
@@ -253,6 +266,7 @@ class PortfolioProgramService {
                 name: program['Programa'],
                 code: program['Código del Programa'],
                 modular: program['Modular nuevo'],
+                hours: Number(program['Horas programa']),
                 courses: [{
                   name: program['Curso'],
                   code: program['Código']
@@ -261,6 +275,9 @@ class PortfolioProgramService {
             }
           }
         };
+
+        // Eliminar la información anterior
+        await PortfolioProgram.collection.drop();
 
         // Subir los programas
         for await (let program of organizedData) {

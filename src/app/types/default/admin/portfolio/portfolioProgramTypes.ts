@@ -9,6 +9,7 @@ export interface IPortfolioProgram{
   name?: string;
   code?: string;
   modular?: string;
+  hours?: number;
   courses?: {
     name: string;
     code: string;
@@ -25,6 +26,7 @@ export interface IPortfolioProgramQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
   modular?: string
+  code?: string
 }
 
 export interface IPortfolioProgramProcessFile{
