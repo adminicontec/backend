@@ -42,59 +42,59 @@
   <div>
     <h4 class="title">CUADRO RESUMEN DE PROGRAMACION</h4>
   </div>
-    <table>
-      <tr>
-        <td style="width: 15%"><b>NOMBRE DEL PROGRAMA:</b></td>
-        <td style="width: 25%">{{program_name}}</td>
-        <td style="width: 15%"><b>ID DEL SERVICIO</b></td>
-        <td style="width: 15%">{{service_id}}</td>
-        <td style="width: 15%"><b>REGIONAL</b></td>
-        <td style="width: 15%">{{regional_name}}</td>
+    <table style="font-size: 8px;">
+      <tr style="font-size: 8px;">
+        <td style="width: 15%; font-size: 8px;"><b>NOMBRE DEL PROGRAMA:</b></td>
+        <td style="width: 25%; font-size: 8px;">{{program_name}}</td>
+        <td style="width: 15%; font-size: 8px;"><b>ID DEL SERVICIO</b></td>
+        <td style="width: 15%; font-size: 8px;">{{service_id}}</td>
+        <td style="width: 15%; font-size: 8px;"><b>REGIONAL</b></td>
+        <td style="width: 15%; font-size: 8px;">{{regional_name}}</td>
       </tr>
-      <tr>
-        <td style="width: 10%"><b>EMPRESA</b></td>
-        <td style="width: 10%">{{cliente_name}}</td>
-        <td style="width: 10%"><b>MODALIDAD</b></td>
-        <td style="width: 10%">{{schedule_mode}}</td>
-        <td style="width: 10%"><b>CIUDAD DEL SERVICIO</b></td>
-        <td style="width: 10%">{{service_city}}</td>
+      <tr style="font-size: 8px;">
+        <td style="width: 10%; font-size: 8px;"><b>EMPRESA</b></td>
+        <td style="width: 10%; font-size: 8px;">{{cliente_name}}</td>
+        <td style="width: 10%; font-size: 8px;"><b>MODALIDAD</b></td>
+        <td style="width: 10%; font-size: 8px;">{{schedule_mode}}</td>
+        <td style="width: 10%; font-size: 8px;"><b>CIUDAD DEL SERVICIO</b></td>
+        <td style="width: 10%; font-size: 8px;">{{service_city}}</td>
       </tr>
     </table>
-    <table style="width: 100%;">
-      <tr style="background-color: #0085ca; color: #FFFFFF;">
-        <td style="width: 10%">Código  del curso</td>
-        <td style="width: 30%">Nombre del curso</td>
-        <td style="width: 10%">Nro de horas del curso para el servicio</td>
-        <td style="width: 10%">Sesión (consecutivo)</td>
-        <td style="width: 10%">Docente/Tutor</td>
-        <td style="width: 10%">Fecha</td>
-        <td style="width: 10%">Horas por sesión</td>
-        <td style="width: 10%">Horario</td>
+    <table style="width: 100%;font-size: 8px;">
+      <tr style="background-color: #0085ca; color: #FFFFFF; font-size: 8px;">
+        <td style="width: 10%; font-size: 8px;">Código  del curso</td>
+        <td style="width: 30%; font-size: 8px;">Nombre del curso</td>
+        <td style="width: 10%; font-size: 8px;">Nro de horas del curso para el servicio</td>
+        <td style="width: 10%; font-size: 8px;">Sesión (consecutivo)</td>
+        <td style="width: 10%; font-size: 8px;">Docente/Tutor</td>
+        <td style="width: 10%; font-size: 8px;">Fecha</td>
+        <td style="width: 10%; font-size: 8px;">Horas por sesión</td>
+        <td style="width: 10%; font-size: 8px;">Horario</td>
       </tr>
       {{#each courses}}
-        <tr>
+        <tr style="font-size: 8px;">
           {{#if this.course_code}}
-            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
+            <td class="table-cell" style="font-size: 8px;" rowspan="{{this.course_row_span}}">{{this.course_code}}</td>
           {{/if}}
           {{#if this.course_name}}
-            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
+            <td class="table-cell" style="font-size: 8px;" rowspan="{{this.course_row_span}}">{{this.course_name}}</td>
           {{/if}}
           {{#if this.course_duration}}
-            <td class="table-cell" rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
+            <td class="table-cell" style="font-size: 8px;" rowspan="{{this.course_row_span}}">{{this.course_duration}}</td>
           {{/if}}
-          <td class="table-cell">{{this.consecutive}}</td>
-          <td class="table-cell">{{this.teacher_name}}</td>
-          <td class="table-cell">{{this.start_date}}</td>
-          <td class="table-cell">{{this.duration}}</td>
-          <td class="table-cell">{{this.schedule}}</td>
+          <td class="table-cell" style="font-size: 8px;">{{this.consecutive}}</td>
+          <td class="table-cell" style="font-size: 8px;">{{this.teacher_name}}</td>
+          <td class="table-cell" style="font-size: 8px;">{{this.start_date}}</td>
+          <td class="table-cell" style="font-size: 8px;">{{this.duration}}</td>
+          <td class="table-cell" style="font-size: 8px;">{{this.schedule}}</td>
         </tr>
       {{/each}}
-      <tr>
-        <td style="color: #0085ca;" colspan="7">Nro de Horas Programadas a la fecha</td>
+      <tr style="font-size: 8px;">
+        <td style="color: #0085ca; font-size: 8px;" colspan="7">Nro de Horas Programadas a la fecha</td>
         <td>{{total_scheduling}}</td>
       </tr>
       <tr>
-        <td style="color: #0085ca;" colspan="7">Nro de Horas pendientes por programar</td>
+        <td style="color: #0085ca; font-size: 8px;" colspan="7">Nro de Horas pendientes por programar</td>
         <td>{{scheduling_free}}</td>
       </tr>
     </table>
