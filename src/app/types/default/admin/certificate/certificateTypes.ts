@@ -48,6 +48,9 @@ export interface ICertificate {
   dato_8?: string,
   dato_9?: string,
   dato_10?: string,
+  dato_11?: string,
+  dato_12?: string,
+  dato_13?: string
   anexos?: {
     dato_1?: string,
     dato_2?: string,
@@ -148,11 +151,12 @@ export interface ICertificateCompletion {
 
 export interface ILogoInformation{
   imageBase64: string,
-  companyName: string
+  //companyName: string
 }
 export interface ISignatureInformation{
   imageBase64: string,
   signatoryName: string,
-  signatoryPosition: string
+  signatoryPosition: string,
+  signatoryCompanyName: string
 }
 //@end

@@ -642,19 +642,15 @@ class CertificateService {
       let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1);
       if (logoImage64_1) {
         logoDataArray.push({
-          imageBase64: logoImage64_1,
-          companyName: 'Primera compañía'
+          imageBase64: logoImage64_1
         });
-        console.log(`Logo for: ${logoDataArray[0].companyName}`);
       }
 
       let logoImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_2);
       if (logoImage64_2) {
         logoDataArray.push({
-          imageBase64: logoImage64_2,
-          companyName: 'Segunda compañía'
+          imageBase64: logoImage64_2
         });
-        console.log(`Logo for: ${logoDataArray[1].companyName}`);
       }
 
       let signatureImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_1);
@@ -663,6 +659,7 @@ class CertificateService {
           imageBase64: signatureImage64_1,
           signatoryName: 'Primer firmante',
           signatoryPosition: 'Cargo 1er',
+          signatoryCompanyName: 'Empresa 1'
         });
         console.log(`Signature : ${signatureDataArray[0].signatoryName}`);
       }
@@ -673,6 +670,7 @@ class CertificateService {
           imageBase64: signatureImage64_2,
           signatoryName: 'Segundo firmante',
           signatoryPosition: 'Cargo 2ndo',
+          signatoryCompanyName: 'Empresa 2'
         });
         console.log(`Signature : ${signatureDataArray[1].signatoryName}`);
       }
@@ -683,6 +681,7 @@ class CertificateService {
           imageBase64: signatureImage64_3,
           signatoryName: 'Tercer firmante',
           signatoryPosition: 'Cargo 3er',
+          signatoryCompanyName: 'Empresa 3'
         });
         console.log(`Signature : ${signatureDataArray[2].signatoryName}`);
       }
@@ -705,6 +704,7 @@ class CertificateService {
 
       let isComplete = true;
       let mapping_dato_1 = '';
+      let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
       let mapping_template = '';
       let mapping_intensidad = 0;
       let mapping_titulo_certificado = '';
@@ -742,13 +742,21 @@ class CertificateService {
         mapping_template = certificate_template.programa_diplomado;
       }
 
+      // applies for "interintitutional agreement"
       if (logoDataArray.length != 0) {
-        if (signatureDataArray.length != 0) {
-          mapping_template = certificate_template.convenio_doble_logo_doble_firma;
-        }
-        else{
-          mapping_template = certificate_template.convenio_doble_logo;
-        }
+        console.log("Applies agreement:");
+
+        //if (signatureDataArray.length != 0) {
+        mapping_template = certificate_template.convenios;
+        //}
+        // else{
+        //   mapping_template = certificate_template.convenio_doble_logo;
+        // }
+        mapping_dato_13 = "Certifican que"
+      } else {
+        console.log("NO agreement:");
+
+        mapping_dato_13 = "Certifica que"
       }
 
       console.log("Choosen template: " + mapping_template);
@@ -846,7 +854,10 @@ class CertificateService {
             isComplete = false;
             //isAuditorCerficateEnabled = false; // deshabilita la solicitud de CertAuditor en caso que aplique
 
-            mapping_template = certificate_template.parcial;
+            if (logoDataArray.length != 0)
+              mapping_template = certificate_template.parcial_convenios;
+            else
+              mapping_template = certificate_template.parcial;
             mapping_dato_1 = 'Asistió a los cursos de';
             mapping_titulo_certificado = 'CORRESPONDIENTE AL ' + certificateName + ', CUYA DURACIÓN TOTAL ES DE ' + generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration).toUpperCase();
 
@@ -914,13 +925,23 @@ class CertificateService {
         fecha_impresion: currentDate,
         dato_1: mapping_dato_1,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+        // primer logo
         dato_3: (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].imageBase64 : null,
+        // primera firma
         dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
         dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
         dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
-        dato_7: (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].companyName : null,
-        dato_8: (logoDataArray.length != 0 && logoDataArray[1]) ? logoDataArray[1].imageBase64 : null,
+        dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
 
+        // segundo logo
+        dato_8: (logoDataArray.length != 0 && logoDataArray[1]) ? logoDataArray[1].imageBase64 : null,
+        // segunda firma
+        dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
+        dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
+        dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
+        dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
+
+        dato_13: mapping_dato_13
       }
       certificateParamsArray.push({
         queueData: params,
@@ -1766,6 +1787,11 @@ class CertificateService {
 
   private encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
 
+    const height = '150px';
+    const prefixMimeType = "<img src='data:image/png;base64,";
+    const sufixMimeType = `'style='height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px;'/>"`;
+    let fullContentBase64 = '';
+
     if (imagePath) {
       console.log(`Image path: ${imagePath}`);
 
@@ -1778,7 +1804,8 @@ class CertificateService {
         const contentFile = fileUtility.readFileSyncBuffer(filePath);
         if (contentFile && contentFile.length > 0) {
           const dataArray = Buffer.from(contentFile);
-          return dataArray.toString('base64');
+          fullContentBase64 = `${prefixMimeType}${dataArray.toString('base64')}${sufixMimeType}`;
+          return fullContentBase64;
         }
       }
     }
