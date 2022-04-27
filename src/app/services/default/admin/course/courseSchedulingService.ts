@@ -1557,7 +1557,7 @@ class CourseSchedulingService {
         let courses = []
 
         const detailSessions = await CourseSchedulingDetails.find()
-          .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
+          .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations')
           .populate({
             path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
@@ -1630,7 +1630,6 @@ class CourseSchedulingService {
           let reprogramingTypes = []
           if (course.course_scheduling?.logReprograming) {
             reprogramingTypes = course.course_scheduling?.logReprograming.log.reduce((accum, element) => {
-              // TODO: Definir si las reprogramaciones son por modulo o por programación
               if (element?.source?.sourceType === 'course_scheduling_detail' && element?.source?.identifier === course._id.toString()) {
                 accum.push(ReprogramingLabels[element.reason])
                 reprogramingCount++;
@@ -1666,7 +1665,8 @@ class CourseSchedulingService {
             client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
             service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
             reprogramingCount,
-            reprogramingTypes
+            reprogramingTypes,
+            moduleObservations: (course?.observations) ? course.observations : '-'
           }
 
           courses.push(item)
@@ -1775,7 +1775,8 @@ class CourseSchedulingService {
         'Ciudad del servicio': element.city,
         'Regional del servicio': element.regional,
         'Participantes': element.participants,
-        'Observaciones': element.observations,
+        'Observaciones del programa': element.observations,
+        'Observaciones del modulo': element.moduleObservations,
         'Cantidad de reprogramaciones': element.reprogramingCount,
         'Tipo de reprogramaciones': element.reprogramingTypes.join(','),
         'Nombre del ejecutivo de cuenta': element.executive,

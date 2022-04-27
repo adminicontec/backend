@@ -336,6 +336,7 @@ class TeacherService {
     let processResult: IQualifiedTeacher[] = [];
     let processError = [];
     let newModulars = [];
+    let test = []
 
     try {
 
@@ -377,8 +378,8 @@ class TeacherService {
           let stringDate = (element['Fecha Calificación']) ? element['Fecha Calificación'].toString() : null;
           let qualifiedDate = (stringDate) ? moment(stringDate, 'DD/MM/YYYY').format('YYYY-MM-DD') : null;
 
-          console.log(`>>> Fecha calificación: ${element['Fecha Calificación']}`);
-          console.log(`>>> Fecha calificación: ${stringDate} - ${qualifiedDate}`);
+          // console.log(`>>> Fecha calificación: ${element['Fecha Calificación']}`);
+          // console.log(`>>> Fecha calificación: ${stringDate} - ${qualifiedDate}`);
 
           // 11/12/21
           // 14/11/21
@@ -399,7 +400,7 @@ class TeacherService {
 
           if (contentRowTeacher.modular == null || contentRowTeacher.modular === '#N/D') {
             // error en modular
-            console.log(" ERROR AT  ROW: [" + indexP + "]");
+            // console.log(" ERROR AT  ROW: [" + indexP + "]");
 
             processError.push({
               typeError: 'ModularEmpty',
@@ -408,6 +409,7 @@ class TeacherService {
               message: 'el valor del Modular está vacío',
               data: element
             });
+            test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
 
             indexP++
             continue;
@@ -447,26 +449,27 @@ class TeacherService {
                 x.name.toLowerCase() == searchNewModular['Modular nuevo'].toLowerCase().trim());
               if (localModular) {
                 // take ID
-                console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
+                // console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
                 modularID = localModular._id;
                 flagAddRegister = true;
               }
             }
             else {
-              console.log("-----------ROW: [" + indexP + "] --------------");
-              console.log('Find: ' + contentRowTeacher.modular);
-              console.log('normalize: [' + contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() + ']');
+              // console.log("-----------ROW: [" + indexP + "] --------------");
+              // console.log('Find: ' + contentRowTeacher.modular);
+              // console.log('normalize: [' + contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim() + ']');
 
-              console.log(" Cant't find any equivalent to [" + contentRowTeacher.modular + "]");
-              console.log(searchNewModular);
+              // console.log(" Cant't find any equivalent to [" + contentRowTeacher.modular + "]");
+              // console.log(searchNewModular);
 
               processError.push({
                 typeError: 'ModularMissmatch',
-                message: 'Modular [' + contentRowTeacher.modular + '] no encontrado en hoja de Migración',
+                message: `Modular [${contentRowTeacher.modular}] no encontrado en hoja de Migración para el docente con numero de documento ${contentRowTeacher.documentID}`,
                 row: indexP,
                 col: 'Modular',
                 data: contentRowTeacher.modular
               });
+              test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
               indexP++
               continue;
             }
@@ -482,7 +485,7 @@ class TeacherService {
 
           if (respCampusDataUser.status == "error") {
             // USUARIO NO EXISTE EN CAMPUS VIRTUAL
-            console.log(">>[CampusVirtual]: Usuario no existe. No se puede crear registro");
+            // console.log(">>[CampusVirtual]: Usuario no existe. No se puede crear registro");
             // log de error
             processError.push({
               typeError: 'UserNotFound',
@@ -491,12 +494,13 @@ class TeacherService {
               col: 'Documento de Identidad',
               data: contentRowTeacher.documentID
             });
+            test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
             indexP++;
             continue;
           }
 
-          console.log(">>[CampusVirtual]: Usuario encontrado. Inserción de registro");
-          //console.log("::::: " + contentRowTeacher.documentID);
+          // console.log(">>[CampusVirtual]: Usuario encontrado. Inserción de registro");
+          // console.log("::::: " + contentRowTeacher.documentID);
           //#endregion
 
           //#region  ---- Registro de Docente Calificado
@@ -511,29 +515,34 @@ class TeacherService {
             status: 'active'
           }
 
-          console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
-          console.log(registerQualifiedTeacher); //, { depth: null, colors: true });
-          console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
+          // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
+          // console.log(registerQualifiedTeacher); //, { depth: null, colors: true });
+          // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
 
           const respQualifiedTeacher: any = await qualifiedTeachersService.insertOrUpdate(registerQualifiedTeacher);
           if (respQualifiedTeacher.status == 'error') {
-            console.log('Error insertando Docente Calificado.');
-            console.log(respQualifiedTeacher);
+            // console.log('Error insertando Docente Calificado.');
+            // console.log(respQualifiedTeacher);
+            if (respQualifiedTeacher.status_code !== 'qualified_teacher_insertOrUpdate_already_exists') {
+              processError.push({
+                typeError: 'RegisterQualifiedTeacher',
+                message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
+                row: indexP,
+                col: 'Full register',
+                data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
+              });
+            }
+            test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
+            indexP++;
+            continue;
 
-            processError.push({
-              typeError: 'RegisterQualifiedTeacher',
-              message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
-              row: indexP,
-              col: 'Full register',
-              data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
-            });
           }
           else {
-            console.log('Éxito insertando Docente Calificado.');
+            // console.log('Éxito insertando Docente Calificado.');
             processResult.push(registerQualifiedTeacher);
           }
           //#endregion
-
+          test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
           indexP++;
         }
 
@@ -555,11 +564,11 @@ class TeacherService {
 
       }
       else {
-        console.log('Empty Doc:  "Profesionales calificados"');
+        // console.log('Empty Doc:  "Profesionales calificados"');
       }
     }
     catch (e) {
-      console.log(e);
+      // console.log(e);
       return responseUtility.buildResponseFailed('json', e)
     }
     //#endregion  dataWSProfessionals

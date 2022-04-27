@@ -291,7 +291,7 @@ class CourseSchedulingNotificationsService {
       const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
       if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
       // Enviar la notificación
-      let path_template = 'course/schedulingReminderCertificate';
+      let path_template = 'course/schedulingReminderCertificated';
       const params = {
         mailer: customs['mailer'],
         today: moment.utc().format('YYYY-MM-DD'),
