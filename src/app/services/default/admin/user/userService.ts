@@ -319,7 +319,7 @@ class UserService {
       else {
         //#region INSERT NEW USER
         console.log("* * User.findOne * *");
-        const exist = await User.findOne({ name: params.username })
+        const exist = await User.findOne({ username: params.username })
 
         console.log("If user Exists --> [" + params.username + "]");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
