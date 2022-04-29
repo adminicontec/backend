@@ -1122,6 +1122,13 @@ class ErrorResponse {
             "code": 400
           }
         },
+        "logs": {
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.logs.not_found"),
+            "status_code": "logs_not_found",
+            "code": 400
+          },
+        }
       },
       "document" : {
         "queue": {
