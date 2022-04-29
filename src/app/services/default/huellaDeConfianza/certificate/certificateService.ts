@@ -1815,7 +1815,7 @@ class CertificateService {
 
   private encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
 
-    const height = '150px';
+    const height = '70px';
     const prefixMimeType = "<img src='data:image/png;base64,";
     const sufixMimeType = `'style='height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px;'/>"`;
     let fullContentBase64 = '';
