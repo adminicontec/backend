@@ -180,8 +180,9 @@ class CertificateService {
       }
 
       //#region Tipo de programa
-      const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
       let programTypeName;
+      const programType = this.getProgramTypeFromCode(respCourse.scheduling.program.code);
+      // program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
 
       if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
         programTypeName = 'curso';
@@ -454,23 +455,23 @@ class CertificateService {
       }
 
       //#region Tipo de programa
-      const programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
       let programTypeName;
+      const programType = this.getProgramTypeFromCode(respCourse.scheduling.program.code);
 
-      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
-        programTypeName = 'curso';
+      if (programType) {
+        if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor)
+          programTypeName = 'curso';
+        if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor)
+          programTypeName = 'programa';
+        if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor)
+          programTypeName = 'diplomado';
       }
-      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
-        programTypeName = 'programa';
-      }
-      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-        programTypeName = 'diplomado';
-      }
+
       //#endregion Tipo de programa
 
-      // console.log("---------------------\n\r" + 'El contenido del ' + programType);
-      // console.log(respCourseDetails.schedulings);
-      // console.log('_______________________________________________________');
+      console.log("---------------------\n\r" + 'El contenido del ' + programType);
+      console.log(respCourseDetails.schedulings);
+      console.log('_______________________________________________________');
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
@@ -696,9 +697,11 @@ class CertificateService {
       }
 
       // 2. Tipo de programa
-      let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
-      let schedulingMode = respCourse.scheduling.schedulingMode.name;
+      let programTypeName;
+      const programType = this.getProgramTypeFromCode(respCourse.scheduling.program.code);
 
+      //let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
+      let schedulingMode = respCourse.scheduling.schedulingMode.name;
 
       let isComplete = true;
       let mapping_dato_1 = '';
@@ -722,7 +725,6 @@ class CertificateService {
       // - Asistencias
       // - Entregas de actividades completas
 
-      let programTypeName = '';
       let reviewAuditorCerficateRules = false;
       let isAuditorCerficateByProgressEnabled = false;
 
@@ -1838,6 +1840,24 @@ class CertificateService {
       }
     }
     return null;
+  }
+
+  private getProgramTypeFromCode = (code: string) => {
+    let programTypeName;
+    let codeProgram = code.split('-');
+    programTypeName = program_type_collection.find(element => element.abbr == codeProgram[0]);
+
+    if (!programTypeName) {
+      for (const prog of program_type_collection) {
+        if (codeProgram[0].includes(prog.abbr)) {
+          programTypeName = prog;
+          continue;
+        }
+      }
+    }
+    console.log("codeProgram: " + codeProgram[0]);
+    console.log("abbr: " + programTypeName.abbr + " - Name:" + programTypeName.name);
+    return programTypeName;
   }
 
   //#endregion Private Methods
