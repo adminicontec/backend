@@ -332,7 +332,7 @@ class CourseSchedulingService {
             // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
-            await this.serviceSchedulingNotification(response)
+            await this.serviceSchedulingNotification(response, prevSchedulingStatus)
             visibleAtMoodle = 1;
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
@@ -503,6 +503,8 @@ class CourseSchedulingService {
         steps.push('17')
         steps.push(response)
 
+        const prevSchedulingStatus = (response && response.schedulingStatus && response.schedulingStatus.name) ? response.schedulingStatus.name : null
+
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         steps.push('18')
@@ -550,7 +552,7 @@ class CourseSchedulingService {
                 steps.push('26')
                 await this.checkEnrollmentUsers(response)
                 await this.checkEnrollmentTeachers(response)
-                await this.serviceSchedulingNotification(response)
+                await this.serviceSchedulingNotification(response, prevSchedulingStatus)
               }
             } else {
               steps.push('24-b')
@@ -575,7 +577,7 @@ class CourseSchedulingService {
             steps.push('26')
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
-            await this.serviceSchedulingNotification(response)
+            await this.serviceSchedulingNotification(response, prevSchedulingStatus)
           }
         }
 
@@ -847,9 +849,14 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingNotification = async (courseScheduling) => {
-    // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
-    return await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+  private serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
+    // Solo se envía cuando pasa de programado a confirmado
+    const currentStatus = (courseScheduling && courseScheduling.schedulingStatus && courseScheduling.schedulingStatus.name) ? courseScheduling.schedulingStatus.name : null
+    if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
+      // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
+      await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+    }
+    return
     let email_to_notificate = []
     const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
     if (serviceScheduler) {
@@ -976,7 +983,7 @@ class CourseSchedulingService {
   }
 
   public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any }) => {
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'modify', undefined, changes);
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(typeof courseScheduling === 'string' ? courseScheduling : courseScheduling?._id, 'modify', true, changes);
 
     let students_to_notificate = []
     let teachers_to_notificate = []

@@ -251,7 +251,7 @@ class CourseSchedulingDetailsService {
 
           if (changes.length > 0) {
             // @INFO Notificar al auxiliar logisto del servicio
-            await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
+            // await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
             await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
               course: response.course,
               courseSchedulingDetail: register,
