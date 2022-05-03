@@ -425,6 +425,9 @@
       },
       "download_masive": {
         "no_certificate_to_download": "No encontramos certificados que puedan descargarse"
+      },
+      "logs": {
+        "not_found": "El registro de actividad no existe."
       }
     },
     "attached_category": {

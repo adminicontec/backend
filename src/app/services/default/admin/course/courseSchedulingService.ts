@@ -1662,6 +1662,7 @@ class CourseSchedulingService {
             start_year: (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '',
             teacher_name: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
             teacher_type,
+            teacher_id: (course.teacher?._id) ? course.teacher._id : '-',
             teacher_city: (course.teacher?.profile?.city) ? course.teacher.profile.city : '-',
             teacher_regional: (course.teacher?.profile?.regional) ? course.teacher.profile.regional : '-',
             city: (course?.course_scheduling?.city?.name) ? course.course_scheduling.city.name : '-',
@@ -1682,6 +1683,12 @@ class CourseSchedulingService {
         if (params.format === 'pdf') {
         } else if (params.format === 'xlsx') {
           return await this.generateXLSXReport(courses)
+        } else if (params.format === 'json') {
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              courses
+            }
+          })
         }
       }
     } catch (error) {

@@ -42,6 +42,10 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.Date,
     required: false
   },
+  requestJson: {
+    type: Schema.Types.Mixed,
+    required: false
+  },
   certificate: {
     hash: {
       type: Schema.Types.String,
