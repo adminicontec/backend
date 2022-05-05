@@ -469,9 +469,9 @@ class CertificateService {
 
       //#endregion Tipo de programa
 
-      console.log("---------------------\n\r" + 'El contenido del ' + programType);
-      console.log(respCourseDetails.schedulings);
-      console.log('_______________________________________________________');
+      // console.log("---------------------\n\r" + 'El contenido del ' + programType);
+      // console.log(respCourseDetails.schedulings);
+      // console.log('_______________________________________________________');
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;

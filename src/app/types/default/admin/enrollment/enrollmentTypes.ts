@@ -4,7 +4,7 @@
 // @add your types
 export interface IEnrollment{
   courseScheduling?: string    // Identificador de la programación
-  user?: string // Identificador del usuario en campus
+  user?: string | any // Identificador del usuario en campus
   email: string,          // email de estudiante
   password: string,
   firstname: string,      // Nombre de estudiante

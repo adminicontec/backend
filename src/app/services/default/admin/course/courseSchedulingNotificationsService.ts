@@ -364,9 +364,9 @@ class CourseSchedulingNotificationsService {
         without_certification: true
       });
       if (qualifiedModules && qualifiedModules.completion && qualifiedModules.completion.length) {
-        qualifiedModules.completion.forEach((_itemStudent) => {
-          if (_itemStudent && _itemStudent.length) {
-            _itemStudent.forEach((itemStudent) => {
+        qualifiedModules.completion.forEach((_itemCompletion) => {
+          if (_itemCompletion && _itemCompletion.listOfStudentProgress && _itemCompletion.listOfStudentProgress.length) {
+            _itemCompletion.listOfStudentProgress.forEach((itemStudent) => {
               if (completeAssistance && itemStudent.student && itemStudent.student.itemType && itemStudent.student.itemType.attendance) {
                 // Revisar la asistencia por cada estudiante
                 itemStudent.student.itemType.attendance.forEach((attendance) => {
@@ -386,6 +386,8 @@ class CourseSchedulingNotificationsService {
           }
         })
       }
+    } else {
+      completeAssistance = false;
     }
     return completeAssistance;
   }
