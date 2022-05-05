@@ -890,15 +890,15 @@ class CertificateService {
       const currentDate = new Date(Date.now());
       let certificateParamsArray: ISetCertificateParams[] = [];
 
-      // location for logos setup 
-      let location3 = null; // = (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+      // location for logos setup
+      let location3 = null;
       let location8 = null;
 
-      if(logoDataArray.length != 0){
-        if( logoDataArray.length == 1) {
+      if (logoDataArray.length != 0) {
+        if (logoDataArray.length == 1) {
           location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
         }
-        else{
+        else {
           location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
           location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
         }
@@ -930,7 +930,7 @@ class CertificateService {
         dato_1: mapping_dato_1,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
         // primer logo
-        dato_3: location3, //(logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].imageBase64 : null,
+        dato_3: location3,
         // primera firma
         dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
         dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
@@ -938,7 +938,7 @@ class CertificateService {
         dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
 
         // segundo logo
-        dato_8: location8, //(logoDataArray.length != 0 && logoDataArray[1]) ? logoDataArray[1].imageBase64 : null,
+        dato_8: location8,
         // segunda firma
         dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
         dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
@@ -976,6 +976,20 @@ class CertificateService {
 
         console.log(mapping_listado_modulos_auditor);
 
+        // location for logos setup
+        let location3 = null;
+        let location8 = null;
+
+        if (logoDataArray.length != 0) {
+          if (logoDataArray.length == 1) {
+            location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+          }
+          else {
+            location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+            location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
+          }
+        }
+
         let auditorCertificateParams: ICertificate = {
           modulo: mapping_template,
           numero_certificado: mapping_numero_certificado + '-A',
@@ -1002,7 +1016,7 @@ class CertificateService {
           dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
 
           // primer logo
-          dato_3: (logoDataArray.length != 0 && logoDataArray[0]) ? logoDataArray[0].imageBase64 : null,
+          dato_3: location3,
           // primera firma
           dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
           dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
@@ -1010,7 +1024,7 @@ class CertificateService {
           dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
 
           // segundo logo
-          dato_8: (logoDataArray.length != 0 && logoDataArray[1]) ? logoDataArray[1].imageBase64 : null,
+          dato_8: location8,
           // segunda firma
           dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
           dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
@@ -1827,7 +1841,7 @@ class CertificateService {
   private encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
 
     const height = '70px';
-    const prefixMimeType =  `<img style="height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
+    const prefixMimeType = `<img style="height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
     const sufixMimeType = `"/>`;
     let fullContentBase64 = '';
 
