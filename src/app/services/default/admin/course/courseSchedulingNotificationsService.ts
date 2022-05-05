@@ -43,6 +43,14 @@ class CourseSchedulingNotificationsService {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
       }
 
+      // Notificar al correo especificado en el env.json
+      if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service ) {
+        email_to_notificate.push({
+          email: (customs as any).mailer.email_confirm_service,
+          name: 'Jhonatan Malaver'
+        });
+      }
+
       // @INFO Notificar al programador
       const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
       if (serviceScheduler && (type === 'started')) {
@@ -69,6 +77,14 @@ class CourseSchedulingNotificationsService {
           name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`
         });
       }
+
+      // Eliminar emails repetidos
+      email_to_notificate = email_to_notificate.reduce((accum: {email: string, name: string}[], item) => {
+        if (!accum.find((e) => e.email === item.email)) {
+          accum.push(item);
+        }
+        return accum;
+      }, []);
 
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
@@ -117,7 +133,7 @@ class CourseSchedulingNotificationsService {
                   assistant_name: emailNotificate.name
                 }
               },
-              amount_notifications: type === 'modify' ? null : 1
+              amount_notifications: type === 'modify' ? null : 4
             },
             notification_source: params.notification_source
           })
@@ -154,6 +170,7 @@ class CourseSchedulingNotificationsService {
         // Información
         assistant_name: `${courseScheduling.material_assistant.profile.first_name} ${courseScheduling.material_assistant.profile.last_name}`,
         program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
         service_id: courseScheduling.metadata.service_id,
         modality: courseScheduling.schedulingMode.name,
         module: courseSchedulingDetails?.course?.name,

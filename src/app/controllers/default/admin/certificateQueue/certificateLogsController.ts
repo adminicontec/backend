@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 // @end
 
 // @import_models Import models
-import { certificateLogsService } from 'app/services/default/admin/certificateQueue/certificateLogsService';
+import { certificateLogsService } from '@scnode_app/services/default/admin/certificateQueue/certificateLogsService';
 // @end
 
 // @import_services Import services

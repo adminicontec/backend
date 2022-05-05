@@ -8,12 +8,14 @@ export interface ICourseSchedulingSession {
 }
 
 export interface ICourseScheduling {
+  _id?: string;
   logReprograming?: {
     count?: number,
     log: {reason: string, date: any}[]
   }
   reprograming?: string
   disabledCreateMasterMoodle?: boolean
+  moodle_id?: string
   metadata?: {
     user: string // Identificador del usuario que genera el registro
     date: string // Fecha del servicio
