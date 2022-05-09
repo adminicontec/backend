@@ -12,6 +12,30 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "reports": {
+        "factory": {
+          "report_modality_required": {
+            "message": i18nUtility.__("app_error_messages.reports.factory.report_modality_required"),
+            "status_code": "reports_factory_report_modality_required",
+            "code": 400
+          },
+          "report_required": {
+            "message": i18nUtility.__("app_error_messages.reports.factory.report_required"),
+            "status_code": "reports_factory_report_required",
+            "code": 400
+          },
+          "report_invalid": {
+            "message": i18nUtility.__("app_error_messages.reports.factory.report_invalid"),
+            "status_code": "reports_factory_report_invalid",
+            "code": 400
+          },
+          "report_not_configured": {
+            "message": i18nUtility.__("app_error_messages.reports.factory.report_not_configured"),
+            "status_code": "reports_factory_report_not_configured",
+            "code": 400
+          }
+        }
+      },
       "secure": {
         "appModule": {
           "permission": {

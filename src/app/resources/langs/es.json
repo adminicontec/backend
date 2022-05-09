@@ -1,5 +1,13 @@
 {
   "app_error_messages": {
+    "reports": {
+      "factory": {
+        "report_modality_required": "La modalidad es obligatoria",
+        "report_required": "El tipo de reporte es obligatorio",
+        "report_invalid": "El tipo de reporte no es valido, lo valores permitidos son :reports",
+        "report_not_configured": "El tipo de reporte no esta configurado"
+      }
+    },
     "secure": {
       "appModule": {
         "permission": {
