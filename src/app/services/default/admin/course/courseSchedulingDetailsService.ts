@@ -51,7 +51,7 @@ class CourseSchedulingDetailsService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
+      let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseSchedulingDetails.find(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
@@ -251,7 +251,7 @@ class CourseSchedulingDetailsService {
 
           if (changes.length > 0) {
             // @INFO Notificar al auxiliar logisto del servicio
-            await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true);
+            // await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
             await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
               course: response.course,
               courseSchedulingDetail: register,
@@ -446,7 +446,7 @@ class CourseSchedulingDetailsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations'
     if (filters.select) {
       select = filters.select
     }

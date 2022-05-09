@@ -5,6 +5,7 @@ import moment from 'moment';
 // @import services
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 // @end
 
 // @import utilities
@@ -34,8 +35,7 @@ class CourseSchedulingNotificationsService {
   /**
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
-  public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean) => {
-    if (type === 'modify') return;
+  public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean, changes?: any) => {
     try {
       let email_to_notificate: {email: string, name: string}[] = []
 
@@ -43,7 +43,15 @@ class CourseSchedulingNotificationsService {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
       }
 
-      // @INFO Notificar al administrador
+      // Notificar al correo especificado en el env.json
+      if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service ) {
+        email_to_notificate.push({
+          email: (customs as any).mailer.email_confirm_service,
+          name: 'Jhonatan Malaver'
+        });
+      }
+
+      // @INFO Notificar al programador
       const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
       if (serviceScheduler && (type === 'started')) {
         email_to_notificate.push({
@@ -52,16 +60,16 @@ class CourseSchedulingNotificationsService {
         })
       }
 
-      // @INFO Notificar al administrador
+      // @INFO Notificar al ejecutivo de cuenta
       const accountExecutive = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
-      if (accountExecutive && (type === 'started')) {
+      if (accountExecutive) {
         email_to_notificate.push({
           email: accountExecutive.email,
           name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`
         })
       }
 
-      // @INFO: Solo enviar al responsable del servicio
+      // @INFO: Solo enviar al auxiliar logístico
       const logisticAssistant = courseScheduling.material_assistant;
       if (logisticAssistant && logisticAssistant.email) {
         email_to_notificate.push({
@@ -70,11 +78,19 @@ class CourseSchedulingNotificationsService {
         });
       }
 
+      // Eliminar emails repetidos
+      email_to_notificate = email_to_notificate.reduce((accum: {email: string, name: string}[], item) => {
+        if (!accum.find((e) => e.email === item.email)) {
+          accum.push(item);
+        }
+        return accum;
+      }, []);
+
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
 
       // @INFO Obtener si el servicio aplica para examen o no
-      const exam: boolean = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id, modules);
+      const exam: boolean = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id);
 
       if (email_to_notificate.length > 0) {
         const params = {
@@ -93,7 +109,9 @@ class CourseSchedulingNotificationsService {
           endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
           observations: courseScheduling.observations,
           exam: exam ? 'SI' : 'NO',
+          changes,
           accountExecutive: courseScheduling.account_executive.profile.first_name,
+          client: courseScheduling.client?.name,
           regional: courseScheduling.regional.name
         };
 
@@ -115,7 +133,7 @@ class CourseSchedulingNotificationsService {
                   assistant_name: emailNotificate.name
                 }
               },
-              amount_notifications: null
+              amount_notifications: type === 'modify' ? null : 4
             },
             notification_source: params.notification_source
           })
@@ -140,27 +158,31 @@ class CourseSchedulingNotificationsService {
       courseSchedulingDetails = await this.getCourseSchedulingDetailsFromId(courseSchedulingDetailsId);
     }
 
+    if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
+
     // @INFO Verificar si el courseSchedulingDetails aplica para examen
-    const exam = await this.verifyCourseSchedulingDetailsExercise(courseScheduling.moodle_id, courseSchedulingDetails);
+    const exam = await this.verifyCourseSchedulingDetailsExercise(courseScheduling.moodle_id);
 
     try {
       let path_template = 'survey/surveyNotification';
       const params = {
         mailer: customs['mailer'],
-        // Informacion
+        // Información
         assistant_name: `${courseScheduling.material_assistant.profile.first_name} ${courseScheduling.material_assistant.profile.last_name}`,
         program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
         service_id: courseScheduling.metadata.service_id,
         modality: courseScheduling.schedulingMode.name,
-        module: courseSchedulingDetails.course.name,
-        duration: this.formatSecondsToHours(courseSchedulingDetails.duration),
-        startDate: moment.utc(courseSchedulingDetails.startDate).format('YYYY-MM-DD'),
-        endDate: moment.utc(courseSchedulingDetails.endDate).format('YYYY-MM-DD'),
-        teacher: `${courseSchedulingDetails.teacher.profile.first_name} ${courseSchedulingDetails.teacher.profile.last_name}`,
+        module: courseSchedulingDetails?.course?.name,
+        duration: courseSchedulingDetails ? this.formatSecondsToHours(courseSchedulingDetails.duration) : this.formatSecondsToHours(courseScheduling.duration),
+        startDate: courseSchedulingDetails ? moment.utc(courseSchedulingDetails.startDate).format('YYYY-MM-DD') : moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: courseSchedulingDetails ? moment.utc(courseSchedulingDetails.endDate).format('YYYY-MM-DD') : moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        teacher: `${courseSchedulingDetails?.teacher?.profile?.first_name} ${courseSchedulingDetails?.teacher?.profile?.last_name}`,
         observations: courseScheduling.observations,
         exam: exam ? 'SI' : 'NO',
         accountExecutive: courseScheduling.account_executive.profile.first_name,
-        regional: courseScheduling.regional.name
+        regional: courseScheduling.regional.name,
+        courseSchedulingDetails
       }
       const emails: string[] = [courseScheduling.material_assistant.email];
       const mail = await mailService.sendMail({
@@ -172,6 +194,7 @@ class CourseSchedulingNotificationsService {
             path_template: path_template,
             params
           },
+          amount_notifications: 1
         },
         notification_source: `survey_notification_${courseSchedulingDetailsId ? courseSchedulingDetailsId : courseSchedulingId}`
       })
@@ -180,6 +203,193 @@ class CourseSchedulingNotificationsService {
       console.log('Error send email notification: ', e);
       return e;
     }
+  }
+
+  /**
+   * @INFO Enviar correo al auxiliar logístico sobre la activación del examen
+   */
+  public sendNotificationExamToAssistance = async (courseSchedulingId: string) => {
+    try{
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
+      // Enviar la notificación
+      let path_template = 'course/schedulingExamToAssistance';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_exam_assistant_${courseScheduling._id}`,
+        // Información
+        assistant_name: `${courseScheduling.material_assistant?.profile?.first_name} ${courseScheduling.material_assistant?.profile?.last_name}`,
+        program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
+        service_id: courseScheduling.metadata.service_id,
+        modality: courseScheduling.schedulingMode.name,
+        duration: this.formatSecondsToHours(courseScheduling.duration),
+        startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        observations: courseScheduling.observations,
+        accountExecutive: courseScheduling.account_executive?.profile?.first_name,
+        regional: courseScheduling.regional.name
+      };
+      const emails: string[] = [courseScheduling.material_assistant.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_exam_to_assistance.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch(e){
+      console.log('sendNotificationExamToAssistance Error: ', e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * @INFO: Enviar notificación de emisión de certificados
+   * @param courseSchedulingId
+   */
+  public sendNotificationCertificate = async (courseSchedulingId: string) => {
+    try {
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
+      // Enviar la notificación
+      let path_template = 'course/schedulingCertificate';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_certificate_${courseScheduling._id}`,
+        // Información
+        assistant_name: `${courseScheduling.material_assistant?.profile?.first_name} ${courseScheduling.material_assistant?.profile?.last_name}`,
+        program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
+        service_id: courseScheduling.metadata.service_id,
+        modality: courseScheduling.schedulingMode.name,
+        duration: this.formatSecondsToHours(courseScheduling.duration),
+        startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        observations: courseScheduling.observations,
+        accountExecutive: courseScheduling.account_executive?.profile?.first_name,
+        regional: courseScheduling.regional.name
+      };
+      const emails: string[] = [courseScheduling.material_assistant.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_certificate.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendNotificationCertificate Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  /**
+   * @INFO Enviar notificación de no descarga de certificados
+   */
+  public sendNotificationReminderCertificate = async (courseSchedulingId: string) => {
+    try {
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
+      // Enviar la notificación
+      let path_template = 'course/schedulingReminderCertificated';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_reminder_certificate_${courseScheduling._id}`,
+        // Información
+        assistant_name: `${courseScheduling.material_assistant?.profile?.first_name} ${courseScheduling.material_assistant?.profile?.last_name}`,
+        program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
+        service_id: courseScheduling.metadata.service_id,
+        modality: courseScheduling.schedulingMode.name,
+        duration: this.formatSecondsToHours(courseScheduling.duration),
+        startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        observations: courseScheduling.observations,
+        accountExecutive: courseScheduling.account_executive?.profile?.first_name,
+        regional: courseScheduling.regional.name
+      };
+      const emails: string[] = [courseScheduling.material_assistant.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_reminder_certificate.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendNotificationReminderCertificate Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  /**
+   * @INFO Verificar si un courseScheduling ya tiene cargadas todas las asistencias en moodle
+   * @param moodle_id
+   */
+  public isAttendanceComplete = async (moodle_id: string, courseSchedulingId: string, minimumPercentage?: number): Promise<boolean> => {
+    const moduleType = ['attendance'];
+    // Obtener los módulos de asistencia que tiene la programación
+    const modules: any = await this.getCourseExamList(moodle_id, moduleType);
+    let completeAssistance: boolean = true;
+    if (modules && modules.courseModules && modules.courseModules.length) {
+      const courseModules = modules.courseModules;
+      const qualifiedModules: any = await certificateService.rulesForCompletion({
+        courseID: moodle_id,
+        course_scheduling: courseSchedulingId,
+        without_certification: true
+      });
+      if (qualifiedModules && qualifiedModules.completion && qualifiedModules.completion.length) {
+        qualifiedModules.completion.forEach((_itemCompletion) => {
+          if (_itemCompletion && _itemCompletion.listOfStudentProgress && _itemCompletion.listOfStudentProgress.length) {
+            _itemCompletion.listOfStudentProgress.forEach((itemStudent) => {
+              if (completeAssistance && itemStudent.student && itemStudent.student.itemType && itemStudent.student.itemType.attendance) {
+                // Revisar la asistencia por cada estudiante
+                itemStudent.student.itemType.attendance.forEach((attendance) => {
+                  if (attendance && courseModules.find((item) => item.id === attendance.cmid)) {
+                    if (attendance && attendance.graderaw !== null && attendance.graderaw !== undefined) {
+                    } else {
+                      // @INFO Si la asistencia tiene calificación de null o undefined la marca como no diligenciada
+                      completeAssistance = false;
+                    }
+                  } else {
+                    // @INFO Si no encuentra la asistencia en el curso la marca como false porque es un error
+                    completeAssistance = false;
+                  }
+                });
+              }
+            })
+          }
+        })
+      }
+    } else {
+      completeAssistance = false;
+    }
+    return completeAssistance;
   }
 
   /**
@@ -250,18 +460,8 @@ class CourseSchedulingNotificationsService {
    * @INFO Verificar si un servicio aplica para examen
    * @param courseScheduling : Módulos del servicio
    */
-  private verifyCourseSchedulingExercise = async (moodle_id: string, modules: any[]): Promise<boolean> => {
-    let response: boolean = false;
-    if (modules && modules.length) {
-      for await (let module of modules) {
-        if (!response) {
-          const verify = await this.verifyCourseSchedulingDetailsExercise(moodle_id, module);
-          if (verify) {
-            response = true;
-          }
-        }
-      }
-    }
+  public verifyCourseSchedulingExercise = async (moodle_id: string): Promise<boolean> => {
+    let response: boolean = await this.verifyCourseSchedulingDetailsExercise(moodle_id);;
     return response;
   }
 
@@ -269,10 +469,8 @@ class CourseSchedulingNotificationsService {
    * @INFO Verificar si un modulo del servicio tiene examen
    * @param module : Objeto de courseSchedulingDetails
    */
-  private verifyCourseSchedulingDetailsExercise = async (moodle_id: string, module: any): Promise<boolean> => {
-    if (!module || !module.course || !module.course.moodle_id) return false;
+  private verifyCourseSchedulingDetailsExercise = async (moodle_id: string): Promise<boolean> => {
     const exams: any = await this.getCourseExamList(moodle_id);
-    // const exams: any = await this.getCourseExamList(module.course.moodle_id);
     if (exams && exams.courseModules && exams.courseModules.length) {
       return true;
     } else {
@@ -285,9 +483,9 @@ class CourseSchedulingNotificationsService {
    * @param courseId
    * @param moduleType
    */
-  private getCourseExamList = async (courseID: string) => {
+  private getCourseExamList = async (courseID: string, _moduleType?: string[]) => {
     const moduleType: string[] = ['quiz'];
-    const response = await courseContentService.moduleList({courseID, moduleType});
+    const response = await courseContentService.moduleList({courseID, moduleType: _moduleType ? _moduleType : moduleType});
     return response;
   }
 

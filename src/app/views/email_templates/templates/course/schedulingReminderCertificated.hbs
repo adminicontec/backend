@@ -1,22 +1,18 @@
-<div >
+<div>
   <img src="{{params.mailer.footer_icon}}">
   <br><br>
   <div style="color: black;"><strong>Estimado(a) Auxiliar {{params.assistant_name}}:</strong></div> <br>
-  <div style="color: black;">Se informa acerca del no diligenciamiento de asistencia y no aplicación para el grupo de la encuesta de satisfacción.</div> <br>
+  <div style="color: black;">Se informa acerca de la existencia de certificados no descargados en el siguiente servicio:</div> <br>
   <div style="color: black;"><strong>Id del servicio: {{params.service_id}}</strong></div> <br>
   <div style="color: black;"><strong>Programa: {{params.program_name}}</strong></div> <br>
   <div style="color: black;"><strong>Código del programa: {{params.program_code}}</strong></div> <br>
   <div style="color: black;"><strong>Modalidad: {{params.modality}}</strong></div> <br>
-  {{#if params.courseSchedulingDetails}}
-  <div style="color: black;"><strong>Módulo: {{params.module}}</strong></div> <br>
-  {{/if}}
   <div style="color: black;"><strong>Duración: {{params.duration}}</strong></div> <br>
   <div style="color: black;"><strong>Fecha Inicio: {{params.startDate}}</strong></div> <br>
   <div style="color: black;"><strong>Fecha Fin: {{params.endDate}}</strong></div> <br>
-  {{#if params.courseSchedulingDetails}}
-  <div style="color: black;"><strong>Docente: {{params.teacher}}</strong></div> <br>
-  {{/if}}
   <div style="color: black;"><strong>Observaciones: {{params.observations}}</strong></div> <br>
-  <div style="color: black;"><strong>Aplica examen: {{params.exam}}</strong></div> <br>
   <div style="color: black;"><strong>Nombre del ejecutivo comercial: {{params.accountExecutive}}</strong></div> <br>
+  <div style="color: black;"><strong>Regional: {{params.regional}}</strong></div> <br>
+  <br><br>
+  <div style="color: black;">Lo invitamos a ingresar al campus Virtual, para que pueda realizar el seguimiento.</div>
 </div>

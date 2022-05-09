@@ -332,7 +332,7 @@ class CourseSchedulingService {
             // if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Programado') {
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
-            await this.serviceSchedulingNotification(response)
+            await this.serviceSchedulingNotification(response, prevSchedulingStatus)
             visibleAtMoodle = 1;
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
@@ -503,6 +503,8 @@ class CourseSchedulingService {
         steps.push('17')
         steps.push(response)
 
+        const prevSchedulingStatus = (response && response.schedulingStatus && response.schedulingStatus.name) ? response.schedulingStatus.name : null
+
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         steps.push('18')
@@ -550,7 +552,7 @@ class CourseSchedulingService {
                 steps.push('26')
                 await this.checkEnrollmentUsers(response)
                 await this.checkEnrollmentTeachers(response)
-                await this.serviceSchedulingNotification(response)
+                await this.serviceSchedulingNotification(response, prevSchedulingStatus)
               }
             } else {
               steps.push('24-b')
@@ -575,7 +577,7 @@ class CourseSchedulingService {
             steps.push('26')
             await this.checkEnrollmentUsers(response)
             await this.checkEnrollmentTeachers(response)
-            await this.serviceSchedulingNotification(response)
+            await this.serviceSchedulingNotification(response, prevSchedulingStatus)
           }
         }
 
@@ -847,9 +849,14 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingNotification = async (courseScheduling) => {
-    // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
-    return await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+  private serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
+    // Solo se envía cuando pasa de programado a confirmado
+    const currentStatus = (courseScheduling && courseScheduling.schedulingStatus && courseScheduling.schedulingStatus.name) ? courseScheduling.schedulingStatus.name : null
+    if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
+      // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
+      await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+    }
+    return
     let email_to_notificate = []
     const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
     if (serviceScheduler) {
@@ -976,7 +983,7 @@ class CourseSchedulingService {
   }
 
   public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any }) => {
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(typeof courseScheduling === 'string' ? courseScheduling : courseScheduling?._id, 'modify', true, changes);
 
     let students_to_notificate = []
     let teachers_to_notificate = []
@@ -1557,7 +1564,7 @@ class CourseSchedulingService {
         let courses = []
 
         const detailSessions = await CourseSchedulingDetails.find()
-          .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
+          .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations')
           .populate({
             path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
@@ -1630,7 +1637,6 @@ class CourseSchedulingService {
           let reprogramingTypes = []
           if (course.course_scheduling?.logReprograming) {
             reprogramingTypes = course.course_scheduling?.logReprograming.log.reduce((accum, element) => {
-              // TODO: Definir si las reprogramaciones son por modulo o por programación
               if (element?.source?.sourceType === 'course_scheduling_detail' && element?.source?.identifier === course._id.toString()) {
                 accum.push(ReprogramingLabels[element.reason])
                 reprogramingCount++;
@@ -1656,6 +1662,7 @@ class CourseSchedulingService {
             start_year: (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '',
             teacher_name: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
             teacher_type,
+            teacher_id: (course.teacher?._id) ? course.teacher._id : '-',
             teacher_city: (course.teacher?.profile?.city) ? course.teacher.profile.city : '-',
             teacher_regional: (course.teacher?.profile?.regional) ? course.teacher.profile.regional : '-',
             city: (course?.course_scheduling?.city?.name) ? course.course_scheduling.city.name : '-',
@@ -1666,7 +1673,8 @@ class CourseSchedulingService {
             client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
             service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
             reprogramingCount,
-            reprogramingTypes
+            reprogramingTypes,
+            moduleObservations: (course?.observations) ? course.observations : '-'
           }
 
           courses.push(item)
@@ -1675,6 +1683,12 @@ class CourseSchedulingService {
         if (params.format === 'pdf') {
         } else if (params.format === 'xlsx') {
           return await this.generateXLSXReport(courses)
+        } else if (params.format === 'json') {
+          return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+              courses
+            }
+          })
         }
       }
     } catch (error) {
@@ -1775,7 +1789,8 @@ class CourseSchedulingService {
         'Ciudad del servicio': element.city,
         'Regional del servicio': element.regional,
         'Participantes': element.participants,
-        'Observaciones': element.observations,
+        'Observaciones del programa': element.observations,
+        'Observaciones del modulo': element.moduleObservations,
         'Cantidad de reprogramaciones': element.reprogramingCount,
         'Tipo de reprogramaciones': element.reprogramingTypes.join(','),
         'Nombre del ejecutivo de cuenta': element.executive,

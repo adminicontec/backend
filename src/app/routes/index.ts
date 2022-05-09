@@ -1,5 +1,7 @@
 // @import_routes
+import { reportsFactoryRoute } from "@scnode_app/routes/default/data/reports/reportsFactoryRoute";
 import { certificateLogsRoute } from "@scnode_app/routes/default/admin/certificateQueue/certificateLogsRoute";
+import { portfolioProgramRoute } from "@scnode_app/routes/default/admin/portfolio/portfolioProgramRoute";
 import { documentQueueRoute } from "@scnode_app/routes/default/admin/documentQueue/documentQueueRoute";
 import { qualifiedTeachersRoute } from "@scnode_app/routes/default/admin/qualifiedTeachers/qualifiedTeachersRoute";
 import { attachedRoute } from "@scnode_app/routes/default/admin/attached/attachedRoute";
@@ -76,7 +78,9 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    reportsFactoryRoute,
     certificateLogsRoute,
+    portfolioProgramRoute,
     documentQueueRoute,
     qualifiedTeachersRoute,
     attachedRoute,

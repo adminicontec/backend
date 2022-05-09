@@ -46,7 +46,10 @@ const CourseSchedulingDetailsSchema = new Schema({
       type: Schema.Types.Number,
       required: true,
     }
-  }]
+  }],
+  observations: {
+    type: Schema.Types.String
+  }
   // @end
 }, {
   collection: 'course_scheduling_details' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
