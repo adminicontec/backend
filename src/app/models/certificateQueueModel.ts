@@ -29,6 +29,10 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.String,
     required: false
   },
+  certificateConsecutive: {
+    type: Schema.Types.String,
+    required: false
+  },
   status: {
     type: Schema.Types.String,
     required: true,
