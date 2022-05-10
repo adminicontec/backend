@@ -14,7 +14,7 @@ import { xlsxUtility } from "@scnode_core/utilities/xlsx/xlsxUtility";
 // @end
 
 // @import models
-import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue } from '@scnode_app/models';
+import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, Program } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -118,7 +118,6 @@ class ReportByModalityService {
     try {
       const userLogged: any = await User.findOne({ _id: params.user }).select('id profile.first_name profile.last_name')
 
-      // TODO:  Auditor (true | false | all)
       if (!params.modality) return responseUtility.buildResponseFailed('json', null, {error_key: 'reports.factory.report_modality_required'})
       // @INFO: Consultando encuestas programadas
       const courseSchedulingMode = await CourseSchedulingMode.findOne({_id: params.modality, moodle_id: {$exists: true}}).select('id name')
@@ -134,7 +133,6 @@ class ReportByModalityService {
         return accum
       }, {})
 
-      // TODO: Agregar validación de programa auditor
       let where: any = {
         schedulingMode: courseSchedulingMode._id,
         schedulingStatus: {$in: [
@@ -142,6 +140,15 @@ class ReportByModalityService {
           courseSchedulingStatusInfo['Ejecutado']._id,
           courseSchedulingStatusInfo['Cancelado']._id,
         ]}
+      }
+
+      if (params.auditor === true || params.auditor === false) {
+        const programs = await Program.find({isAuditor: params.auditor}).select('id').lean()
+        const programIds = programs.reduce((accum, element) => {
+          accum.push(element._id)
+          return accum
+        }, [])
+        where['program'] = {$in: programIds}
       }
 
       if (params?.reportStartDate && params?.reportEndDate) {
@@ -152,7 +159,7 @@ class ReportByModalityService {
       .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
-      .populate({path: 'program', select: 'id name code'})
+      .populate({path: 'program', select: 'id name code isAuditor'})
       .populate({path: 'client', select: 'id name'})
       .populate({path: 'city', select: 'id name'})
       .populate({path: 'schedulingType', select: 'id name'})
@@ -290,7 +297,7 @@ class ReportByModalityService {
           totalCourses: 0,
           participants: [],
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
-          isAuditor: Math.round(Math.random()) === 1 ? true : false // TODO: Crear tarea automatizada para estableccer este dato y poderlo sacar desde colección programas
+          isAuditor: courseScheduling?.program?.isAuditor || false,
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {

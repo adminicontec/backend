@@ -12,6 +12,7 @@ export interface IFactoryGenerateReport {
   report: FactoryReportType,
   title?: string;
   output_format?: 'xlsx' | 'json';
+  auditor?: boolean;
   reportStartDate?: string | undefined,
   reportEndDate?: string | undefined
   modality?: string;

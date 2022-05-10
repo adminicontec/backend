@@ -14,7 +14,10 @@ const ProgramSchema = new Schema({
     type: Schema.Types.String,
     required: true
   },
-  moodle_id: { type: Schema.Types.String }
+  moodle_id: { type: Schema.Types.String },
+  isAuditor: {
+    type: Schema.Types.Boolean
+  }
   // @end
 }, {
   collection: 'programs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
