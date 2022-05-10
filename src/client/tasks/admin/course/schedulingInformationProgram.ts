@@ -1,5 +1,6 @@
 // @import_services Import Services
 import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plugins/tasks/taskService";
+import { courseSchedulingInformationService } from "@scnode_app/services/default/admin/course/courseSchedulingInformationService";
 // @end
 
 // @import_models Import models
@@ -20,6 +21,7 @@ class SchedulingInformationProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
+    await courseSchedulingInformationService.processInformation();
     // @end
 
     return true; // Always return true | false

@@ -25,6 +25,7 @@ export interface ICourseSchedulingDetail {
   duration?: number // Duración del programa
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar email de notificación
   id?: string // Identificador de la categoria
+  _id?: string
 }
 
 export interface ICourseSchedulingDetailDelete {
