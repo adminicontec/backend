@@ -1,4 +1,5 @@
 // @import types
+import { IQueryFind } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 // @add your types
@@ -20,10 +21,9 @@ export interface ICourseSchedulingInformation{
   }[]
 }
 
-export interface IParamsCourseSchedulingInformationList{
+export interface IParamsCourseSchedulingInformationList extends IQueryFind{
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
-  search?:string, // Busca sobre los campos de la coleccion
 }
 //@end

@@ -66,16 +66,16 @@ class CourseSchedulingInformationService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name'
+    let select = undefined;
     if (filters.select) {
       select = filters.select
     }
 
+    let where = {}
+
     if (filters.where && Array.isArray(filters.where)) {
       filters.where.map((p) => where[p.field] = p.value)
     }
-
-    let where = {}
 
     let registers = []
     try {
@@ -87,7 +87,7 @@ class CourseSchedulingInformationService {
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
-        forumCategories: [
+        courseSchedulingInformation: [
           ...registers
         ],
         total_register: (paging) ? await CourseSchedulingInformation.find(where).count() : 0,
