@@ -14,7 +14,7 @@ import { xlsxUtility } from "@scnode_core/utilities/xlsx/xlsxUtility";
 // @end
 
 // @import models
-import { CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue } from '@scnode_app/models';
+import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, Program } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -23,7 +23,7 @@ import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/r
 
 export interface IReportByModalityStructure {
   title: string,
-  data: IReportByModalityPerPage[]
+  pages: IReportByModalityPerPage[]
 }
 
 export interface IReportByModalityPerPage {
@@ -32,6 +32,8 @@ export interface IReportByModalityPerPage {
     reportStartDate: string | undefined,
     reportEndDate: string | undefined,
   };
+  reportDate: string;
+  personWhoGeneratesReport: string;
   data: IReportPage
 }
 
@@ -46,7 +48,6 @@ export interface IReportPage {
   city: string;
   companyName: string;
   accountExecutive: string;
-  reportDate: string;
   courses: IReportCourse[];
   totalDuration: number;
   totalDurationFormated: string;
@@ -115,7 +116,8 @@ class ReportByModalityService {
 
   public generateReport = async (params: IFactoryGenerateReport) => {
     try {
-      // TODO:  Auditor (true | false | all)
+      const userLogged: any = await User.findOne({ _id: params.user }).select('id profile.first_name profile.last_name')
+
       if (!params.modality) return responseUtility.buildResponseFailed('json', null, {error_key: 'reports.factory.report_modality_required'})
       // @INFO: Consultando encuestas programadas
       const courseSchedulingMode = await CourseSchedulingMode.findOne({_id: params.modality, moodle_id: {$exists: true}}).select('id name')
@@ -131,7 +133,6 @@ class ReportByModalityService {
         return accum
       }, {})
 
-      // TODO: Agregar validación de programa auditor
       let where: any = {
         schedulingMode: courseSchedulingMode._id,
         schedulingStatus: {$in: [
@@ -139,6 +140,15 @@ class ReportByModalityService {
           courseSchedulingStatusInfo['Ejecutado']._id,
           courseSchedulingStatusInfo['Cancelado']._id,
         ]}
+      }
+
+      if (params.auditor === true || params.auditor === false) {
+        const programs = await Program.find({isAuditor: params.auditor}).select('id').lean()
+        const programIds = programs.reduce((accum, element) => {
+          accum.push(element._id)
+          return accum
+        }, [])
+        where['program'] = {$in: programIds}
       }
 
       if (params?.reportStartDate && params?.reportEndDate) {
@@ -149,7 +159,7 @@ class ReportByModalityService {
       .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
-      .populate({path: 'program', select: 'id name code'})
+      .populate({path: 'program', select: 'id name code isAuditor'})
       .populate({path: 'client', select: 'id name'})
       .populate({path: 'city', select: 'id name'})
       .populate({path: 'schedulingType', select: 'id name'})
@@ -255,7 +265,7 @@ class ReportByModalityService {
 
       const report: IReportByModalityStructure = {
         title,
-        data: []
+        pages: []
       }
 
       for (const courseScheduling of courseSchedulings) {
@@ -265,6 +275,8 @@ class ReportByModalityService {
             reportStartDate: params.reportStartDate,
             reportEndDate: params.reportEndDate
           },
+          reportDate: moment().format('DD/MM/YYYY'),
+          personWhoGeneratesReport: (userLogged?.profile) ? `${userLogged?.profile.first_name} ${userLogged?.profile.last_name}` : '-',
           data: undefined
         }
 
@@ -279,14 +291,13 @@ class ReportByModalityService {
           city: courseScheduling?.city?.name || '-',
           companyName: courseScheduling?.client?.name || '-',
           accountExecutive: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : '-',
-          reportDate: moment().format('DD/MM/YYYY'),
           courses: [],
           totalDuration: 0,
           totalDurationFormated: '0h',
           totalCourses: 0,
           participants: [],
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
-          isAuditor: Math.round(Math.random()) === 1 ? true : false // TODO: Crear tarea automatizada para estableccer este dato y poderlo sacar desde colección programas
+          isAuditor: courseScheduling?.program?.isAuditor || false,
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -471,7 +482,7 @@ class ReportByModalityService {
         }
 
         reportDataPerPage.data = itemBase;
-        report.data.push(reportDataPerPage)
+        report.pages.push(reportDataPerPage)
       }
 
       if (output_format === 'json') {
@@ -504,7 +515,7 @@ class ReportByModalityService {
       // @INFO: Inicializamos el nuevo libro de excel
       const wb: XLSX.WorkBook = XLSX.utils.book_new();
 
-      for (const reportData of report.data) {
+      for (const reportData of report.pages) {
         const wsSheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet([])
 
         let row = 0;
@@ -521,6 +532,22 @@ class ReportByModalityService {
         merge.push(itemMerge)
         row++;
         row++;
+
+        if (reportData?.queryRange?.reportStartDate && reportData?.queryRange?.reportEndDate) {
+          sheetData.push(['PERIODO DE CONSULTA', ''])
+          sheetData.push(['Fecha 1', reportData?.queryRange?.reportStartDate])
+          sheetData.push(['Fecha 2', reportData?.queryRange?.reportEndDate])
+          sheetData.push([])
+
+          let itemMergeFilterDate = {}
+          itemMergeFilterDate['s'] = {r: row, c: 0}
+          itemMergeFilterDate['e'] = {r: row, c: 1}
+          merge.push(itemMergeFilterDate)
+          row++;
+          row++;
+          row++;
+          row++;
+        }
 
         // @INFO: Información del servicio
         sheetData.push(['PROGRAMA DE FORMACIÓN', reportData?.data?.programName])
@@ -539,7 +566,9 @@ class ReportByModalityService {
         row++
         sheetData.push(['EJECUTIVO DE CUENTA', reportData?.data?.accountExecutive])
         row++
-        sheetData.push(['FECHA DEL REPORTE', reportData?.data?.reportDate])
+        sheetData.push(['NOMBRE PERSONA QUE CONSULTA', reportData?.personWhoGeneratesReport])
+        row++;
+        sheetData.push(['FECHA DEL REPORTE', reportData?.reportDate])
         row++
         sheetData.push([])
         row++

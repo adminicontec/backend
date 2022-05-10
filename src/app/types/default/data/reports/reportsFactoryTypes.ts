@@ -8,9 +8,11 @@ export enum FactoryReportType {
   GENERAL_STUDENT_CERTIFICATES = 'general_student_certificates'
 }
 export interface IFactoryGenerateReport {
+  user: string;
   report: FactoryReportType,
   title?: string;
   output_format?: 'xlsx' | 'json';
+  auditor?: boolean;
   reportStartDate?: string | undefined,
   reportEndDate?: string | undefined
   modality?: string;

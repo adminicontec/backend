@@ -34,15 +34,6 @@ class ReportsFactoryService {
    */
   public factoryGenerateReport = async (params: IFactoryGenerateReport) => {
     try {
-      const time = new Date().getTime()
-
-      // @INFO: Se define el formato del reporte, xlsx por defecto
-      const output_format: any = params.output_format ? params.output_format : 'xlsx'
-      const title: any = params.title ? `${params.title}_${time}` : `reporte_factory_${time}`
-
-      const reportStartDate = params.reportStartDate || undefined
-      const reportEndDate = params.reportEndDate || undefined
-
       if (!params.report) return responseUtility.buildResponseFailed('json', null, {error_key: 'reports.factory.report_required'})
       const reportValid = Object.keys(FactoryReportType).filter(
         (key) => FactoryReportType[key] === params.report,
@@ -70,12 +61,6 @@ class ReportsFactoryService {
       const service = serviceInstance['service'];
       const reportResponse = await service.generateReport(params)
       return reportResponse
-      // if (reportResponse.status !== 'success') return reportResponse;
-
-      // return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-      //   report,
-      //   instance: serviceInstance.status
-      // }})
     } catch(err) {
       return responseUtility.buildResponseFailed('json')
     }
