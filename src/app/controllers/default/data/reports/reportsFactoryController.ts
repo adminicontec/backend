@@ -35,7 +35,11 @@ class ReportsFactoryController {
 	 * @returns
 	 */
 	public factoryGenerateReport = async (req: Request, res: Response) => {
-		const response = await reportsFactoryService.factoryGenerateReport(req.getParameters.all())
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+		const response = await reportsFactoryService.factoryGenerateReport(params)
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 }
