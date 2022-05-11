@@ -14,7 +14,7 @@ import { xlsxUtility } from "@scnode_core/utilities/xlsx/xlsxUtility";
 // @end
 
 // @import models
-import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, Program } from '@scnode_app/models';
+import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, Program, CourseSchedulingInformation } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -101,6 +101,33 @@ export interface IReportParticipant {
     examNote: number;
     examApproval: string;
   }
+}
+
+export interface ICourseSchedulingInfoByParticipantAndCourse {
+  _id: string,
+  schedulingDetails: string,
+  attendanceScore: number
+}
+export interface ICourseSchedulingInfoByParticipant {
+  generalData: {
+    _id: string,
+    auditCertificateType: string,
+    user: string,
+    courseScheduling: string,
+    totalAttendanceScore: number,
+    totalAttendanceHours: number,
+    taskScore: number,
+    examsScore: number,
+    totalScore: number,
+    completion: number,
+    auditExamScore: number,
+    isAuditExamApprove: boolean,
+    isPartialCertification: boolean,
+    isAttendanceCertification: boolean,
+    certificationDate: string;
+    assistanceCertificate: string
+  },
+  courses: Record<string, ICourseSchedulingInfoByParticipantAndCourse>
 }
 
 class ReportByModalityService {
@@ -197,6 +224,7 @@ class ReportByModalityService {
 
       let participantsByProgram = {}
       let certificationsByProgram = {}
+      let participantsInformationByProgram = {}
 
       if (courseSchedulingIds.length > 0) {
         const enrolledByProgramQuery = await Enrollment.find({
@@ -254,9 +282,48 @@ class ReportByModalityService {
           }, {})
         }
 
-      }
+        const courseSchedulingInformationByProgramQuery = await CourseSchedulingInformation.find({
+          courseScheduling: {
+            $in: courseSchedulingIds.reduce((accum, element) => {
+              accum.push(ObjectID(element))
+              return accum
+            },[])
+          },
+        })
+        .select('user courseScheduling totalAttendanceHours totalAttendanceScore auditCertificateType taskScore examsScore totalScore completion auditExamScore isAuditExamApprove isPartialCertification isAttendanceCertification courses certificationDate assistanceCertificate')
+        .lean()
 
-      // TODO: Consultar información desde coleccion consolidada
+        if (courseSchedulingInformationByProgramQuery.length > 0) {
+          participantsInformationByProgram = courseSchedulingInformationByProgramQuery.reduce((accum, element) => {
+            if (element.courseScheduling && element.user) {
+              if (!accum[element.courseScheduling.toString()]) {
+                accum[element.courseScheduling.toString()] = {};
+              }
+
+              if (!accum[element.courseScheduling.toString()][element.user.toString()]) {
+                accum[element.courseScheduling.toString()][element.user.toString()] = {
+                  generalData: {...element, courses: undefined},
+                  courses: {}
+                };
+              }
+
+              if (element.courses) {
+                const coursesData = element.courses.reduce((_accum, _element) => {
+                  if (_element.schedulingDetails) {
+                    if (!_accum[_element.schedulingDetails.toString()]) {
+                      _accum[_element.schedulingDetails.toString()] = _element;
+                    }
+                  }
+                  return _accum;
+                }, {})
+
+                accum[element.courseScheduling.toString()][element.user.toString()].courses = coursesData
+              }
+            }
+            return accum
+          }, {})
+        }
+      }
 
       const time = new Date().getTime()
       // @INFO: Se define el formato del reporte, xlsx por defecto
@@ -370,11 +437,26 @@ class ReportByModalityService {
                 examApproval: '-',
               }
             }
-            if (itemBase.isAuditor) {
-              participantItemBase.auditor.examNote = Math.floor((Math.random() * (100-1)) +1); // TODO: Extraer valor que debe salir del consolidado
-              participantItemBase.auditor.examApproval = participantItemBase.auditor.examNote >= 70 ? 'Si' : 'No'  // TODO: Ya se esta validando en local, verificar si se va a extraer el valor que debe salir del consolidado
 
-              participantItemBase.certification.auditorCertificationType = 'No se certifica' // TODO: Extraer valor que debe salir del consolidado
+            let courseSchedulingInfoByParticipant: ICourseSchedulingInfoByParticipant;
+
+            if (
+              participantsInformationByProgram &&
+              participantsInformationByProgram[courseScheduling._id.toString()] &&
+              participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+            ) {
+              courseSchedulingInfoByParticipant = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+            }
+
+
+            if (itemBase.isAuditor) {
+              // participantItemBase.auditor.examNote = Math.floor((Math.random() * (100-1)) +1);
+              participantItemBase.auditor.examNote = courseSchedulingInfoByParticipant?.generalData?.auditExamScore || 0; // @INFO: Dato extraido del consolidado
+              // participantItemBase.auditor.examApproval = courseSchedulingInfoByParticipant?.generalData?.isAuditExamApprove ? 'Si' : 'No' // @INFO: Dato extraido del consolidado
+              participantItemBase.auditor.examApproval = participantItemBase.auditor.examNote >= 70 ? 'Si' : 'No'  // -- @INFO: Dato calculado
+
+              // participantItemBase.certification.auditorCertificationType = 'No se certifica'
+              participantItemBase.certification.auditorCertificationType = courseSchedulingInfoByParticipant?.generalData?.auditCertificateType || '-' // @INFO: Dato extraido del consolidado
             }
 
             if (!itemBase.isVirtual) {
@@ -384,7 +466,12 @@ class ReportByModalityService {
                 let totalAssistanceCertification = []
                 for (const course of courses) {
                   if (!participantItemBase.attendance.attendanceByCourse[course?._id.toString()]) {
-                    const attendanceParticipantInCourse = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
+                    let participantInfoByCourse: ICourseSchedulingInfoByParticipantAndCourse;
+                     if (courseSchedulingInfoByParticipant?.courses && courseSchedulingInfoByParticipant.courses[course?._id.toString()]) {
+                      participantInfoByCourse = courseSchedulingInfoByParticipant.courses[course?._id.toString()];
+                     }
+                    // const attendanceParticipantInCourse = Math.floor((Math.random() * (100-1)) +1)
+                    const attendanceParticipantInCourse = participantInfoByCourse?.attendanceScore || 0 // @INFO: Dato extraido del consolidado
                     participantItemBase.attendance.attendanceByCourse[course?._id.toString()] = {
                       value: attendanceParticipantInCourse
                     }
@@ -398,13 +485,20 @@ class ReportByModalityService {
                 }
                 const maximumTotalOfCourses = 100 * courses.length;
                 const totalProgramDurationInHours = Math.trunc(itemBase.totalDuration / 3600)
-                participantItemBase.attendance.totalHoursAttended = Math.round(((((totalHoursAttended) * 100)/(maximumTotalOfCourses))*(totalProgramDurationInHours))/100)
-                participantItemBase.attendance.totalAttendancePercentage = Math.round((((totalHoursAttended) * 100)/(maximumTotalOfCourses)))
+
+                // participantItemBase.attendance.totalHoursAttended = courseSchedulingInfoByParticipant?.generalData?.totalAttendanceHours || 0 // @INFO:  Dato extraido del consolidado
+                participantItemBase.attendance.totalHoursAttended = Math.round(((((totalHoursAttended) * 100)/(maximumTotalOfCourses))*(totalProgramDurationInHours))/100) // @INFO: Dato calculado
+
+                // participantItemBase.attendance.totalAttendancePercentage = courseSchedulingInfoByParticipant?.generalData?.totalAttendanceScore || 0 // @INFO: Dato extraido del consolidado
+                participantItemBase.attendance.totalAttendancePercentage = Math.round((((totalHoursAttended) * 100)/(maximumTotalOfCourses))) // @INFO: Dato calculado
 
                 if (totalAssistanceCertification.length > 0) {
                   const anyFalse = totalAssistanceCertification.filter((i) => i === false)
-                  participantItemBase.certification.totalAssistanceCertification = anyFalse ? 'NO' : 'SI' // TODO: Ya se esta validando en local, verificar si se va a extraer el valor que debe salir del consolidado
-                  participantItemBase.certification.partialCertification =  participantItemBase.certification.totalAssistanceCertification === 'SI' ? 'NO' : 'SI' // TODO: Ya se esta validando en local, verificar si se va a extraer el valor que debe salir del consolidado
+                  // participantItemBase.certification.totalAssistanceCertification = courseSchedulingInfoByParticipant?.generalData?.isAttendanceCertification ? 'SI' : 'NO' // @INFO: Dato extraido del consolidado
+                  participantItemBase.certification.totalAssistanceCertification = anyFalse ? 'NO' : 'SI' // @INFO: Dato calculado
+
+                  // participantItemBase.certification.partialCertification =  courseSchedulingInfoByParticipant?.generalData?.isPartialCertification ? 'SI' : 'NO' // @INFO: Dato extraido del consolidado
+                  participantItemBase.certification.partialCertification =  participantItemBase.certification.totalAssistanceCertification === 'SI' ? 'NO' : 'SI' // @INFO: Dato calculado
                 }
               }
             } else {
@@ -425,9 +519,12 @@ class ReportByModalityService {
                 }
 
                 participantItemBase.progress.forumNote = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
-                participantItemBase.progress.taskNote = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
-                participantItemBase.progress.evaluationNote = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
-                participantItemBase.progress.finalNote = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
+                // participantItemBase.progress.taskNote = Math.floor((Math.random() * (100-1)) +1)
+                // participantItemBase.progress.evaluationNote = Math.floor((Math.random() * (100-1)) +1)
+                // participantItemBase.progress.finalNote = Math.floor((Math.random() * (100-1)) +1)
+                participantItemBase.progress.taskNote = courseSchedulingInfoByParticipant?.generalData?.taskScore || 0 // @INFO: Dato extraido del consolidado
+                participantItemBase.progress.evaluationNote = courseSchedulingInfoByParticipant?.generalData?.examsScore || 0 // @INFO: Dato extraido del consolidado
+                participantItemBase.progress.finalNote = courseSchedulingInfoByParticipant?.generalData?.totalScore || 0 // @INFO: Dato extraido del consolidado
 
 
                 const certificationStatus = []
