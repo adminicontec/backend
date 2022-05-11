@@ -146,10 +146,10 @@ class EnrollmentService {
           console.log('Error with profile:');
           console.log(register);
 
-          var i = registers.indexOf( register );
-          if ( i !== -1 ) {
-            registers.splice( i, 1 );
-        }
+          var i = registers.indexOf(register);
+          if (i !== -1) {
+            registers.splice(i, 1);
+          }
         }
       }
     } catch (e) {
@@ -638,9 +638,16 @@ class EnrollmentService {
       const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
         .select('id account_executive')
         .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+        .populate({ path: 'schedulingType', select: 'id name' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .lean()
 
+      console.log("Datos Curso");
+      console.log(`Línea: ${courseScheduling.schedulingType.name}`);
+      console.log(`Modalidad: ${courseScheduling.schedulingMode.name}`);
+
       let index = 1;
+
       for await (const element of dataFromWorksheet) {
 
         let dob = '';
@@ -673,6 +680,16 @@ class EnrollmentService {
             checkEmail = generalUtility.normalizeEmail(checkEmail);
 
             if (generalUtility.validateEmailFormat(checkEmail)) {
+
+              let originField = '';
+              if (courseScheduling.schedulingType.name.toLowerCase() == 'abierto' && (courseScheduling.schedulingMode.name.toLowerCase() == 'virtual' || courseScheduling.schedulingMode.name.toLowerCase() == 'en linea')) {
+                originField = element['Ejecutivo'];
+              }
+              else {
+                originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
+              }
+
+              console.log(`Origin for ${ element['Nombres']}: ${originField}`);
               singleUserEnrollmentContent =
               {
                 documentType: element['Tipo Documento'].trim().toUpperCase(),
@@ -693,8 +710,7 @@ class EnrollmentService {
                 educationalLevel: element['Nivel Educativo'],
                 company: element['Empresa'],
                 genre: element['Género'],
-                origin: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null,
-
+                origin: originField,
                 courseID: params.courseID,
                 rolename: 'student',
                 courseScheduling: params.courseScheduling,
