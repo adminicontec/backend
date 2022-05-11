@@ -40,7 +40,7 @@ class DocumentQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id userId status type docPath processLog errorLog processLogTutor errorLogTutor'
+    let select = 'id userId status type docPath processLog errorLog processLogTutor errorLogTutor mixedParams'
     if (filters.select) {
       select = filters.select
     }
@@ -118,7 +118,7 @@ class DocumentQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id userId status type docPath processLog errorLog created_at updated_at';
+      let select = 'id userId status type docPath processLog errorLog mixedParams created_at updated_at';
       if (params.query === QueryValues.ALL) {
         const registers = await DocumentQueue.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {
@@ -145,6 +145,13 @@ class DocumentQueueService {
   public insertOrUpdate = async (params: IDocumentQueue) => {
 
     try {
+      if (params.type === 'Generate Report') {
+        if (!params.mixedParams) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.generate_report.params_invalid'})
+        if (typeof params.mixedParams !== 'object') return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.generate_report.params_invalid'})
+
+        if (!params.mixedParams.report || !params.mixedParams.output_format) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.generate_report.params_invalid'})
+      }
+
       if (params.id) {
         const register = await DocumentQueue.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'document.queue.not_found' })
@@ -164,12 +171,15 @@ class DocumentQueueService {
               errorLog: (response.errorLog) ? response.errorLog : null,
               processLogTutor: (response.processLogTutor) ? response.processLogTutor : null,
               errorLogTutor: (response.errorLogTutor) ? response.errorLogTutor : null,
+              mixedParams: response.mixedParams
             }
           }
         })
 
       }
       else {
+        if (!params.type) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.type_required'})
+
         const response: any = await DocumentQueue.create(params)
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -184,6 +194,7 @@ class DocumentQueueService {
               errorLog: (response.errorLog) ? response.errorLog : null,
               processLogTutor: (response.processLogTutor) ? response.processLogTutor : null,
               errorLogTutor: (response.errorLogTutor) ? response.errorLogTutor : null,
+              mixedParams: response.mixedParams
             }
           }
         })

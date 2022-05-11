@@ -2,6 +2,7 @@
 // @end
 
 // @import services
+import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 // @end
 
 // @import utilities
@@ -63,6 +64,34 @@ class ReportsFactoryService {
       return reportResponse
     } catch(err) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public processFactoryGenerateReportByDocumentQueue = async (params: {recordToProcess: any, mixedParams: IFactoryGenerateReport}) => {
+    try {
+      const factoryReport = await this.factoryGenerateReport(params.mixedParams);
+      let docPath = undefined;
+      if (factoryReport.status === 'success' && factoryReport.path) {
+        docPath = factoryReport.path.split('uploads/')[1]
+      }
+      const respDocumentQueue: any = await documentQueueService.insertOrUpdate({
+        id: params.recordToProcess.id,
+        status: 'Complete',
+        docPath,
+        processLog: factoryReport?.status === 'success' ? factoryReport : undefined,
+        errorLog: factoryReport?.status === 'error' ? factoryReport : undefined,
+      });
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          processFile: {
+            ...respDocumentQueue
+          }
+        }
+      })
+    } catch(err) {
+      console.log('processFactoryGenerateReportByDocumentQueue - error', err)
+      return responseUtility.buildResponseFailed('json', null)
     }
   }
 }

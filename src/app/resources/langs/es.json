@@ -436,6 +436,10 @@
     },
     "document": {
       "queue": {
+        "type_required": "El tipo de documento es obligatorio",
+        "generate_report": {
+          "params_invalid": "Los parametros para generación de reporte no son validos"
+        },
         "not_found": "El item de la cola del Procesador de Documentos no existe.",
         "insertOrUpdate": {
           "failed": "Error al insertar registro en la cola del Procesador de Documentos. :error"

@@ -1156,6 +1156,18 @@ class ErrorResponse {
       },
       "document" : {
         "queue": {
+          "type_required": {
+            "message": i18nUtility.__("app_error_messages.document.queue.type_required"),
+            "status_code": "document_queue_type_required",
+            "code": 400
+          },
+          "generate_report": {
+            "params_invalid": {
+              "message": i18nUtility.__("app_error_messages.document.queue.generate_report.params_invalid"),
+              "status_code": "document_queue_generate_report_params_invalid",
+              "code": 400
+            }
+          },
           "insertOrUpdate": {
             "failed": {
               "message": i18nUtility.__("app_error_messages.document.queue.insertOrUpdate.failed"),

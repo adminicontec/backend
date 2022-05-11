@@ -30,6 +30,7 @@ export interface IDocumentQueue {
   errorLog?: any,
   processLogTutor?: any,
   errorLogTutor?: any,
+  mixedParams?: any
 }
 
 export interface IDocumentQueueDelete {

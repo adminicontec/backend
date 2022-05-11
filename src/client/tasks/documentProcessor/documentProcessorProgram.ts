@@ -12,7 +12,7 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 import { teacherService } from '@scnode_app/services/default/admin/teacher/teacherService'
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 import { portfolioProgramService } from '@scnode_app/services/default/admin/portfolio/portfolioProgramService';
-
+import { reportsFactoryService } from '@scnode_app/services/default/data/reports/reportsFactoryService';
 // @end
 
 // @import_models Import models
@@ -26,6 +26,7 @@ import { fileUtility } from "@scnode_core/utilities/fileUtility";
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { FileType } from 'basic-ftp';
+
 // @end
 
 class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
@@ -48,65 +49,61 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
       });
 
     if (respDocumentQueue.documentQueue[0]) {
-      console.log(respDocumentQueue.documentQueue);
+      const documentQueue = respDocumentQueue.documentQueue[0];
 
-      console.log("Type of Document: " + respDocumentQueue.documentQueue[0].type);
+      console.log("Type of Document: " + documentQueue.type);
+      if (documentQueue.type === 'Generate Report') {
+        let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
+        const response = await reportsFactoryService.processFactoryGenerateReportByDocumentQueue(params)
+        console.log(response);
+      } else {
+        let driver = attached['driver'];
+        let attached_config = attached[driver];
+        const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
 
-      //#region *** Path to open the file ***
-      let driver = attached['driver'];
-      let attached_config = attached[driver];
-      const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+        let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+        if (attached_config.base_path_type === "absolute") {
+          base_path = upload_config_base_path
+        }
 
-      let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
-      if (attached_config.base_path_type === "absolute") {
-        base_path = upload_config_base_path
-      }
-      //#endregion
+        let docPath = documentQueue.docPath;
+        let filePath = `${base_path}/${docPath}`
 
-      //console.log(base_path);
-      let docPath = respDocumentQueue.documentQueue[0].docPath;
-      let filePath = `${base_path}/${docPath}`
+        if (filePath && fileUtility.fileExists(filePath) === true) {
+          console.log('File Exists!');
+          const contentFile = fileUtility.readFileSyncBuffer(filePath);
 
-      if (filePath && fileUtility.fileExists(filePath) === true) {
-        console.log('File Exists!');
-        const contentFile = fileUtility.readFileSyncBuffer(filePath);
+          if (contentFile && contentFile.length > 0) {
+            let params: any = {
+              recordToProcess: documentQueue,
+              contentFile: { name: 'excel', data: contentFile }
+            };
 
-        if (contentFile && contentFile.length > 0) {
-          let params: any = {
-            recordToProcess: respDocumentQueue.documentQueue[0],
-            contentFile: { name: 'excel', data: contentFile }
-          };
-
-          let response: any;
-          switch(respDocumentQueue.documentQueue[0].type) {
-            case 'Qualified Teacher':
-              response = await teacherService.processFile(params);
-              break;
-            case 'Portfolio':
-              response = await portfolioProgramService.processFile(params);
-              break;
-            default:
-              break;
+            let response: any;
+            switch(documentQueue.type) {
+              case 'Qualified Teacher':
+                response = await teacherService.processFile(params);
+                break;
+              case 'Portfolio':
+                response = await portfolioProgramService.processFile(params);
+                break;
+              default:
+                break;
+            }
+            console.log(response);
           }
-          console.log(response);
+          else {
+            console.log("There's no content to process");
+          }
         }
         else {
-          console.log("There's no content to process");
+          console.log("File not found");
         }
       }
-      else {
-        console.log("File not found");
-      }
-
-
-      // @add_more_methods
-      // @end
     }
     else {
       console.log("There's no records to process");
     }
-
-    // @end
     return true; // Always return true | false
   }
 

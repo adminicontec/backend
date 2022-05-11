@@ -14,7 +14,7 @@ const DocumentQueueSchema = new Schema({
   },
   docPath: {
     type: Schema.Types.String,
-    required: true
+    required: false
   },
   status: {
     type: Schema.Types.String,
@@ -24,11 +24,15 @@ const DocumentQueueSchema = new Schema({
   type: {
     type: Schema.Types.String,
     required: true,
-    enum: ['Qualified Teacher', 'Portfolio']
+    enum: ['Qualified Teacher', 'Portfolio', 'Generate Report']
   },
   sendEmail:{
     type: Schema.Types.Boolean,
-    required: true,
+    required: false,
+  },
+  mixedParams: {
+    type: Schema.Types.Mixed,
+    required: false,
   },
   processLog: {
     type: Schema.Types.Mixed
