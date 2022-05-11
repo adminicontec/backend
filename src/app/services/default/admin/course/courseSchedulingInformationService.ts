@@ -119,8 +119,6 @@ class CourseSchedulingInformationService {
 
             params = await this.getSchedulingDetailsStats(params, details, moduleList, rules, enrollment);
 
-            console.log('\n\n ============= Parámetros a insertar ========: \n', params, scheduling.moodle_id, '\n\n');
-
             await this.insertOrUpdate(params);
           }
         }
@@ -175,7 +173,23 @@ class CourseSchedulingInformationService {
           params.totalAttendanceHours = 0;
         }
       }
+      // Nota de tareas
+      if (student.itemType && student.itemType.assign && student.itemType.assign.length) {
+        let taskSum = student.itemType.assign.reduce((accum, item) => accum += item.graderaw || 0 , 0);
+        taskSum = Math.round(taskSum / student.itemType.assign.length);
+        params.taskScore = taskSum;
+      }
+      // Nota de evaluaciones
+      if (student.itemType && student.itemType.quiz && student.itemType.quiz.length) {
+        let examSum = student.itemType.quiz.reduce((accum, item) => accum += item.graderaw || 0 , 0);
+        examSum = Math.round(examSum / student.itemType.quiz.length);
+        params.examsScore = examSum;
+      }
       if (student.studentProgress) {
+        // Nota final
+        params.totalScore = student.studentProgress.average_grade;
+        // Porcentaje de completitud
+        params.completion = student.studentProgress.completion;
         // Calificación de examen de auditor
         params.auditExamScore = student.studentProgress.auditorGrade;
         // Verificar si aprueba o no el examen de auditor

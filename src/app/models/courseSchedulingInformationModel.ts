@@ -22,6 +22,18 @@ const CourseSchedulingInformationSchema = new Schema({
   totalAttendanceScore: {
     type: Schema.Types.Number
   },
+  totalScore: {
+    type: Schema.Types.Number
+  },
+  taskScore: {
+    type: Schema.Types.Number
+  },
+  examsScore: {
+    type: Schema.Types.Number
+  },
+  completion: {
+    type: Schema.Types.Number
+  },
   auditExamScore: {
     type: Schema.Types.Number
   },

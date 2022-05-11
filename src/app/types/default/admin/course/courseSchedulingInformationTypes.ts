@@ -8,6 +8,10 @@ export interface ICourseSchedulingInformation{
   courseScheduling: string;                     // Id del servicio
   totalAttendanceHours?: number;                // Total de asistencia al programa en horas
   totalAttendanceScore?: number;                // Total de asistencia al programa en porcentaje
+  totalScore?: number;                          // Nota final
+  taskScore?: number;                           // Nota de tareas
+  examsScore?: number;                          // Nota de evaluaciones
+  completion?: number;                          // Porcentaje de completitud
   auditExamScore?: number;                      // Calificación del examen de auditor
   isAuditExamApprove?: boolean;                 // Verificar si aprueba o no el examen de auditor
   isAttendanceCertification?: boolean;          // Verificar si aplica para certificado de asistencia
