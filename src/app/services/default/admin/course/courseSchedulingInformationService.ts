@@ -46,6 +46,9 @@ class CourseSchedulingInformationService {
           }
         })
       } else {
+        if (!params.user || !params.courseScheduling) {
+          return responseUtility.buildResponseFailed('json');
+        }
         const response: any = await CourseSchedulingInformation.create(params)
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -119,6 +122,8 @@ class CourseSchedulingInformationService {
 
             params = await this.getSchedulingDetailsStats(params, details, moduleList, rules, enrollment);
 
+            params = this.setCertificateStats(params);
+
             await this.insertOrUpdate(params);
           }
         }
@@ -185,6 +190,12 @@ class CourseSchedulingInformationService {
         examSum = Math.round(examSum / student.itemType.quiz.length);
         params.examsScore = examSum;
       }
+      // Nota de foros
+      if (student.itemType && student.itemType.forum && student.itemType.forum.length) {
+        let forumSum = student.itemType.forum.reduce((accum, item) => accum += item.graderaw || 0 , 0);
+        forumSum = Math.round(forumSum / student.itemType.forum.length);
+        params.forumsScore = forumSum;
+      }
       if (student.studentProgress) {
         // Nota final
         params.totalScore = student.studentProgress.average_grade;
@@ -207,12 +218,21 @@ class CourseSchedulingInformationService {
 
   private getCertificateSchedulingStats = async (_params: ICourseSchedulingInformation): Promise<ICourseSchedulingInformation> => {
     const params = _params;
-    const certificateQueue = await CertificateQueue.findOne({userId: params.user, courseId: params.courseScheduling});
-    if (certificateQueue) {
-      // Fecha del certificado
-      params.certificationDate = certificateQueue?.certificate?.date;
-      // Fecha de descarga de certificado
-      params.assistanceCertificate = certificateQueue?.auxiliar;
+    const certificatesQueue = await CertificateQueue.find({userId: params.user, courseId: params.courseScheduling});
+    if (certificatesQueue && certificatesQueue.length) {
+      certificatesQueue.forEach((certificateQueue) => {
+        if (certificateQueue) {
+          if (certificateQueue.certificateType === 'academic') {
+            params.certificationDate = certificateQueue?.certificate?.date;
+            params.certificationDownloadDate = certificateQueue?.downloadDate;
+            params.assistanceCertificate = certificateQueue?.auxiliar;
+          } else if (certificateQueue.certificateType === 'auditor'){
+            params.auditCertificationDate = certificateQueue?.certificate?.date;
+            params.auditCertificationDownloadDate = certificateQueue?.downloadDate;
+            params.auditAssistanceCertificate = certificateQueue?.auxiliar;
+          }
+        }
+      });
     }
     return params;
   }
@@ -241,6 +261,37 @@ class CourseSchedulingInformationService {
           attendanceScore
         });
       }
+    }
+    return params;
+  }
+
+  private setCertificateStats = (_params: ICourseSchedulingInformation): ICourseSchedulingInformation => {
+    const params: ICourseSchedulingInformation = _params;
+    params.certificateStats = {};
+    params.auditCertificateStats = {};
+    // Estadisticas de certificado
+    if (params.totalAttendanceScore === 100) {
+      params.certificateStats.isAttendanceComplete = true;
+    }
+    if (params.completion === 100) {
+      params.certificateStats.isProgressComplete = true;
+    }
+    if (params.certificationDate) {
+      params.certificateStats.isCertificate = true;
+    }
+    if (params.certificationDownloadDate) {
+      params.certificateStats.isDownloadCertificate = true;
+    }
+    // Estadisticas de certificado de auditor
+    // TODO: Falta la asistencia de auditor
+    if (params.isAuditExamApprove) {
+      params.auditCertificateStats.isExamApprove = true;
+    }
+    if (params.auditCertificationDate) {
+      params.auditCertificateStats.isCertificate = true;
+    }
+    if (params.auditCertificationDownloadDate) {
+      params.auditCertificateStats.isDownloadCertificate = true;
     }
     return params;
   }
