@@ -1288,6 +1288,39 @@ class CourseSchedulingService {
     // where['metadata.user'] = filters.user
     // }
 
+    // Filtrar por docente
+    if (filters.teacher) {
+      const responseCourses = await CourseSchedulingDetails.aggregate([
+        {
+          $lookup: {
+            from: "users",
+            localField: "teacher",
+            foreignField: "_id",
+            as: "teacher_doc"
+          }
+        }, {
+          $match: {
+            $or: [
+              {"teacher_doc.profile.first_name": { $regex: '.*' + filters.teacher + '.*', $options: 'i' }},
+              {"teacher_doc.profile.last_name": { $regex: '.*' + filters.teacher + '.*', $options: 'i' }},
+              {"teacher_doc.username": { $regex: '.*' + filters.teacher + '.*', $options: 'i' }},
+              {"teacher_doc.email": { $regex: '.*' + filters.teacher + '.*', $options: 'i' }},
+              {"teacher_doc.profile.doc_number": { $regex: '.*' + filters.teacher + '.*', $options: 'i' }},
+            ]
+          }
+        }
+      ])
+      let programsId = []
+      if (responseCourses && responseCourses.length) {
+        programsId = responseCourses.map((c) => ObjectID(c.course_scheduling))
+      }
+      where.push({
+        $match: {
+          _id: {$in: programsId}
+        }
+      })
+    }
+
     if (filters.program_course_name) {
       // Buscar el los cursos una coincidencia
       const responseCourses = await CourseSchedulingDetails.aggregate([
