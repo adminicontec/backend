@@ -37,10 +37,11 @@ import {
   ICourseSchedulingReport,
   ICourseSchedulingReportData,
   IDuplicateCourseScheduling,
+  IDuplicateService,
+  IReactivateService,
   ItemsToDuplicate,
   ReprogramingLabels
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
-import { Console } from "console";
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 // @end
 
@@ -290,6 +291,19 @@ class CourseSchedulingService {
         if (paramsStatus && paramsStatus.name === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
           confirmed_date = new Date();
           params.confirmed_date = confirmed_date;
+        }
+
+        if (paramsStatus && paramsStatus.name === 'Cancelado') {
+          if (!register?.cancelationTracking?.date) {
+            params.cancelationTracking = {
+              date: moment().format('YYYY-MM-DD'),
+              personWhoCancels: params.user
+            }
+            params.reactivateTracking = {
+              date: null,
+              personWhoReactivates: null
+            }
+          }
         }
 
         if (params.hasCost) {
@@ -1621,7 +1635,9 @@ class CourseSchedulingService {
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations')
           .populate({
-            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming schedulingAssociation', populate: [
+            path: 'course_scheduling',
+            select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming schedulingAssociation cancelationTracking reactivateTracking',
+            populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
               { path: 'modular', select: 'id name' },
@@ -1633,7 +1649,9 @@ class CourseSchedulingService {
               { path: 'city', select: 'id name' },
               { path: 'account_executive', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingAssociation.parent', select: 'id metadata.service_id'},
-              { path: 'schedulingAssociation.personWhoGeneratedAssociation', select: 'id profile.first_name profile.last_name'}
+              { path: 'schedulingAssociation.personWhoGeneratedAssociation', select: 'id profile.first_name profile.last_name'},
+              { path: 'cancelationTracking.personWhoCancels', select: 'id profile.first_name profile.last_name'},
+              { path: 'reactivateTracking.personWhoReactivates', select: 'id profile.first_name profile.last_name'}
             ]
           })
           .populate({ path: 'course', select: 'id name code moodle_id' })
@@ -1734,6 +1752,11 @@ class CourseSchedulingService {
             schedulingAssociationSlug: (course?.course_scheduling?.schedulingAssociation?.slug) ? course?.course_scheduling?.schedulingAssociation?.slug : '-',
             schedulingAssociationDate: (course?.course_scheduling?.schedulingAssociation?.date) ? moment.utc(course?.course_scheduling?.schedulingAssociation?.date).format('DD/MM/YYYY') : '-',
             schedulingAssociationPerson: (course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation) ? `${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.first_name} ${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.last_name}` : '-',
+            cancelationDate: (course?.course_scheduling?.cancelationTracking?.date) ? moment.utc(course?.course_scheduling?.cancelationTracking?.date).format('DD/MM/YYYY') : 'N/A',
+            cancelationPerson: (course?.course_scheduling?.cancelationTracking?.personWhoCancels) ? `${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.first_name} ${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.last_name}` : 'N/A',
+            reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
+            reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
+
           }
 
           courses.push(item)
@@ -1857,6 +1880,10 @@ class CourseSchedulingService {
         'Grupo': element.schedulingAssociationSlug,
         'Fecha de generación del grupo': element.schedulingAssociationDate,
         'Persona que genero el grupo': element.schedulingAssociationPerson,
+        'Fecha de cancelación del servicio': element.cancelationDate,
+        'Persona que cancelo el servicio': element.cancelationPerson,
+        'Fecha de reactivación del servicio': element.reactivateDate,
+        'Persona que reactivo el servicio': element.reactivatePerson,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo
         // 'Coordinador Servicio': element.service_user,
       })
@@ -1896,7 +1923,7 @@ class CourseSchedulingService {
       const newCourseSchedulingObj = {
         ...courseScheduling,
         _id: undefined,
-        user: courseScheduling?.metadata?.user,
+        user: params.user || courseScheduling?.metadata?.user,
         endDate: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('YYYY-MM-DD') : undefined,
         endDiscountDate: courseScheduling?.endDiscountDate ? moment(courseScheduling.endDiscountDate).format('YYYY-MM-DD') : undefined,
         endPublicationDate: courseScheduling?.endPublicationDate ? moment(courseScheduling.endPublicationDate).format('YYYY-MM-DD') : undefined,
@@ -1936,6 +1963,72 @@ class CourseSchedulingService {
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         newCourseScheduling: newCourseSchedulingResponse.scheduling,
         logs
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public reactivateService = async (params: IReactivateService) => {
+    try {
+
+      const user = await User.findOne({_id: params.user}).select('id')
+      if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+
+      const schedulingStatus = await CourseSchedulingStatus.findOne({name: 'Programado'}).select('id')
+      const courseScheduling = await CourseScheduling.findOne({_id: params.id})
+      .populate({path: 'schedulingStatus', select: 'id name'})
+      .select('id schedulingStatus')
+      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+
+      if (!courseScheduling?.schedulingStatus?.name) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.reactivate.invalid'})
+      if (courseScheduling?.schedulingStatus?.name !== 'Cancelado') return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.reactivate.invalid'})
+
+      await CourseScheduling.findByIdAndUpdate(
+        courseScheduling._id,
+        {
+          cancelationTracking: {
+            date: undefined,
+            personWhoCancels: undefined
+          },
+          reactivateTracking: {
+            date: moment().format('YYYY-MM-DD'),
+            personWhoReactivates: user._id,
+          },
+          schedulingStatus: schedulingStatus._id
+        },
+        {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
+        }
+      )
+      return responseUtility.buildResponseSuccess('json')
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public duplicateService = async (params: IDuplicateService) => {
+    try {
+
+      const user = await User.findOne({_id: params.user}).select('id')
+      if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+
+      const duplicateResponse = await this.duplicateCourseScheduling({
+        courseSchedulingId: params.id,
+        itemsToDuplicate: params.itemsToDuplicate,
+        user: user._id
+      })
+
+      if (duplicateResponse.status === 'error') return duplicateResponse;
+
+      const newService = duplicateResponse.newCourseScheduling
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        service: {
+          serviceId: newService?.metadata?.service_id,
+        }
       }})
     } catch (err) {
       return responseUtility.buildResponseFailed('json')

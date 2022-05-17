@@ -60,6 +60,14 @@ export interface ICourseScheduling {
   signature_2?: string
   signature_3?: string
   auditor_modules?: string | Array<string>
+  cancelationTracking?: {
+    date: string;
+    personWhoCancels: string;
+  }
+  reactivateTracking?: {
+    date: string;
+    personWhoReactivates: string;
+  }
 }
 
 export interface ICourseSchedulingDelete {
@@ -115,6 +123,18 @@ export enum ItemsToDuplicate {
 
 export interface IDuplicateCourseScheduling {
   courseSchedulingId: string;
+  itemsToDuplicate: ItemsToDuplicate[];
+  user?: string
+}
+
+export interface IReactivateService {
+  id: string;
+  user: string;
+}
+
+export interface IDuplicateService {
+  id: string;
+  user: string;
   itemsToDuplicate: ItemsToDuplicate[];
 }
 //@end

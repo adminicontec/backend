@@ -901,6 +901,13 @@ class ErrorResponse {
             "code": 400
           }
         },
+        "reactivate": {
+          "invalid": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.reactivate.invalid"),
+            "status_code": "course_scheduling_reactivate_invalid",
+            "code": 400
+          },
+        },
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course_scheduling.not_found"),
           "status_code": "course_scheduling_not_found",

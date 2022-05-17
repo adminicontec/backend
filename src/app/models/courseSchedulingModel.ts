@@ -273,6 +273,24 @@ const CourseSchedulingSchema = new Schema({
     slug: {
       type: Schema.Types.String
     }
+  },
+  cancelationTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoCancels: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+  },
+  reactivateTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoReactivates: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
   }
   // @end
 }, {
