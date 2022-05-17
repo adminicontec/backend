@@ -86,6 +86,7 @@ export interface ICourseSchedulingQuery {
   account_executive?: string // Buscar solo resultados de ese accountExecutive
   company?: string
   schedulingAssociation?: string;
+  teacher?: string;
 }
 
 export interface ICourseSchedulingReport {
