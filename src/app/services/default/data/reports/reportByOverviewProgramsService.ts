@@ -14,7 +14,7 @@ import { xlsxUtility } from "@scnode_core/utilities/xlsx/xlsxUtility";
 // @end
 
 // @import models
-import { CourseSchedulingStatus, CourseScheduling, Enrollment, CourseSchedulingDetails, User } from '@scnode_app/models';
+import { CourseSchedulingInformation,CourseSchedulingStatus, CourseScheduling, Enrollment, CourseSchedulingDetails, User } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -114,7 +114,7 @@ class ReportByOverviewProgramsService {
       .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
-      .populate({path: 'program', select: 'id name code'})
+      .populate({path: 'program', select: 'id name code isAuditor'})
       .populate({path: 'client', select: 'id name'})
       .populate({path: 'city', select: 'id name'})
       .populate({path: 'schedulingType', select: 'id name'})
@@ -152,27 +152,69 @@ class ReportByOverviewProgramsService {
       }
 
       let participantsByProgram = {}
+      let participantsInformationByProgram = {}
 
       if (courseSchedulingIds.length > 0) {
-        const enrolledByProgramQuery = await Enrollment.aggregate([
-          {
-            $match: {
-              course_scheduling: {
-                $in: courseSchedulingIds.reduce((accum, element) => {
-                  accum.push(ObjectID(element))
-                  return accum
-                },[])
-              }
-            }
-          },
-          {
-            $group: { _id: "$course_scheduling", count: { $sum: 1} }
+        const enrolledByProgramQuery = await Enrollment.find({
+          course_scheduling: {
+            $in: courseSchedulingIds.reduce((accum, element) => {
+              accum.push(ObjectID(element))
+              return accum
+            },[])
           }
-        ])
+        })
+        .select('id user course_scheduling')
+        .populate({path: 'user', select: 'id profile.first_name profile.last_name profile.doc_number'})
+
         if (enrolledByProgramQuery.length > 0) {
           participantsByProgram = enrolledByProgramQuery.reduce((accum, element) => {
-            if (!accum[element._id.toString()]) {
-              accum[element._id.toString()] = element.count;
+            if (element.course_scheduling) {
+              if (!accum[element.course_scheduling.toString()]) {
+                accum[element.course_scheduling.toString()] = [];
+              }
+              accum[element.course_scheduling.toString()].push(element)
+            }
+            return accum
+          }, {})
+        }
+
+        const courseSchedulingInformationByProgramQuery = await CourseSchedulingInformation.find({
+          courseScheduling: {
+            $in: courseSchedulingIds.reduce((accum, element) => {
+              accum.push(ObjectID(element))
+              return accum
+            },[])
+          },
+        })
+        .select('user courseScheduling totalAttendanceHours totalAttendanceScore auditCertificateType taskScore examsScore totalScore completion auditExamScore isAuditExamApprove isPartialCertification isAttendanceCertification courses certificationDate assistanceCertificate auditCertificationDate auditCertificationDownloadDate auditAssistanceCertificate certificateStats auditCertificateStats')
+        .lean()
+
+        if (courseSchedulingInformationByProgramQuery.length > 0) {
+          participantsInformationByProgram = courseSchedulingInformationByProgramQuery.reduce((accum, element) => {
+            if (element.courseScheduling && element.user) {
+              if (!accum[element.courseScheduling.toString()]) {
+                accum[element.courseScheduling.toString()] = {};
+              }
+
+              if (!accum[element.courseScheduling.toString()][element.user.toString()]) {
+                accum[element.courseScheduling.toString()][element.user.toString()] = {
+                  generalData: {...element, courses: undefined},
+                  courses: {}
+                };
+              }
+
+              if (element.courses) {
+                const coursesData = element.courses.reduce((_accum, _element) => {
+                  if (_element.schedulingDetails) {
+                    if (!_accum[_element.schedulingDetails.toString()]) {
+                      _accum[_element.schedulingDetails.toString()] = _element;
+                    }
+                  }
+                  return _accum;
+                }, {})
+
+                accum[element.courseScheduling.toString()][element.user.toString()].courses = coursesData
+              }
             }
             return accum
           }, {})
@@ -200,8 +242,6 @@ class ReportByOverviewProgramsService {
         data: []
       }
 
-      // TODO: Consultar información desde coleccion consolidada
-
       for (const courseScheduling of courseSchedulings) {
         const itemBase: IReportPage = {
           _id: courseScheduling._id,
@@ -214,18 +254,18 @@ class ReportByOverviewProgramsService {
           modalityName: courseScheduling?.schedulingMode?.name || '-',
           totalDuration: 0,
           totalDurationFormated: '0h',
-          participants: (participantsByProgram[courseScheduling?._id]) ? participantsByProgram[courseScheduling._id] : 0,
+          participants: (participantsByProgram[courseScheduling?._id]) ? participantsByProgram[courseScheduling._id].length : 0,
           certification: {
             standar: {
-              participantsWithAttendanceProgressComplete: 0, // TODO: Extraer valor que debe salir del consolidado
-              participantsWithCertificate: 0, // TODO: Extraer valor que debe salir del consolidado
-              participantsWithCertificateDownload: 0, // TODO: Extraer valor que debe salir del consolidado
+              participantsWithAttendanceProgressComplete: 0, // @INFO: Dato extraido del consolidado
+              participantsWithCertificate: 0, // @INFO: Dato extraido del consolidado
+              participantsWithCertificateDownload: 0, // @INFO: Dato extraido del consolidado
             },
             auditor: {
-              participantsWithAttendance: 0, // TODO: Extraer valor que debe salir del consolidado
-              participantsWithExamenApproved: 0, // TODO: Extraer valor que debe salir del consolidado
-              amountCertificatesWithAttendanceAndAproved: 0, // TODO: Extraer valor que debe salir del consolidado
-              participantsWithCertificateDownload: 0, // TODO: Extraer valor que debe salir del consolidado
+              participantsWithAttendance: 0, // @INFO: Dato extraido del consolidado
+              participantsWithExamenApproved: 0, // @INFO: Dato extraido del consolidado
+              amountCertificatesWithAttendanceAndAproved: 0, // @INFO: Dato extraido del consolidado
+              participantsWithCertificateDownload: 0, // @INFO: Dato extraido del consolidado
             }
           },
           companyName: courseScheduling?.client?.name || '-',
@@ -235,7 +275,7 @@ class ReportByOverviewProgramsService {
           accountExecutive: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : '-',
           auxiliar: (courseScheduling?.material_assistant?.profile) ? `${courseScheduling?.material_assistant?.profile.first_name} ${courseScheduling?.material_assistant?.profile.last_name}` : '-',
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
-          isAuditor: Math.round(Math.random()) === 1 ? true : false // TODO: Crear tarea automatizada para estableccer este dato y poderlo sacar desde colección programas
+          isAuditor: courseScheduling?.program?.isAuditor || false,
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -250,6 +290,52 @@ class ReportByOverviewProgramsService {
             }
 
             itemBase.totalDuration += duration_scheduling || 0
+          }
+        }
+
+        if (participantsByProgram[courseScheduling?._id.toString()]) {
+          const participants = participantsByProgram[courseScheduling._id.toString()]
+          for (const participant of participants) {
+            if (
+              participantsInformationByProgram &&
+              participantsInformationByProgram[courseScheduling._id.toString()] &&
+              participantsInformationByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]
+            ) {
+              const participantInfo = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+              // @INFO: Cargando información de participantes con certificado
+              if (!itemBase.isVirtual) {
+                if (participantInfo?.certificateStats?.isAttendanceComplete === true) {
+                  itemBase.certification.standar.participantsWithAttendanceProgressComplete += 1;
+                }
+              } else {
+                if (participantInfo?.certificateStats?.isProgressComplete === true) {
+                  itemBase.certification.standar.participantsWithAttendanceProgressComplete += 1;
+                }
+              }
+
+              if (participantInfo?.certificateStats?.isCertificate === true) {
+                itemBase.certification.standar.participantsWithCertificate += 1;
+              }
+
+              if (participantInfo?.certificateStats?.isDownloadCertificate === true) {
+                itemBase.certification.standar.participantsWithCertificateDownload += 1;
+              }
+
+              // @INFO: Cargando información de participantes con certificado auditor
+              if (participantInfo?.auditCertificateStats?.isAttendanceComplete === true) {
+                itemBase.certification.auditor.participantsWithAttendance += 1;
+              }
+              if (participantInfo?.auditCertificateStats?.isExamApprove === true) {
+                itemBase.certification.auditor.participantsWithExamenApproved += 1;
+              }
+              if (participantInfo?.auditCertificateStats?.isCertificate === true) {
+                itemBase.certification.auditor.amountCertificatesWithAttendanceAndAproved += 1;
+
+              }
+              if (participantInfo?.auditCertificateStats?.isDownloadCertificate === true) {
+                itemBase.certification.auditor.participantsWithCertificateDownload += 1;
+              }
+            }
           }
         }
 
@@ -268,6 +354,8 @@ class ReportByOverviewProgramsService {
           report
         }})
       } else if (output_format === 'xlsx') {
+        if (report.pages.length === 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.factory.no_data' })
+
         const wb = await this.buildXLSX(report);
         if (!wb) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_build_xlsx' })
 

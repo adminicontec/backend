@@ -2,6 +2,7 @@
   "app_error_messages": {
     "reports": {
       "factory": {
+        "no_data": "No hay información para generar el reporte",
         "report_modality_required": "La modalidad es obligatoria",
         "report_required": "El tipo de reporte es obligatorio",
         "report_invalid": "El tipo de reporte no es valido, lo valores permitidos son :reports",
