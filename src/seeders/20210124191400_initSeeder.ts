@@ -530,6 +530,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_viewer', description: 'Consultar programas'},
         {name: 'permission:course_scheduling_menu_access', description: 'Menu de programas'},
         {name: 'permission:course_scheduling_reprogramming', description: 'Solicitar reprogramación'},
+
+        {name: 'permission:course_scheduling_associations_view', description: 'Ver asociaciones de programaciones'},
+        {name: 'permission:course_scheduling_associations_add', description: 'Crear/Actualizar asociaciones de programaciones'},
       ]},
       {name: 'module:course_scheduling_enrollment', description: 'Módulo que permite administrar los programas', permissions: [
         {name: 'permission:course_scheduling_enrollment_create', description: 'Crear programas'},

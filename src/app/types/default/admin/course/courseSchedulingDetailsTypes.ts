@@ -39,4 +39,8 @@ export interface ICourseSchedulingDetailQuery {
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
 }
+export interface IDuplicateCourseSchedulingDetail {
+  courseSchedulingId: string;
+  courseSchedulingDetailId: string;
+}
 //@end

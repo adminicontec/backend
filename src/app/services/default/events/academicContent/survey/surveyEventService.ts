@@ -129,7 +129,7 @@ class SurveyEventService {
                     const lastSession = sessions[sessions.length-1]
                     console.log('lastSession', lastSession)
                     // if (today.format('YYYY-MM-DD ') >= endDate.format('YYYY-MM-DD')) {
-                      if (today.isAfter(lastSession.endDate.subtract(30, 'minutes'))) {
+                      if (today.isAfter(lastSession.endDate.subtract(90, 'minutes'))) {
                         console.log('session selected', lastSession)
                         anySessionExpiredToday = true
                         surveyAvailable = true

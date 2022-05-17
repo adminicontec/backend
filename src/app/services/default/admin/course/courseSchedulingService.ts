@@ -36,9 +36,12 @@ import {
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
   ICourseSchedulingReportData,
+  IDuplicateCourseScheduling,
+  ItemsToDuplicate,
   ReprogramingLabels
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { Console } from "console";
+import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 // @end
 
 class CourseSchedulingService {
@@ -185,11 +188,16 @@ class CourseSchedulingService {
 
     let steps = [];
     try {
-      const user: any = await User.findOne({ _id: params.user }).select('id short_key')
+      let user = undefined;
+      if (params.user) {
+        user = await User.findOne({ _id: params.user }).select('id short_key')
+      }
       steps.push('1')
 
       if (params.auditor_modules && typeof params.auditor_modules === 'string' && params.auditor_modules.length) {
         params.auditor_modules = params.auditor_modules.split(',');
+      } else if (Array.isArray(params.auditor_modules)) {
+        params.auditor_modules = params.auditor_modules;
       } else {
         delete params.auditor_modules;
       }
@@ -298,7 +306,9 @@ class CourseSchedulingService {
         }
         if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
 
-        params.endDate = moment(params.endDate + "T23:59:59Z");
+        if (params.endDate) {
+          params.endDate = moment(params.endDate + "T23:59:59Z");
+        }
         params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
         params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
         params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
@@ -426,7 +436,7 @@ class CourseSchedulingService {
 
         let service_id = ''
         steps.push('9')
-        if (user.short_key) {
+        if (user && user.short_key) {
           service_id += `${user.short_key}`
         }
         steps.push('10')
@@ -463,17 +473,13 @@ class CourseSchedulingService {
           year: moment().format('YYYY')
         }
 
-        params.endDate = moment(params.endDate + "T23:59:59Z");
+        params.endDate = params.endDate ? moment(params.endDate + "T23:59:59Z") : moment(params.startDate + "T23:59:59Z");
         params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
         params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
         params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
 
-        console.log("==> ==> =>");
-        console.log(params.endDate);
-        console.log(params.endDiscountDate);
-        console.log("==> ==> =>");
         steps.push('14-1');
-        steps.push(params.endDate);
+        // steps.push(params.endDate);
         steps.push(params.endDiscountDate);
         steps.push(params.endPublicationDate);
         steps.push(params.enrollmentDeadline);
@@ -621,6 +627,22 @@ class CourseSchedulingService {
         }
       })
     }
+  }
+
+  public updateCourseSchedulingEndDate = async (courseSchedulingId: string) => {
+    try {
+      const courseSchedulingDetails = await CourseSchedulingDetails.find({course_scheduling: courseSchedulingId})
+      .select('id startDate endDate')
+      .sort({endDate: -1})
+      .limit(1)
+      if (courseSchedulingDetails && courseSchedulingDetails[0]) {
+        const endDate = courseSchedulingDetails[0].endDate.toISOString().split('T')[0]
+        await this.insertOrUpdate({
+          id: courseSchedulingId,
+          endDate: moment(endDate).format('YYYY-MM-DD')
+        })
+      }
+    } catch (err) {}
   }
 
   public addReprogramingLog = (reprograming: string, courseScheduling: any, source: {identifier: string, sourceType: string}) => {
@@ -1221,7 +1243,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report schedulingAssociation'
     if (filters.select) {
       select = filters.select
     }
@@ -1282,7 +1304,7 @@ class CourseSchedulingService {
     if (filters.account_executive) where.push({ $match: { account_executive: ObjectID(filters.account_executive) } })
     if (filters.start_date) where.push({ $match: { startDate: { $gte: new Date(filters.start_date) } } })
     if (filters.end_date) where.push({ $match: { endDate: { $lte: new Date(filters.end_date) } } })
-
+    if (filters.schedulingAssociation) where.push({ $match: {'schedulingAssociation.slug': { $regex: '.*' + filters.schedulingAssociation + '.*', $options: 'i' }}})
 
     // if (filters.user) {
     // where['metadata.user'] = filters.user
@@ -1566,7 +1588,7 @@ class CourseSchedulingService {
         const detailSessions = await CourseSchedulingDetails.find()
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations')
           .populate({
-            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming', populate: [
+            path: 'course_scheduling', select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming schedulingAssociation', populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
               { path: 'modular', select: 'id name' },
@@ -1576,8 +1598,9 @@ class CourseSchedulingService {
               { path: 'regional', select: 'id name' },
               { path: 'client', select: 'id name' },
               { path: 'city', select: 'id name' },
-              { path: 'account_executive', select: 'id profile.first_name profile.last_name' }
-              // { path: 'country', select: 'id name' },
+              { path: 'account_executive', select: 'id profile.first_name profile.last_name' },
+              { path: 'schedulingAssociation.parent', select: 'id metadata.service_id'},
+              { path: 'schedulingAssociation.personWhoGeneratedAssociation', select: 'id profile.first_name profile.last_name'}
             ]
           })
           .populate({ path: 'course', select: 'id name code moodle_id' })
@@ -1674,7 +1697,10 @@ class CourseSchedulingService {
             service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
             reprogramingCount,
             reprogramingTypes,
-            moduleObservations: (course?.observations) ? course.observations : '-'
+            moduleObservations: (course?.observations) ? course.observations : '-',
+            schedulingAssociationSlug: (course?.course_scheduling?.schedulingAssociation?.slug) ? course?.course_scheduling?.schedulingAssociation?.slug : '-',
+            schedulingAssociationDate: (course?.course_scheduling?.schedulingAssociation?.date) ? moment.utc(course?.course_scheduling?.schedulingAssociation?.date).format('DD/MM/YYYY') : '-',
+            schedulingAssociationPerson: (course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation) ? `${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.first_name} ${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.last_name}` : '-',
           }
 
           courses.push(item)
@@ -1795,6 +1821,9 @@ class CourseSchedulingService {
         'Tipo de reprogramaciones': element.reprogramingTypes.join(','),
         'Nombre del ejecutivo de cuenta': element.executive,
         'Empresa': element.client,
+        'Grupo': element.schedulingAssociationSlug,
+        'Fecha de generación del grupo': element.schedulingAssociationDate,
+        'Persona que genero el grupo': element.schedulingAssociationPerson,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo
         // 'Coordinador Servicio': element.service_user,
       })
@@ -1822,6 +1851,62 @@ class CourseSchedulingService {
         path: send
       }
     })
+  }
+
+  public duplicateCourseScheduling = async (params: IDuplicateCourseScheduling) => {
+    try {
+
+      const logs = []
+      const courseScheduling = await CourseScheduling.findOne({_id: params.courseSchedulingId}).lean()
+      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
+
+      const newCourseSchedulingObj = {
+        ...courseScheduling,
+        _id: undefined,
+        user: courseScheduling?.metadata?.user,
+        endDate: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('YYYY-MM-DD') : undefined,
+        endDiscountDate: courseScheduling?.endDiscountDate ? moment(courseScheduling.endDiscountDate).format('YYYY-MM-DD') : undefined,
+        endPublicationDate: courseScheduling?.endPublicationDate ? moment(courseScheduling.endPublicationDate).format('YYYY-MM-DD') : undefined,
+        enrollmentDeadline: courseScheduling?.enrollmentDeadline ? moment(courseScheduling.enrollmentDeadline).format('YYYY-MM-DD') : undefined,
+        moodle_id: undefined,
+        sendEmail: false,
+        schedulingAssociation: undefined
+      }
+
+      const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj)
+
+      if (newCourseSchedulingResponse.status === 'error') return newCourseSchedulingResponse;
+
+      const newCourseScheduling = newCourseSchedulingResponse.scheduling;
+      logs.push(
+        {key: newCourseScheduling._id, type: 'CourseScheduling'}
+      )
+
+      if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
+        const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
+        .select('id')
+        .lean()
+        for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
+          const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
+            courseSchedulingDetailId: courseSchedulingDetail._id,
+            courseSchedulingId: newCourseScheduling._id
+          })
+          if (newCourseSchedulingDetailResponse.status === 'success') {
+            const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
+            logs.push(
+              {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
+            )
+          }
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        newCourseScheduling: newCourseSchedulingResponse.scheduling,
+        logs
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 }
 

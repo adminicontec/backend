@@ -331,6 +331,12 @@
       }
     },
     "course_scheduling": {
+      "associations": {
+        "generate_associations_in_progress": "Generando asociación en progreso",
+        "duplicated": "Existen asociaciones duplicadas",
+        "course_scheduling_required": "El identificador de la programación es obligatorio",
+        "course_scheduling_not_found": "La programación no ha sido encontrada"
+      },
       "not_found": "La programación no ha sido encontrada",
       "insertOrUpdate": {
         "failed": "Se ha presentado un error al guardar"
@@ -433,6 +439,9 @@
         "type_required": "El tipo de documento es obligatorio",
         "generate_report": {
           "params_invalid": "Los parametros para generación de reporte no son validos"
+        },
+        "course_scheduling_association": {
+          "params_invalid": "Los parametros para asociación de programaciones no son validos"
         },
         "not_found": "El item de la cola del Procesador de Documentos no existe.",
         "insertOrUpdate": {

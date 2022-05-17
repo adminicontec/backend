@@ -879,6 +879,28 @@ class ErrorResponse {
         }
       },
       "course_scheduling": {
+        "associations": {
+          "generate_associations_in_progress": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.associations.generate_associations_in_progress"),
+            "status_code": "course_scheduling_associations_generate_associations_in_progress",
+            "code": 400
+          },
+          "duplicated": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.associations.duplicated"),
+            "status_code": "course_scheduling_associations_duplicated",
+            "code": 400
+          },
+          "course_scheduling_required": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.associations.course_scheduling_required"),
+            "status_code": "course_scheduling_associations_course_scheduling_required",
+            "code": 400
+          },
+          "course_scheduling_not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.associations.course_scheduling_not_found"),
+            "status_code": "course_scheduling_associations_course_scheduling_not_found",
+            "code": 400
+          }
+        },
         "not_found": {
           "message": i18nUtility.__("app_error_messages.course_scheduling.not_found"),
           "status_code": "course_scheduling_not_found",
@@ -1160,6 +1182,13 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.document.queue.type_required"),
             "status_code": "document_queue_type_required",
             "code": 400
+          },
+          "course_scheduling_association": {
+            "params_invalid": {
+              "message": i18nUtility.__("app_error_messages.document.queue.course_scheduling_association.params_invalid"),
+              "status_code": "document_queue_course_scheduling_association_params_invalid",
+              "code": 400
+            }
           },
           "generate_report": {
             "params_invalid": {

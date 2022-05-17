@@ -1,4 +1,5 @@
 // @import_routes
+import { courseSchedulingAssociationRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingAssociationRoute";
 import { reportsFactoryRoute } from "@scnode_app/routes/default/data/reports/reportsFactoryRoute";
 import { certificateLogsRoute } from "@scnode_app/routes/default/admin/certificateQueue/certificateLogsRoute";
 import { portfolioProgramRoute } from "@scnode_app/routes/default/admin/portfolio/portfolioProgramRoute";
@@ -78,6 +79,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    courseSchedulingAssociationRoute,
     reportsFactoryRoute,
     certificateLogsRoute,
     portfolioProgramRoute,
