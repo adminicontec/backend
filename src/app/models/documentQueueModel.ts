@@ -24,7 +24,7 @@ const DocumentQueueSchema = new Schema({
   type: {
     type: Schema.Types.String,
     required: true,
-    enum: ['Qualified Teacher', 'Portfolio', 'Generate Report']
+    enum: ['Qualified Teacher', 'Portfolio', 'Generate Report', 'CourseScheduling Association']
   },
   sendEmail:{
     type: Schema.Types.Boolean,

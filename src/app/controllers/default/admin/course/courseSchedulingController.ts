@@ -123,6 +123,36 @@ class CourseSchedulingController {
 		const response = await courseSchedulingService.generateReport(req.getParameters.all())
 		return responseUtility.sendResponseFromObject(res, response)
 	}
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public reactivateService = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await courseSchedulingService.reactivateService(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public duplicateService = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await courseSchedulingService.duplicateService(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const courseSchedulingController = new CourseSchedulingController();

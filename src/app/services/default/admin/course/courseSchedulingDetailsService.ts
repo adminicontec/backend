@@ -24,7 +24,7 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 // @end
 
 class CourseSchedulingDetailsService {
@@ -274,6 +274,8 @@ class CourseSchedulingDetailsService {
           )
         }
 
+        await courseSchedulingService.updateCourseSchedulingEndDate(register.course_scheduling);
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: {
@@ -312,6 +314,8 @@ class CourseSchedulingDetailsService {
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, 1)
         }
+
+        await courseSchedulingService.updateCourseSchedulingEndDate(response.course_scheduling._id);
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -511,6 +515,29 @@ class CourseSchedulingDetailsService {
     })
   }
 
+  public duplicateCourseSchedulingDetail = async (params: IDuplicateCourseSchedulingDetail) => {
+    try {
+      const courseSchedulingDetail = await CourseSchedulingDetails.findOne({_id: params.courseSchedulingDetailId}).lean()
+      if (!courseSchedulingDetail) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
+
+      const newCourseSchedulingDetailObj = {
+        ...courseSchedulingDetail,
+        _id: undefined,
+        course_scheduling: params.courseSchedulingId,
+        sendEmail: false
+      }
+
+      const newCourseSchedulingDetailResponse: any = await this.insertOrUpdate(newCourseSchedulingDetailObj)
+
+      if (newCourseSchedulingDetailResponse.status === 'error') return newCourseSchedulingDetailResponse;
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        newCourseSchedulingDetail: newCourseSchedulingDetailResponse.scheduling
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 }
 
 export const courseSchedulingDetailsService = new CourseSchedulingDetailsService();

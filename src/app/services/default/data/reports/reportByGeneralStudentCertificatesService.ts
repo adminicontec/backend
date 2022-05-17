@@ -87,7 +87,7 @@ class ReportByGeneralStudentCertificatesService {
       }
 
       const certifications = await CertificateQueue.find(where)
-      .select('_id courseId userId auxiliar certificateType message certificate.hash certificate.date')
+      .select('_id courseId userId auxiliar certificateType message certificate.hash certificate.date ') // TODO: Agregar certificate.downloadDate
       .populate({
         path: 'courseId',
         select: 'id metadata schedulingMode regional city account_executive client program startDate endDate',

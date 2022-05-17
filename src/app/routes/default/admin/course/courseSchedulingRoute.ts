@@ -31,13 +31,14 @@ class CourseSchedulingRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.get(app, _route, '/generate-report', this.instanceController.generateReport, [], ['auth'])
 
+    routerUtility.post(app, _route, '/:id/reactivate-service', this.instanceController.reactivateService, [], ['auth'])
+    routerUtility.post(app, _route, '/:id/duplicate-service', this.instanceController.duplicateService, [], ['auth'])
 
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'course-scheduling', method: 'create', dir: 'admin/course' }], ['auth'])
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
-
     // @end
   }
 }
