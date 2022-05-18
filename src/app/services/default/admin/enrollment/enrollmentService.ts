@@ -29,12 +29,12 @@ import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
 // @end
 
 // @import models
-import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue, Program } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -825,6 +825,131 @@ class EnrollmentService {
         successfully: extSuccess
       }
     })
+  }
+
+  /**
+   * @INFO Obtener los enrollment de un estudiante según unos parámetros de búsqueda
+   */
+  public findStudents = async (params: IEnrollmentFindStudents) => {
+    try{
+      let where: any[] = [];
+      let availableSearch: boolean = false;
+
+      where.push({
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user_doc'
+        }
+      });
+
+      where.push({
+        $lookup: {
+          from: 'course_schedulings',
+          localField: 'course_scheduling',
+          foreignField: '_id',
+          as: 'course_scheduling_doc'
+        }
+      });
+
+      where.push({
+        $lookup: {
+          from: 'programs',
+          localField: 'course_scheduling_doc.program',
+          foreignField: '_id',
+          as: 'program_doc'
+        }
+      });
+
+      if (params.name && params.name.length) {
+        where.push({
+          $match: {
+            $or: [
+              {'user_doc.profile.first_name': { $regex: '.*' + params.name + '.*', $options: 'i' }},
+              {'user_doc.profile.last_name': { $regex: '.*' + params.name + '.*', $options: 'i' }}
+            ]
+          }
+        })
+        availableSearch = true;
+      }
+
+      if (params.docNumber && params.docNumber.length) {
+        where.push({
+          $match: {
+            $or: [
+              {'user_doc.profile.doc_number': { $regex: '.*' + params.docNumber + '.*', $options: 'i' }}
+            ]
+          }
+        })
+        availableSearch = true;
+      }
+
+      if (params.email && params.email.length) {
+        where.push({
+          $match: {
+            $or: [
+              {'user_doc.email': { $regex: '.*' + params.email + '.*', $options: 'i' }}
+            ]
+          }
+        })
+        availableSearch = true;
+      }
+
+      let registers: any[] = [];
+      if (availableSearch) {
+        registers = await Enrollment.aggregate(where);
+      }
+
+      // Formatear respuesta
+      if (registers && registers.length) {
+        registers.forEach((register, idx) => {
+          if (register.user_doc && register.user_doc.length) {
+            registers[idx].user_doc = register.user_doc[0];
+          }
+          if (register.program_doc && register.program_doc.length) {
+            registers[idx].program_doc = register.program_doc[0];
+          }
+          if (register.course_scheduling_doc && register.course_scheduling_doc.length) {
+            registers[idx].course_scheduling_doc = register.course_scheduling_doc[0];
+          }
+        })
+      }
+
+      // Buscar certificados generados
+      if (registers && registers.length) {
+        let idx: number = 0;
+        for await (let register of registers) {
+          const certificates = await CertificateQueue.find({userId: register.user, courseId: register.course_scheduling});
+          if (certificates && certificates.length) {
+            certificates.forEach((certificate) => {
+              if (certificate.certificateType === 'academic') {
+                registers[idx].academicCertificate = {
+                  date: certificate.certificate?.date,
+                  title: certificate?.certificate?.title
+                }
+              } else {
+                registers[idx].auditCertificate = {
+                  date: certificate.certificate?.date,
+                  title: certificate?.certificate?.title
+                }
+              }
+            });
+          }
+          idx++;
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          enrollments: registers
+        }
+      })
+
+    } catch(e) {
+      console.log('EnrollmentService => findStudents Error: ', e);
+      return responseUtility.buildResponseFailed('json');
+    }
   }
 
 }
