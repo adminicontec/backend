@@ -175,7 +175,7 @@ class MasterCategoryService {
       const regexMain = new RegExp(/(^R[0-9]$)/);
 
       if (respMoodle != null) {
-        let mainCategory = respMoodle.filter(c => c.idnumber.match(regexMain));
+        let mainCategory = respMoodle.filter(c => c?.idnumber?.match(regexMain));
 
         mainCategory.forEach(element => {
 
