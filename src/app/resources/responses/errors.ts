@@ -14,6 +14,11 @@ class ErrorResponse {
       // Add errors
       "reports": {
         "factory": {
+          "no_data": {
+            "message": i18nUtility.__("app_error_messages.reports.factory.no_data"),
+            "status_code": "reports_factory_no_data",
+            "code": 400
+          },
           "report_modality_required": {
             "message": i18nUtility.__("app_error_messages.reports.factory.report_modality_required"),
             "status_code": "reports_factory_report_modality_required",
