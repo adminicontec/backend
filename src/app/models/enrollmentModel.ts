@@ -38,6 +38,10 @@ const EnrollmentSchema = new Schema({
   courseID: {
     type: Schema.Types.String,
     required: true,
+  },
+  origin: {
+    type: Schema.Types.String,
+    required: false,
   }
   // @end
 }, {

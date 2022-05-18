@@ -66,7 +66,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID course_scheduling'
+    let select = 'id user courseID course_scheduling origin'
     if (filters.select) {
       select = filters.select
     }
@@ -111,14 +111,16 @@ class EnrollmentService {
     try {
       registers = await Enrollment.find(where)
         .select(select)
-        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen' })
+        .populate({
+          path: 'user',
+          select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen'
+        })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
 
       let count = 1
       for await (const register of registers) {
-
 
         if (register.user && register.user.profile) {
           register.count = count
@@ -254,7 +256,7 @@ class EnrollmentService {
 
     try {
       if (params.id) {
-
+        console.log("update register: " + params.id)
         const register = await Enrollment.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
 
@@ -689,7 +691,7 @@ class EnrollmentService {
                 originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
               }
 
-              console.log(`Origin for ${ element['Nombres']}: ${originField}`);
+              console.log(`Origin for ${element['Nombres']}: ${originField}`);
               singleUserEnrollmentContent =
               {
                 documentType: element['Tipo Documento'].trim().toUpperCase(),
@@ -827,6 +829,55 @@ class EnrollmentService {
     })
   }
 
+
+  public moveOriginRecords = async (params: IEnrollmentQuery) => {
+
+    // 1. List of Enrollments
+    let listOfEnrollment;
+    let listOfUpdatedRecords = [];
+    try {
+
+      let registers: any = await this.list(params);
+      if (!registers) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
+
+      listOfEnrollment = registers.enrollment;
+
+      for await (let enrollment of listOfEnrollment) {
+
+        if (enrollment.user) {
+          if (!enrollment.origin) {
+            enrollment.origin = enrollment.user.profile.origen;
+            enrollment.id = enrollment._id;
+            console.log("ææææææææææææææææææææææææææææææææææææææææææææææææææææ");
+            console.log(`Update register for ${enrollment.user.fullname} to ${enrollment.origin}`);
+
+            let updateRegister: any = await this.insertOrUpdate(enrollment);
+            console.log(updateRegister);
+            listOfUpdatedRecords.push(enrollment);
+          }
+        }
+      }
+    }
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'enrollment.exception',
+          additional_parameters: {
+            process: 'list()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        enrollment: [
+          listOfUpdatedRecords
+        ]
+      }
+    })
+  }
 }
 
 export const enrollmentService = new EnrollmentService();
