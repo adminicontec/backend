@@ -4,6 +4,7 @@
 // @add your types
 export interface IGenerateSurveyReport {
   title?: string
+  user: string;
   output_format?: 'xlsx' | 'json' // Formato de salida del reporte, por defecto es xlsx
   course_scheduling?: string
   course_scheduling_detail?: string
@@ -46,7 +47,23 @@ export interface ISectionQuestionsChoiceSimple {
   average?: number,
 }
 
+export interface IReportSurveyGeneralInfo {
+  programName: string;
+  programCode: string;
+  courseName?: string;
+  courseCode?: string;
+  serviceId: string;
+  modalityName: string;
+  regional: string;
+  city: string;
+  companyName: string;
+  accountExecutive: string;
+  personWhoGeneratesReport: string;
+  reportDate: string;
+}
+
 export interface IReportSurvey {
+  generalInfo: IReportSurveyGeneralInfo
   section_questions_range: ISectionQuestionsRange[]
   section_questions_open: Record<string, ISectionQuestionsOpen>
   section_questions_choice_simple: Record<string, ISectionQuestionsChoiceSimple>
