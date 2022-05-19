@@ -443,9 +443,9 @@ class ReportByModalityService {
             if (
               participantsInformationByProgram &&
               participantsInformationByProgram[courseScheduling._id.toString()] &&
-              participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+              participantsInformationByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]
             ) {
-              courseSchedulingInfoByParticipant = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+              courseSchedulingInfoByParticipant = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]
             }
 
 
@@ -587,6 +587,8 @@ class ReportByModalityService {
           report
         }})
       } else if (output_format === 'xlsx') {
+        if (report.pages.length === 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.factory.no_data' })
+
         const wb = await this.buildXLSX(report);
         if (!wb) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_build_xlsx' })
 

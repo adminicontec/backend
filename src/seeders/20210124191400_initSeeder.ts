@@ -483,6 +483,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:portfolio', description: 'Módulo que permite administrar el portafolio', permissions: [
         {name: 'permission:portfolio_menu_access', description: 'Menu de portafolio'},
       ]},
+      {name: 'module:student_administrator', description: 'Módulo que permite administrar los estudiantes', permissions: [
+        {name: 'permission:student_administrator_menu_access', description: 'Menu de administración de estudiantes'},
+      ]},
       {name: 'module:qualifiedTeacher', description: 'Módulo que permite administrar los docentes y tutores', permissions: [
         {name: 'permission:qualifiedTeacher_create', description: 'Crear docentes'},
         {name: 'permission:qualifiedTeacher_update', description: 'Editar docentes'},
@@ -530,6 +533,11 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_viewer', description: 'Consultar programas'},
         {name: 'permission:course_scheduling_menu_access', description: 'Menu de programas'},
         {name: 'permission:course_scheduling_reprogramming', description: 'Solicitar reprogramación'},
+
+        {name: 'permission:course_scheduling_associations_view', description: 'Ver asociaciones de programaciones'},
+        {name: 'permission:course_scheduling_associations_add', description: 'Crear/Actualizar asociaciones de programaciones'},
+
+        {name: 'permission:course_scheduling_reactivate', description: 'Reactiva programaciones'},
       ]},
       {name: 'module:course_scheduling_enrollment', description: 'Módulo que permite administrar los programas', permissions: [
         {name: 'permission:course_scheduling_enrollment_create', description: 'Crear programas'},
@@ -726,6 +734,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:account_executives_menu_access'],
           module_permission_ids['permission:portfolio_menu_access'],
+          module_permission_ids['permission:student_administrator_menu_access'],
           module_permission_ids['permission:roles_menu_access'],
           module_permission_ids['permission:companies_menu_access'],
           module_permission_ids['permission:courses_menu_access'],

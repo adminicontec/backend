@@ -31,6 +31,9 @@ const CourseSchedulingInformationSchema = new Schema({
   examsScore: {
     type: Schema.Types.Number
   },
+  forumsScore: {
+    type: Schema.Types.Number
+  },
   completion: {
     type: Schema.Types.Number
   },
@@ -54,9 +57,58 @@ const CourseSchedulingInformationSchema = new Schema({
   certificationDate: {
     type: Schema.Types.Date
   },
+  certificationDownloadDate: {
+    type: Schema.Types.Date
+  },
   assistanceCertificate: {
     type: Schema.Types.ObjectId,
     ref: 'User'
+  },
+  auditCertificationDate: {
+    type: Schema.Types.Date
+  },
+  auditCertificationDownloadDate: {
+    type: Schema.Types.Date
+  },
+  auditAssistanceCertificate: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  certificateStats: {
+    isAttendanceComplete: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isProgressComplete: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isCertificate: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isDownloadCertificate: {
+      type: Schema.Types.Boolean,
+      default: false
+    }
+  },
+  auditCertificateStats: {
+    isAttendanceComplete: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isExamApprove: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isCertificate: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    isDownloadCertificate: {
+      type: Schema.Types.Boolean,
+      default: false
+    }
   },
   courses: [{
     schedulingDetails: {

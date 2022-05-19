@@ -152,6 +152,13 @@ class DocumentQueueService {
         if (!params.mixedParams.report || !params.mixedParams.output_format) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.generate_report.params_invalid'})
       }
 
+      if (params.type === 'CourseScheduling Association') {
+        if (!params.mixedParams) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.course_scheduling_association.params_invalid'})
+        if (typeof params.mixedParams !== 'object') return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.course_scheduling_association.params_invalid'})
+
+        if (!params.mixedParams.schedulingAssociation) return responseUtility.buildResponseFailed('json', null, {error_key: 'document.queue.course_scheduling_association.params_invalid'})
+      }
+
       if (params.id) {
         const register = await DocumentQueue.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'document.queue.not_found' })

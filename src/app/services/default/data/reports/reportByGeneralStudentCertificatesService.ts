@@ -87,7 +87,7 @@ class ReportByGeneralStudentCertificatesService {
       }
 
       const certifications = await CertificateQueue.find(where)
-      .select('_id courseId userId auxiliar certificateType message certificate.hash certificate.date')
+      .select('_id courseId userId auxiliar certificateType message downloadDate certificate.hash certificate.date certificate.title')
       .populate({
         path: 'courseId',
         select: 'id metadata schedulingMode regional city account_executive client program startDate endDate',
@@ -140,7 +140,7 @@ class ReportByGeneralStudentCertificatesService {
           companyName: certification?.courseId?.client?.name || '-',
           programCode: certification?.courseId?.program?.code || '-',
           programName: certification?.courseId?.program?.name || '-',
-          certificationName: '-', // TODO: Esta info de donde sale
+          certificationName: certification?.certificate?.title || '-',
           user: {
             username: certification?.userId?.username || '-',
             docNumber: certification?.userId?.profile?.doc_number || '-',
@@ -153,7 +153,7 @@ class ReportByGeneralStudentCertificatesService {
           certification: {
             hash: certification?.certificate?.hash || '-',
             date: (certification?.certificate?.date) ? moment(certification?.certificate?.date).format('DD/MM/YYYY') : '-',
-            downloadDate: '-', // TODO: Esta info de donde sale
+            downloadDate: certification?.downloadDate ? moment(certification?.downloadDate).format('DD/MM/YYYY') : '-',
             auxiliar: (certification?.auxiliar?.profile) ? `${certification?.auxiliar?.profile.first_name} ${certification?.auxiliar?.profile.last_name}` : '-',
           }
         }
@@ -168,6 +168,8 @@ class ReportByGeneralStudentCertificatesService {
           report
         }})
       } else if (output_format === 'xlsx') {
+        if (report.pages.length === 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.factory.no_data' })
+
         const wb = await this.buildXLSX(report);
         if (!wb) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_build_xlsx' })
 

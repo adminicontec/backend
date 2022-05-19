@@ -13,6 +13,7 @@ import { teacherService } from '@scnode_app/services/default/admin/teacher/teach
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 import { portfolioProgramService } from '@scnode_app/services/default/admin/portfolio/portfolioProgramService';
 import { reportsFactoryService } from '@scnode_app/services/default/data/reports/reportsFactoryService';
+import { courseSchedulingAssociationService } from '@scnode_app/services/default/admin/course/courseSchedulingAssociationService';
 // @end
 
 // @import_models Import models
@@ -48,56 +49,61 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
       });
 
-    if (respDocumentQueue.documentQueue[0]) {
-      const documentQueue = respDocumentQueue.documentQueue[0];
+    if (respDocumentQueue.documentQueue) {
+      for (const documentQueue of respDocumentQueue.documentQueue) {
 
-      console.log("Type of Document: " + documentQueue.type);
-      if (documentQueue.type === 'Generate Report') {
-        let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
-        const response = await reportsFactoryService.processFactoryGenerateReportByDocumentQueue(params)
-        console.log(response);
-      } else {
-        let driver = attached['driver'];
-        let attached_config = attached[driver];
-        const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
+        console.log("Type of Document: " + documentQueue.type);
+        if (documentQueue.type === 'CourseScheduling Association') {
+          let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
+          const response = await courseSchedulingAssociationService.processAssociateSchedulesByDocumentQueue(params)
+          console.log(`CourseScheduling Association - response`, response);
+        } else if (documentQueue.type === 'Generate Report') {
+          let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
+          const response = await reportsFactoryService.processFactoryGenerateReportByDocumentQueue(params)
+          console.log(response);
+        } else {
+          let driver = attached['driver'];
+          let attached_config = attached[driver];
+          const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
 
-        let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
-        if (attached_config.base_path_type === "absolute") {
-          base_path = upload_config_base_path
-        }
+          let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
+          if (attached_config.base_path_type === "absolute") {
+            base_path = upload_config_base_path
+          }
 
-        let docPath = documentQueue.docPath;
-        let filePath = `${base_path}/${docPath}`
+          let docPath = documentQueue.docPath;
+          let filePath = `${base_path}/${docPath}`
 
-        if (filePath && fileUtility.fileExists(filePath) === true) {
-          console.log('File Exists!');
-          const contentFile = fileUtility.readFileSyncBuffer(filePath);
+          if (filePath && fileUtility.fileExists(filePath) === true) {
+            console.log('File Exists!');
+            const contentFile = fileUtility.readFileSyncBuffer(filePath);
 
-          if (contentFile && contentFile.length > 0) {
-            let params: any = {
-              recordToProcess: documentQueue,
-              contentFile: { name: 'excel', data: contentFile }
-            };
+            if (contentFile && contentFile.length > 0) {
+              let params: any = {
+                recordToProcess: documentQueue,
+                contentFile: { name: 'excel', data: contentFile }
+              };
 
-            let response: any;
-            switch(documentQueue.type) {
-              case 'Qualified Teacher':
-                response = await teacherService.processFile(params);
-                break;
-              case 'Portfolio':
-                response = await portfolioProgramService.processFile(params);
-                break;
-              default:
-                break;
+              let response: any;
+              switch(documentQueue.type) {
+                case 'Qualified Teacher':
+                  response = await teacherService.processFile(params);
+                  break;
+                case 'Portfolio':
+                  response = await portfolioProgramService.processFile(params);
+                  break;
+                default:
+                  break;
+              }
+              console.log(response);
             }
-            console.log(response);
+            else {
+              console.log("There's no content to process");
+            }
           }
           else {
-            console.log("There's no content to process");
+            console.log("File not found");
           }
-        }
-        else {
-          console.log("File not found");
         }
       }
     }

@@ -57,4 +57,10 @@ export interface IEnrollmentDelete {
   id: string // Identificador de la matrícula en Campus Digital
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar notificación via email
 }
+
+export interface IEnrollmentFindStudents{
+  name?: string;
+  email?: string;
+  docNumber?: string;
+}
 //@end

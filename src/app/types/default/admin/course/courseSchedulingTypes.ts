@@ -22,14 +22,14 @@ export interface ICourseScheduling {
     service_id: string // Campo unico que identifica el servicio
     year: string // Año en que se genera el servicio
   }
-  user: string // Identificador del usuario logueado
-  schedulingMode: {value: number, label: string} | string // Identificador del modo de programación
-  schedulingModeDetails: 'in_situ' | 'online',
-  modular: string // Identificador del modular
-  program: {value: number, label: string} | string // Identificador del programa
-  schedulingType: string // Identificador del tipo de programación
-  schedulingStatus: string //Identificador del estado de programación
-  confirmed_date: Date | null;
+  user?: string // Identificador del usuario logueado
+  schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
+  schedulingModeDetails?: 'in_situ' | 'online',
+  modular?: string // Identificador del modular
+  program?: {value: number, label: string} | string // Identificador del programa
+  schedulingType?: string // Identificador del tipo de programación
+  schedulingStatus?: string //Identificador del estado de programación
+  confirmed_date?: Date | null;
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
   regional?: string // Regional de la programación
@@ -47,9 +47,9 @@ export interface ICourseScheduling {
   // teacher?: string // Docente de la programación
   // sessions?: Array<ICourseSchedulingSession> // Array de sesiones de clase
   hasCost?         : boolean | string,   // Indica si el curso es de pago o no
-  priceCOP         : number,             // Precio en Pesos Colombianos
-  priceUSD         : number,             // Precio en Dólares Estadounidenses
-  discount         : number,             // Porcentaje de descuento del precio
+  priceCOP?         : number,             // Precio en Pesos Colombianos
+  priceUSD?         : number,             // Precio en Dólares Estadounidenses
+  discount?         : number,             // Porcentaje de descuento del precio
   endPublicationDate?: any | null,
   endDiscountDate?: any | null,
   enrollmentDeadline?: any | null,
@@ -60,6 +60,14 @@ export interface ICourseScheduling {
   signature_2?: string
   signature_3?: string
   auditor_modules?: string | Array<string>
+  cancelationTracking?: {
+    date: string;
+    personWhoCancels: string;
+  }
+  reactivateTracking?: {
+    date: string;
+    personWhoReactivates: string;
+  }
 }
 
 export interface ICourseSchedulingDelete {
@@ -85,6 +93,8 @@ export interface ICourseSchedulingQuery {
   program_course_name?: string
   account_executive?: string // Buscar solo resultados de ese accountExecutive
   company?: string
+  schedulingAssociation?: string;
+  teacher?: string;
 }
 
 export interface ICourseSchedulingReport {
@@ -103,5 +113,28 @@ export enum ReprogramingLabels {
   client = 'Solicitud del cliente',
   account_executive = 'Ejecutivo de cuenta',
   internal = 'Operaciones Icontec',
+}
+
+export enum ItemsToDuplicate {
+  COURSE_SCHEDULING = 'course_scheduling',
+  COURSE_SCHEDULING_DETAILS = 'course_scheduling_details',
+  ENROLLMENT = 'enrollment'
+}
+
+export interface IDuplicateCourseScheduling {
+  courseSchedulingId: string;
+  itemsToDuplicate: ItemsToDuplicate[];
+  user?: string
+}
+
+export interface IReactivateService {
+  id: string;
+  user: string;
+}
+
+export interface IDuplicateService {
+  id: string;
+  user: string;
+  itemsToDuplicate: ItemsToDuplicate[];
 }
 //@end

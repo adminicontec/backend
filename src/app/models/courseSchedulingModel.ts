@@ -87,7 +87,7 @@ const CourseSchedulingSchema = new Schema({
   },
   endDate: {
     type: Schema.Types.Date,
-    required: true,
+    required: false,
   },
   regional: {
     type: Schema.Types.ObjectId,
@@ -250,6 +250,47 @@ const CourseSchedulingSchema = new Schema({
   business_report: {
     type: Schema.Types.ObjectId,
     ref: 'Attached'
+  },
+  schedulingAssociation: {
+    generatingAssociation: {
+      type: Schema.Types.Boolean,
+    },
+    associationType: {
+      type: Schema.Types.String,
+      enum: ['parent', 'child'],
+    },
+    parent: {
+      type: Schema.Types.ObjectId,
+      ref: 'CourseScheduling'
+    },
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoGeneratedAssociation: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    slug: {
+      type: Schema.Types.String
+    }
+  },
+  cancelationTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoCancels: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+  },
+  reactivateTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoReactivates: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
   }
   // @end
 }, {
