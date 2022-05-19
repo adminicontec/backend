@@ -50,6 +50,9 @@ export interface ISectionQuestionsChoiceSimple {
 export interface IReportSurveyGeneralInfo {
   programName: string;
   programCode: string;
+  startDate: string;
+  endDate: string;
+  teacher: string;
   courseName?: string;
   courseCode?: string;
   serviceId: string;
