@@ -96,6 +96,10 @@ class EnrollmentController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public moveOriginRecords = async (req: Request, res: Response) => {
+    const response = await enrollmentService.moveOriginRecords(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const enrollmentController = new EnrollmentController();

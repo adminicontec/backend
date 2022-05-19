@@ -53,6 +53,11 @@ class CertificateController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public automaticRelease = async (req: Request, res: Response) => {
+    const response = await certificateService.automaticRelease(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const certificateController = new CertificateController();
