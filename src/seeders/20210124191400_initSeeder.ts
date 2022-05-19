@@ -486,6 +486,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:student_administrator', description: 'Módulo que permite administrar los estudiantes', permissions: [
         {name: 'permission:student_administrator_menu_access', description: 'Menu de administración de estudiantes'},
       ]},
+      {name: 'module:reports', description: 'Módulo que permite administrar los reportes', permissions: [
+        {name: 'permission:reports_menu_access', description: 'Menu de pantalla de reportes'},
+      ]},
       {name: 'module:qualifiedTeacher', description: 'Módulo que permite administrar los docentes y tutores', permissions: [
         {name: 'permission:qualifiedTeacher_create', description: 'Crear docentes'},
         {name: 'permission:qualifiedTeacher_update', description: 'Editar docentes'},
