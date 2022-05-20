@@ -26,8 +26,9 @@ import {
   ISectionQuestionsOpen,
   ISectionQuestionsChoiceSimple,
   IGeneralReportSurvey,
+  IReportSurveyGeneralInfo,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
-import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey } from '@scnode_app/models';
+import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey, User } from '@scnode_app/models';
 // @end
 
 class SurveyDataService {
@@ -767,6 +768,7 @@ class SurveyDataService {
    */
   public generateReport = async (params: IGenerateSurveyReport) => {
     try {
+      const userLogged: any = await User.findOne({ _id: params.user }).select('id profile.first_name profile.last_name')
 
       const time = new Date().getTime()
 
@@ -777,26 +779,98 @@ class SurveyDataService {
       // @INFO: Consultando el elemento relacionado a la encuesta
       let container_survey = null;
       let schedulingMode = null;
+      let generalInfo: IReportSurveyGeneralInfo = null;
       if (params.course_scheduling) { // Si es una programación general
         container_survey = await CourseScheduling.findOne({_id: params.course_scheduling})
         .populate({path: 'schedulingMode', select: 'id name'})
-        .select('_id schedulingMode')
+        .populate({path: 'modular', select: 'id name'})
+        .populate({path: 'program', select: 'id name code isAuditor'})
+        .populate({path: 'client', select: 'id name'})
+        .populate({path: 'city', select: 'id name'})
+        .populate({path: 'schedulingType', select: 'id name'})
+        .populate({path: 'regional', select: 'id name'})
+        .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
+        .select('_id schedulingMode modular program client city schedulingType regional account_executive metadata startDate endDate')
         .lean()
         if (container_survey) {
           schedulingMode = container_survey.schedulingMode._id
+
+          let courseSchedulingDetails = {};
+          const details = await CourseSchedulingDetails.find({
+            course_scheduling: container_survey._id
+          })
+          .select('id course_scheduling teacher course startDate endDate duration sessions')
+          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
+          .populate({path: 'course', select: 'id name code'})
+          .lean();
+          courseSchedulingDetails = details.reduce((accum, element) => {
+            if (element?.course_scheduling) {
+              if (!accum[element.course_scheduling.toString()]) {
+                accum[element.course_scheduling.toString()] = []
+              }
+              accum[element.course_scheduling.toString()].push(element)
+            }
+            return accum
+          }, {})
+
+          let teacher = '-';
+          if (courseSchedulingDetails[container_survey._id.toString()]) {
+            const courses = courseSchedulingDetails[container_survey._id.toString()]
+            const lastCourse = courses[courses.length - 1];
+            teacher = (lastCourse?.teacher?.profile) ? `${lastCourse?.teacher.profile?.first_name} ${lastCourse?.teacher.profile?.last_name}` : '-';
+          }
+          generalInfo = {
+            programName: container_survey?.program?.name || '-',
+            programCode: container_survey?.program?.code || '-',
+            teacher,
+            serviceId: container_survey?.metadata?.service_id || '-',
+            modalityName: container_survey?.schedulingMode?.name || '-',
+            regional: container_survey?.regional?.name || '-',
+            city: container_survey?.city?.name || '-',
+            companyName: container_survey?.client?.name || '-',
+            startDate: (container_survey?.startDate) ? moment(container_survey.startDate).format('DD/MM/YYYY') : '-',
+            endDate: (container_survey?.endDate) ? moment(container_survey.endDate).format('DD/MM/YYYY') : '-',
+            accountExecutive: (container_survey?.account_executive?.profile) ? `${container_survey?.account_executive?.profile.first_name} ${container_survey?.account_executive?.profile.last_name}` : '-',
+            personWhoGeneratesReport: (userLogged?.profile) ? `${userLogged?.profile.first_name} ${userLogged?.profile.last_name}` : '-',
+            reportDate: moment().format('DD/MM/YYYY'),
+          }
         }
       } else if (params.course_scheduling_detail) { // Si es un curso dentro de una programación
         container_survey = await CourseSchedulingDetails.findOne({_id: params.course_scheduling_detail})
-        .populate({path: 'course_scheduling', select: 'id schedulingMode', populate: [
-          {
-            path: 'schedulingMode', select: 'id name'
-          },
+        .populate({path: 'course_scheduling', select: 'id schedulingMode modular program client city schedulingType regional account_executive metadata', populate: [
+          {path: 'schedulingMode', select: 'id name'},
+          {path: 'modular', select: 'id name'},
+          {path: 'program', select: 'id name code isAuditor'},
+          {path: 'client', select: 'id name'},
+          {path: 'city', select: 'id name'},
+          {path: 'schedulingType', select: 'id name'},
+          {path: 'regional', select: 'id name'},
+          {path: 'account_executive', select: 'id profile.first_name profile.last_name'},
         ]})
-        .select('_id course_scheduling')
+        .select('_id course_scheduling course teacher startDate endDate')
+        .populate({path: 'course', select: 'id name code'})
+        .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
         .lean()
 
         if (container_survey) {
           schedulingMode = container_survey.course_scheduling.schedulingMode._id
+          generalInfo = {
+            programName: container_survey.course_scheduling?.program?.name || '-',
+            programCode: container_survey.course_scheduling?.program?.code || '-',
+            teacher: (container_survey?.teacher?.profile) ? `${container_survey?.teacher?.profile.first_name} ${container_survey?.teacher?.profile.last_name}` : '-',
+            courseName: container_survey?.course?.name || '-',
+            courseCode: container_survey?.course?.code || '-',
+            serviceId: container_survey.course_scheduling?.metadata?.service_id || '-',
+            modalityName: container_survey.course_scheduling?.schedulingMode?.name || '-',
+            regional: container_survey.course_scheduling?.regional?.name || '-',
+            city: container_survey.course_scheduling?.city?.name || '-',
+            companyName: container_survey.course_scheduling?.client?.name || '-',
+            accountExecutive: (container_survey.course_scheduling?.account_executive?.profile) ? `${container_survey.course_scheduling?.account_executive?.profile.first_name} ${container_survey.course_scheduling?.account_executive?.profile.last_name}` : '-',
+            personWhoGeneratesReport: (userLogged?.profile) ? `${userLogged?.profile.first_name} ${userLogged?.profile.last_name}` : '-',
+            reportDate: moment().format('DD/MM/YYYY'),
+            startDate: (container_survey?.startDate) ? moment(container_survey.startDate).format('DD/MM/YYYY') : '-',
+            endDate: (container_survey?.endDate) ? moment(container_survey.endDate).format('DD/MM/YYYY') : '-'
+          }
         }
       }
 
@@ -975,6 +1049,7 @@ class SurveyDataService {
       }
 
       const reportData = {
+        generalInfo,
         section_questions_range,
         section_questions_open,
         section_questions_choice_simple,
@@ -1029,6 +1104,45 @@ class SurveyDataService {
       const merge = []
       const sheet_data_aoa = []
       let row = 0;
+
+      // @INFO: Información del servicio
+      sheet_data_aoa.push(['PROGRAMA DE FORMACIÓN', data?.generalInfo?.programName])
+      row++
+      sheet_data_aoa.push(['CODIGO DEL PROGRAMA', data?.generalInfo?.programCode])
+      row++
+      if (data?.generalInfo?.courseCode && data?.generalInfo?.courseName) {
+        sheet_data_aoa.push(['CURSO DE FORMACIÓN', data?.generalInfo?.courseName])
+        row++
+        sheet_data_aoa.push(['CODIGO DEL CURSO', data?.generalInfo?.courseCode])
+        row++
+      }
+      if (data?.generalInfo?.startDate && data?.generalInfo?.endDate) {
+        sheet_data_aoa.push(['FECHA DE INICIO', data?.generalInfo?.startDate])
+        row++
+        sheet_data_aoa.push(['FECHA DE FINALIZACIÓN', data?.generalInfo?.endDate])
+        row++
+      }
+      sheet_data_aoa.push(['ID DEL SERVICIO', data?.generalInfo?.serviceId])
+      row++
+      sheet_data_aoa.push(['MODALIDAD', data?.generalInfo?.modalityName])
+      row++
+      sheet_data_aoa.push(['REGIONAL', data?.generalInfo?.regional])
+      row++
+      sheet_data_aoa.push(['CIUDAD', data?.generalInfo?.city])
+      row++
+      sheet_data_aoa.push(['CLIENTE', data?.generalInfo?.companyName])
+      row++
+      sheet_data_aoa.push(['EJECUTIVO DE CUENTA', data?.generalInfo?.accountExecutive])
+      row++
+      sheet_data_aoa.push(['DOCENTE', data?.generalInfo?.teacher])
+      row++
+      sheet_data_aoa.push(['NOMBRE PERSONA QUE CONSULTA', data?.generalInfo?.personWhoGeneratesReport])
+      row++;
+      sheet_data_aoa.push(['FECHA DEL REPORTE', data?.generalInfo?.reportDate])
+      row++
+      sheet_data_aoa.push([])
+      row++
+
       if (data.section_questions_range) {
         for (const section of data.section_questions_range) {
           if (Object.keys(section.questions).length > 0) {
@@ -1155,6 +1269,13 @@ class SurveyDataService {
       if (merge.length > 0) {
         ws["!merges"] = merge;
       }
+
+      const cols = []
+      for (let index = 0; index < 40; index++) {
+        cols.push({width: 35})
+      }
+
+      ws["!cols"] = cols
 
       XLSX.utils.sheet_add_aoa(ws, sheet_data_aoa, {origin: "A1"});
 

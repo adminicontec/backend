@@ -110,7 +110,7 @@ class CourseSchedulingNotificationsService {
           observations: courseScheduling.observations,
           exam: exam ? 'SI' : 'NO',
           changes,
-          accountExecutive: courseScheduling.account_executive.profile.first_name,
+          accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
           regional: courseScheduling.regional.name
         };
@@ -180,7 +180,7 @@ class CourseSchedulingNotificationsService {
         teacher: `${courseSchedulingDetails?.teacher?.profile?.first_name} ${courseSchedulingDetails?.teacher?.profile?.last_name}`,
         observations: courseScheduling.observations,
         exam: exam ? 'SI' : 'NO',
-        accountExecutive: courseScheduling.account_executive.profile.first_name,
+        accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
         regional: courseScheduling.regional.name,
         courseSchedulingDetails
       }

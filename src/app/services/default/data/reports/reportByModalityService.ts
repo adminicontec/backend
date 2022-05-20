@@ -565,9 +565,9 @@ class ReportByModalityService {
             if (
               certificationsByProgram &&
               certificationsByProgram[courseScheduling._id.toString()] &&
-              certificationsByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
+              certificationsByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]
             ) {
-              if (certificationsByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]['academic']) {
+              if (certificationsByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]['academic']) {
                 const certification = certificationsByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]['academic'];
                 participantItemBase.certification.certificateReleaseDate = moment(certification?.certificate?.date).format('YYYY-MM-DD')
                 participantItemBase.certification.personWhoReleasesCertificate = (certification?.auxiliar?.profile) ? `${certification?.auxiliar.profile?.first_name} ${certification?.auxiliar.profile?.last_name}` : '-'
@@ -605,6 +605,7 @@ class ReportByModalityService {
 
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
+      console.log('reportByModalityService - generateReport', err)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -948,6 +949,7 @@ class ReportByModalityService {
 
       return wb
     } catch(err) {
+      console.log('reportByModalityService - buildXLSX', err)
       return null;
     }
   }

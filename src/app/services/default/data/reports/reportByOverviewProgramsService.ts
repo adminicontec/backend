@@ -372,6 +372,7 @@ class ReportByOverviewProgramsService {
 
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
+      console.log('ReportByOverviewProgramsService - generateReport', err)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -548,6 +549,7 @@ class ReportByOverviewProgramsService {
       }
       return wb
     } catch (err) {
+      console.log('ReportByOverviewProgramsService - buildXLSX', err)
       return null;
     }
   }

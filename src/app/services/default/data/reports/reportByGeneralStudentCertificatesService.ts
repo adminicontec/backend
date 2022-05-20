@@ -185,6 +185,7 @@ class ReportByGeneralStudentCertificatesService {
       }
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
+      console.log('ReportByGeneralStudentCertificatesService - generateReport', err)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -307,6 +308,7 @@ class ReportByGeneralStudentCertificatesService {
       }
       return wb
     } catch(err) {
+      console.log('ReportByGeneralStudentCertificatesService - buildXLSX', err)
       return null;
     }
   }
