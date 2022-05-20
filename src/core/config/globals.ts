@@ -54,6 +54,7 @@ export const moodle_setup: any = (env.hasOwnProperty('moodle_setup')) ? env['moo
 export const campus_setup: any = (env.hasOwnProperty('campus_setup')) ? env['campus_setup'] : {};
 export const google_services = (env.hasOwnProperty('google_services')) ? env['google_services'] : {};
 export const certificate_setup: any = (env.hasOwnProperty('certificate_setup')) ? env['certificate_setup'] : {};
+export const system_user: any = (env.hasOwnProperty('system_user')) ? env['system_user'] : {};
 
 // @end
 

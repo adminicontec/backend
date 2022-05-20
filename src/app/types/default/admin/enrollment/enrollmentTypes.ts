@@ -39,7 +39,7 @@ export interface IEnrollmentQuery {
   course_scheduling?: string;
   without_certification?: boolean
   check_certification?: boolean,
-  origen?: string
+  origin?: string
 }
 
 export interface IMassiveEnrollment{

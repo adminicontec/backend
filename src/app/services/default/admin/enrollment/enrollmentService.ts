@@ -73,19 +73,11 @@ class EnrollmentService {
 
     let where = {}
 
-    // if (filters.search) {
-    //   const search = filters.search
-    //   where = {
-    //     ...where,
-    //     $or: [
-    //       { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //       { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-    //     ]
-    //   }
-    // }
-
     if (filters.courseID) {
-      where['courseID'] = filters.courseID
+      where['courseID'] = filters.courseID;
+    }
+    if (filters.origin) {
+      where['origin'] = filters.origin;
     }
 
     if (filters.without_certification && filters.course_scheduling) {
@@ -115,9 +107,16 @@ class EnrollmentService {
           path: 'user',
           select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen'
         })
+        .populate({
+          path: 'course_scheduling',
+          select: 'id metadata.service_id'
+        })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
+
+      console.log("registers");
+      console.log(registers);
 
       let count = 1
       for await (const register of registers) {
@@ -184,7 +183,7 @@ class EnrollmentService {
  * @returns
  */
   public findBy = async (params: IQueryFind) => {
-
+    console.log("findBy...");
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
@@ -833,7 +832,7 @@ class EnrollmentService {
    * @INFO Obtener los enrollment de un estudiante según unos parámetros de búsqueda
    */
   public findStudents = async (params: IEnrollmentFindStudents) => {
-    try{
+    try {
       let where: any[] = [];
       let availableSearch: boolean = false;
 
@@ -868,8 +867,8 @@ class EnrollmentService {
         where.push({
           $match: {
             $or: [
-              {'user_doc.profile.first_name': { $regex: '.*' + params.name + '.*', $options: 'i' }},
-              {'user_doc.profile.last_name': { $regex: '.*' + params.name + '.*', $options: 'i' }}
+              { 'user_doc.profile.first_name': { $regex: '.*' + params.name + '.*', $options: 'i' } },
+              { 'user_doc.profile.last_name': { $regex: '.*' + params.name + '.*', $options: 'i' } }
             ]
           }
         })
@@ -880,7 +879,7 @@ class EnrollmentService {
         where.push({
           $match: {
             $or: [
-              {'user_doc.profile.doc_number': { $regex: '.*' + params.docNumber + '.*', $options: 'i' }}
+              { 'user_doc.profile.doc_number': { $regex: '.*' + params.docNumber + '.*', $options: 'i' } }
             ]
           }
         })
@@ -891,7 +890,7 @@ class EnrollmentService {
         where.push({
           $match: {
             $or: [
-              {'user_doc.email': { $regex: '.*' + params.email + '.*', $options: 'i' }}
+              { 'user_doc.email': { $regex: '.*' + params.email + '.*', $options: 'i' } }
             ]
           }
         })
@@ -922,7 +921,7 @@ class EnrollmentService {
       if (registers && registers.length) {
         let idx: number = 0;
         for await (let register of registers) {
-          const certificates = await CertificateQueue.find({userId: register.user, courseId: register.course_scheduling});
+          const certificates = await CertificateQueue.find({ userId: register.user, courseId: register.course_scheduling });
           if (certificates && certificates.length) {
             certificates.forEach((certificate) => {
               if (certificate.certificateType === 'academic') {
@@ -948,7 +947,7 @@ class EnrollmentService {
         }
       })
 
-    } catch(e) {
+    } catch (e) {
       console.log('EnrollmentService => findStudents Error: ', e);
       return responseUtility.buildResponseFailed('json');
     }

@@ -98,7 +98,7 @@ export interface ICertificateQueue {
   certificateType?: string,
   certificateModule?: string,
   status: string,
-  message: string,
+  message?: string,
   downloadDate?: Date,
   certificate?: {
     hash: string,
