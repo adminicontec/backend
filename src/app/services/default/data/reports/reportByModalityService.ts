@@ -605,6 +605,7 @@ class ReportByModalityService {
 
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
+      console.log('reportByModalityService - generateReport', err)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -948,6 +949,7 @@ class ReportByModalityService {
 
       return wb
     } catch(err) {
+      console.log('reportByModalityService - buildXLSX', err)
       return null;
     }
   }
