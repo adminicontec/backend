@@ -1431,6 +1431,8 @@ class CourseSchedulingService {
           { path: 'client', select: 'id name' },
           { path: 'contact', select: 'id profile email' },
           { path: 'material_assistant', select: 'id profile' },
+          { path: 'auditor_modules', select: 'id course duration', populate: { path: 'course', select: 'id name ' } }
+
         ])
       } else {
         registers = await CourseScheduling.find({})

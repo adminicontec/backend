@@ -8,7 +8,7 @@ const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import config
-import { customs } from '@scnode_core/config/globals'
+import { customs, system_user } from '@scnode_core/config/globals'
 // @end
 
 // @import services
@@ -44,7 +44,7 @@ import {
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UpdateCACertificateParams } from "aws-sdk/clients/iot";
 import { certificatePreviewProcessorProgram } from "client/tasks/certificateProcessor/certificatePreviewProcessorProgram";
-import { bool } from "aws-sdk/clients/signer";
+
 // @end
 
 class CertificateService {
@@ -121,6 +121,7 @@ class CertificateService {
     let isAuditorCerficateEnabled = false;
     let previewCertificateParams;
     let currentDate = new Date(Date.now());
+    console.log("→→→ Execution of completion()");
 
     //#region query Filters
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
@@ -390,15 +391,11 @@ class CertificateService {
 
 
   public automaticRelease = async (filters: ICertificateCompletion) => {
-
-    console.log("±±±±± automaticRelease: ");
+    console.log("→→→ Execution of automaticRelease()");
     let enrollmentRegisters = [];
-    let listOfStudents = [];
     let schedulingMode = '';
     let isAuditorCerficateEnabled = false;
-    let previewCertificateParams;
-    let currentDate = new Date(Date.now());
-
+    let listOfCertificatesQueue = [];
     //#region query Filters
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -410,13 +407,8 @@ class CertificateService {
     }
 
     let where = {
-      'profile.origen': 'Tienda Virtual'
+      'origin': 'Tienda Virtual'
     }
-
-    // if (filters.courseID) {
-
-    // }
-
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
@@ -436,42 +428,60 @@ class CertificateService {
 
     try {
 
+      // System user (this is an automated task)
+      let respSystemUser: any = await userService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: 'username', value: system_user }]
+      });
+
+      if (respSystemUser.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'user.not_found' } })
+      }
+
       console.log("List of course Scheduling");
       let respCourse: any = await courseSchedulingService.list(
         {
           schedulingStatus: ObjectID('615309f85d811e78db3fc91e')
         });
 
-      // console.log(respCourse);
-
-      // await courseSchedulingService.findBy({
-      //   query: QueryValues.ONE,
-      //   where: [{ field: '_id', value: filters.course_scheduling }]
-      // });
       if (respCourse.status == 'error') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
       }
+      let count = 1;
 
       //1. List of Courses
       for (var course of respCourse.schedulings) {
 
-
+        let listOfStudents = [];
         //#region Información del curso
         console.log(`-------------------------------------------`)
         console.log(`Datos para Programa: ${course.program.name}`)
         console.log(`ID: ${course._id}`)
         console.log(`→→ Program Status: ${course.schedulingStatus.name}`);
         console.log(`→→ Modalidad: ${course.schedulingMode.name.toLowerCase()}`);
-        listOfStudents.push({ courseId: course._id });
+        console.log(`-------------------------------------------`)
+        schedulingMode = course.schedulingMode.name;
         //#endregion Información del curso
 
+        //#region Filters
         where['courseID'] = course.moodle_id;
 
-        // console.log("course Data:");
-        // console.log(course);
+        const certifications = await CertificateQueue.find({
+          courseId: course._id,
+          status: { $in: ['New', 'In-process', 'Complete'] }
+        })
+          .select('id userId')
 
-        // check Students that approve course
+        const user_ids = certifications.reduce((accum, element) => {
+          accum.push(element.userId)
+          return accum
+        }, [])
+        if (user_ids.length > 0) {
+          where['user'] = { $nin: user_ids }
+        }
+        //#endregion Filters
 
         //  course Scheduling Details data
         let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
@@ -480,7 +490,6 @@ class CertificateService {
         });
 
         // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
-        schedulingMode = course.schedulingMode.name;
         if (course.schedulingStatus.name == 'Programado' || course.schedulingStatus.name == 'Cancelado') {
           return responseUtility.buildResponseFailed('json', null,
             { error_key: { key: 'certificate.requirements.program_status', params: { error: course.schedulingStatus.name } } });
@@ -489,70 +498,86 @@ class CertificateService {
         //#region Tipo de programa
         let programTypeName;
         const programType = this.getProgramTypeFromCode(course.program.code);
-        // program_type_collection.find(element => element.abbr == course.program.code.substring(0, 2));
-
-        if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
-          programTypeName = 'curso';
-        }
-        if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
-          programTypeName = 'programa';
-        }
-        if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-          programTypeName = 'diplomado';
-        }
+        programTypeName = this.getProgramTypeName(programType.abbr);
         //#endregion Tipo de programa
 
         if (course.auditor_certificate) {
           isAuditorCerficateEnabled = true;
-          // get modules need to process Second certificate
-          // console.log(`Módulos para Segundo Certificado: \"${course.auditor_certificate}\"`);
-          // console.log(course.auditor_modules);
-
-          // course.auditor_modules.forEach(element => {
-          //   console.log(`→ ${element.course.name}`);
-          // });
-
-          // let total_intensidad = 0;
-          // mapping_listado_modulos_auditor = 'El contenido del programa comprendió: <br/>';
-          // mapping_listado_modulos_auditor += '<ul>'
-          // course.auditor_modules.forEach(element => {
-          //   total_intensidad += element.duration;
-          //   mapping_listado_modulos_auditor += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
-          //   //mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-
-          // });
-          // mapping_listado_modulos_auditor += '</ul>'
         }
+
+        //#region Revisión de Progreso en Actividades para todo el curso
+        const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: course.moodle_id, moduleType: this.selectActivitiesTest });
+
+        if (respListOfActivitiesInModulesTest.status == "error") {
+          return responseUtility.buildResponseFailed('json', null,
+            { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
+        }
+        //#endregion Revisión de Progreso en Actividades para todo el curso
 
         //#endregion Información del curso
 
         // filter only students with "Tienda Virtual" as origin
-        console.log(where);
         enrollmentRegisters = await Enrollment.find(where)
           .select(select)
           .populate({
             path: 'user',
-            select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id'
+            select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional origin moodle_id'
           })
-          // .skip(0)
-          // .limit(1000)
           .lean();
 
-        console.log("Total de estudiantes: " + enrollmentRegisters.length);
-        //console.log(enrollmentRegisters);
-        let count = 1
         for (let student of enrollmentRegisters) {
-          console.log("------- " + count);
-          //console.log(student)
-          console.log("moodleID " + student.user.moodle_id);
-          count++
+
+          // Check if Completion is done for student
+          let studentProgress: any = await this.rulesForCompleteProgress(
+            course.moodle_id,
+            this.selectActivitiesTest,
+            schedulingMode.toLowerCase(),
+            programTypeName,
+            respListOfActivitiesInModulesTest.courseModules,
+            respCourseDetails.schedulings,
+            isAuditorCerficateEnabled,
+            course.auditor_modules,
+            false,
+            student.user.moodle_id);
+
+          if (studentProgress.listOfStudentProgress[0]) {
+            console.log(`\tCheck progress for: ${student.user.profile.first_name} ${student.user.profile.last_name}`)
+
+            let progressData = studentProgress.listOfStudentProgress[0].student.studentProgress;
+            console.log(`Progress: ${progressData.status}`);
+            if (progressData.status === 'ok' || progressData.status === 'partial') {
+              console.log(`\tAdded to certificate queue.`);
+              listOfStudents.push(student.user._id.toString());
+              count++;
+            }
+            else {
+              console.log(`\tNot available to certificate.`);
+            }
+          }
+
         }
 
+        if (listOfStudents.length > 0) {
+          let queueData = {
+            status: "New",
+            courseId: course._id.toString(),
+            users: listOfStudents,
+            auxiliar: respSystemUser.user._id.toString()
+          }
+          listOfCertificatesQueue.push(queueData);
+          let responseCertQueue: any = await certificateQueueService.insertOrUpdate(queueData);
+          if (responseCertQueue.status === 'error') {
+            console.log("Error inserting new Certificate queue record");
+
+          }
+
+          console.log(">>>>>>>>>>>>>>>>>>>>><");
+          console.log("responseCertQueue");
+          console.log(responseCertQueue);
+          console.log(">>>>>>>>>>>>>>>>>>>>><");
+        }
 
       }
-
-      console.log(listOfStudents);
-
     }
     catch (e) {
       console.log(e.message);
@@ -565,14 +590,13 @@ class CertificateService {
           }
         });
     }
-
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         schedulingMode: schedulingMode,
         automaticRelease: [
-          ...listOfStudents
+          ...listOfCertificatesQueue
         ],
-        total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
+        total_register: listOfCertificatesQueue.length,
         pageNumber: pageNumber,
         nPerPage: nPerPage
       }
@@ -651,12 +675,13 @@ class CertificateService {
       const programType = this.getProgramTypeFromCode(respCourse.scheduling.program.code);
 
       if (programType) {
-        if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor)
-          programTypeName = 'curso';
-        if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor)
-          programTypeName = 'programa';
-        if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor)
-          programTypeName = 'diplomado';
+        programTypeName = this.getProgramTypeName(programType.abbr);
+        // if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor)
+        //   programTypeName = 'curso';
+        // if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor)
+        //   programTypeName = 'programa';
+        // if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor)
+        //   programTypeName = 'diplomado';
       }
 
       //#endregion Tipo de programa
@@ -772,6 +797,7 @@ class CertificateService {
    */
 
   public setCertificate = async (params: IQueryUserToCertificate) => {
+    console.log("→→→ Execution of setCertificate()");
 
     try {
       let logoDataArray: ILogoInformation[] = [];
@@ -1273,12 +1299,11 @@ class CertificateService {
     programTypeName: string,
     respListOfActivitiesInModules: any[],
     respSchedulingsDetails: any[],
-    reviewAuditorCerficateRulesEnabled: bool,
+    reviewAuditorCerficateRulesEnabled: boolean,
     auditorModules: any[],
-    isForCertificate: bool,
+    isForCertificate: boolean,
     userMoodleID?: string
   ) => {
-
     try {
 
       // respListOfActivitiesInModules.forEach(element => {
@@ -1287,7 +1312,6 @@ class CertificateService {
       //   console.log('* ' + element.instance + ' - (' + element.modname + ') - ' + element.name);
       // });
       // console.log("===========================================")
-      //console.log("programTypeName: " + programTypeName)
 
       let listOfStudentProgress = [];
       let auditorQuizApplies = false;
@@ -1295,11 +1319,10 @@ class CertificateService {
 
       // Presencial - Online
       // Asistencia >= 75
-      //console.log(moduleType);
       const respUserGrades: any = await gradesService.fetchGradesByFilter({
         courseID: moodleCourseID,
         userID: (userMoodleID) ? userMoodleID.toString() : '0',
-        filter: moduleType//['attendance', 'quiz']
+        filter: moduleType
       });
 
       if (respUserGrades.error) {
@@ -1312,7 +1335,7 @@ class CertificateService {
       }
 
       // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
-      // console.dir(respUserGrades.grades, {depth: null});
+      // console.dir(respUserGrades.grades, { depth: null });
       // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
 
       for await (const student of respUserGrades.grades) {
@@ -1351,8 +1374,6 @@ class CertificateService {
 
 
           for (const grade of student.itemType.attendance) {
-            // console.log("»»» Check on activity: " + grade.name);
-            // console.log(grade.graderaw);
 
             if (grade.graderaw) {
               // console.log("Grade: " + grade.name);
@@ -1366,7 +1387,6 @@ class CertificateService {
               let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
               // console.log("itemModule: ")
               // console.dir(itemModule);
-
               let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid.toString());
               // console.log("durationModule: ");
               // console.dir(durationModule);
@@ -1657,9 +1677,9 @@ class CertificateService {
         student.studentProgress = studentProgress;
         listOfStudentProgress.push({ student });
       }
-      console.log("──────────────────────────────────────────────────────────");
-      console.log("Auditor Quiz applied: " + auditorQuizApplies);
-      console.log("──────────────────────────────────────────────────────────");
+      // console.log("──────────────────────────────────────────────────────────");
+      // console.log("Auditor Quiz applied: " + auditorQuizApplies);
+      // console.log("──────────────────────────────────────────────────────────");
       responseStudentProgress = {
         auditorQuizApplies,
         listOfStudentProgress
@@ -2070,8 +2090,22 @@ class CertificateService {
         }
       }
     }
-    console.log("codeProgram: " + codeProgram[0]);
-    console.log("abbr: " + programTypeName.abbr + " - Name:" + programTypeName.name);
+    // console.log("codeProgram: " + codeProgram[0]);
+    // console.log("abbr: " + programTypeName.abbr + " - Name:" + programTypeName.name);
+    return programTypeName;
+  }
+
+  private getProgramTypeName = (abbr: string) => {
+    let programTypeName = '';
+    if (abbr === program_type_abbr.curso || abbr === program_type_abbr.curso_auditor) {
+      programTypeName = 'curso';
+    }
+    if (abbr === program_type_abbr.programa || abbr === program_type_abbr.programa_auditor) {
+      programTypeName = 'programa';
+    }
+    if (abbr === program_type_abbr.diplomado || abbr === program_type_abbr.diplomado_auditor) {
+      programTypeName = 'diplomado';
+    }
     return programTypeName;
   }
 
