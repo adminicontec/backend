@@ -46,7 +46,7 @@ class CourseDataService {
       const slug_type = (params.slug_type) ? params.slug_type : 'course_scheduling'
       let courseResponse = null
 
-      if (slug_type === 'course_scheduling')  {
+      if (slug_type === 'course_scheduling') {
         courseResponse = await this.fetchCourseByCourseScheduling(params)
       } else if (slug_type === 'program') {
         courseResponse = await this.fetchCourseByProgram(params)
@@ -77,17 +77,18 @@ class CourseDataService {
       } else if (params.slug) {
         where['_id'] = params.slug
       } else {
-        return responseUtility.buildResponseFailed('json', null, {error_key: 'course.filter_to_search_required'})
+        return responseUtility.buildResponseFailed('json', null, { error_key: 'course.filter_to_search_required' })
       }
 
       let register = null
       try {
         register = await CourseScheduling.findOne(where)
-        .select(select)
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'city', select: 'id name' })
-        .lean()
+          .select(select)
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'schedulingType', select: 'id name' })
+          .populate({ path: 'city', select: 'id name' })
+          .lean()
 
         if (register) {
           register['enrollment_enabled'] = false
@@ -96,7 +97,7 @@ class CourseDataService {
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
           })
-          .lean()
+            .lean()
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo
@@ -107,22 +108,25 @@ class CourseDataService {
 
           const today = moment()
           if (register.enrollmentDeadline) {
-            const enrollmentDeadline = moment(register.enrollmentDeadline.toISOString().replace('T00:00:00.000Z', ''))
+            const enrollmentDeadline = moment(register.enrollmentDeadline.toISOString().replace('T23:59:59.999Z', ''))
             if (today.format('YYYY-MM-DD') <= enrollmentDeadline.format('YYYY-MM-DD')) {
-              register['enrollment_enabled'] = true
+              if (register.schedulingType.name.toLowerCase() == 'abierto' && register.schedulingMode.name.toLowerCase() == 'virtual')
+                register['enrollment_enabled'] = true
             }
           }
           if (register.endDiscountDate) {
             register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
           }
         }
-      } catch (e) {}
+      } catch (e) { }
 
       if (!register) return responseUtility.buildResponseFailed('json')
 
-      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-        course: register
-      }})
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: register
+        }
+      })
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -137,16 +141,16 @@ class CourseDataService {
       } else if (params.slug) {
         where['program'] = params.slug
       } else {
-        return responseUtility.buildResponseFailed('json', null, {error_key: 'course.filter_to_search_required'})
+        return responseUtility.buildResponseFailed('json', null, { error_key: 'course.filter_to_search_required' })
       }
 
       let register = null
       try {
 
         const schedulingExtraInfo: any = await Course.findOne(where)
-        .populate({path: 'program', select: 'id name code'})
-        .populate({path: 'schedulingMode', select: 'id name'})
-        .lean()
+          .populate({ path: 'program', select: 'id name code' })
+          .populate({ path: 'schedulingMode', select: 'id name' })
+          .lean()
 
         if (schedulingExtraInfo) {
           register = {
@@ -161,13 +165,15 @@ class CourseDataService {
           register['extra_info'] = extra_info
         }
 
-      } catch (e) {}
+      } catch (e) { }
 
       if (!register) return responseUtility.buildResponseFailed('json')
 
-      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-        course: register
-      }})
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          course: register
+        }
+      })
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -215,7 +221,7 @@ class CourseDataService {
     }
 
     if (course.startDate) {
-      scheduling['startDate'] = moment(course?.startDate.toISOString().replace('T00:00:00.000Z','')).format('DD/MM/YYYY')
+      scheduling['startDate'] = moment(course?.startDate.toISOString().replace('T00:00:00.000Z', '')).format('DD/MM/YYYY')
     }
 
     if (course?.schedulingMode?.name) {
@@ -225,7 +231,7 @@ class CourseDataService {
     if (course?.city?.name) {
       scheduling['city'] = course?.city?.name
     }
-    console.log('file', courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}))
+    console.log('file', courseService.coverUrl({ coverUrl: course?.extra_info?.originalCoverUrl }, { format: 'file' }))
     const responsePdf = await htmlPdfUtility.generatePdf({
       from: 'file',
       file: {
@@ -234,7 +240,7 @@ class CourseDataService {
         context: {
           title: course.program.name,
           // cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
-          cover_url: courseService.coverUrl({coverUrl: course?.extra_info?.originalCoverUrl}, {format: 'file'}),
+          cover_url: courseService.coverUrl({ coverUrl: course?.extra_info?.originalCoverUrl }, { format: 'file' }),
           duration: course.duration ? generalUtility.getDurationFormated(course.duration, 'large') : null,
           long_description: course?.extra_info?.description?.blocks ? editorjsService.jsonToHtml(course.extra_info.description.blocks) : null,
           competencies: course?.extra_info?.competencies?.blocks ? editorjsService.jsonToHtml(course.extra_info.competencies.blocks) : null,
@@ -285,7 +291,7 @@ class CourseDataService {
     const price = course?.priceCOP
     const discount = course?.discount
     let finalPrice = ''
-    if(!price) return null
+    if (!price) return null
 
     let priceWithIva = parseFloat(price.toString())
     if (customs['iva']) {
@@ -293,13 +299,13 @@ class CourseDataService {
     }
 
     if (withDiscount === true && moment().isSameOrBefore(moment(course?.endDiscountDate).endOf('day'))) {
-      if(discount){
-        finalPrice += parseFloat(Math.round(priceWithIva*(1-(discount/100))).toString()).toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace(',00', '')
-      }else{
-        finalPrice += priceWithIva.toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace('.00', '')
+      if (discount) {
+        finalPrice += parseFloat(Math.round(priceWithIva * (1 - (discount / 100))).toString()).toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace(',00', '')
+      } else {
+        finalPrice += priceWithIva.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace('.00', '')
       }
     } else {
-      finalPrice += priceWithIva.toLocaleString('es-CO', {style: 'currency', currency: 'COP'}).replace('.00', '')
+      finalPrice += priceWithIva.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace('.00', '')
     }
     return finalPrice
   }
@@ -317,7 +323,7 @@ class CourseDataService {
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      const schedulingTypes = await CourseSchedulingType.find({name: {$in: ['Abierto']}})
+      const schedulingTypes = await CourseSchedulingType.find({ name: { $in: ['Abierto'] } })
       if (schedulingTypes.length === 0) {
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -340,7 +346,7 @@ class CourseDataService {
       }
 
       let where: any = {
-        schedulingType: {$in: schedulingTypesIds}
+        schedulingType: { $in: schedulingTypesIds }
       }
 
       if (params.search) {
@@ -365,7 +371,7 @@ class CourseDataService {
       }
 
       if (params.highlighted) {
-        const coursesHighlighted: any = await Course.find({highlighted: true}).select('id program').lean()
+        const coursesHighlighted: any = await Course.find({ highlighted: true }).select('id program').lean()
         const programsHighlighted = coursesHighlighted.reduce((accum, element) => {
           accum.push(element.program)
           return accum;
@@ -398,8 +404,8 @@ class CourseDataService {
           where['hasCost'] = true
         } else if (params.price === 'discount') {
           let date = moment()
-          where['discount'] = {$gt: 0}
-          where['endDiscountDate'] = {$gte: date.format('YYYY-MM-DD')}
+          where['discount'] = { $gt: 0 }
+          where['endDiscountDate'] = { $gte: date.format('YYYY-MM-DD') }
         }
       }
 
@@ -439,7 +445,7 @@ class CourseDataService {
       }
 
       if (params.exclude) {
-        where['_id'] = {$nin: params.exclude}
+        where['_id'] = { $nin: params.exclude }
       }
 
       let sort = null
@@ -452,13 +458,13 @@ class CourseDataService {
 
       try {
         registers = await CourseScheduling.find(where)
-        .populate({ path: 'program', select: 'id name moodle_id code' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .populate({ path: 'city', select: 'id name' })
-        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-        .limit(paging ? nPerPage : null)
-        .sort(sort)
-        .lean()
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'city', select: 'id name' })
+          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          .limit(paging ? nPerPage : null)
+          .sort(sort)
+          .lean()
 
         if (params.random && params.random.size) {
           registers = mapUtility.shuffle(registers).slice(0, params.random.size)
@@ -471,9 +477,9 @@ class CourseDataService {
 
         if (program_ids.length > 0) {
           const schedulingExtraInfo: any = await Course.find({
-            program: {$in: program_ids}
+            program: { $in: program_ids }
           })
-          .lean()
+            .lean()
 
           const extra_info_by_program = schedulingExtraInfo.reduce((accum, element) => {
             if (!accum[element.program]) {
@@ -498,7 +504,7 @@ class CourseDataService {
       // @INFO Filtrar solo los cursos nuevos
       if (params.new && registers && registers.length) {
         const programs = registers.map((r) => r.program._id)
-        const courses = await Course.find({program: {$in: programs}}).lean()
+        const courses = await Course.find({ program: { $in: programs } }).lean()
         registers = registers.reduce((accumCourses, schedule) => {
           if (courses && courses.length) {
             const course: any = courses.find((c: any) => c.program.toString() === schedule.program._id.toString())
