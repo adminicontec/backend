@@ -102,7 +102,7 @@ class MoodleCourseService {
       'courses[0][summary]': params.summary,
       'courses[0][startdate]': params.startDate,
       'courses[0][enddate]': params.endDate,
-      'courses[0][lang]': params.lang
+      'courses[0][lang]': params.lang,
     };
 
     console.log("Moodle: Inicio Creación de curso.");
@@ -150,7 +150,8 @@ class MoodleCourseService {
       'courses[0][startdate]': generalUtility.unixTimeOffset(new Date(params.startDate).toISOString(), 5),
       'courses[0][enddate]': generalUtility.unixTimeOffset(new Date(params.endDate).toISOString(), 5),
       'courses[0][visible]': params.visible,
-      'courses[0][idnumber]': params.shortName,
+      //'courses[0][idnumber]': params.shortName,
+      'courses[0][summary]': params.status,
       'courses[0][customfields][0][shortname]': 'programa_horas',
       'courses[0][customfields][0][value]': params.customClassHours,
       'courses[0][customfields][1][shortname]': 'ciudad',
@@ -158,6 +159,10 @@ class MoodleCourseService {
       'courses[0][customfields][2][shortname]': 'pais',
       'courses[0][customfields][2][value]': '(' + params.country + ')',
     };
+
+    if (params.shortName) {
+      moodleParams['courses[0][idnumber]'] = params.shortName;
+    }
 
     console.log("Moodle: Actualización de curso.");
     console.log(moodleParams);

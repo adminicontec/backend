@@ -371,7 +371,8 @@ class CourseSchedulingService {
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
           "country": `${response.country.name}`,
-          "visible": visibleAtMoodle
+          "visible": visibleAtMoodle,
+          status: paramsStatus.name
         });
 
         if (moodleResponse.status === 'success') {

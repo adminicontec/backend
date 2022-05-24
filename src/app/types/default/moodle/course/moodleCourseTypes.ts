@@ -34,6 +34,7 @@ export interface IMoodleCourse{
   customClassHours?: string,
   city?: string,
   country?: string,
-  visible?:number
+  visible?:number,
+  status?:string
 }
 //@end
