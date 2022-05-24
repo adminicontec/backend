@@ -1848,6 +1848,9 @@ class CourseSchedulingService {
   }
 
   private generateXLSXReport = async (courses: Array<any>) => {
+    const time = new Date().getTime()
+    const title: any = `reporte_general_${time}`
+
     // @INFO: Se genera la hoja de calculo para el reporte
     let cols = []
     let reportData = courses.reduce((accum, element) => {
@@ -1904,8 +1907,7 @@ class CourseSchedulingService {
     XLSX.utils.book_append_sheet(wb, ws, 'reporte_general')
 
     // @INFO Se carga el archivo al servidor S3
-    const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `reporte_general.xlsx` } } }, { workbook: wb })
-
+    const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `${title}.xlsx` } } }, {workbook: wb})
     if (!send) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_upload_xlsx' })
 
     return responseUtility.buildResponseSuccess('json', null, {

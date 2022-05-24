@@ -507,7 +507,8 @@ class ReportByModalityService {
                 let totalProgress = 0;
                 for (const course of courses) {
                   if (!participantItemBase.progress.progressByCourse[course?._id.toString()]) {
-                    const progressParticipantInCourse = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
+                    // const progressParticipantInCourse = Math.floor((Math.random() * (100-1)) +1)
+                    const progressParticipantInCourse = 0 // TODO: Extraer valor que debe salir del consolidado
                     participantItemBase.progress.progressByCourse[course?._id.toString()] = {
                       value: progressParticipantInCourse
                     }
@@ -518,7 +519,8 @@ class ReportByModalityService {
                   participantItemBase.progress.percentageOfProgressInTheProgram = Math.round(totalProgress / courses.length)
                 }
 
-                participantItemBase.progress.forumNote = Math.floor((Math.random() * (100-1)) +1) // TODO: Extraer valor que debe salir del consolidado
+                // participantItemBase.progress.forumNote = Math.floor((Math.random() * (100-1)) +1)
+                participantItemBase.progress.forumNote = 0 // TODO: Extraer valor que debe salir del consolidado
                 // participantItemBase.progress.taskNote = Math.floor((Math.random() * (100-1)) +1)
                 // participantItemBase.progress.evaluationNote = Math.floor((Math.random() * (100-1)) +1)
                 // participantItemBase.progress.finalNote = Math.floor((Math.random() * (100-1)) +1)
