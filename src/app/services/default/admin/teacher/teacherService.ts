@@ -114,13 +114,29 @@ class TeacherService {
       let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
       let modularMigration = []
       if (dataModularMigration) {
-        modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
+        let onlyModulars = [];
+
+        // let essencial items
+        dataModularMigration.forEach(element => {
+          onlyModulars.push({
+            modular_anterior: generalUtility.normalizeString(element['Modular anterior']),
+            modular_nuevo: generalUtility.normalizeString(element['Modular nuevo'])
+          });
+        });
+
+        onlyModulars.sort((a, b) => a.modular_anterior.localeCompare(b.modular_anterior));
+
+        //console.log('------------------------');
+        ///console.log('modularMigration');
+        modularMigration = [...new Map(onlyModulars.map((x) => [x.modular_nuevo, x])).values()];
+        //console.table(modularMigration);
       }
 
       // 1. Extracción de información de Docentes
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
       // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
+
       // 3. Extracción de Tutores calificados
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
@@ -133,9 +149,11 @@ class TeacherService {
         respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
         if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
           processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+          //console.table(processLog);
         }
         if (respProcessQualifiedTeacherData?.errorLog) {
           errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+          ///console.table(errorLog);
         }
       }
       if (dataWSTutores) {
@@ -344,21 +362,22 @@ class TeacherService {
       // Insert the new Modulars from Migration file and then update the general Modular list
       console.log('################################################');
       for await (const row of dataModularMigration) {
-        //console.log("Search for  " + row['Modular nuevo']);
-        let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row['Modular nuevo'].toLowerCase());
+        //console.log("Search for: " + row.modular_nuevo);
+        let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row.modular_nuevo.toLowerCase());
         //console.log('-----------------');
+        //console.log(searchModular);
         if (!searchModular) {
           newModulars.push({
-            anterior: row['Modular anterior'],
-            nuevo: row['Modular nuevo'],
+            anterior: row.modular_anterior,
+            nuevo: row.modular_nuevo,
           });
           // Insert new Modular:
           const respModular: any = await modularService.insertOrUpdate({
-            name: row['Modular nuevo'],
-            description: row['Modular nuevo']
+            name: row.modular_nuevo,
+            description: row.modular_nuevo
           });
           if (respModular.status == 'success') {
-            //console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
+            console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
             modularList = await modularService.list();
           }
         }
@@ -368,8 +387,6 @@ class TeacherService {
       //#region     dataWSProfessionals
       // try {
       if (dataWSQualifiedTeachersBase != null) {
-        console.log("Listado de Profesionales calificados");
-        //console.log(dataWSProfessionals);
 
         let indexP = 5;
         for await (const element of dataWSQualifiedTeachersBase) {
@@ -393,7 +410,8 @@ class TeacherService {
             qualifiedDate: qualifiedDate
           }
 
-          //console.log(contentRowTeacher);
+          console.log("--------------");
+          console.log(`Record for ${contentRowTeacher.documentID} ${element['Nombre Profesional']}- code: ${contentRowTeacher.courseCode}`);
 
           //#region   ------------- MODULAR -------------
           // 2. Insert Modular: singleProfessionalLoadContent.modular
@@ -418,12 +436,12 @@ class TeacherService {
           let modularID;
 
           let searchOldModular: any = dataModularMigration.find(field =>
-            field['Modular anterior'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            field.modular_anterior.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
 
           if (searchOldModular) {
             // take pair value for 'Modular nuevo' and get ModularId
             let localModular: any = modularList.modulars.find(x =>
-              x.name.toLowerCase() == searchOldModular['Modular nuevo'].toLowerCase().trim());
+              x.name.toLowerCase() == searchOldModular.modular_nuevo.toLowerCase().trim());
             if (localModular) {
               // take ID
               // console.log('OLD:\t' + localModular.name + '\t[' + localModular._id) + ']';
@@ -442,11 +460,11 @@ class TeacherService {
           }
           else {
             let searchNewModular: any = dataModularMigration.find(field =>
-              field['Modular nuevo'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-            //field['Modular nuevo'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+              field.modular_nuevo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            //field.modular_nuevo.toLowerCase() == contentRowTeacher.modular.toLowerCase());
             if (searchNewModular) {
               let localModular: any = modularList.modulars.find(x =>
-                x.name.toLowerCase() == searchNewModular['Modular nuevo'].toLowerCase().trim());
+                x.name.toLowerCase() == searchNewModular.modular_nuevo.toLowerCase().trim());
               if (localModular) {
                 // take ID
                 // console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
@@ -512,38 +530,57 @@ class TeacherService {
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
-            status: 'active'
+            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO'
           }
 
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
           // console.log(registerQualifiedTeacher); //, { depth: null, colors: true });
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
 
+
+          const respIfExistQualifiedTeacher: any = await qualifiedTeachersService.findBy(
+            {
+              query: QueryValues.ONE,
+              where: [
+                { field: 'courseCode', value: registerQualifiedTeacher.courseCode },
+                { field: 'teacher', value: registerQualifiedTeacher.teacher }
+              ]
+            }
+          );
+
+          if (respIfExistQualifiedTeacher.status == 'success'){
+            console.log(`There's a record for user ${contentRowTeacher.documentID} and course code ${contentRowTeacher.courseCode}`)
+            registerQualifiedTeacher.id = respIfExistQualifiedTeacher.qualified_teacher._id;
+          }
+
           const respQualifiedTeacher: any = await qualifiedTeachersService.insertOrUpdate(registerQualifiedTeacher);
           if (respQualifiedTeacher.status == 'error') {
-            // console.log('Error insertando Docente Calificado.');
-            // console.log(respQualifiedTeacher);
-            if (respQualifiedTeacher.status_code !== 'qualified_teacher_insertOrUpdate_already_exists') {
-              processError.push({
-                typeError: 'RegisterQualifiedTeacher',
-                message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
-                row: indexP,
-                col: 'Full register',
-                data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
-              });
-            }
+            console.log('Error insertando Docente Calificado.');
+            console.log(`${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`);
+
+            processError.push({
+              typeError: 'RegisterQualifiedTeacher',
+              message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
+              row: indexP,
+              col: 'Full register',
+              data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
+            });
+
             test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
             indexP++;
             continue;
 
           }
           else {
-            // console.log('Éxito insertando Docente Calificado.');
+            console.log(`Éxito en acción con Docente Calificado: ${respQualifiedTeacher.qualifiedTeacher.action}`);
+            registerQualifiedTeacher.action = respQualifiedTeacher.qualifiedTeacher.action;
             processResult.push(registerQualifiedTeacher);
           }
           //#endregion
           test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
           indexP++;
+
+          console.log("--------------");
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
