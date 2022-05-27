@@ -421,11 +421,12 @@ class TeacherService {
             // console.log(" ERROR AT  ROW: [" + indexP + "]");
 
             processError.push({
-              typeError: 'ModularEmpty',
+              sheetName: sheetname,
+              errorType: 'ModularEmpty',
               row: indexP,
               col: 'Modular',
               message: 'el valor del Modular está vacío',
-              data: element
+              data: contentRowTeacher
             });
             test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
 
@@ -481,7 +482,8 @@ class TeacherService {
               // console.log(searchNewModular);
 
               processError.push({
-                typeError: 'ModularMissmatch',
+                sheetName: sheetname,
+                errorType: 'ModularMissmatch',
                 message: `Modular [${contentRowTeacher.modular}] no encontrado en hoja de Migración para el docente con numero de documento ${contentRowTeacher.documentID}`,
                 row: indexP,
                 col: 'Modular',
@@ -506,7 +508,8 @@ class TeacherService {
             // console.log(">>[CampusVirtual]: Usuario no existe. No se puede crear registro");
             // log de error
             processError.push({
-              typeError: 'UserNotFound',
+              sheetName: sheetname,
+              errorType: 'UserNotFound',
               message: 'Usuario ' + contentRowTeacher.documentID + ' no encontrado',
               row: indexP,
               col: 'Documento de Identidad',
@@ -530,7 +533,8 @@ class TeacherService {
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
-            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO'
+            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO',
+            sheetName: sheetname
           }
 
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
@@ -559,7 +563,8 @@ class TeacherService {
             console.log(`${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`);
 
             processError.push({
-              typeError: 'RegisterQualifiedTeacher',
+              sheetName: sheetname,
+              errorType: 'RegisterQualifiedTeacher',
               message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
               row: indexP,
               col: 'Full register',
