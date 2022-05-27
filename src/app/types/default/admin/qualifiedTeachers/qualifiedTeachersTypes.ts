@@ -14,7 +14,9 @@ export interface IQualifiedTeacher{
   courseName?: string
   evaluationDate?: Date
   isEnabled?: boolean
-  observations?: string
+  observations?: string,
+  action?:string,
+  sheetName?:string
 }
 
 export interface IQualifiedTeacherDelete{

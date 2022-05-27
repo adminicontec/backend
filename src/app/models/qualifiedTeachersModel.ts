@@ -22,8 +22,8 @@ const QualifiedTeachersSchema = new Schema({
   },
   status: {
     type: Schema.Types.String,
-    enum: ['active', 'inactive'],
-    default: 'active',
+    enum: ['ACTIVO', 'INACTIVO'],
+    default: 'ACTIVO',
     required: true,
   },
   courseName: {

@@ -292,15 +292,15 @@ class GeneralUtility {
     return username.trim().toLowerCase().replace(/ /g, "_").replace(/\./g, "").replace(/\,/g, "");
   }
 
-    /*
-    * Método que elimina caracteres en el nombre de un usuario :
-    * si existen espacios, se eliminan
-    * Si existen caracteres acentuados, se reemplaza por su vocal sin acento
-    * Si existen Ñ, se convierte a N
-  */
+  /*
+  * Método que elimina caracteres en el nombre de un usuario :
+  * si existen espacios, se eliminan
+  * Si existen caracteres acentuados, se reemplaza por su vocal sin acento
+  * Si existen Ñ, se convierte a N
+*/
   public normalizeFullName = (firstname: string, lastname: string) => {
     return firstname.trim().replace(/ /g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    + lastname.trim().replace(/ /g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      + lastname.trim().replace(/ /g, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   }
 
   /*
@@ -320,6 +320,13 @@ class GeneralUtility {
 */
   public normalizeEmail = (email: string) => {
     return email.trim().toLowerCase().replace(/(\r\n|\n|\r)/gm, "");
+  }
+
+  /*
+  * Método que elimina espacios en inicio y final, espacios duplicados y puntos
+  */
+  public normalizeString = (data: string) => {
+    return data.trim().replace(/\./g, "").replace(/\s+/g, ' ')
   }
 
   // public timeUnix = (date: string) => {
