@@ -139,6 +139,9 @@ class QualifiedTeachersService {
 
     try {
 
+      console.log('teacher');
+      console.log(params.teacher);
+
       if (params.id) {
 
         const register = await QualifiedTeachers.findOne({ _id: params.id })

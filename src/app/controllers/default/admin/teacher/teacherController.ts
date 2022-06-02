@@ -50,6 +50,10 @@ class TeacherController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public merge = async (req: Request, res: Response) => {
+    const response = await teacherService.merge(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const teacherController = new TeacherController();
