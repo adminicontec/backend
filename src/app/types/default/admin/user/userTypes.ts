@@ -102,6 +102,7 @@ export interface IUserQuery {
   company?: string // Identificador de compañia
   without_company?: boolean | string
   sort?: string
+  username?: Array<string> | string
 }
 
 export interface IUserDateTimezone {

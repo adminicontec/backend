@@ -635,7 +635,7 @@ class UserService {
         .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        .sort( typeOfSort ? typeOfSort : {})
+        .sort(typeOfSort ? typeOfSort : {})
         .lean()
 
       for await (const register of registers) {
@@ -844,6 +844,82 @@ class UserService {
         },
       });
     }
+  }
+
+
+  public syncMoodle = async (params: IUserQuery = {}) => {
+
+    let userMoodle = [];
+
+    try {
+
+      for await (let username of params.username) {
+        console.log(`Sync the user moodle Id to current user: ${username}`);
+
+        const respUser: any = await this.findBy({ query: QueryValues.ONE, where: [{ field: 'username', value: username }] });
+        if (respUser.status == 'error') {
+          return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
+        }
+
+        if (respUser.user.moodle_id) {
+
+          userMoodle.push({
+            action: 'moodleId exists! no updated is performed.',
+            user:  respUser.user
+          });
+        }
+        else {
+          // get Moodle ID from Moodle User Endpoint
+          console.log('→→→→→→→→→→→→→→→');
+          console.log(respUser.user);
+          console.log('→→→→→→→→→→→→→→→');
+
+          var paramUserMoodle = { username: username };
+          let respMoodleSearch: any = await moodleUserService.findBy(paramUserMoodle);
+
+          // console.log('→→→→→→→→→→→→→→→');
+          // console.log(respMoodleSearch);
+          // console.log('→→→→→→→→→→→→→→→');
+
+          if (respMoodleSearch.status == "success") {
+
+            if (respMoodleSearch.user) {
+              console.log(`Moodle ID: ${respMoodleSearch.user.id}`);
+
+              // update Moodle ID on User (campus)
+
+              let respUpdateUser: any = await this.insertOrUpdate({
+                id: respUser.user._id,
+                moodle_id: respMoodleSearch.user.id
+              });
+
+              console.log(respUpdateUser.user);
+
+              userMoodle.push({
+                action: 'update moodleId',
+                user: respUpdateUser.user
+              });
+            }
+            else {
+              return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_user.not_found' } });
+            }
+          }
+          else {
+            return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_user.not_found' } });
+          }
+        }
+      }
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          userMoodle: userMoodle,
+        }
+      })
+
+    }
+    catch (e) {
+      return responseUtility.buildResponseFailed("json");
+    }
+
   }
 
 }
