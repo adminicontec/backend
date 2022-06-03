@@ -131,6 +131,12 @@ class UserController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+	public syncMoodle = async (req: Request, res: Response) => {
+    console.log("syncMoodle");
+		const response = await userService.syncMoodle(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const userController = new UserController();
