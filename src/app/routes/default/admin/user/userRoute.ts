@@ -17,14 +17,14 @@ class UserRoute {
   public instanceController: Controller = new Controller();
   // @end
 
-  constructor () {}
+  constructor() { }
 
   /**
   * Metodo que permite agregar rutas especificas por controlador
   * @param app Objeto de clase Express Aplication
   * @param [prefix] Prefijo para el enrutamiento
   */
-  public routes(app,prefix: string = '/'): void {
+  public routes(app, prefix: string = '/'): void {
 
     const _route = `${prefix}${this.router_prefix}`;
 
@@ -32,11 +32,12 @@ class UserRoute {
     routerUtility.get(app, _route, '/list-teachers', this.instanceController.listTeachers, [], ['auth'])
 
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'user', method: 'create', dir: 'admin/user' }], ['auth'])
-		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
-		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
+    routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
+    routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
-    routerUtility.post(app,_route,'/create-multiple',this.instanceController.createMultiple,[], ['auth']);
+    routerUtility.post(app, _route, '/create-multiple', this.instanceController.createMultiple, [], ['auth']);
+    routerUtility.post(app, _route, '/sync-moodle', this.instanceController.syncMoodle, [], ['auth'])
     // @end
   }
 }
