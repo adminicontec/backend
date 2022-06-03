@@ -145,7 +145,8 @@ class TeacherService {
       let processLog = []
       let respProcessQualifiedTeacherData: any = {}
       let respProcessQualifiedTutorData: any = {}
-      //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
+      let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
+
       if (dataWSProfessionals) {
         respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
         if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
