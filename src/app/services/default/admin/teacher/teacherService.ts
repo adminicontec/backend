@@ -147,27 +147,30 @@ class TeacherService {
       let respProcessQualifiedTutorData: any = {}
       let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
 
-      if (dataWSProfessionals) {
-        respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
-        if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
-          processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
-          //console.table(processLog);
-        }
-        if (respProcessQualifiedTeacherData?.errorLog) {
-          errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
-          ///console.table(errorLog);
-        }
-      }
-      if (dataWSTutores) {
-        respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
-        if (respProcessQualifiedTutorData?.qualifiedTeachers) {
-          processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
-        }
-        if (respProcessQualifiedTutorData?.errorLog) {
-          errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
-        }
-      }
+      console.log(respProcessTeacherData);
 
+      /*
+            if (dataWSProfessionals) {
+              respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+              if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
+                processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+                //console.table(processLog);
+              }
+              if (respProcessQualifiedTeacherData?.errorLog) {
+                errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+                ///console.table(errorLog);
+              }
+            }
+            if (dataWSTutores) {
+              respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+              if (respProcessQualifiedTutorData?.qualifiedTeachers) {
+                processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
+              }
+              if (respProcessQualifiedTutorData?.errorLog) {
+                errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
+              }
+            }
+      */
       // Update processed record
       // processError
 
@@ -224,11 +227,11 @@ class TeacherService {
 
         for await (const element of dataWSTeachersBase) {
 
+          console.log('*****************************************************************');
           if (element['Documento de Identidad']) {
 
             singleUserLoadContent = {
               username: generalUtility.normalizeUsername(element['Documento de Identidad']),
-              password: element['Documento de Identidad'].toString(),
               email: element['Correo Electrónico'],
               phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
               roles: [roles['teacher']],
@@ -258,12 +261,13 @@ class TeacherService {
 
             let respCampusDataUser: any = await userService.findBy({
               query: QueryValues.ONE,
-              where: [{ field: 'profile.doc_number', value: singleUserLoadContent.profile.doc_number }]
+              where: [{ field: 'username', value: singleUserLoadContent.username }]
             });
 
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
               console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+              singleUserLoadContent.password = singleUserLoadContent.username;
             }
             else {
               console.log(">>[CampusVirtual]: El usuario ya existe. Actualización de datos datos.");
@@ -770,7 +774,7 @@ class TeacherService {
             console.log('*******************************');
             console.log(respCourseSched.schedulings);
 
-            for(let scheduleRecord of respCourseSched.schedulings){
+            for (let scheduleRecord of respCourseSched.schedulings) {
               let respUpdateRecord: any = await courseSchedulingDetailsService.insertOrUpdate({
                 id: scheduleRecord._id,
                 teacher: principalId
