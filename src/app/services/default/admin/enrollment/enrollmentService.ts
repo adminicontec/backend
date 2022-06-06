@@ -130,7 +130,7 @@ class EnrollmentService {
             const certificate = await CertificateQueue.findOne({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Complete'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
             })
               .select('')
 
