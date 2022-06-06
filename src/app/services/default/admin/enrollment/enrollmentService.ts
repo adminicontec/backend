@@ -6,12 +6,12 @@ import moment from 'moment';
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
-import { userService } from '../user/userService';
+import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
-import { moodleUserService } from '../../moodle/user/moodleUserService';
-import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService';
+import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 
 
 // @end

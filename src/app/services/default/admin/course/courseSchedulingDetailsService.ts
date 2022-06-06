@@ -5,7 +5,7 @@ import moment from 'moment'
 
 // @import services
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
-import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import { moodleEnrollmentService } from  '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
