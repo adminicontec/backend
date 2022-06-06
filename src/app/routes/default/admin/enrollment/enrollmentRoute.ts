@@ -34,6 +34,7 @@ class EnrollmentRoute {
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'enrollment', method: 'create', dir:'admin/enrollment'}], ['auth'])
     routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.post(app, _route, '/massive', this.instanceController.massive, [], ['auth'])
+    routerUtility.post(app, _route, '/origins', this.instanceController.moveOriginRecords, [], ['auth'])
 
     // @end
   }

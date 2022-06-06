@@ -371,7 +371,8 @@ class CourseSchedulingService {
           "customClassHours": `${generalUtility.getDurationFormatedForCertificate(params.duration)}`,
           "city": `${moodleCity}`,
           "country": `${response.country.name}`,
-          "visible": visibleAtMoodle
+          "visible": visibleAtMoodle,
+          status: paramsStatus.name
         });
 
         if (moodleResponse.status === 'success') {
@@ -1345,8 +1346,8 @@ class CourseSchedulingService {
       if (where.length) {
         where.push({$match: {deleted: false}})
         registers = await CourseScheduling.aggregate(where)
-          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-          .limit(paging ? nPerPage : null)
+          // .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          // .limit(paging ? nPerPage : null)
           .sort({ startDate: -1 })
         await CourseScheduling.populate(registers, [
           { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },

@@ -41,7 +41,7 @@ class QualifiedTeachersService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id teacher modular courseCode courseName evaluationDate isEnabled observations';
+    let select = 'id teacher modular courseCode courseName evaluationDate status isEnabled observations';
 
     if (filters.select) {
       select = filters.select
@@ -99,7 +99,35 @@ class QualifiedTeachersService {
     * @returns
     */
   public findBy = async (params: IQueryFind) => {
+    try {
+      let where = {}
+      if (params.where && Array.isArray(params.where)) {
+        params.where.map((p) => where[p.field] = p.value)
+      }
 
+      let select = 'id status teacher modular courseCode courseName evaluationDate isEnabled observations'
+
+      if (params.query === QueryValues.ALL) {
+        const registers = await QualifiedTeachers.find(where).select(select)
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            qualified_teacher: registers
+          }
+        })
+      } else if (params.query === QueryValues.ONE) {
+        const register = await QualifiedTeachers.findOne(where).select(select)
+        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'qualified_teacher.not_found' })
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            qualified_teacher: register
+          }
+        })
+      }
+
+      return responseUtility.buildResponseFailed('json')
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
   /**
@@ -110,6 +138,9 @@ class QualifiedTeachersService {
   public insertOrUpdate = async (params: IQualifiedTeacher) => {
 
     try {
+
+      console.log('teacher');
+      console.log(params.teacher);
 
       if (params.id) {
 
@@ -129,7 +160,8 @@ class QualifiedTeachersService {
               courseName: response.courseName,
               evaluationDate: response.evaluationDate,
               isEnabled: response.isEnabled,
-              observations: response.observations
+              observations: response.observations,
+              action: 'update'
             }
           }
         })
@@ -137,17 +169,14 @@ class QualifiedTeachersService {
       } else {
 
         // Query if User ID exists
-        //console.log('User Data:');
         const respUser = await userService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.teacher }] })
-        //console.log(respUser);
+        console.log(respUser);
         if (respUser.status == 'error') {
           return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
         }
 
         // Query if Modular ID exists
-        //console.log('Modular Data:');
         const respModular = await modularService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.modular }] })
-        //console.log(respModular);
         if (respModular.status == 'error') {
           return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'modular.not_found' } });
         }
@@ -156,7 +185,12 @@ class QualifiedTeachersService {
         const respQualifiedTeacher = await QualifiedTeachers.findOne({ teacher: params.teacher, courseCode: params.courseCode })
         if (respQualifiedTeacher) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'qualified_teacher.insertOrUpdate.already_exists', params: { user: params.teacher, courseCode: params.courseCode } } })
 
+        console.log("***********");
+        console.log('Qualified Teacher Create:');
+        console.table(params);
         const response: any = await QualifiedTeachers.create(params)
+        console.log(response);
+        console.log("***********");
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -168,7 +202,8 @@ class QualifiedTeachersService {
               courseName: response.courseName,
               evaluationDate: response.evaluationDate,
               isEnabled: response.isEnabled,
-              observations: response.observations
+              observations: response.observations,
+              action: 'insert'
             }
           }
         })

@@ -4,6 +4,7 @@ import moment from 'moment'
 import { Base64 } from 'js-base64';
 import { host, public_dir, attached } from "@scnode_core/config/globals";
 const AdmZip = require("adm-zip");
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import config
@@ -50,7 +51,7 @@ class CertificateService {
 
   private default_certificate_path = 'certifications'
   public default_certificate_zip_path = 'certifications'
-  private selectActivitiesTest = ['attendance', 'assign', 'quiz', 'course'];
+  private selectActivitiesTest = ['attendance', 'assign', 'quiz', 'course', 'forum'];
   private default_logo_path = 'certificate/icons';
   private default_signature_path = 'certificate/signatures';
   /*===============================================
@@ -385,6 +386,200 @@ class CertificateService {
       }
     });
 
+  }
+
+
+  public automaticRelease = async (filters: ICertificateCompletion) => {
+
+    console.log("±±±±± automaticRelease: ");
+    let enrollmentRegisters = [];
+    let listOfStudents = [];
+    let schedulingMode = '';
+    let isAuditorCerficateEnabled = false;
+    let previewCertificateParams;
+    let currentDate = new Date(Date.now());
+
+    //#region query Filters
+    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
+    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
+    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
+
+    let select = 'id user courseID course_scheduling';
+    if (filters.select) {
+      select = filters.select
+    }
+
+    let where = {
+      'profile.origen': 'Tienda Virtual'
+    }
+
+    // if (filters.courseID) {
+
+    // }
+
+    if (filters.without_certification && filters.course_scheduling) {
+      const certifications = await CertificateQueue.find({
+        courseId: filters.course_scheduling,
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+      })
+        .select('id userId')
+
+      const user_ids = certifications.reduce((accum, element) => {
+        accum.push(element.userId)
+        return accum
+      }, [])
+      if (user_ids.length > 0) {
+        where['user'] = { $nin: user_ids }
+      }
+    }
+    //#endregion query Filters
+
+    try {
+
+      console.log("List of course Scheduling");
+      let respCourse: any = await courseSchedulingService.list(
+        {
+          schedulingStatus: ObjectID('615309f85d811e78db3fc91e')
+        });
+
+      // console.log(respCourse);
+
+      // await courseSchedulingService.findBy({
+      //   query: QueryValues.ONE,
+      //   where: [{ field: '_id', value: filters.course_scheduling }]
+      // });
+      if (respCourse.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'program.not_found' } })
+      }
+
+      //1. List of Courses
+      for (var course of respCourse.schedulings) {
+
+
+        //#region Información del curso
+        console.log(`-------------------------------------------`)
+        console.log(`Datos para Programa: ${course.program.name}`)
+        console.log(`ID: ${course._id}`)
+        console.log(`→→ Program Status: ${course.schedulingStatus.name}`);
+        console.log(`→→ Modalidad: ${course.schedulingMode.name.toLowerCase()}`);
+        listOfStudents.push({ courseId: course._id });
+        //#endregion Información del curso
+
+        where['courseID'] = course.moodle_id;
+
+        const certifications = await CertificateQueue.find({
+          courseId: course._id,
+          status: { $in: ['New', 'Requested', 'In-process', 'Complete'] }
+        })
+          .select('id userId')
+
+        // check Students that approve course
+
+        //  course Scheduling Details data
+        let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
+          query: QueryValues.ALL,
+          where: [{ field: 'course_scheduling', value: course._id }]
+        });
+
+        // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
+        schedulingMode = course.schedulingMode.name;
+        if (course.schedulingStatus.name == 'Programado' || course.schedulingStatus.name == 'Cancelado') {
+          return responseUtility.buildResponseFailed('json', null,
+            { error_key: { key: 'certificate.requirements.program_status', params: { error: course.schedulingStatus.name } } });
+        }
+
+        //#region Tipo de programa
+        let programTypeName;
+        const programType = this.getProgramTypeFromCode(course.program.code);
+        // program_type_collection.find(element => element.abbr == course.program.code.substring(0, 2));
+
+        if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
+          programTypeName = 'curso';
+        }
+        if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
+          programTypeName = 'programa';
+        }
+        if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
+          programTypeName = 'diplomado';
+        }
+        //#endregion Tipo de programa
+
+        if (course.auditor_certificate) {
+          isAuditorCerficateEnabled = true;
+          // get modules need to process Second certificate
+          // console.log(`Módulos para Segundo Certificado: \"${course.auditor_certificate}\"`);
+          // console.log(course.auditor_modules);
+
+          // course.auditor_modules.forEach(element => {
+          //   console.log(`→ ${element.course.name}`);
+          // });
+
+          // let total_intensidad = 0;
+          // mapping_listado_modulos_auditor = 'El contenido del programa comprendió: <br/>';
+          // mapping_listado_modulos_auditor += '<ul>'
+          // course.auditor_modules.forEach(element => {
+          //   total_intensidad += element.duration;
+          //   mapping_listado_modulos_auditor += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
+          //   //mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+
+          // });
+          // mapping_listado_modulos_auditor += '</ul>'
+        }
+
+        //#endregion Información del curso
+
+        // filter only students with "Tienda Virtual" as origin
+        console.log(where);
+        enrollmentRegisters = await Enrollment.find(where)
+          .select(select)
+          .populate({
+            path: 'user',
+            select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id'
+          })
+          // .skip(0)
+          // .limit(1000)
+          .lean();
+
+        console.log("Total de estudiantes: " + enrollmentRegisters.length);
+        //console.log(enrollmentRegisters);
+        let count = 1
+        for (let student of enrollmentRegisters) {
+          console.log("------- " + count);
+          //console.log(student)
+          console.log("moodleID " + student.user.moodle_id);
+          count++
+        }
+
+
+      }
+
+      console.log(listOfStudents);
+
+    }
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'completion()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        schedulingMode: schedulingMode,
+        automaticRelease: [
+          ...listOfStudents
+        ],
+        total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
+        pageNumber: pageNumber,
+        nPerPage: nPerPage
+      }
+    });
   }
 
 

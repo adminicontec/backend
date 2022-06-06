@@ -37,6 +37,7 @@ export interface ITeacherQuery {
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
   roles?: Array<string> | string // Roles
+  username?: string
 }
 
 export interface IQualifiedProfessional {

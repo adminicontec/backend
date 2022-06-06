@@ -38,7 +38,8 @@ export interface IEnrollmentQuery {
   search?:string, // Busca sobre los campos de la coleccion
   course_scheduling?: string;
   without_certification?: boolean
-  check_certification?: boolean
+  check_certification?: boolean,
+  origen?: string
 }
 
 export interface IMassiveEnrollment{

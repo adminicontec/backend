@@ -9,6 +9,7 @@ import { modularService } from '@scnode_app/services/default/admin/modular/modul
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 import { qualifiedTeachersService } from "@scnode_app/services/default/admin/qualifiedTeachers/qualifiedTeachersService"
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService'
 // @end
 
 // @import utilities
@@ -114,13 +115,29 @@ class TeacherService {
       let dataModularMigration = await xlsxUtility.extractXLSX(content.data, 'Migración Modulares', 0);
       let modularMigration = []
       if (dataModularMigration) {
-        modularMigration = [...new Map(dataModularMigration.map((x) => [x['Modular anterior'], x])).values()];
+        let onlyModulars = [];
+
+        // let essencial items
+        dataModularMigration.forEach(element => {
+          onlyModulars.push({
+            modular_anterior: generalUtility.normalizeString(element['Modular anterior']),
+            modular_nuevo: generalUtility.normalizeString(element['Modular nuevo'])
+          });
+        });
+
+        onlyModulars.sort((a, b) => a.modular_anterior.localeCompare(b.modular_anterior));
+
+        //console.log('------------------------');
+        ///console.log('modularMigration');
+        modularMigration = [...new Map(onlyModulars.map((x) => [x.modular_nuevo, x])).values()];
+        //console.table(modularMigration);
       }
 
       // 1. Extracción de información de Docentes
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
       // 2. Extracción de Cursos y Docentes calificados
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
+
       // 3. Extracción de Tutores calificados
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
@@ -128,26 +145,32 @@ class TeacherService {
       let processLog = []
       let respProcessQualifiedTeacherData: any = {}
       let respProcessQualifiedTutorData: any = {}
-      //let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
-      if (dataWSProfessionals) {
-        respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
-        if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
-          processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
-        }
-        if (respProcessQualifiedTeacherData?.errorLog) {
-          errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
-        }
-      }
-      if (dataWSTutores) {
-        respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
-        if (respProcessQualifiedTutorData?.qualifiedTeachers) {
-          processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
-        }
-        if (respProcessQualifiedTutorData?.errorLog) {
-          errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
-        }
-      }
+      let respProcessTeacherData = await this.processTeacherData(dataWSTeachersBase, 'base docentes y tutores');
 
+      console.log(respProcessTeacherData);
+
+      /*
+            if (dataWSProfessionals) {
+              respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+              if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
+                processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+                //console.table(processLog);
+              }
+              if (respProcessQualifiedTeacherData?.errorLog) {
+                errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+                ///console.table(errorLog);
+              }
+            }
+            if (dataWSTutores) {
+              respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+              if (respProcessQualifiedTutorData?.qualifiedTeachers) {
+                processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
+              }
+              if (respProcessQualifiedTutorData?.errorLog) {
+                errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
+              }
+            }
+      */
       // Update processed record
       // processError
 
@@ -204,11 +227,11 @@ class TeacherService {
 
         for await (const element of dataWSTeachersBase) {
 
+          console.log('*****************************************************************');
           if (element['Documento de Identidad']) {
 
             singleUserLoadContent = {
               username: generalUtility.normalizeUsername(element['Documento de Identidad']),
-              password: element['Documento de Identidad'].toString(),
               email: element['Correo Electrónico'],
               phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
               roles: [roles['teacher']],
@@ -238,12 +261,13 @@ class TeacherService {
 
             let respCampusDataUser: any = await userService.findBy({
               query: QueryValues.ONE,
-              where: [{ field: 'profile.doc_number', value: singleUserLoadContent.profile.doc_number }]
+              where: [{ field: 'username', value: singleUserLoadContent.username }]
             });
 
             if (respCampusDataUser.status == "error") {
               // USUARIO NO EXISTE EN CAMPUS VIRTUAL
               console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+              singleUserLoadContent.password = singleUserLoadContent.username;
             }
             else {
               console.log(">>[CampusVirtual]: El usuario ya existe. Actualización de datos datos.");
@@ -344,21 +368,22 @@ class TeacherService {
       // Insert the new Modulars from Migration file and then update the general Modular list
       console.log('################################################');
       for await (const row of dataModularMigration) {
-        //console.log("Search for  " + row['Modular nuevo']);
-        let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row['Modular nuevo'].toLowerCase());
+        //console.log("Search for: " + row.modular_nuevo);
+        let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row.modular_nuevo.toLowerCase());
         //console.log('-----------------');
+        //console.log(searchModular);
         if (!searchModular) {
           newModulars.push({
-            anterior: row['Modular anterior'],
-            nuevo: row['Modular nuevo'],
+            anterior: row.modular_anterior,
+            nuevo: row.modular_nuevo,
           });
           // Insert new Modular:
           const respModular: any = await modularService.insertOrUpdate({
-            name: row['Modular nuevo'],
-            description: row['Modular nuevo']
+            name: row.modular_nuevo,
+            description: row.modular_nuevo
           });
           if (respModular.status == 'success') {
-            //console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
+            console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
             modularList = await modularService.list();
           }
         }
@@ -368,8 +393,6 @@ class TeacherService {
       //#region     dataWSProfessionals
       // try {
       if (dataWSQualifiedTeachersBase != null) {
-        console.log("Listado de Profesionales calificados");
-        //console.log(dataWSProfessionals);
 
         let indexP = 5;
         for await (const element of dataWSQualifiedTeachersBase) {
@@ -393,7 +416,8 @@ class TeacherService {
             qualifiedDate: qualifiedDate
           }
 
-          //console.log(contentRowTeacher);
+          console.log("--------------");
+          console.log(`Record for ${contentRowTeacher.documentID} ${element['Nombre Profesional']}- code: ${contentRowTeacher.courseCode}`);
 
           //#region   ------------- MODULAR -------------
           // 2. Insert Modular: singleProfessionalLoadContent.modular
@@ -403,11 +427,12 @@ class TeacherService {
             // console.log(" ERROR AT  ROW: [" + indexP + "]");
 
             processError.push({
-              typeError: 'ModularEmpty',
+              sheetName: sheetname,
+              errorType: 'ModularEmpty',
               row: indexP,
               col: 'Modular',
               message: 'el valor del Modular está vacío',
-              data: element
+              data: contentRowTeacher
             });
             test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
 
@@ -418,12 +443,12 @@ class TeacherService {
           let modularID;
 
           let searchOldModular: any = dataModularMigration.find(field =>
-            field['Modular anterior'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            field.modular_anterior.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
 
           if (searchOldModular) {
             // take pair value for 'Modular nuevo' and get ModularId
             let localModular: any = modularList.modulars.find(x =>
-              x.name.toLowerCase() == searchOldModular['Modular nuevo'].toLowerCase().trim());
+              x.name.toLowerCase() == searchOldModular.modular_nuevo.toLowerCase().trim());
             if (localModular) {
               // take ID
               // console.log('OLD:\t' + localModular.name + '\t[' + localModular._id) + ']';
@@ -442,11 +467,11 @@ class TeacherService {
           }
           else {
             let searchNewModular: any = dataModularMigration.find(field =>
-              field['Modular nuevo'].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == contentRowTeacher.modular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-            //field['Modular nuevo'].toLowerCase() == contentRowTeacher.modular.toLowerCase());
+              field.modular_nuevo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+            //field.modular_nuevo.toLowerCase() == contentRowTeacher.modular.toLowerCase());
             if (searchNewModular) {
               let localModular: any = modularList.modulars.find(x =>
-                x.name.toLowerCase() == searchNewModular['Modular nuevo'].toLowerCase().trim());
+                x.name.toLowerCase() == searchNewModular.modular_nuevo.toLowerCase().trim());
               if (localModular) {
                 // take ID
                 // console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
@@ -463,7 +488,8 @@ class TeacherService {
               // console.log(searchNewModular);
 
               processError.push({
-                typeError: 'ModularMissmatch',
+                sheetName: sheetname,
+                errorType: 'ModularMissmatch',
                 message: `Modular [${contentRowTeacher.modular}] no encontrado en hoja de Migración para el docente con numero de documento ${contentRowTeacher.documentID}`,
                 row: indexP,
                 col: 'Modular',
@@ -488,7 +514,8 @@ class TeacherService {
             // console.log(">>[CampusVirtual]: Usuario no existe. No se puede crear registro");
             // log de error
             processError.push({
-              typeError: 'UserNotFound',
+              sheetName: sheetname,
+              errorType: 'UserNotFound',
               message: 'Usuario ' + contentRowTeacher.documentID + ' no encontrado',
               row: indexP,
               col: 'Documento de Identidad',
@@ -512,38 +539,59 @@ class TeacherService {
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
-            status: 'active'
+            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO',
+            sheetName: sheetname
           }
 
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
           // console.log(registerQualifiedTeacher); //, { depth: null, colors: true });
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
 
+
+          const respIfExistQualifiedTeacher: any = await qualifiedTeachersService.findBy(
+            {
+              query: QueryValues.ONE,
+              where: [
+                { field: 'courseCode', value: registerQualifiedTeacher.courseCode },
+                { field: 'teacher', value: registerQualifiedTeacher.teacher }
+              ]
+            }
+          );
+
+          if (respIfExistQualifiedTeacher.status == 'success') {
+            console.log(`There's a record for user ${contentRowTeacher.documentID} and course code ${contentRowTeacher.courseCode}`)
+            registerQualifiedTeacher.id = respIfExistQualifiedTeacher.qualified_teacher._id;
+          }
+
           const respQualifiedTeacher: any = await qualifiedTeachersService.insertOrUpdate(registerQualifiedTeacher);
           if (respQualifiedTeacher.status == 'error') {
-            // console.log('Error insertando Docente Calificado.');
-            // console.log(respQualifiedTeacher);
-            if (respQualifiedTeacher.status_code !== 'qualified_teacher_insertOrUpdate_already_exists') {
-              processError.push({
-                typeError: 'RegisterQualifiedTeacher',
-                message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
-                row: indexP,
-                col: 'Full register',
-                data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
-              });
-            }
+            console.log('Error insertando Docente Calificado.');
+            console.log(`${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`);
+
+            processError.push({
+              sheetName: sheetname,
+              errorType: 'RegisterQualifiedTeacher',
+              message: `Registro de Docente calificado no pudo ser insertado ${respQualifiedTeacher.message}`,
+              row: indexP,
+              col: 'Full register',
+              data: `${registerQualifiedTeacher.teacher} - ${contentRowTeacher.documentID} - ${contentRowTeacher.modular} - ${contentRowTeacher.courseCode}`
+            });
+
             test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
             indexP++;
             continue;
 
           }
           else {
-            // console.log('Éxito insertando Docente Calificado.');
+            console.log(`Éxito en acción con Docente Calificado: ${respQualifiedTeacher.qualifiedTeacher.action}`);
+            registerQualifiedTeacher.action = respQualifiedTeacher.qualifiedTeacher.action;
             processResult.push(registerQualifiedTeacher);
           }
           //#endregion
           test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
           indexP++;
+
+          console.log("--------------");
         }
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -654,6 +702,117 @@ class TeacherService {
     } catch (e) {
       return responseUtility.buildResponseFailed("json");
     }
+  }
+
+  public merge = async (filters: ITeacherQuery = {}) => {
+    let qualifiedRecords = [];
+    let schedulingRecords = [];
+    let deletedUser = '';
+
+    console.log('Merge duplicated teacher records:');
+    console.log(filters);
+
+    try {
+
+      const respUser: any = await userService.findBy({ query: QueryValues.ALL, where: [{ field: 'username', value: filters.username }] });
+      if (respUser.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
+      }
+
+      //console.log(respUser.users);
+
+      if (respUser.users.length > 1) {
+        let principalId;
+
+        for await (const userData of respUser.users) {
+
+          console.log("Get Qualified Data for: " + userData._id);
+
+          if (userData.moodle_id) {
+            console.log("take this UserData as principal");
+            console.log(userData.moodle_id);
+            principalId = userData._id;
+          }
+          else {
+            console.log("Move this profile data to main record.");
+            console.log(userData);
+
+            // update profile data for first user record
+            let respUpdateUserData: any = await userService.insertOrUpdate({
+              id: principalId,
+              profile: userData.profile
+            });
+            console.log('respUpdateUserData');
+            console.log(respUpdateUserData);
+            if (respUpdateUserData.status == "error") {
+
+            }
+
+            // check if there's Qualified Teachers related to user Id
+
+            let respQualifiedTeacher: any = await qualifiedTeachersService.list({ teacher: userData._id });
+            console.log('records for teacher:');
+            if (respQualifiedTeacher.status == 'error') {
+              return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'qualified_teacher.error' } });
+            }
+            console.log(respQualifiedTeacher.qualifiedTeachers.length);
+
+            for await (let record of respQualifiedTeacher.qualifiedTeachers) {
+              // update each record with principalId
+              let respUpdateRecord: any = await qualifiedTeachersService.insertOrUpdate({
+                id: record._id,
+                teacher: principalId
+              });
+
+              console.log("respUpdateRecord");
+              console.log(respUpdateRecord);
+              qualifiedRecords.push(respUpdateRecord);
+            }
+
+            // check if there's scheduling associated to this user Id (duplicate)
+            let respCourseSched: any = await courseSchedulingDetailsService.list({ teacher: userData._id });
+            console.log('*******************************');
+            console.log(respCourseSched.schedulings);
+
+            for (let scheduleRecord of respCourseSched.schedulings) {
+              let respUpdateRecord: any = await courseSchedulingDetailsService.insertOrUpdate({
+                id: scheduleRecord._id,
+                teacher: principalId
+              });
+
+              console.log("respUpdateRecord");
+              console.log(respUpdateRecord);
+              schedulingRecords.push(respUpdateRecord.scheduling);
+            }
+            // delete duplicated records
+            let respDeletedUser: any = await userService.delete({
+              id: userData._id
+            });
+            console.log('respDeletedUser');
+            console.log(respDeletedUser);
+            if (respDeletedUser.status == "error") {
+
+            }
+
+          }
+
+        }
+
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          mergedTeachers: qualifiedRecords,
+          totalMerged: qualifiedRecords.length,
+          mergedScheduling: schedulingRecords,
+          totalScheduling: schedulingRecords.length,
+        }
+      })
+    }
+    catch (e) {
+      return responseUtility.buildResponseFailed("json");
+    }
+
   }
 
 }

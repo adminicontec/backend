@@ -442,6 +442,7 @@
       "wrong_mime_type": "El tipo de archivo no es el esperado."
     },
     "qualified_teacher": {
+      "error": "Error al ejecutar el comando.",
       "not_found": "El registro de Docente Calificado no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe el Docente Calificado :user con el curso :courseCode"

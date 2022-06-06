@@ -6,12 +6,12 @@ import moment from 'moment';
 import { roleService } from '@scnode_app/services/default/admin/secure/roleService'
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
-import { userService } from '../user/userService';
+import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
-import { moodleUserService } from '../../moodle/user/moodleUserService';
-import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
+import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService';
+import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 
 
 // @end
@@ -66,7 +66,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID course_scheduling'
+    let select = 'id user courseID course_scheduling origin'
     if (filters.select) {
       select = filters.select
     }
@@ -111,14 +111,16 @@ class EnrollmentService {
     try {
       registers = await Enrollment.find(where)
         .select(select)
-        .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen' })
+        .populate({
+          path: 'user',
+          select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen'
+        })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
 
       let count = 1
       for await (const register of registers) {
-
 
         if (register.user && register.user.profile) {
           register.count = count
@@ -128,7 +130,7 @@ class EnrollmentService {
             const certificate = await CertificateQueue.findOne({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Complete'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
             })
               .select('')
 
@@ -146,10 +148,10 @@ class EnrollmentService {
           console.log('Error with profile:');
           console.log(register);
 
-          var i = registers.indexOf( register );
-          if ( i !== -1 ) {
-            registers.splice( i, 1 );
-        }
+          var i = registers.indexOf(register);
+          if (i !== -1) {
+            registers.splice(i, 1);
+          }
         }
       }
     } catch (e) {
@@ -254,7 +256,7 @@ class EnrollmentService {
 
     try {
       if (params.id) {
-
+        console.log("update register: " + params.id)
         const register = await Enrollment.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
 
@@ -638,9 +640,16 @@ class EnrollmentService {
       const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
         .select('id account_executive')
         .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+        .populate({ path: 'schedulingType', select: 'id name' })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .lean()
 
+      console.log("Datos Curso");
+      console.log(`Línea: ${courseScheduling.schedulingType.name}`);
+      console.log(`Modalidad: ${courseScheduling.schedulingMode.name}`);
+
       let index = 1;
+
       for await (const element of dataFromWorksheet) {
 
         let dob = '';
@@ -673,6 +682,16 @@ class EnrollmentService {
             checkEmail = generalUtility.normalizeEmail(checkEmail);
 
             if (generalUtility.validateEmailFormat(checkEmail)) {
+
+              let originField = '';
+              if (courseScheduling.schedulingType.name.toLowerCase() == 'abierto' && (courseScheduling.schedulingMode.name.toLowerCase() == 'virtual' || courseScheduling.schedulingMode.name.toLowerCase() == 'en linea')) {
+                originField = element['Ejecutivo'];
+              }
+              else {
+                originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
+              }
+
+              console.log(`Origin for ${element['Nombres']}: ${originField}`);
               singleUserEnrollmentContent =
               {
                 documentType: element['Tipo Documento'].trim().toUpperCase(),
@@ -693,8 +712,7 @@ class EnrollmentService {
                 educationalLevel: element['Nivel Educativo'],
                 company: element['Empresa'],
                 genre: element['Género'],
-                origin: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null,
-
+                origin: originField,
                 courseID: params.courseID,
                 rolename: 'student',
                 courseScheduling: params.courseScheduling,
@@ -811,6 +829,55 @@ class EnrollmentService {
     })
   }
 
+
+  public moveOriginRecords = async (params: IEnrollmentQuery) => {
+
+    // 1. List of Enrollments
+    let listOfEnrollment;
+    let listOfUpdatedRecords = [];
+    try {
+
+      let registers: any = await this.list(params);
+      if (!registers) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
+
+      listOfEnrollment = registers.enrollment;
+
+      for await (let enrollment of listOfEnrollment) {
+
+        if (enrollment.user) {
+          if (!enrollment.origin) {
+            enrollment.origin = enrollment.user.profile.origen;
+            enrollment.id = enrollment._id;
+            console.log("ææææææææææææææææææææææææææææææææææææææææææææææææææææ");
+            console.log(`Update register for ${enrollment.user.fullname} to ${enrollment.origin}`);
+
+            let updateRegister: any = await this.insertOrUpdate(enrollment);
+            console.log(updateRegister);
+            listOfUpdatedRecords.push(enrollment);
+          }
+        }
+      }
+    }
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'enrollment.exception',
+          additional_parameters: {
+            process: 'list()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        enrollment: [
+          listOfUpdatedRecords
+        ]
+      }
+    })
+  }
 }
 
 export const enrollmentService = new EnrollmentService();
