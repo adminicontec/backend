@@ -9,6 +9,7 @@ import { modularService } from '@scnode_app/services/default/admin/modular/modul
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { documentQueueService } from '@scnode_app/services/default/admin/documentQueue/documentQueueService';
 import { qualifiedTeachersService } from "@scnode_app/services/default/admin/qualifiedTeachers/qualifiedTeachersService"
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService'
 // @end
 
 // @import utilities
@@ -552,7 +553,7 @@ class TeacherService {
             }
           );
 
-          if (respIfExistQualifiedTeacher.status == 'success'){
+          if (respIfExistQualifiedTeacher.status == 'success') {
             console.log(`There's a record for user ${contentRowTeacher.documentID} and course code ${contentRowTeacher.courseCode}`)
             registerQualifiedTeacher.id = respIfExistQualifiedTeacher.qualified_teacher._id;
           }
@@ -696,6 +697,117 @@ class TeacherService {
     } catch (e) {
       return responseUtility.buildResponseFailed("json");
     }
+  }
+
+  public merge = async (filters: ITeacherQuery = {}) => {
+    let qualifiedRecords = [];
+    let schedulingRecords = [];
+    let deletedUser = '';
+
+    console.log('Merge duplicated teacher records:');
+    console.log(filters);
+
+    try {
+
+      const respUser: any = await userService.findBy({ query: QueryValues.ALL, where: [{ field: 'username', value: filters.username }] });
+      if (respUser.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
+      }
+
+      //console.log(respUser.users);
+
+      if (respUser.users.length > 1) {
+        let principalId;
+
+        for await (const userData of respUser.users) {
+
+          console.log("Get Qualified Data for: " + userData._id);
+
+          if (userData.moodle_id) {
+            console.log("take this UserData as principal");
+            console.log(userData.moodle_id);
+            principalId = userData._id;
+          }
+          else {
+            console.log("Move this profile data to main record.");
+            console.log(userData);
+
+            // update profile data for first user record
+            let respUpdateUserData: any = await userService.insertOrUpdate({
+              id: principalId,
+              profile: userData.profile
+            });
+            console.log('respUpdateUserData');
+            console.log(respUpdateUserData);
+            if (respUpdateUserData.status == "error") {
+
+            }
+
+            // check if there's Qualified Teachers related to user Id
+
+            let respQualifiedTeacher: any = await qualifiedTeachersService.list({ teacher: userData._id });
+            console.log('records for teacher:');
+            if (respQualifiedTeacher.status == 'error') {
+              return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'qualified_teacher.error' } });
+            }
+            console.log(respQualifiedTeacher.qualifiedTeachers.length);
+
+            for await (let record of respQualifiedTeacher.qualifiedTeachers) {
+              // update each record with principalId
+              let respUpdateRecord: any = await qualifiedTeachersService.insertOrUpdate({
+                id: record._id,
+                teacher: principalId
+              });
+
+              console.log("respUpdateRecord");
+              console.log(respUpdateRecord);
+              qualifiedRecords.push(respUpdateRecord);
+            }
+
+            // check if there's scheduling associated to this user Id (duplicate)
+            let respCourseSched: any = await courseSchedulingDetailsService.list({ teacher: userData._id });
+            console.log('*******************************');
+            console.log(respCourseSched.schedulings);
+
+            for(let scheduleRecord of respCourseSched.schedulings){
+              let respUpdateRecord: any = await courseSchedulingDetailsService.insertOrUpdate({
+                id: scheduleRecord._id,
+                teacher: principalId
+              });
+
+              console.log("respUpdateRecord");
+              console.log(respUpdateRecord);
+              schedulingRecords.push(respUpdateRecord.scheduling);
+            }
+            // delete duplicated records
+            let respDeletedUser: any = await userService.delete({
+              id: userData._id
+            });
+            console.log('respDeletedUser');
+            console.log(respDeletedUser);
+            if (respDeletedUser.status == "error") {
+
+            }
+
+          }
+
+        }
+
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          mergedTeachers: qualifiedRecords,
+          totalMerged: qualifiedRecords.length,
+          mergedScheduling: schedulingRecords,
+          totalScheduling: schedulingRecords.length,
+        }
+      })
+    }
+    catch (e) {
+      return responseUtility.buildResponseFailed("json");
+    }
+
   }
 
 }

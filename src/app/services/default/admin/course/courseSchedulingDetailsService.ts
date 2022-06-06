@@ -6,7 +6,7 @@ import moment from 'moment'
 // @import services
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 import { moodleEnrollmentService } from '../../moodle/enrollment/moodleEnrollmentService';
-import {courseSchedulingService} from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
 // @import config
@@ -46,6 +46,9 @@ class CourseSchedulingDetailsService {
   public findBy = async (params: IQueryFind) => {
 
     try {
+      console.log('params');
+      console.log(params);
+
       let where = {}
       if (params.where && Array.isArray(params.where)) {
         params.where.map((p) => where[p.field] = p.value)
@@ -143,8 +146,8 @@ class CourseSchedulingDetailsService {
 
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
-        .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
-        .populate({path: 'course', select: 'id name code'})
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+          .populate({ path: 'course', select: 'id name code' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
         const changes = this.validateChanges(params, register)
@@ -157,15 +160,16 @@ class CourseSchedulingDetailsService {
 
         await CourseScheduling.populate(response, {
           path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming', populate: [
-            {path: 'city', select: 'id name'},
-            {path: 'schedulingStatus', select: 'id name'},
-            {path: 'schedulingMode', select: 'id name'},
-            {path: 'schedulingType', select: 'id name'},
-            {path: 'regional', select: 'id name'},
-            {path: 'program', select: 'id name'},
-            {path: 'client', select: 'id name'},
-            {path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
-          ]})
+            { path: 'city', select: 'id name' },
+            { path: 'schedulingStatus', select: 'id name' },
+            { path: 'schedulingMode', select: 'id name' },
+            { path: 'schedulingType', select: 'id name' },
+            { path: 'regional', select: 'id name' },
+            { path: 'program', select: 'id name' },
+            { path: 'client', select: 'id name' },
+            { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
+          ]
+        })
         await CourseSchedulingSection.populate(response, { path: 'course', select: 'id code name moodle_id' })
         await CourseSchedulingMode.populate(response, { path: 'schedulingMode', select: 'id name moodle_id' })
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
@@ -179,7 +183,7 @@ class CourseSchedulingDetailsService {
           });
         }
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           if ((register.teacher && register.teacher._id && params.teacher) && register.teacher._id.toString() !== params.teacher.toString()) {
 
             const courses = []
@@ -260,7 +264,7 @@ class CourseSchedulingDetailsService {
         }
 
         if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
-          const logReprograming = courseSchedulingService.addReprogramingLog(params.reprograming, response.course_scheduling, {identifier: response._id, sourceType: 'course_scheduling_detail'});
+          const logReprograming = courseSchedulingService.addReprogramingLog(params.reprograming, response.course_scheduling, { identifier: response._id, sourceType: 'course_scheduling_detail' });
           await CourseScheduling.findByIdAndUpdate(
             response.course_scheduling._id,
             {
@@ -286,19 +290,21 @@ class CourseSchedulingDetailsService {
 
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
-          .populate({ path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
-            {path: 'city', select: 'id name'},
-            {path: 'schedulingStatus', select: 'id name'},
-            {path: 'schedulingMode', select: 'id name'},
-            {path: 'schedulingType', select: 'id name'},
-            {path: 'regional', select: 'id name'},
-            {path: 'program', select: 'id name'},
-            {path: 'client', select: 'id name'},
-            {path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
-          ] })
+          .populate({
+            path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
+              { path: 'city', select: 'id name' },
+              { path: 'schedulingStatus', select: 'id name' },
+              { path: 'schedulingMode', select: 'id name' },
+              { path: 'schedulingType', select: 'id name' },
+              { path: 'regional', select: 'id name' },
+              { path: 'program', select: 'id name' },
+              { path: 'client', select: 'id name' },
+              { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
+            ]
+          })
           .populate({ path: 'course', select: 'id name moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email'})
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
           .lean()
 
         // asignación del rol: Teacher en Moodle (sin permisos)
@@ -309,7 +315,7 @@ class CourseSchedulingDetailsService {
         });
         console.log('respMoodle3', respMoodle3)
 
-        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus  && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
+        if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, 1)
         }
 
@@ -347,7 +353,7 @@ class CourseSchedulingDetailsService {
       })
     }
 
-    let sessionsChange =  []
+    let sessionsChange = []
     if (params.sessions) {
       sessionsChange = params.sessions.filter((session) => session.hasChanges === 'on')
     }
@@ -376,7 +382,7 @@ class CourseSchedulingDetailsService {
         message += `        <td>${schedule}</td>`;
         message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
         duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
-        message += `      </tr>`;
+          message += `      </tr>`;
       })
       message += `  </tbody>`;
       message += `</table>`;
@@ -441,6 +447,9 @@ class CourseSchedulingDetailsService {
    */
   public list = async (filters: ICourseSchedulingDetailQuery = {}) => {
 
+    console.log('filters');
+    console.log(filters);
+
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -455,6 +464,10 @@ class CourseSchedulingDetailsService {
 
     if (filters.course_scheduling) {
       where['course_scheduling'] = filters.course_scheduling
+    }
+
+    if (filters.teacher) {
+      where['teacher'] = filters.teacher;
     }
 
     // if(filters.search){
