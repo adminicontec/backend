@@ -679,6 +679,7 @@ class ReportByModalityService {
         if (reportData?.data?.courses) {
           const headerCourseStructure = [
             {key: 'courseName', label: 'CURSOS DE FORMACIÓN'},
+            {key: 'teacher', label: 'DOCENTE'},
             {key: 'startDate', label: 'FECHA INICIAL'},
             {key: 'endDate', label: 'FECHA FINAL'},
             {key: 'courseCode', label: 'CÓDIGO'},
