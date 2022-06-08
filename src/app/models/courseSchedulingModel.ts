@@ -251,6 +251,10 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Attached'
   },
+  partial_report: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached'
+  },
   schedulingAssociation: {
     generatingAssociation: {
       type: Schema.Types.Boolean,

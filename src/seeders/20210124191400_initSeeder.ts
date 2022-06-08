@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    // await this.addAttachedCategories();
+    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -1397,20 +1397,20 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const attachedCategories: IAttachedCategory[] =[
       {
         name: "partial_report",
-        description: "Adjunto para reporte parcial",
+        description: "Informe parcial",
         config: {
           limit_files: 1,
           formats: ['xlsx', 'pdf', 'ppt'],
-          limit_size_KB: 100
+          limit_size_KB: 5000
         }
       },
       {
         name: "final_report",
-        description: "Adjunto para reporte final",
+        description: "Informe final",
         config: {
           limit_files: 1,
           formats: ['xlsx', 'pdf', 'ppt'],
-          limit_size_KB: 100
+          limit_size_KB: 5000
         }
       },
       {
@@ -1419,7 +1419,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         config: {
           limit_files: 1,
           formats: ['xlsx', 'pdf', 'ppt'],
-          limit_size_KB: 200
+          limit_size_KB: 5000
         }
       },
       {
