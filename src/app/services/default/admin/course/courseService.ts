@@ -277,8 +277,12 @@ class CourseService {
           let endDate = new Date(register.endPublicationDate);
 
           if (register.hasCost) {
-            if (current.valueOf() >= startDate.valueOf() && current.valueOf() <= endDate.valueOf())
-              isActive = true;
+            if (current.valueOf() >= startDate.valueOf() && current.valueOf() <= endDate.valueOf()) {
+              if (register.schedulingMode.name.toLowerCase() == 'virtual')
+                isActive = true;
+              else
+                isActive = false;
+            }
             else
               isActive = false;
           }
