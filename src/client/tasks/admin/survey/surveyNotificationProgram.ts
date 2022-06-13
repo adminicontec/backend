@@ -1,6 +1,7 @@
 // @import_services Import Services
 import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plugins/tasks/taskService";
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
+import { enrollmentService } from '@scnode_app/services/default/admin/enrollment/enrollmentService';
 // @end
 
 // @import_models Import models
@@ -12,7 +13,8 @@ import moment from 'moment';
 // @end
 
 // @import types
-import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
+import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
+import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
 // @end
 
 class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
@@ -42,21 +44,65 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   private sendSchedulingExamNotification = async () => {
     // Obtener todos los servicios confirmados y finalizados con fecha de finalización inferior a 3 meses
     // TODO: Revisar si es necesario el status de Ejecutado
-    const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
+    const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado', 'Ejecutado'] } });
     const date = new Date();
     // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
     date.setMonth(date.getMonth() - 3);
-    const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, endDate: {$gt: date}}).select('id moodle_id').lean();
+    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date } }).select('id moodle_id endDate metadata').lean();
+
+    console.log("---------------------------");
+    console.log("schedulings found");
+    console.dir(schedulings);
+    console.log("---------------------------");
+
     // Enviar notificación de activación de examen
     if (schedulings && schedulings.length) {
+
       for await (let scheduling of schedulings) {
         const attendanceComplete = await courseSchedulingNotificationsService.isAttendanceComplete(scheduling.moodle_id, scheduling._id);
-        const hasAnExam = await courseSchedulingNotificationsService.verifyCourseSchedulingExercise(scheduling.moodle_id);
-        if (attendanceComplete && hasAnExam) {
-          await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
+
+        const examData = await courseSchedulingNotificationsService.verifyCourseSchedulingExercise(scheduling.moodle_id);
+
+        if (attendanceComplete && examData.hasExam) {
+          const response: any = await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
+          console.log("response sendNotification to Aux");
+          console.log(response);
           // ! ==================================================================
           // ! NICO!!! Aquí va la linea para enviar la notificación de examen
           // ! ==================================================================
+
+          //Get list of PArticipants and send individual notifications:
+          const responseEnrollment: any = await enrollmentService.list({ courseID: scheduling.moodle_id });
+          //console.log(responseEnrollment);
+          if (responseEnrollment.status == 'error') {
+            console.log(response);
+            return;
+          }
+
+          let counter = 1;
+          scheduling.endDate.setDate(scheduling.endDate.getDate() + 8);
+          for await (let student of responseEnrollment.enrollment) {
+            console.log(`→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→`);
+            console.log(`Send notification to ${student.user.fullname} : ${student.user.email}`);
+            console.log(`Service: ${scheduling.metadata.service_id}`);
+            console.log(`Deadline: ${scheduling.endDate}`);
+            console.log(`Nombre Módulo: ${examData.moduleName}`);
+
+            // Send notification
+            let emailParams: IStudentExamNotification = {
+              courseSchedulingId: scheduling._id + '_' + counter,
+              studentName: student.user.fullname,
+              email: student.user.email,
+              serviceId: scheduling.metadata.service_id,
+              endDate: moment.utc(scheduling.endDate).format('YYYY-MM-DD HH:mm:ss'),
+              moduleName: examData.moduleName,
+              numberOfQuestions: examData.numberOfQuestions
+            }
+            const response: any = await courseSchedulingNotificationsService.sendNotificationExamToParticipant(emailParams);
+            console.log(response);
+            counter++;
+          }
+
         }
       }
     }
@@ -65,16 +111,16 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   private sendSchedulingCertificateNotification = async () => {
     // Obtener todos los servicios confirmados y finalizados con fecha de finalización inferior a 3 meses
     // TODO: Revisar si es necesario el status de finalizado
-    const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
+    const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado', 'Ejecutado'] } });
     const date = new Date();
     // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
     date.setMonth(date.getMonth() - 3);
-    const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, endDate: {$gt: date}}).select('id moodle_id').lean();
+    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date } }).select('id moodle_id').lean();
     // Enviar notificación de activación de examen
     if (schedulings && schedulings.length) {
       for await (let scheduling of schedulings) {
         // Buscar si se envió un email de activación de examen del servicio
-        const log = await MailMessageLog.findOne({notification_source: `scheduling_notification_exam_assistant_${scheduling._id}`}).select('id created_at');
+        const log = await MailMessageLog.findOne({ notification_source: `scheduling_notification_exam_assistant_${scheduling._id}` }).select('id created_at');
         if (log) {
           // Revisar si han pasado 8 días desde el envío de la notificación de examen
           const sendDate = new Date(log.created_at);
@@ -87,15 +133,15 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
           sendDate2.setMonth(sendDate2.getMonth() + 2);
           if (moment().format('YYYY - MM - DD') === moment(sendDate2).format('YYYY - MM - DD')) {
             // Revisar si hay certificados pendientes por descargar en el servicio
-            const certificates = await CertificateQueue.find({courseId: scheduling._id, downloadDate: {$exists: false}});
+            const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exists: false } });
             if (certificates && certificates.length) {
               await courseSchedulingNotificationsService.sendNotificationReminderCertificate(scheduling._id);
             }
           }
         } else {
-          let details = await CourseSchedulingDetails.find({course_scheduling: scheduling._id});
+          let details = await CourseSchedulingDetails.find({ course_scheduling: scheduling._id });
           if (details && details.length) {
-            details = details.sort((a,b) => (new Date(b.endDate).getTime()) - (new Date(a.endDate).getTime()));
+            details = details.sort((a, b) => (new Date(b.endDate).getTime()) - (new Date(a.endDate).getTime()));
             // Si no se ha emitido examen revisar si han pasado 8 días desde la ultima sesión
             const compareDate = new Date(details[0].endDate);
             compareDate.setDate(compareDate.getDate() + 8);
@@ -107,7 +153,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
             compareDate2.setMonth(compareDate2.getMonth() + 2);
             if (moment().format('YYYY - MM - DD') === moment(compareDate2).format('YYYY - MM - DD')) {
               // Revisar si hay certificados pendientes por descargar en el servicio
-              const certificates = await CertificateQueue.find({courseId: scheduling._id, downloadDate: {$exist: false}});
+              const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exist: false } });
               if (certificates && certificates.length) {
                 await courseSchedulingNotificationsService.sendNotificationReminderCertificate(scheduling._id);
               }
@@ -121,16 +167,16 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   private sendAssistanceNotification = async () => {
     // Obtener todos los servicios confirmados y finalizados con fecha de finalización inferior a 3 meses
     // TODO: Revisar si es necesario el status de finalizado
-    const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
+    const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado', 'Ejecutado'] } });
     const date = new Date();
     // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
     date.setMonth(date.getMonth() - 3);
-    const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, endDate: {$gt: date}}).select('id moodle_id').lean();
+    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date } }).select('id moodle_id').lean();
     if (schedulings && schedulings.length) {
       for await (let scheduling of schedulings) {
-        let details = await CourseSchedulingDetails.find({course_scheduling: scheduling._id});
+        let details = await CourseSchedulingDetails.find({ course_scheduling: scheduling._id });
         if (details && details.length) {
-          details = details.sort((a,b) => (new Date(b.endDate).getTime()) - (new Date(a.endDate).getTime()));
+          details = details.sort((a, b) => (new Date(b.endDate).getTime()) - (new Date(a.endDate).getTime()));
           // Si no se ha emitido examen revisar si ha pasado 1 día desde la ultima sesión
           const compareDate = new Date(details[0].endDate);
           compareDate.setDate(compareDate.getDate() + 1);
@@ -150,7 +196,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
 
   private sendSurveyNotifications = async () => {
     // @INFO Buscar los survey_log que no hayan sido respondidos
-    const logs = await SurveyLog.find({answer_users: {$size: 0}});
+    const logs = await SurveyLog.find({ answer_users: { $size: 0 } });
     if (logs && logs.length) {
       // @INFO Verificar si ha pasado el tiempo suficiente
       const hoursToVerify = 24;
