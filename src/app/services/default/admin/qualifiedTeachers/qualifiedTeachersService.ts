@@ -50,15 +50,7 @@ class QualifiedTeachersService {
     let where = {}
 
     if (filters.courseCode) {
-      const search = filters.courseCode
-      where = {
-        ...where,
-        $or: [
-          {
-            courseCode: { $regex: '.*' + search + '.*', $options: 'i' }
-          }
-        ]
-      }
+      where = { courseCode: filters.courseCode };
     }
 
     if (filters.teacher) {
