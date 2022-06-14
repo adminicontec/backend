@@ -205,7 +205,8 @@ class CourseSchedulingDataService {
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         program: {
           name: (register.program && register.program.name) ? register.program.name : '',
-          extra_info: (register.extra_info) ? register.extra_info : null
+          extra_info: (register.extra_info) ? register.extra_info : null,
+          service_id: (register.metadata.service_id) ? (register.metadata.service_id) : ''
         },
         courses,
         scheduling,
