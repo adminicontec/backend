@@ -108,6 +108,10 @@ export interface ICertificateQueue {
   }
 }
 
+export interface ICertificateQueueDelete {
+  id: string
+}
+
 export interface ICertificatePreview {
   certificate_queue?: string;
   hash: string,

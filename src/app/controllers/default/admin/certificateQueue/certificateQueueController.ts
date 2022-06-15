@@ -66,6 +66,11 @@ class CertificateQueueController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public delete = async (req: Request, res: Response) => {
+    const response = await certificateQueueService.delete(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
 }
 
 export const certificateQueueController = new CertificateQueueController();
