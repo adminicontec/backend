@@ -14,7 +14,7 @@ import { CertificateQueue } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
 // @end
 
@@ -309,6 +309,25 @@ class CertificateQueueService {
       return responseUtility.buildResponseFailed('json');
     }
   }
+
+
+      /**
+	 * Metodo que permite hacer borrar un registro
+	 * @param params Filtros para eliminar
+	 * @returns
+	 */
+       public delete = async (params: ICertificateQueueDelete) => {
+        try {
+          const find = await CertificateQueue.findOne({ _id: params.id })
+          if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
+
+          await find.delete()
+
+          return responseUtility.buildResponseSuccess('json')
+        } catch (error) {
+          return responseUtility.buildResponseFailed('json')
+        }
+      }
 
 }
 
