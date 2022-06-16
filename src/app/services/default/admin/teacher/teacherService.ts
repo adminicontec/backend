@@ -149,7 +149,7 @@ class TeacherService {
 
       console.log(respProcessTeacherData);
 
-      /*
+
             if (dataWSProfessionals) {
               respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
               if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
@@ -170,7 +170,7 @@ class TeacherService {
                 errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
               }
             }
-      */
+
       // Update processed record
       // processError
 
