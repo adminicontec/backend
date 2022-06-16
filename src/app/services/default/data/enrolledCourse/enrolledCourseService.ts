@@ -47,7 +47,7 @@ class EnrolledCourseService {
         user: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata', populate: [
             { path: 'program', select: 'id name code moodle_id' }
           ]
         })
@@ -58,9 +58,14 @@ class EnrolledCourseService {
       enrolled.map((e) => {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
+
+            console.log('----------------------------');
+            console.log(e.course_scheduling);
+
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
+              service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
             })
@@ -74,7 +79,7 @@ class EnrolledCourseService {
         teacher: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata', populate: [
             { path: 'program', select: 'id name code moodle_id' }
           ]
         })
@@ -85,9 +90,14 @@ class EnrolledCourseService {
       courses.map((e) => {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
+
+            console.log('----------------------------');
+            console.log(e.course_scheduling);
+
             registers.push({
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
+              service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
             })
@@ -136,22 +146,22 @@ class EnrolledCourseService {
     }
 
     if (params.search) {
-       whereCourseScheduling['metadata.service_id'] = params.search;
+      whereCourseScheduling['metadata.service_id'] = params.search;
     }
 
     if (params.searchDoc) {
-       _where.push({
+      _where.push({
         $lookup: {
           from: "users",
           localField: "userId",
           foreignField: "_id",
           as: "user_doc"
         }
-       },{
-         $match: {
-           'user_doc.profile.doc_number': { $regex: '.*' + params.searchDoc + '.*',$options: 'i' }
-         }
-       })
+      }, {
+        $match: {
+          'user_doc.profile.doc_number': { $regex: '.*' + params.searchDoc + '.*', $options: 'i' }
+        }
+      })
     }
 
     if (params.certificate_clients) {
@@ -202,9 +212,9 @@ class EnrolledCourseService {
       //   .select(select)
       //   .lean()
       registers = await CertificateQueue.aggregate(_where)
-      .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-      .limit(paging ? nPerPage : null)
-      .sort({ startDate: -1 })
+        .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+        .limit(paging ? nPerPage : null)
+        .sort({ startDate: -1 })
 
       await CertificateQueue.populate(registers, [
         { path: 'userId', select: 'id profile.first_name profile.last_name profile.doc_number' },
@@ -218,13 +228,13 @@ class EnrolledCourseService {
 
       const newRegisters = [];
       for await (let registerInit of registers) {
-        let register = registerInit._doc ? {...registerInit._doc} : {...registerInit}
+        let register = registerInit._doc ? { ...registerInit._doc } : { ...registerInit }
         if (register.userId && register.userId.profile) {
           register = {
             ...register,
             userId: {
               ...register.userId._doc ? register.userId._doc : register.userId,
-              fullname:  `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
+              fullname: `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
             }
           }
           // register.userId['fullname'] = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
@@ -234,7 +244,7 @@ class EnrolledCourseService {
             ...register,
             auxiliar: {
               ...register.auxiliar._doc ? register.auxiliar._doc : register.auxiliar,
-              fullname:  `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
+              fullname: `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
             }
           }
           // register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
