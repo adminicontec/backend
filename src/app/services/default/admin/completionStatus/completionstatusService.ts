@@ -2,22 +2,22 @@
 // @end
 
 // @import services
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { moodle_setup } from '@scnode_core/config/globals';
-import { campus_setup } from '@scnode_core/config/globals';
 // @end
 
 // @import models
-import { Completionstatus } from '@scnode_app/models'
+import { CertificateQueue, User } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion, IActivitiesSummary } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 // @end
 
 class CompletionstatusService {
@@ -215,6 +215,112 @@ class CompletionstatusService {
         });
 
     }
+
+  }
+
+
+  public activitiesSummary = async (params: IActivitiesSummary) => {
+
+    let summary = {
+      totalAdvance: 0,
+      finalGrade: '',
+      programFinalState: '',
+      certificateIssueState: ''
+    }
+
+    try {
+
+      // Get Rules for completion:
+      console.log('Get Rules for completion:');
+      const response: any = await certificateService.rulesForCompletion(params);
+
+      if (response.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
+      }
+
+      if (response.completion[0].listOfStudentProgress) {
+        let studentData = response.completion[0].listOfStudentProgress[0].student;
+        summary.finalGrade = `${studentData.itemType.course[0].graderaw} / 100`;
+
+        if (response.schedulingMode.toLowerCase() == 'virtual') {
+          summary.totalAdvance = studentData.studentProgress.completion;
+        }
+
+        if (response.schedulingMode.toLowerCase() == 'presencial' || response.schedulingMode == 'en linea') {
+          var arrNum = studentData.studentProgress.assistance.split('/');
+
+          summary.totalAdvance = arrNum[0] / arrNum[1];
+        }
+
+
+        if (studentData.studentProgress.status == 'ok')
+          summary.programFinalState = 'Aprobado';
+        else
+          summary.programFinalState = 'No aprobado';
+      }
+
+
+      // Get status of Certificate Issue:
+
+      const respCertification = await CertificateQueue.findOne({
+        userId: params.user_id,
+        courseId: params.course_scheduling,
+        certificateType: 'academic'
+      });
+
+      console.log('Certifications');
+      console.log(respCertification);
+      if (respCertification) {
+        console.log(respCertification.status);
+
+        //['New', 'In-process', 'Requested', 'Complete', 'Error', 'Re-issue']
+        switch (respCertification.status) {
+          case 'New':
+            summary.certificateIssueState = 'En cola';
+            break;
+          case 'In-process':
+            summary.certificateIssueState = 'En proceso';
+            break;
+          case 'Requested':
+            summary.certificateIssueState = 'En emisión';
+            break;
+          case 'Complete':
+            summary.certificateIssueState = 'Disponible';
+            break;
+          case 'Error':
+            summary.certificateIssueState = 'Error';
+            break;
+          case 'Re-issue':
+            summary.certificateIssueState = 'Reexpedido';
+            break;
+
+          default:
+            summary.certificateIssueState = 'En cola';
+            break;
+        }
+      }
+      else {
+        summary.certificateIssueState = 'Sin emitir';
+      }
+
+    }
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'completion()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        summary: summary
+      }
+    });
 
   }
 
