@@ -293,6 +293,9 @@ class CompletionstatusService {
           case 'Re-issue':
             summary.certificateIssueState = 'Reexpedido';
             break;
+          case 'Deleted':
+            summary.certificateIssueState = 'Borrado';
+            break;
 
           default:
             summary.certificateIssueState = 'En cola';
