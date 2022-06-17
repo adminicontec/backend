@@ -225,7 +225,8 @@ class CompletionstatusService {
       totalAdvance: 0,
       finalGrade: '',
       programFinalState: '',
-      certificateIssueState: ''
+      certificateIssueState: '',
+      dowloadLink: ''
     }
 
     try {
@@ -286,6 +287,7 @@ class CompletionstatusService {
             break;
           case 'Complete':
             summary.certificateIssueState = 'Disponible';
+            summary.dowloadLink = 'wwww.'
             break;
           case 'Error':
             summary.certificateIssueState = 'Error';
@@ -304,6 +306,7 @@ class CompletionstatusService {
       }
       else {
         summary.certificateIssueState = 'Sin emitir';
+        summary.dowloadLink = 'no url.'
       }
 
     }
