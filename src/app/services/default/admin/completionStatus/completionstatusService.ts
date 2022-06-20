@@ -221,12 +221,17 @@ class CompletionstatusService {
 
   public activitiesSummary = async (params: IActivitiesSummary) => {
 
+    console.log('activitiesSummary');
+    console.log(params);
+
     let summary = {
+      schedulingMode: '',
       totalAdvance: 0,
       finalGrade: '',
       programFinalState: '',
       certificateIssueState: '',
-      dowloadLink: ''
+      auditor: false,
+      auditorGrade: 0
     }
 
     try {
@@ -241,7 +246,10 @@ class CompletionstatusService {
 
       if (response.completion[0].listOfStudentProgress) {
         let studentData = response.completion[0].listOfStudentProgress[0].student;
+        summary.schedulingMode = response.schedulingMode.toLowerCase();
         summary.finalGrade = `${studentData.itemType.course[0].graderaw} / 100`;
+        summary.auditor = studentData.studentProgress.auditor;
+        summary.auditorGrade = studentData.studentProgress.auditorGrade;
 
         if (response.schedulingMode.toLowerCase() == 'virtual') {
           summary.totalAdvance = studentData.studentProgress.completion;
@@ -263,8 +271,13 @@ class CompletionstatusService {
 
       // Get status of Certificate Issue:
 
+      //params.username
+      const existUser = await User.findOne({ username: params.username })
+      console.log('existUser');
+      console.log(existUser);
+
       const respCertification = await CertificateQueue.findOne({
-        userId: params.user_id,
+        userId: existUser._id,
         courseId: params.course_scheduling,
         certificateType: 'academic'
       });
@@ -287,7 +300,6 @@ class CompletionstatusService {
             break;
           case 'Complete':
             summary.certificateIssueState = 'Disponible';
-            summary.dowloadLink = 'wwww.'
             break;
           case 'Error':
             summary.certificateIssueState = 'Error';
@@ -306,7 +318,6 @@ class CompletionstatusService {
       }
       else {
         summary.certificateIssueState = 'Sin emitir';
-        summary.dowloadLink = 'no url.'
       }
 
     }

@@ -14,8 +14,8 @@ export interface IActivitiesCompletion {
 
 export interface IActivitiesSummary {
   courseID?: string,  // ID de curso (listado de cursos en Moodle)
-  userID?: string,     // ID de estudiante en Moodle
-  user_id?: string, // Id de usuario en Campus
+  userMoodleID?: string,     // ID de estudiante en Moodle
+  username?: string, // Id de usuario en Campus
   course_scheduling?: string
 }
 
