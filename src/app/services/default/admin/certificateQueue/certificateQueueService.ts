@@ -86,6 +86,7 @@ class CertificateQueueService {
       if (params.id) {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("UPDATE certificate queue");
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log(params);
 
         const register = await CertificateQueue.findOne({ _id: params.id })
