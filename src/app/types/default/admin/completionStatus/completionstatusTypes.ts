@@ -25,4 +25,11 @@ export interface ICompletionStatusQuery {
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
 }
+
+export interface IQuizModuleData {
+  hasExam: boolean,
+  examnName: string,
+  moduleName: string,
+  numberOfQuestions: number
+}
 //@end
