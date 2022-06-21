@@ -34,6 +34,7 @@ class CertificateQueueRoute {
 		routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
 		routerUtility.post(app, _route, '/fetchByStatus', this.instanceController.fetchByStatus, [], ['auth'])
 		routerUtility.post(app, _route, '/fetch-certificate-generated-by-month', this.instanceController.certificateGeneratedByMonth, [], ['auth'])
+    routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     //
     // @end
   }
