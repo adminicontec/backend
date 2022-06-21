@@ -18,7 +18,7 @@ import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQu
 import moment from 'moment';
 // @end
 
-interface ParamsCertificateGeneratedByMonth{
+interface ParamsCertificateGeneratedByMonth {
   months?: number;    // Numero de meses a filtrar (por defecto últimos 12)
 }
 
@@ -50,9 +50,9 @@ class CertificateQueueService {
       let select = 'id courseId userId auxiliar status certificateType certificateModule certificate';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
-        .select(select)
-        .populate({ path: 'userId', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
-        .populate({ path: 'auxiliar', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' });
+          .select(select)
+          .populate({ path: 'userId', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+          .populate({ path: 'auxiliar', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' });
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -270,16 +270,16 @@ class CertificateQueueService {
    * @INFO Obtener el numero de certificados emitidos por mes (últimos 12 meses por defecto)
    * @returns
    */
-   public certificateGeneratedByMonth = async (params?: ParamsCertificateGeneratedByMonth) => {
-    try{
+  public certificateGeneratedByMonth = async (params?: ParamsCertificateGeneratedByMonth) => {
+    try {
       // Fechas para filtrar
       const startDate = new Date();
       startDate.setMonth(params.months ? startDate.getMonth() - params.months : startDate.getMonth() - 12);
       const endDate = new Date();
 
       // Obtener los certificados generados por mes
-      const certificatesGeneratedResponse = await CertificateQueue.find({'certificate.date': {$gte: startDate, $lt: endDate}, status: 'Complete'});
-      let certificatesGenerated: {date_ms: number, certificates: number, dateFormated: string}[] = [];
+      const certificatesGeneratedResponse = await CertificateQueue.find({ 'certificate.date': { $gte: startDate, $lt: endDate }, status: 'Complete' });
+      let certificatesGenerated: { date_ms: number, certificates: number, dateFormated: string }[] = [];
       if (certificatesGeneratedResponse && certificatesGeneratedResponse?.length) {
         certificatesGeneratedResponse.forEach((certificate: any) => {
           const dateFormated = moment(certificate.certificate.date).format('YYYY-MM');
@@ -297,37 +297,37 @@ class CertificateQueueService {
       }
 
       // Ordenar el array
-      certificatesGenerated = certificatesGenerated.sort((a,b) => a.date_ms - b.date_ms);
+      certificatesGenerated = certificatesGenerated.sort((a, b) => a.date_ms - b.date_ms);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           certificatesGenerated,
         }
       })
-    }catch(e){
+    } catch (e) {
       console.log('courseSchedulingDataService => schedulingConfirmedByMonth error: ', e);
       return responseUtility.buildResponseFailed('json');
     }
   }
 
 
-      /**
-	 * Metodo que permite hacer borrar un registro
-	 * @param params Filtros para eliminar
-	 * @returns
-	 */
-       public delete = async (params: ICertificateQueueDelete) => {
-        try {
-          const find = await CertificateQueue.findOne({ _id: params.id })
-          if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
+  /**
+* Metodo que permite hacer borrar un registro
+* @param params Filtros para eliminar
+* @returns
+*/
+  public delete = async (params: ICertificateQueueDelete) => {
+    try {
+      const find = await CertificateQueue.findOne({ _id: params.id })
+      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
 
-          await find.delete()
+      await find.delete()
 
-          return responseUtility.buildResponseSuccess('json')
-        } catch (error) {
-          return responseUtility.buildResponseFailed('json')
-        }
-      }
+      return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
 }
 
