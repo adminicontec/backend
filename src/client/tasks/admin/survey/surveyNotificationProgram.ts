@@ -26,13 +26,13 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
 
-    //await this.sendSchedulingCertificateNotification();
+    await this.sendSchedulingCertificateNotification();
 
     await this.sendSchedulingExamNotification();
 
-    //await this.sendAssistanceNotification();
+    await this.sendAssistanceNotification();
 
-    //await this.sendSurveyNotifications();
+    await this.sendSurveyNotifications();
 
     // @end
 
