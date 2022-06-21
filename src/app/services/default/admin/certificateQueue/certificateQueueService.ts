@@ -108,6 +108,7 @@ class CertificateQueueService {
       } else {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("INSERT certificate queue");
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log(params);
         console.log("AuxiliarID:" + params.auxiliar);
 
