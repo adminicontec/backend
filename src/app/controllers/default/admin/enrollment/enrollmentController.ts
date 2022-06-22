@@ -100,6 +100,11 @@ class EnrollmentController {
     const response = await enrollmentService.moveOriginRecords(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public fixEnrollmentCode = async (req: Request, res: Response) => {
+    const response = await enrollmentService.fixEnrollmentCode(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const enrollmentController = new EnrollmentController();
