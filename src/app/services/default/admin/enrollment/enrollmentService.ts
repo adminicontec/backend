@@ -66,7 +66,7 @@ class EnrollmentService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID course_scheduling origin'
+    let select = 'id user courseID course_scheduling origin enrollmentCode'
     if (filters.select) {
       select = filters.select
     }
@@ -115,9 +115,6 @@ class EnrollmentService {
         .limit(paging ? nPerPage : null)
         .lean()
 
-      console.log("registers");
-      console.log(registers);
-
       let count = 1
       for await (const register of registers) {
 
@@ -154,6 +151,7 @@ class EnrollmentService {
         }
       }
     } catch (e) {
+      console.log('→→→ Error ');
       console.log(e.message);
       return responseUtility.buildResponseFailed('json', null,
         {
@@ -1002,6 +1000,101 @@ class EnrollmentService {
       }
     })
   }
+
+
+  public fixEnrollmentCode = async (params: IEnrollmentQuery) => {
+
+    // 1. List of Enrollment:
+    let enrollmentCode = 0;
+    let listOfEnrollment;
+    let listOfUpdatedRecords = [];
+    let where = {};
+    let select = 'id user courseID course_scheduling origin enrollmentCode';
+
+    try {
+
+      if (params.courseID) {
+        where['courseID'] = params.courseID;
+      }
+
+      //this.list(params);
+      let registers: any = await Enrollment.find(where)
+        .select(select)
+        .populate({
+          path: 'user',
+          select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen'
+        })
+        .populate({
+          path: 'course_scheduling',
+          select: 'id metadata.service_id'
+        });
+
+
+      if (registers.length == 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
+
+      console.log(`lastEnrollmentCode`);
+      const lastEnrollmentCode: any = await this.getLastEnrollmentCode(params);
+      console.log(lastEnrollmentCode);
+
+      if (lastEnrollmentCode.enrollmentCode == null) {
+        console.log('No enrollmentCode, begin with 1');
+        enrollmentCode = 1;
+      }
+      else
+        enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
+
+      console.log(`Code: ${enrollmentCode}`);
+
+      listOfEnrollment = registers;
+
+      for await (let enrollment of listOfEnrollment) {
+        if (enrollment.enrollmentCode == null) {
+          // update enrollmentCode
+
+          const response: any = await Enrollment.findByIdAndUpdate(enrollment._id, { enrollmentCode: enrollmentCode }, { useFindAndModify: false, new: true })
+          console.log(response);
+
+          enrollmentCode++;
+          listOfUpdatedRecords.push(response);
+        }
+
+      }
+
+    }
+
+    catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'enrollment.exception',
+          additional_parameters: {
+            process: 'list()',
+            error: e.message
+          }
+        });
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        enrollment: [
+          listOfUpdatedRecords
+        ]
+      }
+    })
+
+
+  }
+
+  private getLastEnrollmentCode = async (params: IEnrollmentQuery) => {
+
+    const lastEnrollmentcode = await Enrollment.findOne({
+      courseID: params.courseID
+    })
+      .select('enrollmentCode')
+      .sort({ enrollmentCode: -1 })
+    return lastEnrollmentcode;
+  }
+
 }
 
 export const enrollmentService = new EnrollmentService();

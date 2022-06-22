@@ -9,7 +9,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { CertificateQueue } from '@scnode_app/models'
+import { Enrollment, CertificateQueue } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -47,7 +47,7 @@ class CertificateQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId auxiliar status certificateType certificateModule certificate';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
           .select(select)
@@ -101,7 +101,8 @@ class CertificateQueueService {
               _id: response._id,
               status: response.status,
               certificate: response.certificate,
-              auxiliar: response.auxiliar
+              auxiliar: response.auxiliar,
+              certificateConsecutive: response.certificateConsecutive
             }
           }
         })
@@ -114,12 +115,21 @@ class CertificateQueueService {
         console.log("AuxiliarID:" + params.auxiliar);
 
         let totalResponse = [];
+        let select = 'id user courseID course_scheduling enrollmentCode';
 
         // Multiple request from List in front
         for await (const userId of params.users) {
 
-          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar })
+          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar });
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
+
+          let consecutive = '';
+          const enrollmentRegisters = await Enrollment.findOne({ user: userId, course_scheduling: params.courseId }).select(select);
+          console.log('Enrollment');
+          console.log(enrollmentRegisters);
+
+          // seguro en caso de no tener Código de enrolamiento
+          consecutive = enrollmentRegisters.enrollmentCode ? enrollmentRegisters.enrollmentCode : '0';
 
           const response: any = await CertificateQueue.create({
             courseId: params.courseId,
@@ -127,6 +137,7 @@ class CertificateQueueService {
             auxiliar: params.auxiliar,
             status: params.status,
             certificateType: params.certificateType,
+            certificateConsecutive: consecutive,
             certificateModule: ''
           });
 

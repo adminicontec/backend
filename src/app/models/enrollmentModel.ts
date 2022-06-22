@@ -42,6 +42,10 @@ const EnrollmentSchema = new Schema({
   origin: {
     type: Schema.Types.String,
     required: false,
+  },
+  enrollmentCode:{
+    type: Schema.Types.Number,
+    required: false,
   }
   // @end
 }, {
