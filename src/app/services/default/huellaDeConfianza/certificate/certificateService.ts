@@ -128,7 +128,7 @@ class CertificateService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id user courseID course_scheduling';
+    let select = 'id user courseID course_scheduling enrollmentCode';
     if (filters.select) {
       select = filters.select
     }
@@ -899,6 +899,8 @@ class CertificateService {
       //schedulingStatus
       // 1. Estatus de Programa: se permite generar si está confirmado o ejecutado.
       console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      console.log(`enrollmentCode: ${params.certificateConsecutive}`);
+
       if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
@@ -920,8 +922,8 @@ class CertificateService {
       let mapping_pais = respCourse.scheduling.country.name;
       let mapping_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
       let mapping_listado_cursos = '';
-      let mapping_consecutive = generalUtility.rand(1, 50).toString(); // check
-      let mapping_numero_certificado = respCourse.scheduling.metadata.service_id + '-' + mapping_consecutive.padStart(4, '0');
+      let mapping_consecutive = parseInt(params.certificateConsecutive); //  generalUtility.rand(1, 50).toString(); // check
+      let mapping_numero_certificado = respCourse.scheduling.metadata.service_id + '-' + params.certificateConsecutive.padStart(4, '0');
 
       let schedulingType = respCourse.scheduling.schedulingType;
 
@@ -1259,7 +1261,8 @@ class CertificateService {
             certificateQueueId: null, // as new record
             userId: params.userId, // Nombre de usario
             courseId: params.courseId,
-            auxiliarId: params.auxiliarId
+            auxiliarId: params.auxiliarId,
+            certificateConsecutive: ''
           },
           certificateType: certificate_type.auditor,
           template: mapping_template,
@@ -1722,9 +1725,10 @@ class CertificateService {
         courseId: certificateReq.queueData.courseId,
         users: [certificateReq.queueData.userId],
         certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
         status: 'In-process',
         message: '',
-        auxiliar: certificateReq.queueData.auxiliarId,
+        auxiliar: certificateReq.queueData.auxiliarId
       });
 
       console.log("--> After Insert/update cerfificateQueue:");
@@ -1763,6 +1767,7 @@ class CertificateService {
         message: certificateReq.paramsHuella.certificado,
         certificateModule: certificateReq.paramsHuella.modulo,
         certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
         auxiliar: certificateReq.queueData.auxiliarId,
         certificate: {
           hash: respHuella.resultado.certificado,

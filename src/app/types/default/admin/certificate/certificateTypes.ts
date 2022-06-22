@@ -12,7 +12,8 @@ export interface IQueryUserToCertificate {
   certificateQueueId: string,
   userId: string, // ID de usario
   courseId: string, // ID de curso
-  auxiliarId: string // ID de Auxiliar qué liberó el certificado
+  auxiliarId: string, // ID de Auxiliar qué liberó el certificado
+  certificateConsecutive: string
 }
 
 
@@ -97,6 +98,7 @@ export interface ICertificateQueue {
   auxiliar?: string,
   certificateType?: string,
   certificateModule?: string,
+  certificateConsecutive?: string,
   status: string,
   message?: string,
   downloadDate?: Date,

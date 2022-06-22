@@ -36,6 +36,7 @@ class EnrollmentRoute {
     routerUtility.post(app, _route, '/massive', this.instanceController.massive, [], ['auth'])
     routerUtility.post(app, _route, '/find-students', this.instanceController.findStudents, [], ['auth'])
     routerUtility.post(app, _route, '/origins', this.instanceController.moveOriginRecords, [], ['auth'])
+    routerUtility.post(app, _route, '/fixcode', this.instanceController.fixEnrollmentCode, [], ['auth'])
 
     // @end
   }
