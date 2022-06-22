@@ -9,7 +9,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { CertificateQueue } from '@scnode_app/models'
+import { Enrollment, CertificateQueue } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -18,7 +18,7 @@ import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQu
 import moment from 'moment';
 // @end
 
-interface ParamsCertificateGeneratedByMonth{
+interface ParamsCertificateGeneratedByMonth {
   months?: number;    // Numero de meses a filtrar (por defecto últimos 12)
 }
 
@@ -47,12 +47,12 @@ class CertificateQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId auxiliar status certificateType certificateModule certificate';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
-        .select(select)
-        .populate({ path: 'userId', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
-        .populate({ path: 'auxiliar', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' });
+          .select(select)
+          .populate({ path: 'userId', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+          .populate({ path: 'auxiliar', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' });
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -100,7 +100,8 @@ class CertificateQueueService {
               _id: response._id,
               status: response.status,
               certificate: response.certificate,
-              auxiliar: response.auxiliar
+              auxiliar: response.auxiliar,
+              certificateConsecutive: response.certificateConsecutive
             }
           }
         })
@@ -112,12 +113,21 @@ class CertificateQueueService {
         console.log("AuxiliarID:" + params.auxiliar);
 
         let totalResponse = [];
+        let select = 'id user courseID course_scheduling enrollmentCode';
 
         // Multiple request from List in front
         for await (const userId of params.users) {
 
-          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar })
+          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar });
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
+
+          let consecutive = '';
+          const enrollmentRegisters = await Enrollment.findOne({ user: userId, course_scheduling: params.courseId }).select(select);
+          console.log('Enrollment');
+          console.log(enrollmentRegisters);
+
+          // seguro en caso de no tener Código de enrolamiento
+          consecutive = enrollmentRegisters.enrollmentCode ? enrollmentRegisters.enrollmentCode : '0';
 
           const response: any = await CertificateQueue.create({
             courseId: params.courseId,
@@ -125,6 +135,7 @@ class CertificateQueueService {
             auxiliar: params.auxiliar,
             status: params.status,
             certificateType: params.certificateType,
+            certificateConsecutive: consecutive,
             certificateModule: ''
           });
 
@@ -270,16 +281,16 @@ class CertificateQueueService {
    * @INFO Obtener el numero de certificados emitidos por mes (últimos 12 meses por defecto)
    * @returns
    */
-   public certificateGeneratedByMonth = async (params?: ParamsCertificateGeneratedByMonth) => {
-    try{
+  public certificateGeneratedByMonth = async (params?: ParamsCertificateGeneratedByMonth) => {
+    try {
       // Fechas para filtrar
       const startDate = new Date();
       startDate.setMonth(params.months ? startDate.getMonth() - params.months : startDate.getMonth() - 12);
       const endDate = new Date();
 
       // Obtener los certificados generados por mes
-      const certificatesGeneratedResponse = await CertificateQueue.find({'certificate.date': {$gte: startDate, $lt: endDate}, status: 'Complete'});
-      let certificatesGenerated: {date_ms: number, certificates: number, dateFormated: string}[] = [];
+      const certificatesGeneratedResponse = await CertificateQueue.find({ 'certificate.date': { $gte: startDate, $lt: endDate }, status: 'Complete' });
+      let certificatesGenerated: { date_ms: number, certificates: number, dateFormated: string }[] = [];
       if (certificatesGeneratedResponse && certificatesGeneratedResponse?.length) {
         certificatesGeneratedResponse.forEach((certificate: any) => {
           const dateFormated = moment(certificate.certificate.date).format('YYYY-MM');
@@ -297,37 +308,37 @@ class CertificateQueueService {
       }
 
       // Ordenar el array
-      certificatesGenerated = certificatesGenerated.sort((a,b) => a.date_ms - b.date_ms);
+      certificatesGenerated = certificatesGenerated.sort((a, b) => a.date_ms - b.date_ms);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           certificatesGenerated,
         }
       })
-    }catch(e){
+    } catch (e) {
       console.log('courseSchedulingDataService => schedulingConfirmedByMonth error: ', e);
       return responseUtility.buildResponseFailed('json');
     }
   }
 
 
-      /**
-	 * Metodo que permite hacer borrar un registro
-	 * @param params Filtros para eliminar
-	 * @returns
-	 */
-       public delete = async (params: ICertificateQueueDelete) => {
-        try {
-          const find = await CertificateQueue.findOne({ _id: params.id })
-          if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
+  /**
+* Metodo que permite hacer borrar un registro
+* @param params Filtros para eliminar
+* @returns
+*/
+  public delete = async (params: ICertificateQueueDelete) => {
+    try {
+      const find = await CertificateQueue.findOne({ _id: params.id })
+      if (!find) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
 
-          await find.delete()
+      await find.delete()
 
-          return responseUtility.buildResponseSuccess('json')
-        } catch (error) {
-          return responseUtility.buildResponseFailed('json')
-        }
-      }
+      return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
 }
 

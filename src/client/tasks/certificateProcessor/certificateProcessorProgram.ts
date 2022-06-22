@@ -32,6 +32,8 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
       });
 
+    console.log(respQueueToProcess);
+
     if (respQueueToProcess.status === "error") return respQueueToProcess;
 
     if (respQueueToProcess.certificateQueue.length != 0) {
@@ -47,7 +49,8 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
-          auxiliarId: element.auxiliar._id
+          auxiliarId: element.auxiliar._id,
+          certificateConsecutive: element.certificateConsecutive
         });
 
         if (respSetCertificate.status === "error") {
