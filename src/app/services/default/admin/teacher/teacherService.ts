@@ -150,26 +150,26 @@ class TeacherService {
       console.log(respProcessTeacherData);
 
 
-            if (dataWSProfessionals) {
-              respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
-              if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
-                processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
-                //console.table(processLog);
-              }
-              if (respProcessQualifiedTeacherData?.errorLog) {
-                errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
-                ///console.table(errorLog);
-              }
-            }
-            if (dataWSTutores) {
-              respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
-              if (respProcessQualifiedTutorData?.qualifiedTeachers) {
-                processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
-              }
-              if (respProcessQualifiedTutorData?.errorLog) {
-                errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
-              }
-            }
+      if (dataWSProfessionals) {
+        respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+        if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+          //console.table(processLog);
+        }
+        if (respProcessQualifiedTeacherData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+          ///console.table(errorLog);
+        }
+      }
+      if (dataWSTutores) {
+        respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+        if (respProcessQualifiedTutorData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
+        }
+        if (respProcessQualifiedTutorData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
+        }
+      }
 
       // Update processed record
       // processError
