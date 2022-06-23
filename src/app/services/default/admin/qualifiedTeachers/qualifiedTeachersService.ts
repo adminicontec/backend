@@ -180,6 +180,7 @@ class QualifiedTeachersService {
         console.log("***********");
         console.log('Qualified Teacher Create:');
         console.table(params);
+        params.status = params.status.toUpperCase();
         const response: any = await QualifiedTeachers.create(params)
         console.log(response);
         console.log("***********");
@@ -194,6 +195,7 @@ class QualifiedTeachersService {
               courseName: response.courseName,
               evaluationDate: response.evaluationDate,
               isEnabled: response.isEnabled,
+              status: response.status,
               observations: response.observations,
               action: 'insert'
             }
@@ -202,6 +204,7 @@ class QualifiedTeachersService {
       }
 
     } catch (e) {
+      console.log(e);
       return responseUtility.buildResponseFailed('json')
     }
 
