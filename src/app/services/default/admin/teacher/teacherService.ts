@@ -149,28 +149,28 @@ class TeacherService {
 
       console.log(respProcessTeacherData);
 
-      /*
-            if (dataWSProfessionals) {
-              respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
-              if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
-                processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
-                //console.table(processLog);
-              }
-              if (respProcessQualifiedTeacherData?.errorLog) {
-                errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
-                ///console.table(errorLog);
-              }
-            }
-            if (dataWSTutores) {
-              respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
-              if (respProcessQualifiedTutorData?.qualifiedTeachers) {
-                processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
-              }
-              if (respProcessQualifiedTutorData?.errorLog) {
-                errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
-              }
-            }
-      */
+
+      if (dataWSProfessionals) {
+        respProcessQualifiedTeacherData = await this.processQualifiedTeacherData(dataWSProfessionals, modularMigration, 'Profesionales calificados');
+        if (respProcessQualifiedTeacherData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTeacherData?.qualifiedTeachers)
+          //console.table(processLog);
+        }
+        if (respProcessQualifiedTeacherData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTeacherData?.errorLog)
+          ///console.table(errorLog);
+        }
+      }
+      if (dataWSTutores) {
+        respProcessQualifiedTutorData = await this.processQualifiedTeacherData(dataWSTutores, modularMigration, 'Tutores calificados');
+        if (respProcessQualifiedTutorData?.qualifiedTeachers) {
+          processLog = processLog.concat(respProcessQualifiedTutorData?.qualifiedTeachers)
+        }
+        if (respProcessQualifiedTutorData?.errorLog) {
+          errorLog = errorLog.concat(respProcessQualifiedTutorData?.errorLog)
+        }
+      }
+
       // Update processed record
       // processError
 
@@ -399,10 +399,10 @@ class TeacherService {
 
           let flagAddRegister = false;
           let stringDate = (element['Fecha Calificación']) ? element['Fecha Calificación'].toString() : null;
-          let qualifiedDate = (stringDate) ? moment(stringDate, 'DD/MM/YYYY').format('YYYY-MM-DD') : null;
+          let qualifiedDate = (stringDate) ? moment(stringDate).format('YYYY-MM-DD') : null;
 
-          // console.log(`>>> Fecha calificación: ${element['Fecha Calificación']}`);
-          // console.log(`>>> Fecha calificación: ${stringDate} - ${qualifiedDate}`);
+          console.log(`>>> Fecha calificación: ${element['Fecha Calificación']}`);
+          console.log(`>>> Fecha calificación: ${stringDate} - ${qualifiedDate}`);
 
           // 11/12/21
           // 14/11/21
