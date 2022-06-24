@@ -480,6 +480,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:account_executives', description: 'Módulo que permite administrar los ejecutivos de cuenta', permissions: [
         {name: 'permission:account_executives_menu_access', description: 'Menu de ejecutivos de cuenta'},
       ]},
+      {name: 'module:company_collaborator', description: 'Módulo que permite administrar los colaboradores de Empresa', permissions: [
+        {name: 'permission:company_collaborator_access', description: 'Menu de colaboradores de Empresa'},
+      ]},
       {name: 'module:portfolio', description: 'Módulo que permite administrar el portafolio', permissions: [
         {name: 'permission:portfolio_menu_access', description: 'Menu de portafolio'},
       ]},
@@ -736,6 +739,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           module_permission_ids['permission:forums_menu_access'],
           module_permission_ids['permission:users_menu_access'],
           module_permission_ids['permission:account_executives_menu_access'],
+          module_permission_ids['permission:company_collaborator_access'],
           module_permission_ids['permission:portfolio_menu_access'],
           module_permission_ids['permission:student_administrator_menu_access'],
           module_permission_ids['permission:roles_menu_access'],

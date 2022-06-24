@@ -290,7 +290,7 @@ class CompanyService {
   public companyUsers = async (params: ICompanyUsers) => {
 
     const companyUsersResponse: any = await userService.list({
-      role_names: 'company',
+      role_names: 'company_collaborator',
       company: params.company,
       pageNumber: params.pageNumber,
       nPerPage: params.nPerPage
@@ -302,7 +302,7 @@ class CompanyService {
 
     if (params.searchUsersAvailable) {
       const usersAvalaibleResponse: any = await userService.list({
-        role_names: 'company',
+        role_names: 'company_collaborator',
         without_company: true
       })
       response['users_available'] = usersAvalaibleResponse
