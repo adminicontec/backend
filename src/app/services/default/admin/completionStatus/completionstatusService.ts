@@ -2,22 +2,22 @@
 // @end
 
 // @import services
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { moodle_setup } from '@scnode_core/config/globals';
-import { campus_setup } from '@scnode_core/config/globals';
 // @end
 
 // @import models
-import { Completionstatus } from '@scnode_app/models'
+import { CertificateQueue, User } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion, IActivitiesSummary } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 // @end
 
 class CompletionstatusService {
@@ -221,17 +221,11 @@ class CompletionstatusService {
 
   public activitiesSummary = async (params: IActivitiesSummary) => {
 
-    console.log('activitiesSummary');
-    console.log(params);
-
     let summary = {
-      schedulingMode: '',
       totalAdvance: 0,
       finalGrade: '',
       programFinalState: '',
-      certificateIssueState: '',
-      auditor: false,
-      auditorGrade: 0
+      certificateIssueState: ''
     }
 
     try {
@@ -246,10 +240,7 @@ class CompletionstatusService {
 
       if (response.completion[0].listOfStudentProgress) {
         let studentData = response.completion[0].listOfStudentProgress[0].student;
-        summary.schedulingMode = response.schedulingMode.toLowerCase();
         summary.finalGrade = `${studentData.itemType.course[0].graderaw} / 100`;
-        summary.auditor = studentData.studentProgress.auditor;
-        summary.auditorGrade = studentData.studentProgress.auditorGrade;
 
         if (response.schedulingMode.toLowerCase() == 'virtual') {
           summary.totalAdvance = studentData.studentProgress.completion;
@@ -271,13 +262,8 @@ class CompletionstatusService {
 
       // Get status of Certificate Issue:
 
-      //params.username
-      const existUser = await User.findOne({ username: params.username })
-      console.log('existUser');
-      console.log(existUser);
-
       const respCertification = await CertificateQueue.findOne({
-        userId: existUser._id,
+        userId: params.user_id,
         courseId: params.course_scheduling,
         certificateType: 'academic'
       });
@@ -306,9 +292,6 @@ class CompletionstatusService {
             break;
           case 'Re-issue':
             summary.certificateIssueState = 'Reexpedido';
-            break;
-          case 'Deleted':
-            summary.certificateIssueState = 'Borrado';
             break;
 
           default:
