@@ -17,9 +17,9 @@ import { courseSchedulingService } from '@scnode_app/services/default/admin/cour
 import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 import { certificateLogsService } from "@scnode_app/services/default/admin/certificateQueue/certificateLogsService";
-import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService'
-import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService'
-import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService'
+import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService';
+import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService';
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 
 // @end
 
@@ -686,14 +686,14 @@ class CertificateService {
 
       //#endregion Tipo de programa
 
-      console.log("---------------------\n\r" + 'El contenido del ' + programType);
-      console.log(respCourseDetails.schedulings);
-      console.log('_______________________________________________________');
+      // console.log("---------------------\n\r" + 'El contenido del ' + programType);
+      // console.log(respCourseDetails.schedulings);
+      // console.log('_______________________________________________________');
 
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
         // get modules need to process Second certificate
-        console.log(`Módulos para Segundo Certificado: \"${respCourse.scheduling.auditor_certificate}\"`);
+        //console.log(`Módulos para Segundo Certificado: \"${respCourse.scheduling.auditor_certificate}\"`);
         respCourse.scheduling.auditor_modules.forEach(element => {
           console.log(`→ ${element.course.name}`);
         });
@@ -708,10 +708,10 @@ class CertificateService {
         .limit(paging ? nPerPage : null)
         .lean();
 
-      console.log("Total de estudiantes: " + enrollmentRegisters.length);
+      //console.log("Total de estudiantes: " + enrollmentRegisters.length);
 
       //#region Revisión de Progreso en Actividades para todo el curso
-      console.log(`→→ Modalidad: ${schedulingMode.toLowerCase()}`);
+      //console.log(`→→ Modalidad: ${schedulingMode.toLowerCase()}`);
       const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: this.selectActivitiesTest });
 
       // console.log("««««««««««««««« »»»»»»»»»»»»»»»»»»»»»»»");

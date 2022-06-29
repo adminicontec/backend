@@ -1,29 +1,21 @@
-<div class="img_icontec">
-  <img src="{{params.mailer.mailer_image}}">
-</div>
-
-<div class="txt_icontec">
+<div>
+  <img src="{{params.mailer.footer_icon}}">
+  <br><br>
   <div style="color: black;"><strong>Estimado (a) participante {{params.studentParams.studentName}}:</strong></div> <br>
-  <div style="color: black;">El examen del módulo <strong>{{params.studentParams.moduleName}}</strong> estará disponible para su aplicación desde este
+  <div style="color: black;">El examen del módulo {{params.studentParams.moduleName}} estará disponible para su aplicación desde este
     momento, hasta el:
     {{params.studentParams.endDate}} (8 días después de la finalización del curso).</div> <br>
+  <div style="color: black;"><strong>Número de preguntas:</strong> {{params.studentParams.numberOfQuestions}} </div> <br>
   <div style="color: black;">Usted podrá elegir el momento más apropiado para su aplicación.​</div> <br>
   <div style="color: black;">Por favor tenga en cuenta:​</div> <br>
   <div style="color: black;">
-    <ol>
-      <li>El porcentaje mínimo para aprobar el examen es de 70%.</li>
-      <li>En caso de que usted repruebe o decida no aplicar el examen, una vez vencida la fecha y la hora límite anunciada, se procederá a certificar la asistenta al servicio <strong>{{params.studentParams.serviceId}}</strong>.</li>
-      <li>Para acceder al examen, ingrese al curso <strong>{{params.studentParams.moduleName}}</strong> en la sección de actividades.</li>
-      <li>Las indicaciones para la aplicación del examen se encuentran dentro de la plataforma.</li>
-    </ol>
+    <li>
+      <ol>El porcentaje mínimo para aprobar el examen es de 70%.</ol>
+      <ol>En caso de que usted repruebe o decida no aplicar el examen, una vez vencida la fecha y la hora límite
+        anunciada, se procederá a certificar la asistenta al servicio {{params.studentParams.serviceId}}.</ol>
+    </li>
+    ​
   </div>
   <br>
   <div style="color: black;">Agradecemos su atención y muchos éxitos en la aplicación de su evaluación. </div> <br>
-
-  <div>En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.campus_instructive_doc}}">instructivo de mesa de ayuda</a>. También dentro del campus puede acceder a soporte con la asistente virtual Daniela en la opción 2. <img src="{{params.mailer.virtual_help}}" style="width: 100px"></div>
-
-  <br><br>
-  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
-  <img src="{{params.mailer.footer_icon}}">
-
 </div>
