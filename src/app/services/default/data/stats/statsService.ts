@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import moment from 'moment';
 // @end
 
 // @import services
@@ -14,6 +15,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 
 // @import types
 import { IStatsScheduledHoursQuery } from '@scnode_app/types/default/data/stats/statsTypes'
+import { mapUtility } from '../../../../../core/utilities/mapUtility';
 // @end
 
 class StatsService {
@@ -29,7 +31,8 @@ class StatsService {
 
 
   public statsHours = async (params: IStatsScheduledHoursQuery = {}) => {
-
+    let stats = [];
+    let reducedTeacherScheduling = [];
     try {
       console.log("Stats for programmed hours:")
       console.log(params);
@@ -49,24 +52,32 @@ class StatsService {
 
         for (let session of respScheduledSessions.schedulings) {
 
-          console.log("----------------");
-          console.log("FIni:  " + session.startDate);
-          console.log("# Sesiones:  " + session.number_of_sessions);
-          console.log("# horas: " + session.duration_formated);
+          reducedTeacherScheduling.push({
+            startDate: session.startDate,
+            number_of_sessions: session.number_of_sessions,
+            duration: session.duration,
+            duration_formated: session.duration_formated
+          });
         }
 
-        return respScheduledSessions.schedulings.reduce((acc, obj) => {
-          const property = obj[key];
-          acc[property] = acc[property] || [];
-          acc[property].push(obj);
-          return acc;
-        }, {});
+        const groups = reducedTeacherScheduling.reduce(function (r, o) {
+          var ym = o.startDate.substring(0, 7);
+          //(r[ym]) ? r[ym].data.push(o) : r[ym] = { group: ym, data: [o] };
 
+          let data: any = {
+            number_of_sessions: o.number_of_sessions,
+            duration: o.duration,
+            duration_formated: o.duration_formated
+          };
+          (r[ym]) ? r[ym].data.push(data) : r[ym] = { group: ym, data: [data] };
+          return r;
+        }, {});
+        stats.push(groups);
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          stats: respScheduledSessions.schedulings
+          stats: stats//respScheduledSessions.schedulings
         }
       });
 
