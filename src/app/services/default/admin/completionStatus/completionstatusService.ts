@@ -2,22 +2,22 @@
 // @end
 
 // @import services
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { moodle_setup } from '@scnode_core/config/globals';
-import { campus_setup } from '@scnode_core/config/globals';
 // @end
 
 // @import models
-import { Completionstatus } from '@scnode_app/models'
+import { CertificateQueue, User } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion, IActivitiesSummary } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 // @end
 
 class CompletionstatusService {
