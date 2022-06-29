@@ -19,6 +19,8 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 // @end
 
 // @import types
+import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
 // @end
 
 class CourseSchedulingNotificationsService {
@@ -30,21 +32,21 @@ class CourseSchedulingNotificationsService {
     public methodName = () => {}
   /*======  End of Estructura de un metodo  =====*/
 
-  constructor () {}
+  constructor() { }
 
   /**
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
   public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean, changes?: any) => {
     try {
-      let email_to_notificate: {email: string, name: string}[] = []
+      let email_to_notificate: { email: string, name: string }[] = []
 
       if (populate) {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
       }
 
       // Notificar al correo especificado en el env.json
-      if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service ) {
+      if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service) {
         email_to_notificate.push({
           email: (customs as any).mailer.email_confirm_service,
           name: 'Jhonatan Malaver'
@@ -79,7 +81,7 @@ class CourseSchedulingNotificationsService {
       }
 
       // Eliminar emails repetidos
-      email_to_notificate = email_to_notificate.reduce((accum: {email: string, name: string}[], item) => {
+      email_to_notificate = email_to_notificate.reduce((accum: { email: string, name: string }[], item) => {
         if (!accum.find((e) => e.email === item.email)) {
           accum.push(item);
         }
@@ -90,7 +92,7 @@ class CourseSchedulingNotificationsService {
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
 
       // @INFO Obtener si el servicio aplica para examen o no
-      const exam: boolean = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id);
+      const exam: IQuizModuleData = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id);
 
       if (email_to_notificate.length > 0) {
         const params = {
@@ -108,7 +110,7 @@ class CourseSchedulingNotificationsService {
           startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
           endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
           observations: courseScheduling.observations,
-          exam: exam ? 'SI' : 'NO',
+          exam: exam.hasExam ? 'SI' : 'NO',
           changes,
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
@@ -199,7 +201,7 @@ class CourseSchedulingNotificationsService {
         notification_source: `survey_notification_${courseSchedulingDetailsId ? courseSchedulingDetailsId : courseSchedulingId}`
       })
       return mail
-    }catch(e){
+    } catch (e) {
       console.log('Error send email notification: ', e);
       return e;
     }
@@ -209,7 +211,7 @@ class CourseSchedulingNotificationsService {
    * @INFO Enviar correo al auxiliar logístico sobre la activación del examen
    */
   public sendNotificationExamToAssistance = async (courseSchedulingId: string) => {
-    try{
+    try {
       const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
       if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
       // Enviar la notificación
@@ -246,11 +248,48 @@ class CourseSchedulingNotificationsService {
         notification_source: params.notification_source
       });
       return mail
-    } catch(e){
+    } catch (e) {
       console.log('sendNotificationExamToAssistance Error: ', e);
       return responseUtility.buildResponseFailed('json')
     }
   }
+
+  /**
+   * @INFO Enviar correo al auxiliar logístico sobre la activación del examen
+   */
+  public sendNotificationExamToParticipant = async (studentParams: IStudentExamNotification) => {
+    try {
+
+      // Enviar la notificación
+      let path_template = 'course/schedulingExamToParticipant';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_exam_participant_${studentParams.courseSchedulingId}`,
+        // Información
+        studentParams: studentParams
+      };
+      const emails: string[] = [studentParams.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_exam_to_assistance.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (e) {
+      console.log('sendNotificationExamToAssistance Error: ', e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
 
   /**
    * @INFO: Enviar notificación de emisión de certificados
@@ -398,10 +437,10 @@ class CourseSchedulingNotificationsService {
    * @returns
    */
   private getModulesOfCourseScheduling = async (courseScheduling: any) => {
-    const response = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
-    .populate({path: 'teacher', select: 'profile'})
-    .populate({path: 'course', select: 'name code moodle_id id'})
-    .lean();
+    const response = await CourseSchedulingDetails.find({ course_scheduling: courseScheduling._id })
+      .populate({ path: 'teacher', select: 'profile' })
+      .populate({ path: 'course', select: 'name code moodle_id id' })
+      .lean();
     if (response) {
       return response;
     }
@@ -414,20 +453,20 @@ class CourseSchedulingNotificationsService {
    * @returns
    */
   private getCourseSchedulingFromId = async (id: string) => {
-    const courseScheduling = await CourseScheduling.findOne({_id: id})
-    .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-    .populate({ path: 'modular', select: 'id name' })
-    .populate({ path: 'program', select: 'id name moodle_id code' })
-    .populate({ path: 'schedulingType', select: 'id name' })
-    .populate({ path: 'schedulingStatus', select: 'id name' })
-    .populate({ path: 'regional', select: 'id name moodle_id' })
-    .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
-    .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
-    .populate({ path: 'city', select: 'id name' })
-    .populate({ path: 'country', select: 'id name' })
-    .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
-    .populate({ path: 'client', select: 'id name' })
-    .lean();
+    const courseScheduling = await CourseScheduling.findOne({ _id: id })
+      .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+      .populate({ path: 'modular', select: 'id name' })
+      .populate({ path: 'program', select: 'id name moodle_id code' })
+      .populate({ path: 'schedulingType', select: 'id name' })
+      .populate({ path: 'schedulingStatus', select: 'id name' })
+      .populate({ path: 'regional', select: 'id name moodle_id' })
+      .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'city', select: 'id name' })
+      .populate({ path: 'country', select: 'id name' })
+      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'client', select: 'id name' })
+      .lean();
 
     return courseScheduling;
   }
@@ -437,15 +476,15 @@ class CourseSchedulingNotificationsService {
    * @param id
    */
   private getCourseSchedulingDetailsFromId = async (id: string) => {
-    const courseSchedulingDetails = await CourseSchedulingDetails.findOne({_id: id})
-    .populate({ path: 'teacher', select: 'id profile' })
-    .populate({path: 'course', select: 'name code moodle_id id'})
-    .lean();
+    const courseSchedulingDetails = await CourseSchedulingDetails.findOne({ _id: id })
+      .populate({ path: 'teacher', select: 'id profile' })
+      .populate({ path: 'course', select: 'name code moodle_id id' })
+      .lean();
     return courseSchedulingDetails;
   }
 
   /**
-   * @INFO Formatear segundos a diferentes formatos
+   * @INFO Formatear segundos a diferentes formatos [moveToUtils]
    * @param _seconds
    * @returns
    */
@@ -453,15 +492,15 @@ class CourseSchedulingNotificationsService {
     if (typeof _seconds !== 'number') {
       _seconds = Number(_seconds);
     }
-    return `${Math.trunc((_seconds/60)/60)}h`
+    return `${Math.trunc((_seconds / 60) / 60)}h`
   }
 
   /**
    * @INFO Verificar si un servicio aplica para examen
    * @param courseScheduling : Módulos del servicio
    */
-  public verifyCourseSchedulingExercise = async (moodle_id: string): Promise<boolean> => {
-    let response: boolean = await this.verifyCourseSchedulingDetailsExercise(moodle_id);;
+  public verifyCourseSchedulingExercise = async (moodle_id: string): Promise<IQuizModuleData> => {
+    let response: IQuizModuleData = await this.verifyCourseSchedulingDetailsExercise(moodle_id);;
     return response;
   }
 
@@ -469,12 +508,25 @@ class CourseSchedulingNotificationsService {
    * @INFO Verificar si un modulo del servicio tiene examen
    * @param module : Objeto de courseSchedulingDetails
    */
-  private verifyCourseSchedulingDetailsExercise = async (moodle_id: string): Promise<boolean> => {
+  private verifyCourseSchedulingDetailsExercise = async (moodle_id: string): Promise<IQuizModuleData> => {
     const exams: any = await this.getCourseExamList(moodle_id);
     if (exams && exams.courseModules && exams.courseModules.length) {
-      return true;
+
+      let auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
+
+      console.log('::::::::::::::');
+      console.log(auditorQuizModule);
+      console.log('::::::::::::::');
+      let quizModuleData: IQuizModuleData = {
+        moduleName: auditorQuizModule.sectionname,
+        examnName: auditorQuizModule.name,
+        hasExam: true,
+        numberOfQuestions: 20
+      }
+
+      return quizModuleData;
     } else {
-      return false;
+      return null;
     }
   }
 
@@ -485,7 +537,7 @@ class CourseSchedulingNotificationsService {
    */
   private getCourseExamList = async (courseID: string, _moduleType?: string[]) => {
     const moduleType: string[] = ['quiz'];
-    const response = await courseContentService.moduleList({courseID, moduleType: _moduleType ? _moduleType : moduleType});
+    const response = await courseContentService.moduleList({ courseID, moduleType: _moduleType ? _moduleType : moduleType });
     return response;
   }
 
