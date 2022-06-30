@@ -31,7 +31,8 @@ class StatsService {
 
 
   public statsHours = async (params: IStatsScheduledHoursQuery = {}) => {
-    let stats = [];
+    let stats;
+    let report = { labels: [], data: [] };
     let reducedTeacherScheduling = [];
     try {
       console.log("Stats for programmed hours:")
@@ -62,6 +63,7 @@ class StatsService {
               duration: course.duration,
               duration_formated: course.duration_formated,
               session: {
+                yearMonth: session.startDate.toISOString().substring(0, 7),
                 startDate: session.startDate.toISOString().split('T')[0],
                 duration: session.duration / 3600
               }
@@ -70,30 +72,27 @@ class StatsService {
         }
 
         // group By Date ()
-        const groups = reducedTeacherScheduling.reduce(function (r, o) {
-          let statGroup = [];
-          var ym = o.session.startDate.substring(0, 7);
-          // let data: any = {
-          //   number_of_sessions: o.number_of_sessions,
-          //   duration: o.session.duration,
-          // };
-
-          if (!r[ym]) {
-            r[ym] = { label: ym, data: 0 }
-            statGroup.push(  r[ym] );
+        let statGroup = [];
+        reducedTeacherScheduling.reduce(function (res, value) {
+          if (!res[value.session.yearMonth]) {
+            res[value.session.yearMonth] = { label: value.session.yearMonth, data: 0 }
+            statGroup.push(res[value.session.yearMonth]);
           }
-          /*else {
-            r[ym].data.push(data);
-          }*/
-          r[ym].data += o.session.duration;
-          return statGroup;
+          res[value.session.yearMonth].data += value.session.duration;
+          return res;
         }, {});
-        stats.push(groups);
+        stats = statGroup;
+
+        for (let item of statGroup) {
+          report.labels.push(item.label);
+          report.data.push(item.data);
+        }
+
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          stats: stats //, //reducedTeacherScheduling
+          report: report //, //reducedTeacherScheduling
           //teacherScheduling: reducedTeacherScheduling
         }
       });
