@@ -50,34 +50,51 @@ class StatsService {
 
         respScheduledSessions.schedulings.sort((a, b) => a.startDate.localeCompare(b.startDate));
 
-        for (let session of respScheduledSessions.schedulings) {
+        for (let course of respScheduledSessions.schedulings) {
 
-          reducedTeacherScheduling.push({
-            startDate: session.startDate,
-            number_of_sessions: session.number_of_sessions,
-            duration: session.duration,
-            duration_formated: session.duration_formated
-          });
+          for (let session of course.sessions) {
+
+            reducedTeacherScheduling.push({
+              course_scheduling: course.course_scheduling,
+              course: course.course,
+              startDate: course.startDate,
+              number_of_sessions: course.number_of_sessions,
+              duration: course.duration,
+              duration_formated: course.duration_formated,
+              session: {
+                startDate: session.startDate.toISOString().split('T')[0],
+                duration: session.duration / 3600
+              }
+            });
+          }
         }
 
+        // group By Date ()
         const groups = reducedTeacherScheduling.reduce(function (r, o) {
-          var ym = o.startDate.substring(0, 7);
-          //(r[ym]) ? r[ym].data.push(o) : r[ym] = { group: ym, data: [o] };
+          let statGroup = [];
+          var ym = o.session.startDate.substring(0, 7);
+          // let data: any = {
+          //   number_of_sessions: o.number_of_sessions,
+          //   duration: o.session.duration,
+          // };
 
-          let data: any = {
-            number_of_sessions: o.number_of_sessions,
-            duration: o.duration,
-            duration_formated: o.duration_formated
-          };
-          (r[ym]) ? r[ym].data.push(data) : r[ym] = { group: ym, data: [data] };
-          return r;
+          if (!r[ym]) {
+            r[ym] = { label: ym, data: 0 }
+            statGroup.push(  r[ym] );
+          }
+          /*else {
+            r[ym].data.push(data);
+          }*/
+          r[ym].data += o.session.duration;
+          return statGroup;
         }, {});
         stats.push(groups);
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          stats: stats//respScheduledSessions.schedulings
+          stats: stats //, //reducedTeacherScheduling
+          //teacherScheduling: reducedTeacherScheduling
         }
       });
 
