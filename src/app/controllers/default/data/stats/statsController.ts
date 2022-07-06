@@ -40,6 +40,12 @@ class StatsController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+
+  public statsCourses = async (req: Request, res: Response) => {
+		const response = await statsService.statsCourses(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const statsController = new StatsController();
