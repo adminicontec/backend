@@ -36,6 +36,7 @@ class EnrolledCourseService {
    */
   public fetchEnrollmentByUser = async (params: IFetchEnrollementByUser) => {
     let registers = []
+    let history = []
     let steps = []
 
     let added = {}
@@ -47,8 +48,9 @@ class EnrolledCourseService {
         user: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata', populate: [
-            { path: 'program', select: 'id name code moodle_id' }
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
+            { path: 'program', select: 'id name code moodle_id' },
+            { path: 'schedulingStatus', select: 'id name'}
           ]
         })
         .lean()
@@ -61,14 +63,18 @@ class EnrolledCourseService {
 
             console.log('----------------------------');
             console.log(e.course_scheduling);
-
-            registers.push({
+            let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
-            })
+            }
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+              history.push(item)
+            } else {
+              registers.push(item)
+            }
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
         }
@@ -79,8 +85,9 @@ class EnrolledCourseService {
         teacher: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata', populate: [
-            { path: 'program', select: 'id name code moodle_id' }
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
+            { path: 'program', select: 'id name code moodle_id' },
+            { path: 'schedulingStatus', select: 'id name'}
           ]
         })
         .lean()
@@ -93,14 +100,20 @@ class EnrolledCourseService {
 
             console.log('----------------------------');
             console.log(e.course_scheduling);
-
-            registers.push({
+            let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
-            })
+            }
+
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+              history.push(item)
+            } else {
+              registers.push(item)
+            }
+
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
         }
@@ -118,7 +131,9 @@ class EnrolledCourseService {
         current_courses: [
           ...registers
         ],
-        history_courses: [],
+        history_courses: [
+          ...history
+        ],
         steps
       }
     })

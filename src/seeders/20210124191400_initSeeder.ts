@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    await this.addAttachedCategories();
+    // await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -614,6 +614,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:isolution', description: 'Modulo que permite la administración de isolucion', permissions: [
         {name: 'permission:isolution_menu_access', description: 'Menu de isolucion'}
+      ]},
+      {name: 'module:jira', description: 'Modulo que permite la administración de JIRA', permissions: [
+        {name: 'permission:jira_menu_access', description: 'Menu de JIRA'}
       ]},
       {name: 'module:publications', description: 'Modulo que permite la administración de publicaciones', permissions: [
         {name: 'permission:publications_menu_access', description: 'Menu de publicaciones'}
