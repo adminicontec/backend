@@ -22,6 +22,7 @@ import { ormService } from "@scnode_core/services/default/orm/ormService";
 
 // @import_utilities Import utilities
 import { i18nUtility } from "@scnode_core/utilities/i18nUtility";
+import { eventEmitterUtility } from "@scnode_core/utilities/eventEmitterUtility";
 // @end
 
 // @import_config_files Import config files
@@ -90,6 +91,8 @@ class App {
     this.app.use(this.localeMiddleware.setLocaleApp); // Middleware de internacionalización
     this.app.use(this.requestParamsMiddleware.addMethodToRequest); // Middleware para formatear parametros de una peticion
     // @end
+
+    eventEmitterUtility.init()
   }
 }
 
