@@ -63,4 +63,13 @@ export interface IEnrollmentFindStudents{
   email?: string;
   docNumber?: string;
 }
+
+export interface IParamsUpdateLoadParticipantsSchedule{
+  schedulingId: string;
+  loading: boolean;
+  status?: 'success' | 'error';
+  errors?: any[];
+  success?: any[];
+  lastUploadDate?: Date;
+}
 //@end

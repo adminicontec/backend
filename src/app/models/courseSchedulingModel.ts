@@ -295,6 +295,24 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: 'User'
     },
+  },
+  loadParticipants: {
+    loading: {
+      type: Schema.Types.Boolean
+    },
+    errors: [{
+      type: Schema.Types.Mixed
+    }],
+    success: [{
+      type: Schema.Types.Mixed
+    }],
+    lastUploadDate: {
+      type: Schema.Types.Date
+    },
+    status: {
+      type: Schema.Types.String,
+      enum: ['success', 'error']
+    }
   }
   // @end
 }, {

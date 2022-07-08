@@ -7,8 +7,6 @@ import moment from 'moment';
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { CourseScheduling } from '@scnode_app/models';
-import { IEnrollment, IMassiveEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes';
 import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -16,9 +14,15 @@ import {enrollmentService as enrollmentAdminService} from '@scnode_app/services/
 // @end
 
 // @import models
+import { CourseScheduling } from '@scnode_app/models';
 // @end
 
 // @import types
+import {
+  IEnrollment,
+  IMassiveEnrollment,
+  IParamsUpdateLoadParticipantsSchedule
+} from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 // @end
 
 class EnrollmentService {
@@ -32,7 +36,19 @@ class EnrollmentService {
 
   constructor () {}
 
+  public updateLoadParticipantsScheduling = async (params: IParamsUpdateLoadParticipantsSchedule) => {
+    const courseScheduling = await CourseScheduling.findOne({_id: params.schedulingId})
+    if (courseScheduling) {
+      const loadParticipants = courseScheduling.loadParticipants ? {...courseScheduling.loadParticipants} : {};
+      Object.assign(loadParticipants, params)
+      await CourseScheduling.findByIdAndUpdate(params.schedulingId, {loadParticipants}, { useFindAndModify: false, new: true })
+    }
+  }
+
   public enrollmentMassiveEvent = async (params: IMassiveEnrollment) => {
+
+    await this.updateLoadParticipantsScheduling({ loading: true, schedulingId: params.courseScheduling })
+
     console.log('llego aca', params)
 
     let processResult: IFileProcessResult;
@@ -229,6 +245,15 @@ class EnrollmentService {
     console.log('extSuccess', extSuccess)
 
     if (extError.length > 0) {
+      await this.updateLoadParticipantsScheduling({
+        loading: false,
+        status: 'error',
+        schedulingId: params.courseScheduling,
+        errors: extError,
+        success: [],
+        lastUploadDate: new Date()
+      })
+
       return responseUtility.buildResponseFailed('json', null, {
         additional_parameters: {
           total_created: extSuccess.length,
@@ -236,6 +261,15 @@ class EnrollmentService {
         }
       })
     }
+
+    await this.updateLoadParticipantsScheduling({
+      loading: false,
+      status: 'success',
+      schedulingId: params.courseScheduling,
+      errors: [],
+      success: extSuccess,
+      lastUploadDate: new Date()
+    })
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
