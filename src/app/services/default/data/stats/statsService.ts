@@ -176,56 +176,49 @@ class StatsService {
       }
 
       if (respScheduledSessions.schedulings && respScheduledSessions.schedulings.length > 0) {
-
-        console.log("=============================================");
         for (let course of respScheduledSessions.schedulings) {
+
           // avoid every Service in "Canceled" status
           if (course.course_scheduling.schedulingStatus.name != 'Cancelado') {
-            for (let session of course.sessions) {
+            console.log('course');
+            console.log(course);
 
-              // filter every scheduled session of the current year
-              // avoid every scheduled session below the current date
-              // must adjust the Offset to real date record
-              let sessionStarDateOffset = moment(session.startDate.toISOString());
+            // filter every scheduled session of the current year
+            // avoid every scheduled session below the current date
+            // must adjust the Offset to real date record
+            let courseEndDateOffset = moment(course.endDate);
 
-              if (sessionStarDateOffset.isSame(today, 'year')) {
-                if (sessionStarDateOffset.isBefore(today)) {
-                  // console.log("========================================================");
-                  // console.log(`ServiceID: ${course.course_scheduling.metadata.service_id}`);
-                  // console.log(`course.course_scheduling: ${course.course_scheduling._id}`);
-                  // console.log("Time session: " + sessionStarDateOffset.local(true).format());
+            console.log(courseEndDateOffset);
 
-                  reducedTeacherScheduling.push({
-                    course_scheduling: course.course_scheduling,
-                    course: course.course,
-                    startDate: course.startDate,
-                    number_of_sessions: course.number_of_sessions,
-                    duration: course.duration,
-                    duration_formated: course.duration_formated,
-                    session: {
-                      yearMonth: sessionStarDateOffset.local(true).format().substring(0, 7),
-                      monthNumber: moment(sessionStarDateOffset).month(),
-                      monthLabel: monthNameList[moment(sessionStarDateOffset).month()],
-                      startDate: sessionStarDateOffset.local(true).format(),
-                      duration: session.duration / 3600
-                    }
-                  });
-                }
+            if (courseEndDateOffset.isSame(today, 'year')) {
+              if (courseEndDateOffset.isBefore(today)) {
+                reducedTeacherScheduling.push({
+                  course_scheduling: course.course_scheduling,
+                  course: course.course,
+                  startDate: course.startDate,
+                  endDate: course.endDate,
+                  duration: course.duration,
+                  duration_formated: course.duration_formated,
+                  monthNumber: moment(courseEndDateOffset).month(),
+                  monthLabel: monthNameList[moment(courseEndDateOffset).month()],
+                });
               }
             }
+
           }
         }
 
-        reducedTeacherScheduling.sort((a, b) => a.session.startDate.localeCompare(b.session.startDate));
+        reducedTeacherScheduling.sort((a, b) => a.endDate.localeCompare(b.endDate));
 
         // group By Date ()
         let statGroup = [];
         reducedTeacherScheduling.reduce(function (res, value) {
-          if (!res[value.session.monthLabel]) {
-            res[value.session.monthLabel] = { index: value.session.monthNumber, label: value.session.monthLabel, data: 0 }
-            statGroup.push(res[value.session.monthLabel]);
+          if (!res[value.monthLabel]) {
+            res[value.monthLabel] = { index: value.monthNumber, label: value.monthLabel, data: 0 }
+            statGroup.push(res[value.monthLabel]);
           }
-          res[value.session.monthLabel].data += value.session.duration;
+          res[value.monthLabel].data += 1;
+
           return res;
         }, {});
         stats = statGroup;
