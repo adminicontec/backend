@@ -47,14 +47,18 @@ class QualifiedTeachersService {
       select = filters.select
     }
 
-    let where = {}
+    let where: any = {};
 
     if (filters.courseCode) {
-      where = { courseCode: filters.courseCode };
+      where['courseCode'] = filters.courseCode;
     }
 
     if (filters.teacher) {
-      where = { teacher: filters.teacher };
+      where['teacher'] = filters.teacher;
+    }
+
+    if (filters.status) {
+      where['status'] = filters.status;
     }
 
     console.log('criteria: ');
