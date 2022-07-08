@@ -39,7 +39,7 @@ class CourseSchedulingDataService {
   public fetchCourseSchedulingByProgram = async (params: IFetchCourseSchedulingByProgram) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report'
+      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants'
 
       let where = {
         moodle_id: params.moodle_id
@@ -228,7 +228,7 @@ class CourseSchedulingDataService {
     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student contact logistics_supply certificate_address business_report partial_report'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants'
     if (params.select) {
       select = params.select
     }
