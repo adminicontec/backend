@@ -116,6 +116,114 @@ class StatsService {
         stats = statGroup;
 
         // fill the missing months with '0' data
+        let index = 0;
+        for (let month of monthNameList) {
+          const found = statGroup.find(m => m.label === month);
+          if (!found) {
+            statGroup.push({ index: index++, label: month, data: 0 });
+          }
+          else {
+            index++;
+          }
+        }
+
+        statGroup.sort((a, b) => a.index - b.index);
+
+        for (let item of statGroup) {
+          report.labels.push(generalUtility.upperCaseString(item.label, false));
+          report.data.push(item.data);
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          currentYear: currentYear,
+          report: report
+        }
+      });
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+
+  /**
+   * Stats course service
+   * Permite consultar las cursos ejecutados por un docente en el año actual
+   */
+  public statsCourses = async (params: IStatsScheduledHoursQuery = {}) => {
+    let stats;
+    let report = { labels: [], data: [] };
+    let reducedTeacherScheduling = [];
+    let today = moment();
+    let currentYear = moment().year();
+    try {
+      let monthNameList = moment.localeData('es').monthsShort();
+
+      console.log("Stats for programmed courses:")
+      console.log(params);
+      console.log(`Current date: ${today}`);
+      console.log(`Current year: ${currentYear}`);
+
+      const respScheduledSessions: any = await courseSchedulingDetailsService.list({
+        teacher: params.teacher
+      });
+
+      if (respScheduledSessions.status == 'error') {
+        console.log(respScheduledSessions.message);
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course_scheduling.details.not_found' } });
+      }
+
+      if (respScheduledSessions.schedulings && respScheduledSessions.schedulings.length > 0) {
+        for (let course of respScheduledSessions.schedulings) {
+
+          // avoid every Service in "Canceled" status
+          if (course.course_scheduling.schedulingStatus.name != 'Cancelado') {
+            console.log('course');
+            console.log(course);
+
+            // filter every scheduled session of the current year
+            // avoid every scheduled session below the current date
+            // must adjust the Offset to real date record
+            let courseEndDateOffset = moment(course.endDate);
+
+            console.log(courseEndDateOffset);
+
+            if (courseEndDateOffset.isSame(today, 'year')) {
+              if (courseEndDateOffset.isBefore(today)) {
+                reducedTeacherScheduling.push({
+                  course_scheduling: course.course_scheduling,
+                  course: course.course,
+                  startDate: course.startDate,
+                  endDate: course.endDate,
+                  duration: course.duration,
+                  duration_formated: course.duration_formated,
+                  monthNumber: moment(courseEndDateOffset).month(),
+                  monthLabel: monthNameList[moment(courseEndDateOffset).month()],
+                });
+              }
+            }
+
+          }
+        }
+
+        reducedTeacherScheduling.sort((a, b) => a.endDate.localeCompare(b.endDate));
+
+        // group By Date ()
+        let statGroup = [];
+        reducedTeacherScheduling.reduce(function (res, value) {
+          if (!res[value.monthLabel]) {
+            res[value.monthLabel] = { index: value.monthNumber, label: value.monthLabel, data: 0 }
+            statGroup.push(res[value.monthLabel]);
+          }
+          res[value.monthLabel].data += 1;
+
+          return res;
+        }, {});
+        stats = statGroup;
+
+        // fill the missing months with '0' data
         console.log('------------------------------');
         console.log(monthNameList);
         let index = 0;
@@ -143,83 +251,8 @@ class StatsService {
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          report: report,
-          //reducedTeacherScheduling: reducedTeacherScheduling,
-          teacherScheduling: respScheduledSessions
-        }
-      });
-
-    } catch (e) {
-      return responseUtility.buildResponseFailed('json')
-    }
-  }
-
-
-
-  public statsCourses = async (params: IStatsScheduledHoursQuery = {}) => {
-    let stats;
-    let report = { labels: [], data: [] };
-    let reducedTeacherScheduling = [];
-    try {
-      console.log("Stats for programmed courses:")
-      console.log(params);
-
-      const respScheduledSessions: any = await courseSchedulingDetailsService.list({
-        teacher: params.teacher
-      });
-
-      if (respScheduledSessions.status == 'error') {
-        console.log(respScheduledSessions.message);
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course_scheduling.details.not_found' } });
-      }
-
-      if (respScheduledSessions.schedulings && respScheduledSessions.schedulings.length > 0) {
-
-        respScheduledSessions.schedulings.sort((a, b) => a.startDate.localeCompare(b.startDate));
-
-        for (let course of respScheduledSessions.schedulings) {
-
-          for (let session of course.sessions) {
-
-            reducedTeacherScheduling.push({
-              course_scheduling: course.course_scheduling,
-              course: course.course,
-              startDate: course.startDate,
-              number_of_sessions: course.number_of_sessions,
-              duration: course.duration,
-              duration_formated: course.duration_formated,
-              session: {
-                yearMonth: session.startDate.toISOString().substring(0, 7),
-                startDate: session.startDate.toISOString().split('T')[0],
-                duration: session.duration / 3600
-              }
-            });
-          }
-        }
-
-        // group By Date ()
-        let statGroup = [];
-        reducedTeacherScheduling.reduce(function (res, value) {
-          if (!res[value.session.yearMonth]) {
-            res[value.session.yearMonth] = { label: value.session.yearMonth, data: 0 }
-            statGroup.push(res[value.session.yearMonth]);
-          }
-          res[value.session.yearMonth].data += value.session.duration;
-          return res;
-        }, {});
-        stats = statGroup;
-
-        for (let item of statGroup) {
-          report.labels.push(item.label);
-          report.data.push(item.data);
-        }
-
-      }
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          report: report //, //reducedTeacherScheduling
-          //teacherScheduling: reducedTeacherScheduling
+          currentYear: currentYear,
+          report: report
         }
       });
 
