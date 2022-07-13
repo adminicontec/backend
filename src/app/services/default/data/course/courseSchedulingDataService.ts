@@ -206,7 +206,8 @@ class CourseSchedulingDataService {
         program: {
           name: (register.program && register.program.name) ? register.program.name : '',
           extra_info: (register.extra_info) ? register.extra_info : null,
-          service_id: (register.metadata.service_id) ? (register.metadata.service_id) : ''
+          service_id: (register.metadata.service_id) ? (register.metadata.service_id) : '',
+          schedulingMode: (register.schedulingMode) ? (register.schedulingMode) : ''
         },
         courses,
         scheduling,
