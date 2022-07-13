@@ -110,7 +110,7 @@ class CourseSchedulingNotificationsService {
           startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
           endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
           observations: courseScheduling.observations,
-          exam: exam.hasExam ? 'SI' : 'NO',
+          exam: exam?.hasExam ? 'SI' : 'NO',
           changes,
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,

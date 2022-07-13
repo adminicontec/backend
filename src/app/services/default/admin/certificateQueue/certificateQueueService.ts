@@ -86,10 +86,17 @@ class CertificateQueueService {
       if (params.id) {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("UPDATE certificate queue");
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log(params);
 
         const register = await CertificateQueue.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
+
+        // only inserts downloadDate if it doesn't exist.
+        if (!register.downloadDate && params.downloadDate) {
+          register.downloadDate = moment().format('YYYY-MM-DD HH:mm:ss').replace(' ', 'T');
+          console.log('update dowload date >>>' + register.downloadDate);
+        }
 
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
@@ -109,6 +116,7 @@ class CertificateQueueService {
       } else {
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("INSERT certificate queue");
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log(params);
         console.log("AuxiliarID:" + params.auxiliar);
 

@@ -5,7 +5,7 @@ import moment from 'moment'
 
 // @import services
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
-import { moodleEnrollmentService } from  '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
+import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
 // @end
 
@@ -488,7 +488,13 @@ class CourseSchedulingDetailsService {
     try {
       registers = await CourseSchedulingDetails.find(where)
         .select(select)
-        .populate({ path: 'course_scheduling', select: 'id moodle_id' })
+        .populate({
+          path: 'course_scheduling', select: 'id moodle_id schedulingMode metadata.service_id schedulingStatus',
+          populate: [
+            { path: 'schedulingStatus', select: 'name' },
+            { path: 'schedulingMode', select: 'name' }
+          ]
+        })
         .populate({ path: 'course', select: 'id name code moodle_id' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
@@ -553,6 +559,7 @@ class CourseSchedulingDetailsService {
       return responseUtility.buildResponseFailed('json')
     }
   }
+
 }
 
 export const courseSchedulingDetailsService = new CourseSchedulingDetailsService();
