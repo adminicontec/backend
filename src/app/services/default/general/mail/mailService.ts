@@ -84,6 +84,7 @@ class MailService {
 
       return responseUtility.buildResponseSuccess('json')
     } catch (e) {
+      console.log('MailService-sendMail', e)
       return responseUtility.buildResponseFailed('json')
     }
   }

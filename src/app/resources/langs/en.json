@@ -490,6 +490,9 @@
     "subject": "Solicitud de recuperación de contraseña"
   },
   "mailer": {
+    "participant_certificated_completed_notification": {
+      "subject": "Emisión de Certificados completa"
+    },
     "participant_certificated_notification": {
       "subject": "Notificación para Descarga de Certificado"
     },

@@ -1,3 +1,138 @@
+{{> partials/page/title title='Cancelación de servicio de educación'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
+
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) {{params.first_name}}</b></p>&nbsp;
+                    <p>Su asignación al curso {{params.course_name}} correspondiente {{params.program.name}} con identificador de servicio N° {{params.program.service_id}} ha sido cancelada. A continuación encontrara la información de la cancelación:</p>
+                    {{#if params.program}}
+                      <p><b>Duración: </b>{{params.program.duration}}</p>
+                      <p><b>Modalidad: </b>{{params.program.scheduling_mode}}</p>
+                      <p><b>Linea: </b>{{params.program.scheduling_type}}</p>
+                      <p><b>Cantidad de participantes: </b>{{params.program.amountParticipants}}</p>
+                      <p><b>Cliente: </b>{{params.program.client}}</p>
+                      <p><b>Regional: </b>{{params.program.regional}}</p>
+                      <p><b>Ejecutivo de cuenta: </b>{{params.program.account_executive}}</p>
+                    {{/if}}
+                    <p class="mcSpecialText">En caso de cualquier inquietud comuníquese con el programador (coordinador del servicio- operación presencial/online o virtual).</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
+
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+{{> partials/page/divider}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
+
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>PROGRAMACIÓN DEL SERVICIO - CANCELADA:</b></p>&nbsp;
+                    {{#each params.courses}}
+                      <p><b>Código: </b>{{this.course_code}}</p>
+                      <p><b>Curso: </b>{{this.course_name}}</p>
+                      {{#if this.sessions}}
+                        <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%" >
+                          <thead>
+                            <tr>
+                              <th style="background: #B4BCBC;">Fecha</th>
+                              <th style="background: #B4BCBC;">Horario</th>
+                              <th style="background: #B4BCBC;">Nro de horas</th>
+                            </tr>
+                          </thead>
+                          <tbody style="font-size: 12px;">
+                            {{#each this.sessions}}
+                              <tr>
+                                <td>{{this.start_date}}</td>
+                                <td>{{this.schedule}}</td>
+                                <td>{{this.duration}}</td>
+                              </tr>
+                            {{/each}}
+                          </tbody>
+                        </table>
+                      {{/if}}
+                      {{#if this.info}}
+                        <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%" >
+                          <thead>
+                            <tr>
+                              <th style="background: #B4BCBC;">Fecha</th>
+                              <th style="background: #B4BCBC;">Nro de horas</th>
+                            </tr>
+                          </thead>
+                          <tbody style="font-size: 12px;">
+                            <tr>
+                              <td>{{this.info.start_date}}</td>
+                              <td>{{this.info.duration}}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      {{/if}}
+                    {{/each}}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
+
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+
+
+
+
+
+
+{{!--
 <div class="img_icontec" style="display: block">
   <img src="{{params.mailer.mailer_image}}">
 </div>
@@ -26,10 +161,8 @@
   {{/if}}
   <div><b>PROGRAMACIÓN DEL SERVICIO - CANCELADA</b></div>
   <br>
-  {{!-- <div>
     <p style="margin: 0;"><b>Código: </b>{{params.course_code}}</p>
     <p style="margin: 0;"><b>Curso: </b>{{params.course_name}}</p>
-  </div> --}}
   {{#each params.courses}}
     <div>
       <p style="margin: 0;"><b>Código: </b>{{this.course_code}}</p>
@@ -74,4 +207,4 @@
   <br><br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
-</div>
+</div> --}}

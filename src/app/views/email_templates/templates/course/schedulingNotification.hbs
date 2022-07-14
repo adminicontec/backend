@@ -1,4 +1,45 @@
-<div class="img_icontec">
+{{> partials/page/title title='Servicio confirmado'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
+
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p>El servicio con código {{params.service_id}} correspondiente al programa {{params.program_name}} ha sido confirmado el dia {{params.today}}.</p>
+                    <p class="mcSpecialText">En caso de cualquier inquietud registre un nuevo ticket en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
+
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+
+{{!-- <div class="img_icontec">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
@@ -11,4 +52,4 @@
   <br><br>
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
-</div>
+</div> --}}
