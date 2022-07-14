@@ -1,4 +1,56 @@
-<div>
+{{> partials/page/title title='Certificados no descargados'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
+
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado(a) Auxiliar {{params.assistant_name}}:</b></p>&nbsp;
+                    <p>Se informa acerca de la existencia de certificados no descargados en el siguiente servicio:</p>
+                    <p><b>Id del servicio:</b> {{params.service_id}}</p>
+                    <p><b>Programa:</b> {{params.program_name}}</p>
+                    <p><b>Código del programa:</b> {{params.program_code}}</p>
+                    <p><b>Modalidad:</b> {{params.modality}}</p>
+                    <p><b>Duración:</b> {{params.duration}}</p>
+                    <p><b>Fecha Inicio:</b> {{params.startDate}}</p>
+                    <p><b>Fecha Fin:</b> {{params.endDate}}</p>
+                    <p><b>Observaciones:</b> {{params.observations}}</p>
+                    <p><b>Nombre del ejecutivo comercial:</b> {{params.accountExecutive}}</p>
+                    <p><b>Regional:</b> {{params.regional}}</p>
+                    <p class="mcSpecialText">Lo invitamos a ingresar al campus Virtual, para que pueda realizar el seguimiento.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
+
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+
+{{!-- <div>
   <img src="{{params.mailer.footer_icon}}">
   <br><br>
   <div style="color: black;"><strong>Estimado(a) Auxiliar {{params.assistant_name}}:</strong></div> <br>
@@ -15,4 +67,4 @@
   <div style="color: black;"><strong>Regional: {{params.regional}}</strong></div> <br>
   <br><br>
   <div style="color: black;">Lo invitamos a ingresar al campus Virtual, para que pueda realizar el seguimiento.</div>
-</div>
+</div> --}}

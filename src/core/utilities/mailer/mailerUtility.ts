@@ -145,6 +145,7 @@ class MailerUtility {
       return sendMailResponse
 
     } catch (err) {
+      console.log('MailerUtility - sendMail', err)
       return responseUtility.buildResponseFailed('json',null,{error_key: "mailer.mailer_fail_request", additional_parameters: {
         reason: err,
       }})

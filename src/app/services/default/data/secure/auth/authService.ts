@@ -2,6 +2,8 @@
 import bcrypt from 'bcrypt-nodejs'
 // @end
 
+import { customs } from '@scnode_core/config/globals'
+
 // @import services
 import {userService} from '@scnode_app/services/default/admin/user/userService'
 import {mailService} from '@scnode_app/services/default/general/mail/mailService'
@@ -288,9 +290,10 @@ class AuthService {
         mailOptions: {
           subject: i18nUtility.i18nMessage(params.subject),
           html_template: {
+            path_layout: 'icontec',
             path_template: 'secure/authenticationEmail',
-            // path_layout: '',
             params: {
+              mailer: customs['mailer'],
               token: tokenGeneratedResponse.token,
             }
           }
