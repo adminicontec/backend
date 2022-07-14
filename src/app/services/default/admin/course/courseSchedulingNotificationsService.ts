@@ -517,14 +517,17 @@ class CourseSchedulingNotificationsService {
       console.log('::::::::::::::');
       console.log(auditorQuizModule);
       console.log('::::::::::::::');
-      let quizModuleData: IQuizModuleData = {
-        moduleName: auditorQuizModule.sectionname,
-        examnName: auditorQuizModule.name,
-        hasExam: true,
-        numberOfQuestions: 20
-      }
+      if (auditorQuizModule) {
+        let quizModuleData: IQuizModuleData = {
+          moduleName: auditorQuizModule.sectionname,
+          examnName: auditorQuizModule.name,
+          hasExam: true,
+          numberOfQuestions: 20
+        }
 
-      return quizModuleData;
+        return quizModuleData;
+      }
+      return null;
     } else {
       return null;
     }
