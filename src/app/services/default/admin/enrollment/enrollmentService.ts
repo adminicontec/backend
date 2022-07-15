@@ -554,7 +554,7 @@ class EnrollmentService {
 
       // @INFO: Buscando programa dentro de campus
       const course_scheduling: any = await CourseScheduling.findOne({ _id: find.course_scheduling })
-        .select('id program schedulingStatus')
+        .select('id program schedulingStatus metadata')
         .populate({ path: 'program', select: 'id name' })
         .populate({ path: 'schedulingStatus', select: 'id name' })
 
