@@ -31,6 +31,7 @@ class CompanyDataRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/fetch-companies',this.instanceController.fetchCompanies,[],[]);
     routerUtility.post(app,_route,'/fetch-company',this.instanceController.fetchCompany,[],[]);
+    routerUtility.post(app,_route,'/fetch-companies-executive-by-user',this.instanceController.fetchCompaniesExecutiveByUser,[],[]);
     // @end
   }
 }

@@ -35,4 +35,8 @@ export interface ICompanyUsers {
   nPerPage?:string, // Cantidad de elementos por pagina
   searchUsersAvailable?: boolean
 }
+
+export interface ParamsFetchCompaniesExecutiveByUser{
+  userId: string;
+}
 //@end
