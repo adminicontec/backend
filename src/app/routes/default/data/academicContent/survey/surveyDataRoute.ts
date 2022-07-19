@@ -29,6 +29,7 @@ class SurveyDataRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
+    routerUtility.post(app, _route, '/consolidate-report', this.instanceController.consolidateReport, [], ['auth'])
     routerUtility.post(app, _route, '/generate-report', this.instanceController.generateReport, [], ['auth'])
     routerUtility.post(app, _route, '/general-survey-report', this.instanceController.generalSurveyReport, [], ['auth'])
     // @end

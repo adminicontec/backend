@@ -27,8 +27,14 @@ import {
   ISectionQuestionsChoiceSimple,
   IGeneralReportSurvey,
   IReportSurveyGeneralInfo,
+  IConsolidateSurvey,
+  IConsolidateSurveyQuestionRange,
+  IConsolidateSurveyQuestionRangeQuestion,
+  IConsolidateSurveyQuestionsWithOptions,
+  IConsolidateSurveyQuestionsWithOptionsAnswer,
+  IConsolidateSurveyIn,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
-import { AcademicResourceAttempt, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey, User } from '@scnode_app/models';
+import { AcademicResourceAttempt, ConsolidatedSurveyInformation, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey, User } from '@scnode_app/models';
 // @end
 
 class SurveyDataService {
@@ -41,6 +47,117 @@ class SurveyDataService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  public consolidateSurvey = async (params: IConsolidateSurveyIn) => {
+    try {
+      const output_format: any = params.output_format ? params.output_format : 'db'
+      const surveyData: any = await this.generalSurveyReport({
+        output_format: 'json',
+      })
+      const data = []
+      if (surveyData?.status === 'success' && surveyData?.data) {
+        const dataReport = surveyData?.data as IGeneralReportSurvey[]
+        for (const reportData of dataReport) {
+          for (const scheduling of reportData.scheduling) {
+            const surveyBySchedulingItem: Partial<IConsolidateSurvey> = {
+              courseScheduling: scheduling?.courseScheduling || undefined,
+              courseSchedulingDetail: scheduling?.courseSchedulingDetail || undefined,
+              isVirtual: reportData?.isVirtual || false,
+              totalSurvey: scheduling?.totalSurvey || 0,
+              teacher: scheduling?.teacherId || undefined,
+              questionsRange: [],
+              questionsRangeAverage: scheduling?.questionsRangeAverage || 0,
+              questionsWithOptions: [],
+            }
+            if (scheduling?.questionsRange) {
+              for (const questionsRange of scheduling.questionsRange) {
+                const questionsRangeItem: IConsolidateSurveyQuestionRange = {
+                  sectionId: questionsRange?._id || '-',
+                  averageSection: questionsRange?.average || 0,
+                  questions: []
+                }
+                if (questionsRange?.questions) {
+                  for (const key in questionsRange?.questions) {
+                    if (Object.prototype.hasOwnProperty.call(questionsRange?.questions, key)) {
+                      const question = questionsRange?.questions[key];
+                      const questionItem: IConsolidateSurveyQuestionRangeQuestion = {
+                        questionId: question?._id || '-',
+                        questionAverage: question?.average || 0,
+                        totalAnswers: question?.total_answers || 0,
+                        answers: {
+                          totalPoints: question?.answers?.total || 0,
+                          list: question?.answers?.list || []
+                        }
+                      }
+                      questionsRangeItem.questions.push(questionItem)
+                    }
+                  }
+                }
+                surveyBySchedulingItem.questionsRange.push(questionsRangeItem)
+              }
+            }
+            if (scheduling?.questionsWithOptions) {
+              for (const key in scheduling?.questionsWithOptions) {
+                if (Object.prototype.hasOwnProperty.call(scheduling?.questionsWithOptions, key)) {
+                  const questionsWithOptions = scheduling?.questionsWithOptions[key];
+                  const questionsWithOptionsItem: IConsolidateSurveyQuestionsWithOptions = {
+                    questionId: questionsWithOptions?._id || '-',
+                    answers: [],
+                    totalAnswers: questionsWithOptions?.total_answers || 0,
+                  }
+                  if (questionsWithOptions?.answers) {
+                    for (const _key in questionsWithOptions?.answers) {
+                      if (Object.prototype.hasOwnProperty.call(questionsWithOptions?.answers, _key)) {
+                        const answer = questionsWithOptions?.answers[_key];
+                        const answerItem: IConsolidateSurveyQuestionsWithOptionsAnswer = {
+                          unique: answer?.unique || '-',
+                          totalAnswers: answer?.total_answers || 0,
+                          averageQuestion: answer?.average || 0
+                        }
+                        questionsWithOptionsItem.answers.push(answerItem)
+                      }
+                    }
+                  }
+                  surveyBySchedulingItem.questionsWithOptions.push(questionsWithOptionsItem)
+                }
+              }
+            }
+
+            if (output_format === 'db') {
+              const where = {}
+              if (surveyBySchedulingItem?.courseScheduling) {
+                where['courseScheduling'] = surveyBySchedulingItem?.courseScheduling
+              }
+              if (surveyBySchedulingItem?.courseSchedulingDetail) {
+                where['courseSchedulingDetail'] = surveyBySchedulingItem?.courseSchedulingDetail
+              }
+              const exists: any = await ConsolidatedSurveyInformation.findOne(where).select('_id').lean()
+              if (exists) {
+                const updateData: any = await ConsolidatedSurveyInformation.findByIdAndUpdate(exists._id, surveyBySchedulingItem, {
+                  useFindAndModify: false,
+                  new: true,
+                  lean: true,
+                })
+              } else {
+                const createData: any = await ConsolidatedSurveyInformation.create(surveyBySchedulingItem)
+              }
+            }
+            data.push(surveyBySchedulingItem)
+          }
+        }
+      }
+
+      if (output_format === 'json') {
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          data
+        }})
+      }
+      return responseUtility.buildResponseSuccess('json', null)
+    } catch (err) {
+      console.log('SurveyDataService --- consolidateSurvey', err)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   public generalSurveyReport = async (params: any) => {
     try {
@@ -245,41 +362,60 @@ class SurveyDataService {
               }
             }
           }
-
           if (modality.name === 'Presencial - En linea') {
-            if (courseSchedulingModesInfoByName['Presencial']) {
-              let report: any = {
-                title: courseSchedulingModesInfoByName['Presencial'].name,
-                queryRange: {
-                  reportStartDate,
-                  reportEndDate
-                },
-                scheduling: [],
-                questionsRange: section_questions_range.map((i) => i),
-                questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
-                totalSurvey: 0,
-                isVirtual: false
-              }
-              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['Presencial'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
-              reportData.push(report)
-            }
+            // if (courseSchedulingModesInfoByName['Presencial']) {
+            //   let report: any = {
+            //     title: courseSchedulingModesInfoByName['Presencial'].name,
+            //     queryRange: {
+            //       reportStartDate,
+            //       reportEndDate
+            //     },
+            //     scheduling: [],
+            //     questionsRange: section_questions_range.map((i) => i),
+            //     questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
+            //     totalSurvey: 0,
+            //     isVirtual: false
+            //   }
+            //   report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['Presencial'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
+            //   reportData.push(report)
+            // }
 
-            if (courseSchedulingModesInfoByName['En linea']) {
-              let report: any = {
-                title: courseSchedulingModesInfoByName['En linea'].name,
-                queryRange: {
-                  reportStartDate,
-                  reportEndDate
-                },
-                scheduling: [],
-                questionsRange: section_questions_range.map((i) => i),
-                questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
-                totalSurvey: 0,
-                isVirtual: false
-              }
-              report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['En linea'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
-              reportData.push(report)
+            // if (courseSchedulingModesInfoByName['En linea']) {
+            //   let report: any = {
+            //     title: courseSchedulingModesInfoByName['En linea'].name,
+            //     queryRange: {
+            //       reportStartDate,
+            //       reportEndDate
+            //     },
+            //     scheduling: [],
+            //     questionsRange: section_questions_range.map((i) => i),
+            //     questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
+            //     totalSurvey: 0,
+            //     isVirtual: false
+            //   }
+            //   report.scheduling = await this.getSchedulingsByModality(courseSchedulingModesInfoByName['En linea'], courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
+            //   reportData.push(report)
+            // }
+          } else if (['En linea', 'Presencial'].includes(modality.name)) {
+            let report: any = {
+              title: modality.name,
+              queryRange: {
+                reportStartDate,
+                reportEndDate
+              },
+              scheduling: [],
+              questionsRange: section_questions_range.map((i) => i),
+              questionsWithOptions: JSON.parse(JSON.stringify(section_questions_choice_simple)),
+              totalSurvey: 0,
+              isVirtual: false
             }
+            report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
+            report.scheduling = await this.getSurveyDataByScheduligs(report.scheduling, {
+              questionByCategory: question_by_category,
+              questionsRange: report.questionsRange,
+              questionsWithOptions: report.questionsWithOptions
+            })
+            reportData.push(report)
           } else {
             let report: any = {
               title: modality.name,
@@ -419,6 +555,8 @@ class SurveyDataService {
     for (const courseScheduling of courseSchedulings) {
       const itemBase = {
         _id: courseScheduling._id,
+        courseScheduling: courseScheduling._id,
+        courseSchedulingDetail: undefined,
         rowIndex: courseScheduling?.metadata?.service_id || '-',
         modular: courseScheduling?.modular?.name || '-',
         programCode: courseScheduling?.program?.code || '-',
@@ -451,6 +589,8 @@ class SurveyDataService {
             }
             let schedulingItem: any = JSON.parse(JSON.stringify(itemBase));
             schedulingItem._id = course._id;
+            schedulingItem.courseSchedulingDetail = course._id;
+            schedulingItem.teacherId = (course?.teacher) ? course?.teacher._id : undefined;
             schedulingItem.teacher = (course?.teacher?.profile) ? `${course?.teacher.profile?.first_name} ${course?.teacher.profile?.last_name}` : '-';
             schedulingItem.courseCode = course?.course?.code || '-';
             schedulingItem.courseName = course?.course?.name || '-';
@@ -468,6 +608,7 @@ class SurveyDataService {
           const courses = courseSchedulingDetails[courseScheduling._id.toString()]
           const lastCourse = courses[courses.length - 1];
           let schedulingItem: any = JSON.parse(JSON.stringify(itemBase));
+          schedulingItem.teacherId = (lastCourse?.teacher) ? lastCourse?.teacher._id : undefined;
           schedulingItem.teacher = (lastCourse?.teacher?.profile) ? `${lastCourse?.teacher.profile?.first_name} ${lastCourse?.teacher.profile?.last_name}` : '-';
           schedulings.push(schedulingItem)
         }
