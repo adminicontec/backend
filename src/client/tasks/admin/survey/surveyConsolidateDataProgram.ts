@@ -3,6 +3,7 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 // @end
 
 // @import_models Import models
+import { ConsolidatedSurveyInformation, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus } from "@scnode_app/models";
 // @end
 
 // @import_services
@@ -23,17 +24,114 @@ class SurveyConsolidateDataProgram extends DefaultPluginsTaskTaskService {
    * @return Booleano que identifica si se pudo o no ejecutar la tarea
    */
   public run = async (taskParams: TaskParams) => {
-    // TODO: Diseñar endpoint/servicio que permita consultar la información consolidada
-    // TODO: 1. Se debe recibir un ID de courseScheduling
-    // TODO: 2. Identificar la modalidad
-    // TODO: 3. Si es Virtual se debe consultar el campo questionsRangeAverage (Promedio general)
-    // TODO: 4. Si es Presencial/En linea se debe consultar los courseSchedulingDetails obtener de cada uno el questionsRangeAverage (Promedio general) y generar un promedio de estos
-    // TODO: 5. Retornar
-
-    // TODO: Revisar donde se trae la data de la pantalla de programaciones del cliente y agregar el dato de la encuesta
     await surveyDataService.consolidateSurvey({
       output_format: 'db'
     })
+
+    // @INFO: Calcular el porcentaje de satisfacción por programación
+
+    const courseSchedulingStatus = await CourseSchedulingStatus.find().select('id name')
+    const courseSchedulingStatusInfo = courseSchedulingStatus.reduce((accum, element) => {
+      if (!accum[element.name]) {
+        accum[element.name] = element;
+      }
+      return accum
+    }, {})
+
+    if (Object.keys(courseSchedulingStatusInfo).length > 0) {
+      let where: any = {
+        schedulingStatus: {$in: [
+          courseSchedulingStatusInfo['Confirmado']._id,
+          courseSchedulingStatusInfo['Ejecutado']._id,
+          courseSchedulingStatusInfo['Cancelado']._id,
+        ]}
+      }
+
+      const courseSchedulings = await CourseScheduling.find(where)
+      .select('id schedulingMode')
+      .populate({path: 'schedulingMode', select: 'id name'})
+      .lean()
+
+      const courseSchedulingIds = courseSchedulings.reduce((accum, element) => {
+        accum.push(element._id.toString())
+        return accum
+      }, [])
+
+      let courseSchedulingDetails = undefined;
+      let consolidatedByScheduling = undefined;
+
+      if (courseSchedulingIds.length > 0) {
+        const details = await CourseSchedulingDetails.find({
+          course_scheduling: {$in: courseSchedulingIds}
+        })
+        .select('id course_scheduling')
+        .lean();
+
+        courseSchedulingDetails = {};
+        courseSchedulingDetails = details.reduce((accum, element) => {
+          if (element?.course_scheduling) {
+            if (!accum[element.course_scheduling.toString()]) {
+              accum[element.course_scheduling.toString()] = []
+            }
+            accum[element.course_scheduling.toString()].push(element)
+          }
+          return accum
+        }, {})
+
+
+        const consolidated = await ConsolidatedSurveyInformation.find({
+          courseScheduling: {$in: courseSchedulingIds}
+        })
+        .lean();
+
+        consolidatedByScheduling = {};
+        consolidatedByScheduling = consolidated.reduce((accum, element) => {
+          if (element?.courseScheduling) {
+            if (!accum[element.courseScheduling.toString()]) {
+              accum[element.courseScheduling.toString()] = []
+            }
+            accum[element.courseScheduling.toString()].push(element)
+          }
+          return accum
+        }, {})
+      }
+
+      for (const courseScheduling of courseSchedulings) {
+        if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(courseScheduling.schedulingMode.name)) {
+          if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
+            if (consolidatedByScheduling && consolidatedByScheduling[courseScheduling._id.toString()]) {
+              const averageList = []
+              for (const consolidate of consolidatedByScheduling[courseScheduling._id.toString()]) {
+                if (consolidate?.questionsRangeAverage) {
+                  averageList.push(consolidate?.questionsRangeAverage)
+                }
+              }
+              const average = Math.round(
+                (
+                  averageList.reduce((accum,element) => {
+                    return accum += element
+                  }, 0) / consolidatedByScheduling[courseScheduling._id.toString()].length
+                ) * 100
+                ) / 100
+
+              await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: average }, {
+                useFindAndModify: false,
+                new: true,
+                lean: true,
+              })
+            }
+          }
+        } else if (courseScheduling.schedulingMode.name === 'Virtual') {
+          if (consolidatedByScheduling && consolidatedByScheduling[courseScheduling._id.toString()] && consolidatedByScheduling[courseScheduling._id.toString()][0] && consolidatedByScheduling[courseScheduling._id.toString()][0].questionsRangeAverage) {
+            await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: consolidatedByScheduling[courseScheduling._id.toString()][0].questionsRangeAverage }, {
+              useFindAndModify: false,
+              new: true,
+              lean: true,
+            })
+          }
+        }
+      }
+    }
     return true; // Always return true | false
   }
 
