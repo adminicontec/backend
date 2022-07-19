@@ -178,7 +178,8 @@ class EnrollmentService {
                     messageProcess: "Error al matricular al estudiante ",
                     details: {
                       user: singleUserEnrollmentContent.user,
-                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname,
+                      ...respEnrollment
                     }
                   }
                 }
