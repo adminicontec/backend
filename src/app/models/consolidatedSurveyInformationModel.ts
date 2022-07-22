@@ -101,6 +101,10 @@ const ConsolidatedSurveyInformationSchema = new Schema({
     type: Schema.Types.Number,
     default: 0
   },
+  surveyPercentage: {
+    type: Schema.Types.Number,
+    default: 0
+  },
   questionsWithOptions: [ConsolidatedSurveyInformationQuestionsWithOptionsSchema]
   // @end
 }, {

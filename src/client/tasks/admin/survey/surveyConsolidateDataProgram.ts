@@ -100,21 +100,21 @@ class SurveyConsolidateDataProgram extends DefaultPluginsTaskTaskService {
         if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(courseScheduling.schedulingMode.name)) {
           if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
             if (consolidatedByScheduling && consolidatedByScheduling[courseScheduling._id.toString()]) {
-              const averageList = []
+              const percentageList = []
               for (const consolidate of consolidatedByScheduling[courseScheduling._id.toString()]) {
-                if (consolidate?.questionsRangeAverage) {
-                  averageList.push(consolidate?.questionsRangeAverage)
+                if (consolidate?.surveyPercentage) {
+                  percentageList.push(consolidate?.surveyPercentage)
                 }
               }
-              const average = Math.round(
+              const percentage = Math.round(
                 (
-                  averageList.reduce((accum,element) => {
+                  percentageList.reduce((accum,element) => {
                     return accum += element
                   }, 0) / consolidatedByScheduling[courseScheduling._id.toString()].length
                 ) * 100
                 ) / 100
 
-              await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: average }, {
+              await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: percentage }, {
                 useFindAndModify: false,
                 new: true,
                 lean: true,
@@ -122,8 +122,8 @@ class SurveyConsolidateDataProgram extends DefaultPluginsTaskTaskService {
             }
           }
         } else if (courseScheduling.schedulingMode.name === 'Virtual') {
-          if (consolidatedByScheduling && consolidatedByScheduling[courseScheduling._id.toString()] && consolidatedByScheduling[courseScheduling._id.toString()][0] && consolidatedByScheduling[courseScheduling._id.toString()][0].questionsRangeAverage) {
-            await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: consolidatedByScheduling[courseScheduling._id.toString()][0].questionsRangeAverage }, {
+          if (consolidatedByScheduling && consolidatedByScheduling[courseScheduling._id.toString()] && consolidatedByScheduling[courseScheduling._id.toString()][0] && consolidatedByScheduling[courseScheduling._id.toString()][0].surveyPercentage) {
+            await CourseScheduling.findByIdAndUpdate(courseScheduling._id, { satisfactionSurvey: consolidatedByScheduling[courseScheduling._id.toString()][0].surveyPercentage }, {
               useFindAndModify: false,
               new: true,
               lean: true,

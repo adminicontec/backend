@@ -59,6 +59,7 @@ class SurveyDataService {
         const dataReport = surveyData?.data as IGeneralReportSurvey[]
         for (const reportData of dataReport) {
           for (const scheduling of reportData.scheduling) {
+            const questionsRangeAverage = scheduling?.questionsRangeAverage || 0;
             const surveyBySchedulingItem: Partial<IConsolidateSurvey> = {
               courseScheduling: scheduling?.courseScheduling || undefined,
               courseSchedulingDetail: scheduling?.courseSchedulingDetail || undefined,
@@ -66,7 +67,8 @@ class SurveyDataService {
               totalSurvey: scheduling?.totalSurvey || 0,
               teacher: scheduling?.teacherId || undefined,
               questionsRange: [],
-              questionsRangeAverage: scheduling?.questionsRangeAverage || 0,
+              questionsRangeAverage: questionsRangeAverage,
+              surveyPercentage: Math.round(((questionsRangeAverage * 100) / 5) * 100) / 100,
               questionsWithOptions: [],
             }
             if (scheduling?.questionsRange) {

@@ -119,6 +119,7 @@ export interface IConsolidateSurvey {
   teacher: string;
   questionsRange: IConsolidateSurveyQuestionRange[],
   questionsRangeAverage: number;
+  surveyPercentage: number;
   questionsWithOptions: IConsolidateSurveyQuestionsWithOptions[]
 }
 
