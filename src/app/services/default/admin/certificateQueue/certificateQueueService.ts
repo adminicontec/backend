@@ -47,7 +47,7 @@ class CertificateQueueService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate message';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
           .select(select)
