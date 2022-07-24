@@ -795,7 +795,6 @@ class CertificateService {
   /**
    *  SetCertificate: método para enviar request a Huella de Confianza para la creación de Certificado.-
    */
-
   public setCertificate = async (params: IQueryUserToCertificate) => {
     console.log("→→→ Execution of setCertificate()");
 
@@ -1292,6 +1291,26 @@ class CertificateService {
     }
   }
 
+  /**
+  * PutCertificate: Método de HdC para solicitar actualización de Certificado existente
+  */
+  public putCertificate = async (params: IQueryUserToCertificate) => {
+    console.log("→→→ Execution of putCertificate() " + params.userId);
+    try{
+
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+
+        }
+      });
+    }
+    catch (e) {
+      console.log(e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
   /*
   * RULES FOR RELEASE CERTIFTICATE
   */
@@ -1739,6 +1758,86 @@ class CertificateService {
       let respHuella: any = await queryUtility.query({
         method: 'post',
         url: certificate_setup.endpoint.create_certificate,
+        api: 'huellaDeConfianza',
+        headers: { Authorization: tokenHC },
+        params: JSON.stringify(certificateReq.paramsHuella)
+      });
+      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(respHuella);
+      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+      let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
+      console.log("--> Register to update " + registerId);
+
+      let responseLog: any = await certificateLogsService.insertOrUpdate({
+        serviceResponse: respHuella.estado,
+        idCertificateQueue: registerId,
+        message: "",
+        requestData: certificateReq.paramsHuella
+      });
+
+      console.log("***************************");
+      console.log(responseLog);
+      console.log("***************************");
+
+      let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+        id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
+        status: 'Requested',
+        message: certificateReq.paramsHuella.certificado,
+        certificateModule: certificateReq.paramsHuella.modulo,
+        certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
+        auxiliar: certificateReq.queueData.auxiliarId,
+        certificate: {
+          hash: respHuella.resultado.certificado,
+          url: respHuella.resultado.url,
+          title: (certificateReq.isComplete) ? certificateReq.paramsHuella.certificado : 'Certificado Parcial de ' + certificateReq.programName,
+          date: certificateReq.paramsHuella.fecha_aprobacion
+        }
+      });
+
+      responseCertQueueArray.push(responseCertQueue);
+      counter++;
+    }
+    return responseCertQueueArray;
+  }
+
+
+  private requestPutCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
+
+    let responseCertQueueArray = [];
+    let counter = 1;
+    for await (const certificateReq of certificateParamsArray) {
+
+      console.log("Certificate n° " + counter);
+      // #region request Login and token response
+      let respToken: any = await this.login();
+      if (respToken.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.login_invalid' } })
+      }
+      var tokenHC = respToken.token;
+      // #endregion request Login and token response
+
+      let responseCertificateQueue: any = await certificateQueueService.insertOrUpdate({
+        id: certificateReq.queueData.certificateQueueId,
+        courseId: certificateReq.queueData.courseId,
+        users: [certificateReq.queueData.userId],
+        certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
+        status: 'In-process',
+        message: '',
+        auxiliar: certificateReq.queueData.auxiliarId
+      });
+
+      console.log("--> After Insert/update cerfificateQueue:");
+      console.log(responseCertificateQueue.certificateQueue);
+
+      console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
+      // Build request for Update Certificate
+      let respHuella: any = await queryUtility.query({
+        method: 'post',
+        url: certificate_setup.endpoint.update_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
         params: JSON.stringify(certificateReq.paramsHuella)
