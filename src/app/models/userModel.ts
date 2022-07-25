@@ -156,6 +156,10 @@ const UserSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: "Company"
   },
+  admin_company: {    // Un administrador puede ver todos los programas de la empresa en el dashboard
+    type: Schema.Types.Boolean,
+    default: false
+  },
   moodle_id: { type: Schema.Types.String },
   // Interacciones
   show_profile_interaction: {

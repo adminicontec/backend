@@ -46,7 +46,7 @@ class AuthService {
    private findUserToLoginQuery = async (query) => {
 
     const user_exist = await User.findOne(query).select(
-      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company show_profile_interaction'
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company show_profile_interaction admin_company'
     )
     .populate({
       path: 'roles',
@@ -184,7 +184,8 @@ class AuthService {
             ...tokenCustom,
             moodle_id: user.moodle_id
           },
-          company: company
+          company: company,
+          admin_company: user.admin_company
 				},
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,
