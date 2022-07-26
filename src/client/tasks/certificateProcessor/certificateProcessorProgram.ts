@@ -25,6 +25,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
     // @task_logic Add task logic
     console.log("Init Task: Certificate Processor ");
 
+    //#region Set certificate, only new requests
     console.log("1. Get all items on Certificate Queue [New] status")
     const select = ["New"];
     let respQueueToProcess: any = await certificateQueueService.
@@ -72,8 +73,9 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
     else {
       console.log("There're no certificates to request.");
     }
+    //#endregion
 
-
+    //#region Put certificate, only Re-issue requests
     console.log("2. Get all items on Certificate Queue [Re-issue] status")
     const selectIssue = ["Re-issue"];
     let respReissueQueueToProcess: any = await certificateQueueService.
@@ -92,6 +94,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         console.log('.............................');
         console.log(element._id);
         console.log(`Re-expedido por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
+        console.log(`Código: ${element.certificate.hash} `)
 
         // 1. Send request to process Certificate on HdC service.
         let respPutCertificate: any = await certificateService.putCertificate({
@@ -99,7 +102,8 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
           courseId: element.courseId,
           userId: element.userId._id,
           auxiliarId: element.auxiliar._id,
-          certificateConsecutive: element.certificateConsecutive
+          certificateConsecutive: element.certificateConsecutive,
+          certificateHash: element.certificate.hash
         });
 
         if (respPutCertificate.status === "error") {
@@ -121,6 +125,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
     else {
       console.log("There're no certificates to re-issue.");
     }
+    //#endregion
 
     // @end
     return true; // Always return true | false

@@ -13,7 +13,8 @@ export interface IQueryUserToCertificate {
   userId: string, // ID de usario
   courseId: string, // ID de curso
   auxiliarId: string, // ID de Auxiliar qué liberó el certificado
-  certificateConsecutive: string
+  certificateConsecutive: string,
+  certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
 }
 
 
@@ -72,7 +73,8 @@ export interface ISetCertificateParams {
   certificateType: string,
   paramsHuella: ICertificate,
   programName: string,
-  isComplete: boolean
+  isComplete: boolean,
+  certificateHash?: string
 }
 
 export interface ICertificateQueueQuery {

@@ -1102,7 +1102,6 @@ class CertificateService {
       }
       //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
 
-
       //#endregion
 
       //#region Build the certificate Parameters
