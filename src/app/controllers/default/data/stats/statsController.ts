@@ -46,6 +46,11 @@ class StatsController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public statsSurveys = async (req: Request, res: Response) => {
+    const response = await statsService.statsSurveys(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const statsController = new StatsController();

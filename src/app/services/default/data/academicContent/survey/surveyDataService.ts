@@ -63,6 +63,9 @@ class SurveyDataService {
             const surveyBySchedulingItem: Partial<IConsolidateSurvey> = {
               courseScheduling: scheduling?.courseScheduling || undefined,
               courseSchedulingDetail: scheduling?.courseSchedulingDetail || undefined,
+              endDate: scheduling?.endDate || undefined,
+              endDateMonth: scheduling?.endDateMonth || undefined,
+              endDateYear: scheduling?.endDateYear || undefined,
               isVirtual: reportData?.isVirtual || false,
               totalSurvey: scheduling?.totalSurvey || 0,
               teacher: scheduling?.teacherId || undefined,
@@ -75,6 +78,7 @@ class SurveyDataService {
               for (const questionsRange of scheduling.questionsRange) {
                 const questionsRangeItem: IConsolidateSurveyQuestionRange = {
                   sectionId: questionsRange?._id || '-',
+                  category: questionsRange?.category || undefined,
                   averageSection: questionsRange?.average || 0,
                   questions: []
                 }
@@ -302,6 +306,7 @@ class SurveyDataService {
                 title: this.htmlEntitiesToUTF(question.question.content),
                 questions: {},
                 average: 0,
+                category: question?.question?.config?.category || undefined
               }
               if (question.childs) {
                 for (const child of question.childs) {
@@ -566,7 +571,9 @@ class SurveyDataService {
         startDate: courseScheduling?.startDate ? moment(courseScheduling.startDate).format('DD/MM/YYYY') : '-',
         startDateMonth: courseScheduling?.startDate ? moment(courseScheduling.startDate).format('MM') : '-',
         startDateYear: courseScheduling?.startDate ? moment(courseScheduling.startDate).format('YYYY') : '-',
-        endDate: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('DD/MM/YYYY') : '-',
+        endDate: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('YYYY-MM-DD') : '-',
+        endDateMonth: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('MM') : '-',
+        endDateYear: courseScheduling?.endDate ? moment(courseScheduling.endDate).format('YYYY') : '-',
         duration: (courseScheduling?.duration) ? generalUtility.getDurationFormated(courseScheduling?.duration) : '0h',
         participants: (participantsByProgram[courseScheduling?._id]) ? participantsByProgram[courseScheduling._id] : 0,
         companyName: courseScheduling?.client?.name || '-',
@@ -599,7 +606,9 @@ class SurveyDataService {
             schedulingItem.startDate = course?.startDate ? moment(course.startDate).format('DD/MM/YYYY') : '-';
             schedulingItem.startDateMonth = course?.startDate ? moment(course.startDate).format('MM') : '-';
             schedulingItem.startDateYear = course?.startDate ? moment(course.startDate).format('YYYY') : '-';
-            schedulingItem.endDate = course?.endDate ? moment(course.endDate).format('DD/MM/YYYY') : '-';
+            schedulingItem.endDate = course?.endDate ? moment(course.endDate).format('YYYY-MM-DD') : '-';
+            schedulingItem.endDateMonth = course?.endDate ? moment(course.endDate).format('MM') : '-';
+            schedulingItem.endDateYear = course?.endDate ? moment(course.endDate).format('YYYY') : '-'
             schedulingItem.duration = (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h';
 
             schedulings.push(schedulingItem)

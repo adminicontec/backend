@@ -26,6 +26,7 @@ export interface ISectionQuestionsRange {
   title: string
   questions: Record<string, IQuestionsRange>
   average: number
+  category?: string
 }
 export interface ISectionQuestionsOpen {
   _id: string
@@ -97,6 +98,7 @@ export interface IConsolidateSurveyQuestionRangeQuestion {
 }
 export interface IConsolidateSurveyQuestionRange {
   sectionId: string;
+  category?: string;
   averageSection: number;
   questions: IConsolidateSurveyQuestionRangeQuestion[]
 }
@@ -115,6 +117,9 @@ export interface IConsolidateSurvey {
   courseScheduling: string;
   courseSchedulingDetail?: string;
   isVirtual: boolean;
+  endDate: string;
+  endDateMonth: string;
+  endDateYear: string;
   totalSurvey: number;
   teacher: string;
   questionsRange: IConsolidateSurveyQuestionRange[],

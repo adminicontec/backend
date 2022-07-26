@@ -12,11 +12,11 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
+import { ConsolidatedSurveyInformationModel } from '@scnode_app/models/consolidatedSurveyInformationModel';
 // @end
 
 // @import types
-import { IStatsScheduledHoursQuery } from '@scnode_app/types/default/data/stats/statsTypes'
-import { mapUtility } from '../../../../../core/utilities/mapUtility';
+import { IStatsScheduledHoursQuery, IStatsSurveysQuery } from '@scnode_app/types/default/data/stats/statsTypes'
 // @end
 
 class StatsService {
@@ -44,23 +44,23 @@ class StatsService {
     try {
       let monthNameList = moment.localeData('es').monthsShort();
 
-      console.log("Stats for programmed hours:")
-      console.log(params);
-      console.log(`Current date: ${today}`);
-      console.log(`Current year: ${currentYear}`);
+      // console.log("Stats for programmed hours:")
+      // console.log(params);
+      // console.log(`Current date: ${today}`);
+      // console.log(`Current year: ${currentYear}`);
 
       const respScheduledSessions: any = await courseSchedulingDetailsService.list({
         teacher: params.teacher
       });
 
       if (respScheduledSessions.status == 'error') {
-        console.log(respScheduledSessions.message);
+        // console.log(respScheduledSessions.message);
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course_scheduling.details.not_found' } });
       }
 
       if (respScheduledSessions.schedulings && respScheduledSessions.schedulings.length > 0) {
 
-        console.log("******************************************************");
+        // console.log("******************************************************");
         for (let course of respScheduledSessions.schedulings) {
           // avoid every Service as Virtual Mode and "Canceled" status
           if (course.course_scheduling.schedulingMode.name.toLowerCase() != "virtual") {
@@ -161,17 +161,17 @@ class StatsService {
     try {
       let monthNameList = moment.localeData('es').monthsShort();
 
-      console.log("Stats for programmed courses:")
-      console.log(params);
-      console.log(`Current date: ${today}`);
-      console.log(`Current year: ${currentYear}`);
+      // console.log("Stats for programmed courses:")
+      // console.log(params);
+      // console.log(`Current date: ${today}`);
+      // console.log(`Current year: ${currentYear}`);
 
       const respScheduledSessions: any = await courseSchedulingDetailsService.list({
         teacher: params.teacher
       });
 
       if (respScheduledSessions.status == 'error') {
-        console.log(respScheduledSessions.message);
+        // console.log(respScheduledSessions.message);
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'course_scheduling.details.not_found' } });
       }
 
@@ -180,15 +180,15 @@ class StatsService {
 
           // avoid every Service in "Canceled" status
           if (course.course_scheduling.schedulingStatus.name != 'Cancelado') {
-            console.log('course');
-            console.log(course);
+            // console.log('course');
+            // console.log(course);
 
             // filter every scheduled session of the current year
             // avoid every scheduled session below the current date
             // must adjust the Offset to real date record
             let courseEndDateOffset = moment(course.endDate);
 
-            console.log(courseEndDateOffset);
+            // console.log(courseEndDateOffset);
 
             if (courseEndDateOffset.isSame(today, 'year')) {
               if (courseEndDateOffset.isBefore(today)) {
@@ -224,8 +224,8 @@ class StatsService {
         stats = statGroup;
 
         // fill the missing months with '0' data
-        console.log('------------------------------');
-        console.log(monthNameList);
+        // console.log('------------------------------');
+        // console.log(monthNameList);
         let index = 0;
         for (let month of monthNameList) {
           const found = statGroup.find(m => m.label === month);
@@ -237,9 +237,9 @@ class StatsService {
           }
         }
 
-        console.log('------------------------------');
-        console.log('statGroup');
-        console.log(statGroup);
+        // console.log('------------------------------');
+        // console.log('statGroup');
+        // console.log(statGroup);
 
         statGroup.sort((a, b) => a.index - b.index);
 
@@ -257,6 +257,102 @@ class StatsService {
       });
 
     } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public statsSurveys = async (params: IStatsSurveysQuery) => {
+    try {
+      let report = { labels: [], data: [] };
+      let currentYear = moment().year();
+
+      // TODO: Validar si se debe recibir el ID del courseScheduling
+
+      let monthNameList = moment.localeData('es').monthsShort();
+      const consolidateSurvey = await ConsolidatedSurveyInformationModel.find({
+        teacher: params.teacher,
+        endDateYear: params.year ? params.year.toString() : currentYear.toString(),
+        isVirtual: params.isVirtual === true ? true : false
+      })
+      .select('id courseScheduling totalSurvey courseSchedulingDetail isVirtual endDate endDateMonth endDateYear questionsRange')
+      .lean()
+      // console.log('monthNameList', monthNameList)
+      // console.log('consolidateSurvey', consolidateSurvey)
+      const consolidateByMonth = {}
+      for (const consolidate of consolidateSurvey) {
+        if (consolidate.endDate && consolidate.endDate !== '-') {
+          // console.log('consolidate.endDate', consolidate.endDate, consolidate._id)
+          const endDateOffset = moment(consolidate.endDate);
+          // console.log('endDateOffset', endDateOffset)
+          const teacherCategory = consolidate.questionsRange.find((item) => item.category === 'docente')
+          // console.log('teacherCategory', teacherCategory)
+          if (teacherCategory && consolidate.totalSurvey && consolidate.totalSurvey > 0) {
+            const key = `${consolidate.endDateMonth}`
+            if (!consolidateByMonth[key]) {
+              consolidateByMonth[key] = {
+                monthLabel: monthNameList[moment(endDateOffset).month()],
+                monthNumber: moment(endDateOffset).month(),
+                average: 0,
+                percentage: 0,
+                list: []
+              }
+            }
+            consolidateByMonth[key].list.push(teacherCategory.averageSection)
+          }
+        }
+      }
+      for (const key in consolidateByMonth) {
+        if (Object.prototype.hasOwnProperty.call(consolidateByMonth, key)) {
+          const element = consolidateByMonth[key];
+          const average = Math.round(
+            (
+              element.list.reduce((accum,element) => {
+                return accum += element
+              }, 0) / element.list.length
+            ) * 100
+            ) / 100
+          element.average = average;
+          element.percentage = Math.round(((average * 100) / 5) * 100) / 100;
+        }
+      }
+
+      let statGroup = [];
+      for (const key in consolidateByMonth) {
+        if (Object.prototype.hasOwnProperty.call(consolidateByMonth, key)) {
+          const element = consolidateByMonth[key];
+          statGroup.push({
+            index: element.monthNumber,
+            label: element.monthLabel,
+            data: element.percentage
+          });
+        }
+      }
+
+      let index = 0;
+      for (let month of monthNameList) {
+        const found = statGroup.find(m => m.label === month);
+        if (!found) {
+          statGroup.push({ index: index++, label: month, data: 0 });
+        }
+        else {
+          index++;
+        }
+      }
+
+      statGroup.sort((a, b) => a.index - b.index);
+
+      for (let item of statGroup) {
+        report.labels.push(generalUtility.upperCaseString(item.label, false));
+        report.data.push(item.data);
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          currentYear: currentYear,
+          report: report,
+        }
+      });
+    } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
   }

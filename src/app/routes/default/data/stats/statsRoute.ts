@@ -31,6 +31,7 @@ class StatsRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app, _route, '/hours', this.instanceController.statsHours, [], ['auth'])
     routerUtility.post(app, _route, '/courses', this.instanceController.statsCourses, [], ['auth'])
+    routerUtility.post(app, _route, '/surveys', this.instanceController.statsSurveys, [], ['auth'])
 
     // @end
   }

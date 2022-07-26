@@ -39,6 +39,9 @@ const ConsolidatedSurveyInformationQuestionsRangeSchema = new Schema({
     type: Schema.Types.Number,
     default: 0
   },
+  category: {
+    type: Schema.Types.String,
+  },
   questions: [ConsolidatedSurveyInformationQuestionsRangeQuestionsSchema]
 }, {
   _id: false
@@ -88,6 +91,15 @@ const ConsolidatedSurveyInformationSchema = new Schema({
   isVirtual: {
     type: Schema.Types.Boolean,
     default: false
+  },
+  endDate: {
+    type: Schema.Types.String,
+  },
+  endDateMonth: {
+    type: Schema.Types.String,
+  },
+  endDateYear: {
+    type: Schema.Types.String,
   },
   totalSurvey: {
     type: Schema.Types.Number,
