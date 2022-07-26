@@ -1,4 +1,56 @@
-<div class="img_icontec">
+{{> partials/page/title title='Activación de examen'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
+
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) participante {{params.studentParams.studentName}}:</b></p>&nbsp;
+                    <p>El examen del módulo <strong>{{params.studentParams.moduleName}}</strong> estará disponible para su aplicación desde este momento, hasta el: {{params.studentParams.endDate}} (8 días después de la finalización del curso).</p>
+                    <p>Usted podrá elegir el momento más apropiado para su aplicación.​</p>
+                    <p>Por favor tenga en cuenta:​</p>
+                    <ol>
+                      <li>El porcentaje mínimo para aprobar el examen es de 70%.</li>
+                      <li>En caso de que usted repruebe o decida no aplicar el examen, una vez vencida la fecha y la hora límite anunciada, se procederá a certificar la asistenta al servicio <strong>{{params.studentParams.serviceId}}</strong>.</li>
+                      <li>Para acceder al examen, ingrese al curso <strong>{{params.studentParams.moduleName}}</strong> en la sección de actividades.</li>
+                      <li>Las indicaciones para la aplicación del examen se encuentran dentro de la plataforma.</li>
+                    </ol>
+                    <p>Agradecemos su atención y muchos éxitos en la aplicación de su evaluación. </p>
+                    <p class="mcSpecialText">En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.campus_instructive_doc}}">instructivo de mesa de ayuda</a>. También dentro del campus puede acceder a soporte con la asistente virtual Daniela en la opción 2. <img src="{{params.mailer.virtual_help}}" style="width: 100px"></p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
+
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+
+
+{{!-- <div class="img_icontec">
   <img src="{{params.mailer.mailer_image}}">
 </div>
 
@@ -26,4 +78,4 @@
   <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
   <img src="{{params.mailer.footer_icon}}">
 
-</div>
+</div> --}}

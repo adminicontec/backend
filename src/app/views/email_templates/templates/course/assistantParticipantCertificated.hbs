@@ -1,23 +1,61 @@
-<div class="txt_icontec">
-  <h2>Emisión de Certificados completa</h2><br>
+{{> partials/page/title title='Emisión de Certificados completa'}}
+{{> partials/page/image image=params.customs.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <!--[if mso]>
+            <table align="left" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;">
+            <tr>
+            <![endif]-->
 
-  <div>
-    <strong>Estimado(a) Auxiliar: {{params.user_name}}</strong>
-  </div> <br>
-  <div>
-    <p>A continuación se relaciona los participantes y su correspondiente certificado emitido:</p>
-  </div>
+            <!--[if mso]>
+            <td valign="top" width="600" style="width:600px;">
+            <![endif]-->
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado(a) Auxiliar: {{params.user_name}}</b></p>&nbsp;
+                    <p>A continuación se relaciona los participantes y su correspondiente certificado emitido:</p>
 
-  {{#each params.participants}}
-  <div><strong>{{{this.participantFullName}}}</strong></div>
-  <div>{{{this.courseSchedulingName}}}</div>
-  <div>{{{this.certificateType}}}</div>
-  {{/each}}
-  <br>
+                    <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%" >
+                      <thead>
+                        <tr>
+                          <th style="background: #B4BCBC;">Participante</th>
+                          <th style="background: #B4BCBC;">Programa</th>
+                          <th style="background: #B4BCBC;">Tipo de certificado</th>
+                        </tr>
+                      </thead>
+                      <tbody style="font-size: 12px;">
+                        {{#each params.participants}}
+                          <tr>
+                            <td>{{{this.participantFullName}}}</td>
+                            <td>{{{this.courseSchedulingName}}}</td>
+                            <td>{{{this.certificateType}}}</td>
+                          </tr>
+                        {{/each}}
+                      </tbody>
+                    </table>
+                    &nbsp;
+                    <p class="mcSpecialText">En caso de cualquier inquietud comuníquese con el programador (coordinador del servicio del área de operaciones presencial/online o virtual).</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <!--[if mso]>
+            </td>
+            <![endif]-->
 
-  <div>En caso de cualquier inquietud comuníquese con el programador (coordinador del servicio del área de operaciones
-    presencial/online o virtual).</div>
-  <br><br>
-  <div>Cordialmente <br>Equipo Unidad Técnica de Educación</div>
-  <img src="{{params.mailer.footer_icon}}">
-</div>
+            <!--[if mso]>
+            </tr>
+            </table>
+            <![endif]-->
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

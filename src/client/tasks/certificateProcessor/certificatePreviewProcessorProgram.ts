@@ -112,7 +112,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
               participantId: certificateData.userId._id,
               participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
               courseSchedulingId: certificateData.courseId,
-              courseSchedulingName: courseScheduling.program.name,
+              courseSchedulingName: certificateData.message, /// courseScheduling.program.name,
               certificateType: certificateData.certificateType
             });
           }

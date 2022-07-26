@@ -144,6 +144,7 @@ class CourseSchedulingNotificationsService {
 
       }
     } catch (e) {
+      console.log('CourseSchedulingNotification - sendNotificationOfServiceToAssistant', e)
       return responseUtility.buildResponseFailed('json', null)
     }
   }

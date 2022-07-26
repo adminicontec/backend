@@ -85,7 +85,7 @@ class NotificationEventService {
       const mail = await mailService.sendMail({
         emails: [user.email],
         mailOptions: {
-          subject: i18nUtility.__('mailer.participant_certificated_notification.subject'),
+          subject: i18nUtility.__('mailer.participant_certificated_completed_notification.subject'),
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,

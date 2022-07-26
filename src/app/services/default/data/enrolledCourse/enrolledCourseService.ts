@@ -195,6 +195,12 @@ class EnrolledCourseService {
       })
     }
 
+    _where.push({
+      $match: {
+        "deleted": false
+      }
+    })
+
     if (Object.keys(whereCourseScheduling).length > 0) {
       const course_scheduling = await CourseScheduling.find(whereCourseScheduling).select('id')
       const course_scheduling_ids = course_scheduling.reduce((accum, element) => {

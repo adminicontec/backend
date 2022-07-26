@@ -10,11 +10,11 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import {Company} from '@scnode_app/models'
+import {Company, CourseScheduling} from '@scnode_app/models'
 // @end
 
 // @import types
-import {ICompanyQuery, IFetchCompany} from '@scnode_app/types/default/admin/company/companyTypes'
+import {ICompanyQuery, IFetchCompany, ParamsFetchCompaniesExecutiveByUser} from '@scnode_app/types/default/admin/company/companyTypes'
 // @end
 
 class CompanyDataService {
@@ -130,6 +130,31 @@ class CompanyDataService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Método que permite consultar las compañías en las que esta registrado un ejecutivo de cuenta
+   * @param params
+   */
+  public fetchCompaniesExecutiveByUser = async (params: ParamsFetchCompaniesExecutiveByUser) => {
+    try{
+
+      const schedulings = await CourseScheduling.find({ account_executive: params.userId }).select('id client').populate([
+        {path: 'client', select: 'slug name description logo background' }
+      ]);
+
+      let companies = schedulings?.map(scheduling => scheduling.client);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          companies
+        }
+      });
+
+    }catch(e){
+      console.log('CompanyDataService => fetchCompaniesExecutiveByUser error: ', e);
+      return responseUtility.buildResponseFailed('json');
+    }
   }
 
 }

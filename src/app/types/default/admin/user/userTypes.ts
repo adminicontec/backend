@@ -103,6 +103,7 @@ export interface IUserQuery {
   without_company?: boolean | string
   sort?: string
   username?: Array<string> | string
+  admin_company?: boolean   // Saber si es administrador de la empresa
 }
 
 export interface IUserDateTimezone {

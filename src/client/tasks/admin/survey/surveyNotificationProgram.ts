@@ -63,7 +63,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
 
         const examData = await courseSchedulingNotificationsService.verifyCourseSchedulingExercise(scheduling.moodle_id);
 
-        if (attendanceComplete && examData.hasExam) {
+        if (attendanceComplete && examData?.hasExam) {
           const response: any = await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
           console.log("response sendNotification to Aux");
           console.log(response);

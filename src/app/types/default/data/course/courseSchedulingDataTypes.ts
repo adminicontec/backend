@@ -31,6 +31,7 @@ export interface IFetchCourseSchedulingExtend {
   program_course_name?: string
   account_executive?: string // Buscar solo resultados de ese accountExecutive
   company?: string // Identificador de cliente
+  contact?: string // Identificador del contacto de la empresa
 }
 
 export interface ParamsSchedulingConfirmedByMonth{

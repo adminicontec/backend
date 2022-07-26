@@ -52,6 +52,18 @@ class CompanyDataController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  /**
+   * Método que permite consultar las compañías en las que esta registrado un ejecutivo de cuenta
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+   public fetchCompaniesExecutiveByUser = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await companyDataService.fetchCompaniesExecutiveByUser(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
 }
 
 export const companyDataController = new CompanyDataController();
