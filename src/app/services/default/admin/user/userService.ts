@@ -112,6 +112,8 @@ class UserService {
 
     const defaultCountryCode = '6058e1f00520a25777a0eb4d';
     const defaultCountryISO = 'CO';
+    //@ts-ignore
+    if (params.sendEmail === 'true') params.sendEmail = true
     try {
 
       // TODO: Que va en los siguientes campos
