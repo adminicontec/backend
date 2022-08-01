@@ -16,6 +16,7 @@ import { CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment
 
 // @import types
 import { IFetchEnrollementByUser, IFetchCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
+import { IDownloadMasiveCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
 // @end
 
 class EnrolledCourseService {
@@ -61,8 +62,6 @@ class EnrolledCourseService {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
 
-            console.log('----------------------------');
-            console.log(e.course_scheduling);
             let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
@@ -98,8 +97,6 @@ class EnrolledCourseService {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
 
-            console.log('----------------------------');
-            console.log(e.course_scheduling);
             let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
@@ -286,7 +283,6 @@ class EnrolledCourseService {
 
       registers = newRegisters
 
-      console.log('Registros: ', registers)
     } catch (error) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
@@ -302,8 +298,26 @@ class EnrolledCourseService {
     })
   }
 
-  public downloadMasiveCertifications = async (params) => {
+  public downloadMasiveCertifications = async (params: IDownloadMasiveCertifications) => {
     try {
+
+      // Download all certifications of a company
+      if (params.downloadAll && params.company) {
+        const certificationsOfCompanyResponse: any = await this.fetchCertifications({
+          company: params.company,
+          status: ['Complete'],
+          certificate_clients: true,
+          nPerPage: '5000',
+          pageNumber: '1'
+        })
+        if (certificationsOfCompanyResponse.status === 'success') {
+          const certificationsOfCompany = certificationsOfCompanyResponse.certifications ?? []
+          const companyCertificationsId = certificationsOfCompany.map(certificate => certificate._id)
+          if (companyCertificationsId.length) {
+            params.certification_queue = companyCertificationsId
+          }
+        }
+      }
 
       // TODO: Validar si no viene ningun certificado a generar
 

@@ -143,7 +143,12 @@ class CompanyDataService {
         {path: 'client', select: 'slug name description logo background' }
       ]);
 
-      let companies = schedulings?.map(scheduling => scheduling.client);
+      let companies = schedulings?.reduce((clients, scheduling) => {
+        if (!clients.find(c => c._id === scheduling?.client?._id)){
+          clients.push(scheduling.client)
+        }
+        return clients
+      }, [])
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

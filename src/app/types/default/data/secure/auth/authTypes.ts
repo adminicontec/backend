@@ -15,6 +15,7 @@ export interface UserFields {
   moodle_id: string
   show_profile_interaction?: boolean
   company?: Record<any, string> | null | undefined
+  admin_company?: boolean
 }
 
 export interface IGenerateTokenFromDestination {

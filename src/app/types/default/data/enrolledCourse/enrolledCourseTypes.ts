@@ -21,5 +21,7 @@ export interface IFetchCertifications {
 export interface IDownloadMasiveCertifications {
   user?: string // Identificador del usuario logueado
   certification_queue: Array<string>
+  downloadAll?: boolean
+  company?: string
 }
 //@end

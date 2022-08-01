@@ -237,6 +237,7 @@ class CourseSchedulingDataService {
     let where: object[] = []
 
     if (params.company) where.push({$match: {client: ObjectID(params.company)}})
+    if (params.contact) where.push({$match: {contact: ObjectID(params.contact)}})
     if (params.start_date) where.push({$match: {startDate: {$gte: new Date(params.start_date)}}})
     if (params.end_date) where.push({$match: {endDate: {$lte: new Date(params.end_date)}}})
 
