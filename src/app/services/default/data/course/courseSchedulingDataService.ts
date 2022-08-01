@@ -322,6 +322,7 @@ class CourseSchedulingDataService {
         if (register.endDate) register.endDate = moment.utc(register.endDate).format('YYYY-MM-DD')
         register.duration = (register.duration) ? generalUtility.getDurationFormated(register.duration) : '0h'
         register.participants = (participants[register._id.toString()]) ? participants[register._id.toString()].length : 0
+        register.satisfactionSurveyFormated = (register.satisfactionSurvey) ? `${Math.round(register.satisfactionSurvey)}%` : '-'
       }
     } catch (e) {}
 
