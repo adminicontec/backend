@@ -796,7 +796,12 @@ class CertificateService {
    *  SetCertificate: método para enviar request a Huella de Confianza para la creación de Certificado.-
    */
   public setCertificate = async (params: IQueryUserToCertificate) => {
-    console.log("→→→ Execution of setCertificate()");
+
+    if (params.certificateHash)
+      console.log(`→→→ Execution of putCertificate(): ${params.certificateHash}`);
+    else
+      console.log("→→→ Execution of setCertificate()");
+
 
     try {
       let logoDataArray: ILogoInformation[] = [];
@@ -984,6 +989,7 @@ class CertificateService {
         reviewAuditorCerficateRules = true;
       }
       //#endregion  Reglas para Certificado de Auditor
+
       //#region ↓↓↓↓↓↓↓ Reglas para cualquier tipo de formación
       let studentProgressList: any = await this.rulesForCompleteProgress(
         respCourse.scheduling.moodle_id,
@@ -1101,8 +1107,6 @@ class CertificateService {
         return responseUtility.buildResponseFailed('json')
       }
       //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
-
-      //#endregion
 
       //#region Build the certificate Parameters
       const currentDate = new Date(Date.now());
@@ -1274,12 +1278,20 @@ class CertificateService {
         console.log("[2]------------------------------------------");
       }
       // Request to Create Certificate(s)
-      let respProcessSetCertificates: any = await this.requestSetCertificate(certificateParamsArray);
+      let respProcessCertificate: any;
+
+      if (!params.certificateHash) {
+        respProcessCertificate = await this.requestSetCertificate(certificateParamsArray);
+      }
+      // Request to Update Certificate(s)
+      else {
+        respProcessCertificate = await this.requestPutCertificate(certificateParamsArray);
+      }
       //#endregion
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          respProcessSetCertificates
+          respProcessCertificate
         }
       });
 
@@ -1293,22 +1305,22 @@ class CertificateService {
   /**
   * PutCertificate: Método de HdC para solicitar actualización de Certificado existente
   */
-  public putCertificate = async (params: IQueryUserToCertificate) => {
-    console.log("→→→ Execution of putCertificate() " + params.userId);
-    try{
+  // public putCertificate = async (params: IQueryUserToCertificate) => {
+  //   console.log("→→→ Execution of putCertificate() " + params.userId);
+  //   try {
 
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
+  //     return responseUtility.buildResponseSuccess('json', null, {
+  //       additional_parameters: {
 
-        }
-      });
-    }
-    catch (e) {
-      console.log(e);
-      return responseUtility.buildResponseFailed('json')
-    }
-  }
+  //       }
+  //     });
+  //   }
+  //   catch (e) {
+  //     console.log(e);
+  //     return responseUtility.buildResponseFailed('json')
+  //   }
+  // }
 
   /*
   * RULES FOR RELEASE CERTIFTICATE
@@ -1642,7 +1654,6 @@ class CertificateService {
                 //flagQuiz = false;
                 continue;
               }
-              auditorActivitiesCounter++;
             }
             if (auditorActivitiesCounter < student.itemType.quiz.length)
               flagAuditorActivities = false;
@@ -1835,10 +1846,11 @@ class CertificateService {
       console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
       // Build request for Update Certificate
       let respHuella: any = await queryUtility.query({
-        method: 'post',
+        method: 'put',
         url: certificate_setup.endpoint.update_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
+        querystringParams: { id: certificateReq.certificateHash },
         params: JSON.stringify(certificateReq.paramsHuella)
       });
       console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -1915,14 +1927,13 @@ class CertificateService {
         headers: { Authorization: tokenHC },
         params: detailParams
       });
-      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
-      console.log(respHuella.estado);
-      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
-      if (respHuella.estado == 'Error' || respHuella.status === 'error') {
+
+      if (respHuella.estado === 'error') {
+        console.log(respHuella);
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: { key: 'certificate.generation' }
-          })
+          });
       }
 
       if (respHuella.resultado === "") {

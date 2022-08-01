@@ -124,19 +124,26 @@ class EnrollmentService {
           register.user.fullname = `${register.user.profile.first_name} ${register.user.profile.last_name}`
 
           if (filters.check_certification) {
-            const certificate = await CertificateQueue.findOne({
+            const certificates = await CertificateQueue.find({
               userId: register.user._id,
               courseId: register.course_scheduling,
               status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
-            })
-              .select('')
+            }); //.select('');
 
-            register.certificate = certificate
-            if (register?.certificate?.certificate?.pdfPath) {
-              register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath)
-            }
-            if (register?.certificate?.certificate?.imagePath) {
-              register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath)
+            register.certificate = [];
+
+            for (let certificate of certificates) {
+              //console.log("certificate Data:");
+              //console.log(certificate);
+
+              //register.certificates.push(certificate);
+              if (certificate.pdfPath) {
+                certificate.pdfPath = certificateService.certificateUrl(certificate.pdfPath)
+              }
+              if (certificate.imagePath) {
+                certificate.imagePath = certificateService.certificateUrl(certificate.imagePath)
+              }
+              register.certificate.push(certificate);
             }
           }
           count++
