@@ -61,10 +61,6 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         else {
           console.log("----------- END Process Set Certificate --------------------");
           console.log("Certificate generation successful!");
-          respSetCertificate.respProcessSetCertificates.forEach(element => {
-            console.log("..................");
-            console.log(element.certificateQueue);
-          });
         }
 
       }
@@ -97,7 +93,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         console.log(`Código: ${element.certificate.hash} `)
 
         // 1. Send request to process Certificate on HdC service.
-        let respPutCertificate: any = await certificateService.putCertificate({
+        let respPutCertificate: any = await certificateService.setCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,

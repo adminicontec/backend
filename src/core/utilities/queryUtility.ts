@@ -58,6 +58,7 @@ class QueryUtility {
         api    : this._main_external_api,
         url    : config.url,
         params : (config.params) ? config.params  : {},
+        querystringParams: (config.querystringParams) ? config.querystringParams  : {},
         headers: (config.headers) ? config.headers: {},
         req    : (config.req) ? config.req        : {},
         sendBy : (config.sendBy) ? config.sendBy  : null

@@ -49,7 +49,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         let queuePreview: ICertificatePreview;
         queuePreview = {
           certificate_queue: docPreview._id.toString(),
-          hash: docPreview.certificate.hash,
+          hash: docPreview.certificateConsecutive,
           format: 2,
           template: 1,
           updateCertificate: true,
