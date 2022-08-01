@@ -8,7 +8,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 // @end
 
 // @import types
-import {HttpStructure, OptionsRequestPromise} from "@scnode_core/types/default/query/httpTypes"
+import { HttpStructure, OptionsRequestPromise } from "@scnode_core/types/default/query/httpTypes"
 const https = require('https');
 // @end
 
@@ -36,7 +36,7 @@ class HttpClientUtility {
   public get = async (http_structure: HttpStructure) => {
 
     const options: OptionsRequestPromise = {
-      qs: (http_structure.hasOwnProperty("params") && typeof http_structure["params"] === "object") ? http_structure["params"]: {},   // Parametros que se envian al metodo destino
+      qs: (http_structure.hasOwnProperty("params") && typeof http_structure["params"] === "object") ? http_structure["params"] : {},   // Parametros que se envian al metodo destino
     };
 
     return this.sendHttpRequest(http_structure, options);
@@ -48,22 +48,46 @@ class HttpClientUtility {
    * @returns [json] Objeto en formato JSON
    */
   public post = async (http_structure: HttpStructure) => {
-    const params = (http_structure.hasOwnProperty("params") && (typeof http_structure["params"] === "object" || typeof http_structure["params"] === "string")) ? http_structure["params"]: {};   // Parametros que se envian al metodo destino
+    const params = (http_structure.hasOwnProperty("params") && (typeof http_structure["params"] === "object" || typeof http_structure["params"] === "string")) ? http_structure["params"] : {};   // Parametros que se envian al metodo destino
     let options: OptionsRequestPromise
-    if (http_structure.hasOwnProperty("sendBy") && http_structure.sendBy === 'body'){
+    if (http_structure.hasOwnProperty("sendBy") && http_structure.sendBy === 'body') {
       options = {
         method: 'POST',
-        body  : params
+        body: params
       };
-    }else{
+    } else {
       options = {
-          method: 'POST',
-          form  : params
+        method: 'POST',
+        form: params
       };
     }
     return this.sendHttpRequest(http_structure, options);
   }
 
+
+  /**
+ * Metodo que envia peticiones HTTP por el metodo PUT
+ * @param http_structure Configuracion del punto destino hacia el cual se va a generar la peticion
+ * @returns [json] Objeto en formato JSON
+ */
+  public put = async (http_structure: HttpStructure) => {
+    const body = (http_structure.hasOwnProperty("params") && (typeof http_structure["params"] === "object" || typeof http_structure["params"] === "string")) ? http_structure["params"] : {};   // Parametros por query string que se envian al metodo destino
+    let options: OptionsRequestPromise = {
+      qs: (http_structure.hasOwnProperty("querystringParams") && typeof http_structure["querystringParams"] === "object") ? http_structure["querystringParams"] : {},   // Parametros que se envian al metodo destino
+    };
+    if (http_structure.hasOwnProperty("sendBy") && http_structure.sendBy === 'body') {
+      options = {
+        method: 'PUT',
+        body: body
+      };
+    } else {
+      options = {
+        method: 'PUT',
+        form: body
+      };
+    }
+    return this.sendHttpRequest(http_structure, options);
+  }
   /**
    * Metodo que envia una peticion HTTP
    * @param http_structure Configuracion del punto destino hacia el cual se va a generar la peticion
@@ -73,13 +97,13 @@ class HttpClientUtility {
   private sendHttpRequest = async (http_structure: HttpStructure, options_method: OptionsRequestPromise) => {
 
     let http_structure_default: HttpStructure = {
-      api    : "",
-      url    : "",
-      params : {},
+      api: "",
+      url: "",
+      params: {},
       headers: {}
     };
 
-    Object.assign(http_structure_default,http_structure);
+    Object.assign(http_structure_default, http_structure);
 
     const validation: any = await this.validateHttpFields(http_structure_default);
     if (validation.status === "error") return validation;
@@ -87,17 +111,17 @@ class HttpClientUtility {
     const uri = `${http_structure_default.api}${http_structure_default.url}`;
 
     let options = {
-      uri    : uri,
-      json   : true,
+      uri: uri,
+      json: true,
       headers: {},
       httpsAgent: this.httpsAgent,
       strictSSL: false
     };
 
-    Object.assign(options,options_method);
+    Object.assign(options, options_method);
 
     if (http_structure.hasOwnProperty('headers') && typeof http_structure['headers'] === 'object') {
-      Object.assign(options.headers,http_structure['headers']);
+      Object.assign(options.headers, http_structure['headers']);
     }
 
     if (http_structure.hasOwnProperty('req') && typeof http_structure['req'] === 'object') {
@@ -111,12 +135,12 @@ class HttpClientUtility {
     }
 
     return rp(options)
-    .then((response) => {
-      return response;
-    })
-    .catch((err) => {
-      return this.processErrorResponse(err);
-    });
+      .then((response) => {
+        return response;
+      })
+      .catch((err) => {
+        return this.processErrorResponse(err);
+      });
   }
 
   /**
@@ -127,13 +151,13 @@ class HttpClientUtility {
   private validateHttpFields = async (http_structure: HttpStructure) => {
 
     const fields_config = [
-      {key: "api"}
+      { key: "api" }
     ];
 
-    const validation = await requestUtility.validator(http_structure,{},fields_config);
-    if (validation.hasError === true) return responseUtility.buildResponseFailed('json',null,{error_key: "fields_in_request.invalid_request_fields",additional_parameters: {fields_status: validation.fields_status}});
+    const validation = await requestUtility.validator(http_structure, {}, fields_config);
+    if (validation.hasError === true) return responseUtility.buildResponseFailed('json', null, { error_key: "fields_in_request.invalid_request_fields", additional_parameters: { fields_status: validation.fields_status } });
 
-    return responseUtility.buildResponseSuccess('json',null);
+    return responseUtility.buildResponseSuccess('json', null);
   }
 
   /**
@@ -147,14 +171,14 @@ class HttpClientUtility {
       if (typeof err.error === 'object') {
         const error = err.error;
         if (error.hasOwnProperty('status') && error.hasOwnProperty('status_code') && error.hasOwnProperty('code')) { // KET Response
-            return error;
+          return error;
         } else { // RequestPromise response
-            return responseUtility.buildResponseFailed('json',null);
+          return responseUtility.buildResponseFailed('json', null);
         }
       }
     }
 
-    return responseUtility.buildResponseFailed('json',null);
+    return responseUtility.buildResponseFailed('json', null);
   }
 }
 
