@@ -313,6 +313,10 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.String,
       enum: ['success', 'error']
     }
+  },
+  satisfactionSurvey: {
+    type: Schema.Types.Number,
+    default: 0,
   }
   // @end
 }, {
