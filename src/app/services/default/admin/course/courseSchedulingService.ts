@@ -371,6 +371,13 @@ class CourseSchedulingService {
           }
         }
 
+        if (response && response.schedulingStatus) {
+          if (['Confirmado', 'Cancelado'].includes(response.schedulingStatus.name)) {
+            console.log('---------------------------- entro aca ----------------------------')
+            visibleAtMoodle = 1;
+          }
+        }
+
         // @INFO Enviar email de entrega de materiales en físico
         await this.sendEmailMaterialDelivery(response, prevSchedulingStatus);
 
@@ -386,6 +393,8 @@ class CourseSchedulingService {
         var moodleCity = '';
         if (response.city) { moodleCity = response.city.name; }
         console.log("update Program on moodle:");
+
+        console.log('------------------- visibleAtMoodle -----------------------------', visibleAtMoodle)
 
         const moodleResponse: any = await moodleCourseService.update({
           "id": `${response.moodle_id}`,
