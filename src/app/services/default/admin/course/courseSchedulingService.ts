@@ -31,6 +31,7 @@ import { City, Company, Country, Course, CourseScheduling, CourseSchedulingDetai
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
+  IChangeSchedulingModular,
   ICourseScheduling,
   ICourseSchedulingDelete,
   ICourseSchedulingQuery,
@@ -2037,6 +2038,65 @@ class CourseSchedulingService {
       }})
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public changeSchedulingModular = async (params: IChangeSchedulingModular) => {
+    try {
+      if (!params.modularOrigin || !params.modularEnd) return responseUtility.buildResponseFailed('json', null, {message: 'Los parametros de modular son obligatorios'})
+      const output = params.output || 'json'
+      const courseSchedulingIds = params.courseSchedulings || []
+
+      const schedulingUpdated = []
+      const schedulingNotUpdated = []
+
+      const courseSchedulings = await CourseScheduling.find({
+        modular: params.modularOrigin
+      })
+      .select('id modular metadata.service_id')
+      .lean()
+
+      for (const courseScheduling of courseSchedulings) {
+        try {
+          if (courseSchedulingIds.length > 0) {
+            if (!courseSchedulingIds.includes(courseScheduling._id.toString())) {
+              schedulingNotUpdated.push({
+                key: courseScheduling._id,
+                message: `La programación no esta incluida en la lista permitida para actualizar`
+              })
+              continue;
+            }
+          }
+          if (output === 'db') {
+            const dataToUpdate = {
+              modular: params.modularEnd
+            }
+            await CourseScheduling.findByIdAndUpdate(courseScheduling._id, dataToUpdate, {
+              useFindAndModify: false,
+              new: true,
+              lean: true,
+            })
+          }
+          schedulingUpdated.push({
+            key: courseScheduling._id
+          })
+        } catch (err) {
+          schedulingNotUpdated.push({
+            key: courseScheduling._id,
+            message: err?.message
+          })
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        schedulingFound: courseSchedulings,
+        schedulingUpdated,
+        schedulingNotUpdated,
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
+        err
+      }})
     }
   }
 }
