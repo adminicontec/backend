@@ -20,6 +20,16 @@ const CertificateLogsSchema = new Schema({
   requestData: {
     type: Schema.Types.Mixed
   },
+  previewRequestData: {
+    type: Schema.Types.Mixed
+  },
+  reissueRequestData: {
+    type: Schema.Types.Mixed
+  },
+  process: {
+    type: Schema.Types.String,
+    enum: ['Set certificate', 'Preview certificate', 'Re-issue certificate', 'Complete']
+  },
 
   // @end
 }, {

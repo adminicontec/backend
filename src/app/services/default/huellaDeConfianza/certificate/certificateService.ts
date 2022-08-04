@@ -1782,7 +1782,8 @@ class CertificateService {
       let responseLog: any = await certificateLogsService.insertOrUpdate({
         serviceResponse: respHuella.estado,
         idCertificateQueue: registerId,
-        message: "",
+        message: '',
+        process: 'Set certificate',
         requestData: certificateReq.paramsHuella
       });
 
@@ -1864,7 +1865,8 @@ class CertificateService {
         serviceResponse: respHuella.estado,
         idCertificateQueue: registerId,
         message: "",
-        requestData: certificateReq.paramsHuella
+        process: 'Re-issue certificate',
+        reissueRequestData: certificateReq.paramsHuella
       });
 
       console.log("***************************");
@@ -1914,7 +1916,10 @@ class CertificateService {
 
       const tokenHC = respToken.token;
 
-      // Build request for GetAllTemplate
+      // get Log
+      let responseLog: any = await certificateLogsService.findBy({ query: QueryValues.ONE, where: [{ field: 'idCertificateQueue', value: params.certificate_queue }] });
+      console.log('certificateLogsService');
+      console.log(responseLog.certificateLogs._id);
 
       console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
       console.log('params:');
@@ -1930,22 +1935,32 @@ class CertificateService {
 
       if (respHuella.estado === 'error') {
         console.log(respHuella);
+
+        // record the error on Log
+        let response2Log: any = await certificateLogsService.insertOrUpdate({
+          id: responseLog.certificateLogs._id,
+          process: 'Preview certificate',
+          serviceResponse: respHuella.estado,
+          message: respHuella.resultado,
+          previewRequestData: detailParams
+        });
+
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: { key: 'certificate.generation' }
           });
       }
 
-      if (respHuella.resultado === "") {
-        console.log("Resp from Huella: ");
-        console.log(respHuella);
-        return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.preview' }
-          })
-      }
+      // if (respHuella.resultado === "") {
+      //   console.log("Resp from Huella: ");
+      //   console.log(respHuella);
+      //   return responseUtility.buildResponseFailed('json', null,
+      //     {
+      //       error_key: { key: 'certificate.preview' }
+      //     })
+      // }
 
-      console.log("update register on certificate queue:");
+      console.log("Update register on certificate queue:");
 
       if (params.updateCertificate && params.format) {
         let updateData = null
@@ -2005,7 +2020,17 @@ class CertificateService {
         }
       }
 
+      // record the error on Log
+      let responseUpdateLog: any = await certificateLogsService.insertOrUpdate({
+        id: responseLog.certificateLogs._id,
+        process: 'Complete',
+        serviceResponse: respHuella.estado,
+        message: respHuella.resultado,
+        previewRequestData: detailParams
+      });
+
       const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
+
 
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
