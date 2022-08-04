@@ -46,6 +46,9 @@ const QuestionSchema = new Schema({
     range: {
       type: Schema.Types.Number,
       default: 1
+    },
+    category: {
+      type: Schema.Types.String,
     }
   },
   answers: [ {

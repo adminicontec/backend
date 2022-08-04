@@ -34,6 +34,22 @@ class SurveyDataController {
    * @param res
    * @returns
    */
+   public consolidateReport = async (req: Request, res: Response) => {
+
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await surveyDataService.consolidateSurvey(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+   * Metodo que permite generar el reporte de encuestas
+   * @param req
+   * @param res
+   * @returns
+   */
    public generateReport = async (req: Request, res: Response) => {
 
     const user_id = req.user.sub

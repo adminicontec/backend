@@ -39,6 +39,8 @@ class CourseSchedulingRoute {
 		routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
+
+    routerUtility.post(app, _route, '/change-scheduling-modular', this.instanceController.changeSchedulingModular, [], ['auth'])
     // @end
   }
 }

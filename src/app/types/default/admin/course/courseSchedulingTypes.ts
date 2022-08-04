@@ -137,4 +137,11 @@ export interface IDuplicateService {
   user: string;
   itemsToDuplicate: ItemsToDuplicate[];
 }
+
+export interface IChangeSchedulingModular {
+  modularOrigin: string;
+  modularEnd: string;
+  output: 'json' | 'db'
+  courseSchedulings: string[]
+}
 //@end
