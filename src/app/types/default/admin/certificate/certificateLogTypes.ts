@@ -14,9 +14,12 @@ export interface ICertificateLogQuery {
 export interface ICertificateLog {
   id?: string,
   serviceResponse: string,
-  idCertificateQueue: string,
+  idCertificateQueue?: string,
+  process?: string,
   message?: string,
-  requestData?: any
+  requestData?: any,
+  previewRequestData?: any,
+  reissueRequestData?: any
 }
 
 export interface ICertificateDelete {
