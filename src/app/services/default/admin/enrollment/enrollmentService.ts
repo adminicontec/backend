@@ -132,18 +132,14 @@ class EnrollmentService {
 
             register.certificate = [];
 
-            for (let certificate of certificates) {
-              //console.log("certificate Data:");
-              //console.log(certificate);
-
-              //register.certificates.push(certificate);
-              if (certificate.pdfPath) {
-                certificate.pdfPath = certificateService.certificateUrl(certificate.pdfPath)
+            for (let itemCertificate of certificates) {
+              if (itemCertificate.certificate.pdfPath) {
+                itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
               }
-              if (certificate.imagePath) {
-                certificate.imagePath = certificateService.certificateUrl(certificate.imagePath)
+              if (itemCertificate.certificate.imagePath) {
+                itemCertificate.certificate.imagePath = certificateService.certificateUrl(itemCertificate.certificate.imagePath)
               }
-              register.certificate.push(certificate);
+              register.certificate.push(itemCertificate);
             }
           }
           count++
