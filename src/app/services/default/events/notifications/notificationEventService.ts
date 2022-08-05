@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import { customs } from '@scnode_core/config/globals'
 // @end
 
 // @import services
@@ -44,7 +45,8 @@ class NotificationEventService {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         program_name: courseScheduling?.program?.name || '-',
         amount_notifications: 1,
-        notification_source: `participant_certificated_${user._id}_${courseScheduling._id}`
+        notification_source: `participant_certificated_${user._id}_${courseScheduling._id}`,
+        mailer: customs['mailer'],
       }
 
       const mail = await mailService.sendMail({
@@ -79,7 +81,8 @@ class NotificationEventService {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         participants: params?.participants || '-',
         amount_notifications: 1,
-        notification_source: `participant_certificated_${user._id}_${params.participants[0].courseSchedulingId}`
+        notification_source: `participant_certificated_${user._id}_${params.participants[0].courseSchedulingId}`,
+        mailer: customs['mailer'],
       }
 
       const mail = await mailService.sendMail({
