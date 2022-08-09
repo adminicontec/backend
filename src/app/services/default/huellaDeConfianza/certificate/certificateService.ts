@@ -2025,7 +2025,7 @@ class CertificateService {
         id: responseLog.certificateLogs._id,
         process: 'Complete',
         serviceResponse: respHuella.estado,
-        message: respHuella.resultado,
+        message: 'Complete',
         previewRequestData: detailParams
       });
 
