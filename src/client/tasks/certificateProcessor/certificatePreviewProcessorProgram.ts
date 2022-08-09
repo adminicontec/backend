@@ -17,7 +17,8 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
-import { IParticipantData } from '@scnode_app/types/default/events/notifications/notificationTypes'
+import { IParticipantData, IParticipantDataByCertificateType } from '@scnode_app/types/default/events/notifications/notificationTypes'
+
 // @end
 
 class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
@@ -82,7 +83,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
             participantId: docProcessed.userId._id,
             courseSchedulingId: docProcessed.courseId
           });
-          console.log(notificationResponse);
+          //console.log(notificationResponse);
         }
         //#endregion Student Notifications
 
@@ -96,32 +97,86 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         }, {});
 
         for (const key of Object.keys(groupByAssistant)) {
+          let serviceId;
 
           for (const value of Object.values(groupByAssistant[key])) {
+
+            console.log('certificateData_ ');
+            console.log(value);
+
             let certificateData: any = value;
             // Object.values(groupByAssistant[key]).forEach((value: any) => {
-            const courseScheduling: any = await CourseScheduling.findOne({ _id: certificateData.courseId }).select('id program')
+            const courseScheduling: any = await CourseScheduling.findOne({ _id: certificateData.courseId }).select('id program metadata')
               .populate({ path: 'program', select: 'id name code' })
-
+            console.log(`courseScheduling`);
+            console.log(courseScheduling);
+            console.log(`..................`);
             if (!courseScheduling) {
               console.log(`Error trying to find course: ${certificateData.courseId}`)
               continue;
             };
+            serviceId = courseScheduling.metadata.service_id;
 
             listOfParticipants.push({
               participantId: certificateData.userId._id,
               participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
               courseSchedulingId: certificateData.courseId,
               courseSchedulingName: certificateData.message, /// courseScheduling.program.name,
-              certificateType: certificateData.certificateType
+              certificateType: certificateData.certificateType,
+              document: certificateData.userId.profile.doc_number,
+              regional: certificateData.userId.profile.regional
             });
           }
+
+          // sort by CertificateType
+          listOfParticipants.sort((a, b) => a.certificateType.localeCompare(b.certificateType));
+
+          let groupByCertificateType: any = listOfParticipants.reduce(function (r, a) {
+            r[a.certificateType] = r[a.certificateType] || [];
+            r[a.certificateType].push(a);
+            return r;
+          }, {});
+
+          // console.log('**************************');
+          console.log(`groupByCertificateType`);
+          // console.log('**************************');
+
+          let listOfParticpantsByCertificateType: IParticipantDataByCertificateType[] = [];
+
+          for (const key of Object.keys(groupByCertificateType)) {
+            let certData: IParticipantData[] = [];
+
+            console.log(`${key}`);
+
+            for (const value of Object.values(groupByCertificateType[key])) {
+               let v : any = value;
+
+              console.table(`${value}`);
+              certData.push({
+                participantId: v.participantId,
+                participantFullName: v.participantFullName,
+                courseSchedulingName: v.courseSchedulingName,
+                courseSchedulingId: v.courseSchedulingId,
+                //certificateType: v.certificateType,
+                document: v.document,
+                regional: v.regional
+              });
+
+            }
+
+            listOfParticpantsByCertificateType.push({
+              certificateType: (key == 'academic') ? 'Certificado de Asistencia' : 'Certificado de Auditor',
+              participants: certData
+            });
+          }
+
           console.log('::::::::::::::::::::::::::::::::::::::::::::::');
           console.log(`Sending notification to Operative Assistant: ${key}`);
           console.log('::::::::::::::::::::::::::::::::::::::::::::::');
           const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar({
             auxiliarId: key,
-            participants: listOfParticipants
+            participants: listOfParticpantsByCertificateType,
+            serviceId: serviceId
           });
           console.log(notificationResponseAuxiliar.status);
         }

@@ -80,15 +80,15 @@ class NotificationEventService {
       const paramsTemplate = {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         participants: params?.participants || '-',
-        amount_notifications: 1,
-        notification_source: `participant_certificated_${user._id}_${params.participants[0].courseSchedulingId}`,
+        amount_notifications: 10,
+        notification_source: `participant_certificated_${params.serviceId}_${user._id}`,
         mailer: customs['mailer'],
       }
 
       const mail = await mailService.sendMail({
         emails: [user.email],
         mailOptions: {
-          subject: i18nUtility.__('mailer.participant_certificated_completed_notification.subject'),
+          subject: `${i18nUtility.__('mailer.participant_certificated_completed_notification.subject')}${params.serviceId}`,
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
