@@ -132,8 +132,8 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
           listOfParticipants.sort((a, b) => a.certificateType.localeCompare(b.certificateType));
 
           let groupByCertificateType: any = listOfParticipants.reduce(function (r, a) {
-            r[a.certificateType] = r[a.certificateType] || [];
-            r[a.certificateType].push(a);
+            r[a.courseSchedulingName] = r[a.courseSchedulingName] || [];
+            r[a.courseSchedulingName].push(a);
             return r;
           }, {});
 
@@ -165,7 +165,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
             }
 
             listOfParticpantsByCertificateType.push({
-              certificateType: (key == 'academic') ? 'Certificado de Asistencia' : 'Certificado de Auditor',
+              certificateName: key,
               participants: certData
             });
           }
