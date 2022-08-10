@@ -15,7 +15,7 @@ export interface IParticipantData {
 }
 
 export interface IParticipantDataByCertificateType {
-  certificateType: string,
+  certificateName: string,
   participants: IParticipantData[]
 }
 
