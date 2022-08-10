@@ -491,7 +491,7 @@
   },
   "mailer": {
     "participant_certificated_completed_notification": {
-      "subject": "Emisión de Certificados completa"
+      "subject": "Emisión de Certificados completa - Servicio "
     },
     "participant_certificated_notification": {
       "subject": "Notificación para Descarga de Certificado"
