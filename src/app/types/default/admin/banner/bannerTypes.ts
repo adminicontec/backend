@@ -12,6 +12,7 @@ export interface IBanner {
   start_date?: Date // Fecha de inicio
   end_date?: Date // Fecha de fin
   location?: 'students'
+  locations?: string[] | string
 }
 
 export interface IBannerDelete {
