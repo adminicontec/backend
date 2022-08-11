@@ -19,6 +19,7 @@ import { CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, User
 
 // @import types
 import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/reportsFactoryTypes';
+import { generalUtility } from "@scnode_core/utilities/generalUtility";
 // @end
 
 export interface IReportByProvisionOfProfessionals {
@@ -149,7 +150,7 @@ class ReportByProvisionOfProfessionalsService {
       const time = new Date().getTime()
       // @INFO: Se define el formato del reporte, xlsx por defecto
       const output_format: any = params.output_format ? params.output_format : 'xlsx'
-      const title: any = params.title ? `${params.title}_${time}` : `reporte_general_programas_${time}`
+      const title: any = params.title ? `${params.title}_${time}` : `reporte_general_provisiones_${time}`
 
       const report: IReportByProvisionOfProfessionals = {
         title,
@@ -198,36 +199,58 @@ class ReportByProvisionOfProfessionalsService {
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
           const courses = courseSchedulingDetails[courseScheduling._id.toString()]
           for (const course of courses) {
-            const itemCourseBase: IReportPage = JSON.parse(JSON.stringify(itemBase));
-            itemCourseBase.courseCode = course?.course?.code || '-';
-            itemCourseBase.courseName = course?.course?.name || '-';
-            itemCourseBase.hoursPerMonth = '-'; // TODO: Ver de donde sale esta valor
-            itemCourseBase.startDate = course?.startDate ? moment.utc(course.startDate).format('DD/MM/YYYY') : '-';
-            itemCourseBase.endDate = course?.endDate ? moment.utc(course.endDate).format('DD/MM/YYYY') : '-';
-            itemCourseBase.month = (course.startDate) ? moment.utc(course.startDate).format('MM') : '-';
-            itemCourseBase.year = (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '-';
+            if (course?.sessions && Array.isArray(course.sessions) && course.sessions.length > 0) {
+              const sessionsByMonth = course.sessions.reduce((accum, element) => {
+                if (element?.startDate) {
+                  const month = moment.utc(element.startDate).format('MM')
+                  const year = moment.utc(element.startDate).format('YYYY')
+                  if (!accum[month]) {
+                    accum[month] = {
+                      duration: 0,
+                      year: year
+                    }
+                  }
+                  accum[month].duration += element.duration
+                }
+                return accum;
+              }, {})
+              for (const month in sessionsByMonth) {
+                if (Object.prototype.hasOwnProperty.call(sessionsByMonth, month)) {
+                  const data = sessionsByMonth[month];
 
-            let teacherType = '-';
-            if (course?.teacher?.profile?.contractType) {
-              if (course?.teacher?.profile?.contractType?.isTeacher === true) {
-                teacherType = 'Docente'
-              } else if (course?.teacher?.profile?.contractType?.isTutor === true) {
-                teacherType = 'Tutor'
+                  const itemCourseBase: IReportPage = JSON.parse(JSON.stringify(itemBase));
+                  itemCourseBase.courseCode = course?.course?.code || '-';
+                  itemCourseBase.courseName = course?.course?.name || '-';
+                  itemCourseBase.hoursPerMonth = generalUtility.getHoursFromDuration(data.duration, null);
+                  itemCourseBase.startDate = course?.startDate ? moment.utc(course.startDate).format('DD/MM/YYYY') : '-';
+                  itemCourseBase.endDate = course?.endDate ? moment.utc(course.endDate).format('DD/MM/YYYY') : '-';
+                  itemCourseBase.month = month;
+                  itemCourseBase.year = data.year
+
+                  let teacherType = '-';
+                  if (course?.teacher?.profile?.contractType) {
+                    if (course?.teacher?.profile?.contractType?.isTeacher === true) {
+                      teacherType = 'Docente'
+                    } else if (course?.teacher?.profile?.contractType?.isTutor === true) {
+                      teacherType = 'Tutor'
+                    }
+                  }
+
+                  itemCourseBase.teacher = {
+                    docNumber: course?.teacher?.profile?.doc_number || '-',
+                    fullname: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
+                    teacherType: teacherType,
+                    scale: course?.teacher?.profile?.contractType?.type || '-',
+                  }
+
+                  reportDataPerPage.data.push(itemCourseBase)
+                }
               }
             }
-
-            itemCourseBase.teacher = {
-              docNumber: course?.teacher?.profile?.doc_number || '-',
-              fullname: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
-              teacherType: teacherType,
-              scale: course?.teacher?.profile?.contractType?.type || '-',
-            }
-
-            reportDataPerPage.data.push(itemCourseBase)
           }
         }
 
-        reportDataPerPage.data.push(itemBase)
+
       }
 
       report.pages.push(reportDataPerPage)
