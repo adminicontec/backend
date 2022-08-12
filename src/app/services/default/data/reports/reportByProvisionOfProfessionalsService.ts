@@ -97,7 +97,7 @@ class ReportByProvisionOfProfessionalsService {
         schedulingStatus: {$in: [
           courseSchedulingStatusInfo['Confirmado']._id,
           courseSchedulingStatusInfo['Ejecutado']._id,
-          courseSchedulingStatusInfo['Cancelado']._id,
+          // courseSchedulingStatusInfo['Cancelado']._id,
         ]}
       }
 
