@@ -20,11 +20,20 @@ const BannerSchema = new Schema({
     type: Schema.Types.Boolean,
     default: true,
   },
-  location: {
-    type: Schema.Types.String,
-    enum: ['students', null],
-  },
+  // location: {
+  //   type: Schema.Types.String,
+  //   enum: ['students', null],
+  // },
+  locations: [
+    {
+      type: Schema.Types.String,
+      enum: ['student_landing','guest']
+    }
+  ],
   action: {
+    type: Schema.Types.String,
+  },
+  registerUrl: {
     type: Schema.Types.String,
   },
   start_date: {

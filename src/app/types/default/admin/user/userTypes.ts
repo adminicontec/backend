@@ -110,4 +110,11 @@ export interface IUserDateTimezone {
   date?: string // Fecha a convertir
   user?: any | string // Objeto de clase User o Identificador de User
 }
+
+export interface SendRegisterUserEmailParams{
+  emails: Array<string>
+  paramsTemplate: any
+  resend?: boolean
+  isCompanyUser?: boolean
+}
 //@end

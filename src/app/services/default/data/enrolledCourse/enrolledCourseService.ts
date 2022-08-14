@@ -355,6 +355,7 @@ class EnrolledCourseService {
       return result
 
     } catch (e) {
+      console.log('EnrolledCourseService => downloadMasiveCertifications catch error: ', e);
       return responseUtility.buildResponseFailed('json')
     }
   }

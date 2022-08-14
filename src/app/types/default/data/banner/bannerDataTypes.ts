@@ -14,5 +14,7 @@ export interface IFetchBanners {
     direction: string
   },
   location?: 'students'
+  locationsGrouped?: boolean
+  locations?: string[]
 }
 //@end

@@ -30,6 +30,7 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IUser, IUserDelete, IUserQuery, IUserDateTimezone } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
+import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
 // @end
 class UserService {
@@ -289,16 +290,19 @@ class UserService {
           // @INFO: Se envia email de bienvenida
           if (params.sendEmail === true && sendWelcomEmail === true) {
             console.log("Sending email to " + paramsMoodleUser.email)
-            await this.sendRegisterUserEmail([paramsMoodleUser.email], {
-              mailer: customs['mailer'],
-              fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
-              first_name: paramsMoodleUser.firstname,
-              last_name: paramsMoodleUser.lastname,
-              username: paramsMoodleUser.username,
-              password: paramsMoodleUser.password,
-              notification_source: `user_register_${response._id}`,
-              amount_notifications: 1,
-              sendWelcomEmail
+            await this.sendRegisterUserEmail({
+              emails: [paramsMoodleUser.email],
+              paramsTemplate: {
+                mailer: customs['mailer'],
+                fullname: `${paramsMoodleUser.firstname} ${paramsMoodleUser.lastname}`,
+                first_name: paramsMoodleUser.firstname,
+                last_name: paramsMoodleUser.lastname,
+                username: paramsMoodleUser.username,
+                password: paramsMoodleUser.password,
+                notification_source: `user_register_${response._id}`,
+                amount_notifications: 1,
+                sendWelcomEmail
+              }
             })
           }
 
@@ -423,18 +427,24 @@ class UserService {
             }
           }
 
+          const isCompanyUser = response?.roles?.find((role) => role.name === 'company_collaborator') ? true : false
+
           // @INFO: Se envia email de bienvenida
           if (params.sendEmail === true) {
-            await this.sendRegisterUserEmail([response.email], {
-              mailer: customs['mailer'],
-              fullname: `${response.profile.first_name} ${response.profile.last_name}`,
-              first_name: response.profile.first_name,
-              last_name: response.profile.last_name,
-              username: response.username,
-              password: params.password,
-              notification_source: `user_register_${response._id}`,
-              amount_notifications: 1
-            })
+            await this.sendRegisterUserEmail({
+                emails: [response.email],
+                paramsTemplate: {
+                  mailer: customs['mailer'],
+                  fullname: `${response.profile.first_name} ${response.profile.last_name}`,
+                  first_name: response.profile.first_name,
+                  last_name: response.profile.last_name,
+                  username: response.username,
+                  password: params.password,
+                  notification_source: `user_register_${response._id}`,
+                  amount_notifications: 1
+                },
+                isCompanyUser
+              })
           }
 
           return responseUtility.buildResponseSuccess('json', null, {
@@ -461,7 +471,7 @@ class UserService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-  private sendRegisterUserEmail = async (emails: Array<string>, paramsTemplate: any, resend = false) => {
+  private sendRegisterUserEmail = async ({emails, paramsTemplate, resend = false, isCompanyUser = false}: SendRegisterUserEmailParams) => {
 
     try {
 
@@ -471,10 +481,16 @@ class UserService {
           subject: i18nUtility.__('mailer.welcome_user.subject'),
           html_template: {
             path_layout: 'icontec',
-            path_template: 'user/welcomeUser',
+            path_template: isCompanyUser ? 'user/welcomeContactCompany' : 'user/welcomeUser',
             params: { ...paramsTemplate }
           },
-          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null,
+          attachments: isCompanyUser ? [
+            {
+              filename: 'Instructivo Consulta y Descarga de Certificaciones.pptx',
+              path: customs['mailer'].company_help_instructive
+            }
+          ]: []
         },
         notification_source: paramsTemplate.notification_source,
         resend_notification: resend
