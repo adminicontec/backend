@@ -54,6 +54,8 @@ class CertificateService {
   private selectActivitiesTest = ['attendance', 'assign', 'quiz', 'course', 'forum'];
   private default_logo_path = 'certificate/icons';
   private default_signature_path = 'certificate/signatures';
+  private left_parentheses = '&#40;';
+  private right_parentheses = '&#41;';
   /*===============================================
   =            Estructura de un metodo            =
   ================================================
@@ -1019,7 +1021,6 @@ class CertificateService {
           isComplete = true;
           mapping_dato_1 = progressData.attended_approved;
           mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-
           console.log(mapping_titulo_certificado);
 
           if (respCourseDetails.schedulings) {
@@ -1134,7 +1135,7 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.full_name.toUpperCase(),
         asistio: null,
-        certificado: mapping_titulo_certificado.toUpperCase(), //(respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+        certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
         certificado_ingles: '', // respCourse.scheduling.english_certificate,
         alcance: '', //respCourse.scheduling.scope,
         alcance_ingles: '', //respCourse.scheduling.scope,
@@ -1219,7 +1220,7 @@ class CertificateService {
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
           asistio: null,
-          certificado: respCourse.scheduling.auditor_certificate.toUpperCase(),
+          certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
           certificado_ingles: '',
           alcance: '',
           alcance_ingles: '',
@@ -1921,10 +1922,10 @@ class CertificateService {
       console.log('certificateLogsService');
       console.log(responseLog.certificateLogs._id);
 
-      console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
-      console.log('params:');
-      console.log(detailParams);
-      console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
+      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
+      // console.log('params:');
+      // console.log(detailParams);
+      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
       const respHuella: any = await queryUtility.query({
         method: 'get',
         url: certificate_setup.endpoint.certificate_detail,
