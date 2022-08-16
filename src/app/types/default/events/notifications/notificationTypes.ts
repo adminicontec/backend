@@ -5,6 +5,7 @@ export interface ISendNotificationParticipantCertificated {
 
 
 export interface IParticipantData {
+  serviceId?: string,
   participantId: string,
   participantFullName: string,
   courseSchedulingName: string,
