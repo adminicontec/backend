@@ -1401,8 +1401,8 @@ class CertificateService {
           /* Todas las asistencia debe estar igual o por encima de 75%.
             Si alguna no cumple esta regla, no se emite Condición por Asistencia
           */
-          let flagAssistance = true;
-          let flagAssistanceCount = 0;
+          let flagAttendance = true;
+          let flagAttendanceCount = 0;
           let flagQuiz = true;
           let flagQuizCount = 0;
 
@@ -1414,7 +1414,7 @@ class CertificateService {
               // console.log("\t\t" + grade.graderaw);
 
               if (grade.graderaw < 75) {
-                flagAssistance = false;
+                flagAttendance = false;
                 continue;
               }
               // search the Module name by ItemInstance in respListOfActivitiesInModules
@@ -1427,21 +1427,21 @@ class CertificateService {
 
               if (itemModule && durationModule) {
                 studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
-                flagAssistanceCount++;
+                flagAttendanceCount++;
               }
             }
             else {
-              flagAssistance = false;
+              flagAttendance = false;
               // console.log("Grade: " + grade.name);
               // console.log("\t\t--");
               // console.log("\t\t--");
             }
           }
-          if (flagAssistanceCount == 0) {
-            flagAssistance = false;
+          if (flagAttendanceCount == 0) {
+            flagAttendance = false;
           }
 
-          //#endregion  :::::::::::: Assistance ::::::::::::
+          //#endregion  :::::::::::: Attendance ::::::::::::
 
           //#region :::::::::::: Quiz ::::::::::::
           /* Todas los exámenes debe estar igual o por encima de 70%.
@@ -1463,8 +1463,8 @@ class CertificateService {
           //#endregion :::::::::::: Quiz ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
-          //console.log("Total attendance: " + flagAssistance);
-          if (flagAssistance) {
+          //console.log("Total attendance: " + flagAttendance);
+          if (flagAttendance) {
             if (flagQuiz && (programTypeName !== 'diplomado')) {
               programTypeText = (programTypeName) ? ' el ' : '.';
 
@@ -1486,7 +1486,7 @@ class CertificateService {
             studentProgress.status = 'ok';
           }
           else {
-            if (flagAssistanceCount > 0) {
+            if (flagAttendanceCount > 0) {
               studentProgress.attended_approved = 'Certificado parcial.';
               studentProgress.status = 'partial';
             }
@@ -1495,7 +1495,7 @@ class CertificateService {
               studentProgress.status = 'no';
             }
           }
-          studentProgress.assistance = `${flagAssistanceCount}/${student.itemType.attendance.length}`;
+          studentProgress.assistance = `${flagAttendanceCount}/${student.itemType.attendance.length}`;
           studentProgress.quizGrade = (student.itemType.quiz.length != 0) ? `${flagQuizCount}/${student.itemType.quiz.length}` : '-';
 
           // console.log(`\t» Attendance:        ${studentProgress.assistance}`);
@@ -1542,24 +1542,16 @@ class CertificateService {
           //#endregion :::::::::::: Completion percentage ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
-          if (studentProgress.completion == 100) {
-            if (studentProgress.average_grade >= 70 && (programTypeName !== 'diplomado')) {
-              programTypeText = (programTypeName) ? ' el ' : '.';
 
-              if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
-              else
-                studentProgress.attended_approved = 'Asistencia y aprobación.'
-            }
-            else {
-              programTypeText = (programTypeName) ? ' al ' : '.';
-              if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió al '; //+ programTypeText;
-              else
-                studentProgress.attended_approved = 'Asistencia.'
+          //if (programTypeName === 'diplomado' || programTypeName === 'curso')
+          // Aplica para Diplomado - Curso o Programa
+          if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+            programTypeText = (programTypeName) ? ' al ' : '.';
+            if (isForCertificate)
+              studentProgress.attended_approved = 'Asistió al ';
+            else
+              studentProgress.attended_approved = 'Asistencia.'
 
-            }
-            //studentProgress.auditor = isAuditorCerficateEnabled;
             studentProgress.status = 'ok';
           }
           else {
@@ -1567,12 +1559,13 @@ class CertificateService {
             studentProgress.status = 'no';
           }
 
-          // console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
-          // console.log(`\t» Completion:          ${studentProgress.completion}%`);
-          // console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
-          // console.log(`\t» Examn Certificate:   `);
-          // console.log(`\t» Second Certificate:  `);
-          // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
+
+          console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
+          console.log(`\t» Completion:          ${studentProgress.completion}%`);
+          console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
+          console.log(`\t» Examn Certificate:   `);
+          console.log(`\t» Second Certificate:  `);
+          console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
 
           //#endregion :::::::::::: Certification resolution ::::::::::::
         }
