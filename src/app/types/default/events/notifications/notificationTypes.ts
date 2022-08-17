@@ -5,14 +5,23 @@ export interface ISendNotificationParticipantCertificated {
 
 
 export interface IParticipantData {
+  serviceId?: string,
   participantId: string,
   participantFullName: string,
   courseSchedulingName: string,
   courseSchedulingId: string,
-  certificateType: string
+  certificateType?: string,
+  document: string,
+  regional: string
+}
+
+export interface IParticipantDataByCertificateType {
+  certificateName: string,
+  participants: IParticipantData[]
 }
 
 export interface ISendNotificationAssistantCertificateGeneration {
-  auxiliarId: string
-  participants: IParticipantData[]
+  auxiliarId: string,
+  participants: IParticipantDataByCertificateType[],
+  serviceId: string
 }

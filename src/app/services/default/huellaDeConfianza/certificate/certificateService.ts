@@ -54,6 +54,8 @@ class CertificateService {
   private selectActivitiesTest = ['attendance', 'assign', 'quiz', 'course', 'forum'];
   private default_logo_path = 'certificate/icons';
   private default_signature_path = 'certificate/signatures';
+  private left_parentheses = '&#40;';
+  private right_parentheses = '&#41;';
   /*===============================================
   =            Estructura de un metodo            =
   ================================================
@@ -795,9 +797,13 @@ class CertificateService {
   /**
    *  SetCertificate: método para enviar request a Huella de Confianza para la creación de Certificado.-
    */
-
   public setCertificate = async (params: IQueryUserToCertificate) => {
-    console.log("→→→ Execution of setCertificate()");
+
+    if (params.certificateHash)
+      console.log(`→→→ Execution of putCertificate(): ${params.certificateHash}`);
+    else
+      console.log("→→→ Execution of setCertificate()");
+
 
     try {
       let logoDataArray: ILogoInformation[] = [];
@@ -985,6 +991,7 @@ class CertificateService {
         reviewAuditorCerficateRules = true;
       }
       //#endregion  Reglas para Certificado de Auditor
+
       //#region ↓↓↓↓↓↓↓ Reglas para cualquier tipo de formación
       let studentProgressList: any = await this.rulesForCompleteProgress(
         respCourse.scheduling.moodle_id,
@@ -1014,7 +1021,6 @@ class CertificateService {
           isComplete = true;
           mapping_dato_1 = progressData.attended_approved;
           mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-
           console.log(mapping_titulo_certificado);
 
           if (respCourseDetails.schedulings) {
@@ -1103,9 +1109,6 @@ class CertificateService {
       }
       //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
 
-
-      //#endregion
-
       //#region Build the certificate Parameters
       const currentDate = new Date(Date.now());
       let certificateParamsArray: ISetCertificateParams[] = [];
@@ -1132,7 +1135,7 @@ class CertificateService {
         documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
         nombre: respDataUser.user.profile.full_name.toUpperCase(),
         asistio: null,
-        certificado: mapping_titulo_certificado.toUpperCase(), //(respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+        certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
         certificado_ingles: '', // respCourse.scheduling.english_certificate,
         alcance: '', //respCourse.scheduling.scope,
         alcance_ingles: '', //respCourse.scheduling.scope,
@@ -1217,7 +1220,7 @@ class CertificateService {
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
           asistio: null,
-          certificado: respCourse.scheduling.auditor_certificate.toUpperCase(),
+          certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
           certificado_ingles: '',
           alcance: '',
           alcance_ingles: '',
@@ -1276,12 +1279,20 @@ class CertificateService {
         console.log("[2]------------------------------------------");
       }
       // Request to Create Certificate(s)
-      let respProcessSetCertificates: any = await this.requestSetCertificate(certificateParamsArray);
+      let respProcessCertificate: any;
+
+      if (!params.certificateHash) {
+        respProcessCertificate = await this.requestSetCertificate(certificateParamsArray);
+      }
+      // Request to Update Certificate(s)
+      else {
+        respProcessCertificate = await this.requestPutCertificate(certificateParamsArray);
+      }
       //#endregion
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          respProcessSetCertificates
+          respProcessCertificate
         }
       });
 
@@ -1291,6 +1302,26 @@ class CertificateService {
       return responseUtility.buildResponseFailed('json')
     }
   }
+
+  /**
+  * PutCertificate: Método de HdC para solicitar actualización de Certificado existente
+  */
+  // public putCertificate = async (params: IQueryUserToCertificate) => {
+  //   console.log("→→→ Execution of putCertificate() " + params.userId);
+  //   try {
+
+
+  //     return responseUtility.buildResponseSuccess('json', null, {
+  //       additional_parameters: {
+
+  //       }
+  //     });
+  //   }
+  //   catch (e) {
+  //     console.log(e);
+  //     return responseUtility.buildResponseFailed('json')
+  //   }
+  // }
 
   /*
   * RULES FOR RELEASE CERTIFTICATE
@@ -1370,8 +1401,8 @@ class CertificateService {
           /* Todas las asistencia debe estar igual o por encima de 75%.
             Si alguna no cumple esta regla, no se emite Condición por Asistencia
           */
-          let flagAssistance = true;
-          let flagAssistanceCount = 0;
+          let flagAttendance = true;
+          let flagAttendanceCount = 0;
           let flagQuiz = true;
           let flagQuizCount = 0;
 
@@ -1383,7 +1414,7 @@ class CertificateService {
               // console.log("\t\t" + grade.graderaw);
 
               if (grade.graderaw < 75) {
-                flagAssistance = false;
+                flagAttendance = false;
                 continue;
               }
               // search the Module name by ItemInstance in respListOfActivitiesInModules
@@ -1396,21 +1427,21 @@ class CertificateService {
 
               if (itemModule && durationModule) {
                 studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
-                flagAssistanceCount++;
+                flagAttendanceCount++;
               }
             }
             else {
-              flagAssistance = false;
+              flagAttendance = false;
               // console.log("Grade: " + grade.name);
               // console.log("\t\t--");
               // console.log("\t\t--");
             }
           }
-          if (flagAssistanceCount == 0) {
-            flagAssistance = false;
+          if (flagAttendanceCount == 0) {
+            flagAttendance = false;
           }
 
-          //#endregion  :::::::::::: Assistance ::::::::::::
+          //#endregion  :::::::::::: Attendance ::::::::::::
 
           //#region :::::::::::: Quiz ::::::::::::
           /* Todas los exámenes debe estar igual o por encima de 70%.
@@ -1432,8 +1463,8 @@ class CertificateService {
           //#endregion :::::::::::: Quiz ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
-          //console.log("Total attendance: " + flagAssistance);
-          if (flagAssistance) {
+          //console.log("Total attendance: " + flagAttendance);
+          if (flagAttendance) {
             if (flagQuiz && (programTypeName !== 'diplomado')) {
               programTypeText = (programTypeName) ? ' el ' : '.';
 
@@ -1455,7 +1486,7 @@ class CertificateService {
             studentProgress.status = 'ok';
           }
           else {
-            if (flagAssistanceCount > 0) {
+            if (flagAttendanceCount > 0) {
               studentProgress.attended_approved = 'Certificado parcial.';
               studentProgress.status = 'partial';
             }
@@ -1464,7 +1495,7 @@ class CertificateService {
               studentProgress.status = 'no';
             }
           }
-          studentProgress.assistance = `${flagAssistanceCount}/${student.itemType.attendance.length}`;
+          studentProgress.assistance = `${flagAttendanceCount}/${student.itemType.attendance.length}`;
           studentProgress.quizGrade = (student.itemType.quiz.length != 0) ? `${flagQuizCount}/${student.itemType.quiz.length}` : '-';
 
           // console.log(`\t» Attendance:        ${studentProgress.assistance}`);
@@ -1511,24 +1542,16 @@ class CertificateService {
           //#endregion :::::::::::: Completion percentage ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
-          if (studentProgress.completion == 100) {
-            if (studentProgress.average_grade >= 70 && (programTypeName !== 'diplomado')) {
-              programTypeText = (programTypeName) ? ' el ' : '.';
 
-              if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
-              else
-                studentProgress.attended_approved = 'Asistencia y aprobación.'
-            }
-            else {
-              programTypeText = (programTypeName) ? ' al ' : '.';
-              if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió al '; //+ programTypeText;
-              else
-                studentProgress.attended_approved = 'Asistencia.'
+          //if (programTypeName === 'diplomado' || programTypeName === 'curso')
+          // Aplica para Diplomado - Curso o Programa
+          if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+            programTypeText = (programTypeName) ? ' al ' : '.';
+            if (isForCertificate)
+              studentProgress.attended_approved = 'Asistió al ';
+            else
+              studentProgress.attended_approved = 'Asistencia.'
 
-            }
-            //studentProgress.auditor = isAuditorCerficateEnabled;
             studentProgress.status = 'ok';
           }
           else {
@@ -1536,12 +1559,13 @@ class CertificateService {
             studentProgress.status = 'no';
           }
 
-          // console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
-          // console.log(`\t» Completion:          ${studentProgress.completion}%`);
-          // console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
-          // console.log(`\t» Examn Certificate:   `);
-          // console.log(`\t» Second Certificate:  `);
-          // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
+
+          console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
+          console.log(`\t» Completion:          ${studentProgress.completion}%`);
+          console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
+          console.log(`\t» Examn Certificate:   `);
+          console.log(`\t» Second Certificate:  `);
+          console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
 
           //#endregion :::::::::::: Certification resolution ::::::::::::
         }
@@ -1624,7 +1648,6 @@ class CertificateService {
                 //flagQuiz = false;
                 continue;
               }
-              auditorActivitiesCounter++;
             }
             if (auditorActivitiesCounter < student.itemType.quiz.length)
               flagAuditorActivities = false;
@@ -1753,8 +1776,91 @@ class CertificateService {
       let responseLog: any = await certificateLogsService.insertOrUpdate({
         serviceResponse: respHuella.estado,
         idCertificateQueue: registerId,
-        message: "",
+        message: '',
+        process: 'Set certificate',
         requestData: certificateReq.paramsHuella
+      });
+
+      console.log("***************************");
+      console.log(responseLog);
+      console.log("***************************");
+
+      let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+        id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
+        status: 'Requested',
+        message: certificateReq.paramsHuella.certificado,
+        certificateModule: certificateReq.paramsHuella.modulo,
+        certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
+        auxiliar: certificateReq.queueData.auxiliarId,
+        certificate: {
+          hash: respHuella.resultado.certificado,
+          url: respHuella.resultado.url,
+          title: (certificateReq.isComplete) ? certificateReq.paramsHuella.certificado : 'Certificado Parcial de ' + certificateReq.programName,
+          date: certificateReq.paramsHuella.fecha_aprobacion
+        }
+      });
+
+      responseCertQueueArray.push(responseCertQueue);
+      counter++;
+    }
+    return responseCertQueueArray;
+  }
+
+
+  private requestPutCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
+
+    let responseCertQueueArray = [];
+    let counter = 1;
+    for await (const certificateReq of certificateParamsArray) {
+
+      console.log("Certificate n° " + counter);
+      // #region request Login and token response
+      let respToken: any = await this.login();
+      if (respToken.status == 'error') {
+        return responseUtility.buildResponseFailed('json', null,
+          { error_key: { key: 'certificate.login_invalid' } })
+      }
+      var tokenHC = respToken.token;
+      // #endregion request Login and token response
+
+      let responseCertificateQueue: any = await certificateQueueService.insertOrUpdate({
+        id: certificateReq.queueData.certificateQueueId,
+        courseId: certificateReq.queueData.courseId,
+        users: [certificateReq.queueData.userId],
+        certificateType: certificateReq.certificateType,
+        certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
+        status: 'In-process',
+        message: '',
+        auxiliar: certificateReq.queueData.auxiliarId
+      });
+
+      console.log("--> After Insert/update cerfificateQueue:");
+      console.log(responseCertificateQueue.certificateQueue);
+
+      console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
+      // Build request for Update Certificate
+      let respHuella: any = await queryUtility.query({
+        method: 'put',
+        url: certificate_setup.endpoint.update_certificate,
+        api: 'huellaDeConfianza',
+        headers: { Authorization: tokenHC },
+        querystringParams: { id: certificateReq.certificateHash },
+        params: JSON.stringify(certificateReq.paramsHuella)
+      });
+      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log(respHuella);
+      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+      let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
+      console.log("--> Register to update " + registerId);
+
+      let responseLog: any = await certificateLogsService.insertOrUpdate({
+        serviceResponse: respHuella.estado,
+        idCertificateQueue: registerId,
+        message: "",
+        process: 'Re-issue certificate',
+        reissueRequestData: certificateReq.paramsHuella
       });
 
       console.log("***************************");
@@ -1804,12 +1910,15 @@ class CertificateService {
 
       const tokenHC = respToken.token;
 
-      // Build request for GetAllTemplate
+      // get Log
+      let responseLog: any = await certificateLogsService.findBy({ query: QueryValues.ONE, where: [{ field: 'idCertificateQueue', value: params.certificate_queue }] });
+      console.log('certificateLogsService');
+      console.log(responseLog.certificateLogs._id);
 
-      console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
-      console.log('params:');
-      console.log(detailParams);
-      console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
+      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
+      // console.log('params:');
+      // console.log(detailParams);
+      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
       const respHuella: any = await queryUtility.query({
         method: 'get',
         url: certificate_setup.endpoint.certificate_detail,
@@ -1817,26 +1926,35 @@ class CertificateService {
         headers: { Authorization: tokenHC },
         params: detailParams
       });
-      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
-      console.log(respHuella.estado);
-      console.log('¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨¨');
-      if (respHuella.estado == 'Error' || respHuella.status === 'error') {
+
+      if (respHuella.estado === 'error') {
+        console.log(respHuella);
+
+        // record the error on Log
+        let response2Log: any = await certificateLogsService.insertOrUpdate({
+          id: responseLog.certificateLogs._id,
+          process: 'Preview certificate',
+          serviceResponse: respHuella.estado,
+          message: respHuella.resultado,
+          previewRequestData: detailParams
+        });
+
         return responseUtility.buildResponseFailed('json', null,
           {
             error_key: { key: 'certificate.generation' }
-          })
+          });
       }
 
-      if (respHuella.resultado === "") {
-        console.log("Resp from Huella: ");
-        console.log(respHuella);
-        return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.preview' }
-          })
-      }
+      // if (respHuella.resultado === "") {
+      //   console.log("Resp from Huella: ");
+      //   console.log(respHuella);
+      //   return responseUtility.buildResponseFailed('json', null,
+      //     {
+      //       error_key: { key: 'certificate.preview' }
+      //     })
+      // }
 
-      console.log("update register on certificate queue:");
+      console.log("Update register on certificate queue:");
 
       if (params.updateCertificate && params.format) {
         let updateData = null
@@ -1896,7 +2014,17 @@ class CertificateService {
         }
       }
 
+      // record the error on Log
+      let responseUpdateLog: any = await certificateLogsService.insertOrUpdate({
+        id: responseLog.certificateLogs._id,
+        process: 'Complete',
+        serviceResponse: respHuella.estado,
+        message: 'Complete',
+        previewRequestData: detailParams
+      });
+
       const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
+
 
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {

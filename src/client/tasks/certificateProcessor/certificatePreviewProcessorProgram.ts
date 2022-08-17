@@ -17,10 +17,13 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
-import { IParticipantData } from '@scnode_app/types/default/events/notifications/notificationTypes'
+import { IParticipantData, IParticipantDataByCertificateType } from '@scnode_app/types/default/events/notifications/notificationTypes'
 // @end
 
 class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
+
+  private left_parentheses = '&#40;';
+  private right_parentheses = '&#41;';
 
   /**
    * Metodo que contiene la logica de la tarea
@@ -59,10 +62,10 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         //responseProcessedDocument.push(docPreview);
 
         let responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
-        console.log("---------------------- -----------");
-        console.log("\n\rResponse preview: ");
-        console.log(responsePreviewCertificate);
-        console.log("---------------------- -----------");
+        // console.log("---------------------- -----------");
+        // console.log("\n\rResponse preview: ");
+        // console.log(responsePreviewCertificate);
+        // console.log("---------------------- -----------");
 
         if (responsePreviewCertificate.status == 'success') {
           responseProcessedDocument.push(docPreview);
@@ -72,6 +75,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
       if (responseProcessedDocument) {
         //#region Student Notifications
+
         // Second Loop: send email notifications to students whose certificate is OK
         for await (const docProcessed of responseProcessedDocument) {
           console.log("---------------------- -----------");
@@ -84,23 +88,31 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
           });
           console.log(notificationResponse);
         }
+
         //#endregion Student Notifications
 
         //#region Assistant Notifications
 
-        // Third Loop: send notifications by e-mail to the operational assistants responsible for the emission.
+        // Third Loop: send notifications by e-mail to the operative assistants responsible for the emission.
+        console.log('=====================================================');
+        console.log('operative assistants notifications');
+        console.log('=====================================================');
+
+        // 1. groupBy Operative Assistant
         let groupByAssistant = responseProcessedDocument.reduce(function (r, a) {
           r[a.auxiliar._id] = r[a.auxiliar._id] || [];
           r[a.auxiliar._id].push(a);
           return r;
         }, {});
 
-        for (const key of Object.keys(groupByAssistant)) {
+        for (const auxiliarKey of Object.keys(groupByAssistant)) {
+          //let serviceId;
+          let courseScheduling: any;
+          for (const value of Object.values(groupByAssistant[auxiliarKey])) {
 
-          for (const value of Object.values(groupByAssistant[key])) {
             let certificateData: any = value;
-            // Object.values(groupByAssistant[key]).forEach((value: any) => {
-            const courseScheduling: any = await CourseScheduling.findOne({ _id: certificateData.courseId }).select('id program')
+
+            courseScheduling = await CourseScheduling.findOne({ _id: certificateData.courseId }).select('id program metadata certificate auditor_certificate')
               .populate({ path: 'program', select: 'id name code' })
 
             if (!courseScheduling) {
@@ -108,29 +120,95 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
               continue;
             };
 
+            //serviceId = courseScheduling.metadata.service_id;
+
             listOfParticipants.push({
+              serviceId: courseScheduling.metadata.service_id,
               participantId: certificateData.userId._id,
               participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
               courseSchedulingId: certificateData.courseId,
-              courseSchedulingName: certificateData.message, /// courseScheduling.program.name,
-              certificateType: certificateData.certificateType
+              courseSchedulingName: certificateData.message.replace(this.left_parentheses, '(').replace(this.right_parentheses, ')'), /// courseScheduling.program.name,
+              certificateType: certificateData.certificateType,
+              document: certificateData.userId.profile.doc_number,
+              regional: certificateData.userId.profile.regional
             });
           }
-          console.log('::::::::::::::::::::::::::::::::::::::::::::::');
-          console.log(`Sending notification to Operative Assistant: ${key}`);
-          console.log('::::::::::::::::::::::::::::::::::::::::::::::');
-          const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar({
-            auxiliarId: key,
-            participants: listOfParticipants
-          });
-          console.log(notificationResponseAuxiliar.status);
-        }
-        //#endregion Assistant Notifications
 
+          const keys = ['serviceId', 'certificateType'];
+
+          // sort by serviceId
+          listOfParticipants.sort((a, b) => a.serviceId.localeCompare(b.serviceId));
+
+          // 2. groupBy Service ID - Certificate Type
+          let groupByService: any = listOfParticipants.reduce((r, o) => {
+            let { serviceId, certificateType } = o;
+
+            let service = r[serviceId] || (r[serviceId] = {});
+            let byCertificate = service[certificateType] || (service[certificateType] = []);
+            byCertificate.push(o);
+
+            return r;
+          }, {});
+
+          //#region Loop by Service ID
+
+          for await (let [serviceKey, serviceGroup] of Object.entries(groupByService)) {
+
+            let listOfParticpantsByCertificateType: IParticipantDataByCertificateType[] = [];
+
+            console.log(`Service ID: ${serviceKey}`);
+
+            for await (let [certificateTypeKey, certificateTypeGroup] of Object.entries(serviceGroup)) {
+              let certData: IParticipantData[] = [];
+              let certificateName = '';
+
+              for await (let element of certificateTypeGroup) {
+                console.log(`ServiceId: ${serviceKey} - certificateTypeKey: ${certificateTypeKey}`);
+
+                certificateName = (element.certificateType == 'academic') ? courseScheduling.certificate : courseScheduling.auditor_certificate;
+
+                certData.push({
+                  participantId: element.participantId,
+                  participantFullName: element.participantFullName,
+                  courseSchedulingName: element.courseSchedulingName,
+                  courseSchedulingId: element.courseSchedulingId,
+                  certificateType: element.certificateType,
+                  document: element.document,
+                  regional: element.regional
+                });
+              }
+
+              listOfParticpantsByCertificateType.push({
+                certificateName: certificateName,
+                participants: certData
+              });
+            }
+
+            console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+            console.log(`Sending notification to Operative Assistant: ${auxiliarKey} - ServiceId ${serviceKey}`);
+            console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+
+            const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar({
+              auxiliarId: auxiliarKey,
+              serviceId: serviceKey,
+              participants: listOfParticpantsByCertificateType
+            });
+            console.log(notificationResponseAuxiliar);
+
+          }
+          console.log('=====================================================');
+
+        }
+        //#endregion
       }
+      else {
+        console.log("There're no certificates to preview.");
+      }
+      //#endregion Assistant Notifications
+
     }
     else {
-      console.log("There're no certificates to preview.");
+      console.log("There're no certificates to process.");
     }
 
     // @end

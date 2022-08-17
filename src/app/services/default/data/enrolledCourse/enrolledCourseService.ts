@@ -50,7 +50,7 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name'}
+            { path: 'schedulingStatus', select: 'id name' }
           ]
         })
         .lean()
@@ -87,7 +87,7 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name'}
+            { path: 'schedulingStatus', select: 'id name' }
           ]
         })
         .lean()
@@ -270,6 +270,9 @@ class EnrolledCourseService {
           }
           // register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
         }
+
+        console.log('Fetch Certficiate at Register');
+        console.log(register);
 
 
         if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
