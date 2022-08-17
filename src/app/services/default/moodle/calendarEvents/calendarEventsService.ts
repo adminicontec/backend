@@ -17,7 +17,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { IMoodleCourse, IMoodleCourseContent, IMoodleCourseQuery, IMoodleForumDiscussion } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
 // @end
@@ -98,6 +98,12 @@ class CalendarEventsService {
         'includenotenrolledcourses': 1
       };
 
+      let moodleParamsForum = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.forumDiscussion,
+        moodlewsrestformat: moodle_setup.restformat,
+      }
+
       // 1. módulos asociados al curso en moodle
       var select = ['assign', 'attendance', 'quiz', 'forum'];
       let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
@@ -143,7 +149,7 @@ class CalendarEventsService {
       // 4. group the events by Instance
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
-        respMoodleCourseModules.courseModules.forEach(module => {
+        for await (const module of respMoodleCourseModules.courseModules as IMoodleCourseContent[]) {
           let eventTimeStart;
           let eventTimeEnd;
           let timeStart;
@@ -152,23 +158,32 @@ class CalendarEventsService {
           let statusActivity = '';
           let timecompleted;
 
-          const groupByInstance = respMoodleEvents.events.filter(e => e.instance == module.instance);
-          if (groupByInstance.length != 0) {
+          let isForum: boolean = false;
 
-            if (groupByInstance[0].modulename === 'attendance') {
+          let groupByInstance;
+
+          if (module.modname === 'forum' && module.completion === 2) {
+            const respForumDiscussions: {discussions: IMoodleForumDiscussion[]} = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: {...moodleParamsForum, forumid: module.instance} });
+            const forumDiscussion = respForumDiscussions?.discussions?.length ? respForumDiscussions.discussions[0] : null
+            eventTimeStart = forumDiscussion.timestart ? new Date(forumDiscussion.timestart * 1000).toISOString() : null
+            eventTimeEnd = forumDiscussion.timeend ? new Date(forumDiscussion.timeend * 1000).toISOString() : null
+            isForum = true;
+            groupByInstance = []
+          } else {
+            groupByInstance = respMoodleEvents.events.filter(e => e.instance == module.instance);
+          }
+          if (groupByInstance?.length > 0 || isForum) {
+
+            if (groupByInstance[0]?.modulename === 'attendance') {
               eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
               eventTimeStart = null;
             }
-            if (groupByInstance[0].modulename === 'assign') {
+            if (groupByInstance[0]?.modulename === 'assign') {
               let assignment = respMoodleAssignement.courses[0].assignments.find(t => t.id == module.instance);
               eventTimeStart = assignment.allowsubmissionsfromdate ? generalUtility.unixTimeToString(assignment.allowsubmissionsfromdate) : null;
               eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
             }
-            if (groupByInstance[0].modulename === 'forum') {
-              eventTimeStart = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
-              eventTimeEnd = null;
-            }
-            if (groupByInstance[0].modulename === 'quiz') {
+            if (groupByInstance[0]?.modulename === 'quiz') {
               timeStart = groupByInstance.filter(g => g.eventtype == 'open');
               timeEnd = groupByInstance.filter(g => g.eventtype == 'close');
 
@@ -206,9 +221,9 @@ class CalendarEventsService {
               name: module.name,
               description: '',
               courseid: courseID,
-              modulename: groupByInstance[0].modulename,
+              modulename: isForum ? module.modname : groupByInstance[0]?.modulename,
               eventtype: '',
-              instance: groupByInstance[0].instance,
+              instance: isForum ? module.instance : groupByInstance[0]?.instance,
               timestart: eventTimeStart,
               timefinish: eventTimeEnd,
               duration: 0,
@@ -216,10 +231,10 @@ class CalendarEventsService {
               status: statusActivity,
               timecompleted: timecompleted
             };
+
             responseEvents.push(singleEvent);
           }
-
-        });
+        }
       }
       else {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodleCourseModules));
