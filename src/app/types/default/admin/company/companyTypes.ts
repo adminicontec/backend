@@ -11,6 +11,8 @@ export interface ICompany {
   logoFile?: any // Objeto de tipo file que contiene la imagen de logo a cargar
   backgroundFile?: any // Objeto de tipo file que contiene la imagen de background a cargar
   id?: string // Identificador de la compañia
+  logoFileClear?: 'true' | 'false'
+  backgroundFileClear?: 'true' | 'false'
 }
 
 export interface ICompanyDelete {

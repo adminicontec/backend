@@ -32,5 +32,6 @@ export interface IQualifiedTeacherQuery {
   courseCode?:string, // Busca sobre los campos de la coleccion
   teacher?:string, // Busca sobre los campos de la coleccion
   status?:string, // qualification status: active or inactive
+  statuses?: string[] | string
 }
 //@end

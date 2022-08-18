@@ -115,6 +115,8 @@ class CompanyService {
         const response_upload: any = await uploadService.uploadFile(params.logoFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.logo = response_upload.name
+      } else if (params.logoFileClear === 'true') {
+        params.logo = null
       }
 
       // @INFO: Cargando imagen al servidor
@@ -123,6 +125,8 @@ class CompanyService {
         const response_upload: any = await uploadService.uploadFile(params.backgroundFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.background = response_upload.name
+      } else if (params.backgroundFile === 'true') {
+        params.background = null
       }
 
       if (params.id) {
