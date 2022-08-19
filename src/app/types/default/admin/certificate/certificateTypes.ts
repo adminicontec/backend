@@ -15,6 +15,7 @@ export interface IQueryUserToCertificate {
   auxiliarId: string, // ID de Auxiliar qué liberó el certificado
   certificateConsecutive: string,
   certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
+  certificateType?: string
 }
 
 

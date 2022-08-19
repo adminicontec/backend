@@ -77,11 +77,13 @@ class HttpClientUtility {
     };
     if (http_structure.hasOwnProperty("sendBy") && http_structure.sendBy === 'body') {
       options = {
+        ...options,
         method: 'PUT',
         body: body
       };
     } else {
       options = {
+        ...options,
         method: 'PUT',
         form: body
       };

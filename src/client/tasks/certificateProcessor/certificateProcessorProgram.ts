@@ -46,7 +46,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         console.log(`Liberado por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
 
         // 1. Send request to process Certificate on HdC service.
-        let respSetCertificate: any = await certificateService.setCertificate({
+        let respSetCertificate: any = await certificateService.createCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
@@ -88,18 +88,21 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
 
       for await (const element of respReissueQueueToProcess.certificateQueue) {
         console.log('.............................');
-        console.log(element._id);
+        console.log(element);
+        console.log('.............................');
+        console.log(`${element._id} - ${element.certificateType}`);
         console.log(`Re-expedido por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
         console.log(`Código: ${element.certificate.hash} `)
 
         // 1. Send request to process Certificate on HdC service.
-        let respPutCertificate: any = await certificateService.setCertificate({
+        let respPutCertificate: any = await certificateService.editCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
           auxiliarId: element.auxiliar._id,
           certificateConsecutive: element.certificateConsecutive,
-          certificateHash: element.certificate.hash
+          certificateHash: element.certificate.hash,
+          certificateType: element.certificateType
         });
 
         if (respPutCertificate.status === "error") {
@@ -109,10 +112,10 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         else {
           console.log("----------- END Process re-issue Certificate --------------------");
           console.log("Certificate re-issue successful!");
-          // respPutCertificate.respProcessSetCertificates.forEach(element => {
-          //   console.log("..................");
-          //   console.log(element.certificateQueue);
-          // });
+          //   // respPutCertificate.respProcessSetCertificates.forEach(element => {
+          //   //   console.log("..................");
+          //   //   console.log(element.certificateQueue);
+          //   // });
         }
 
       }
