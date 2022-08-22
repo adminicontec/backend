@@ -42,8 +42,6 @@ import {
   ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { certificatePreviewProcessorProgram } from "client/tasks/certificateProcessor/certificatePreviewProcessorProgram";
-
 // @end
 
 class CertificateService {
@@ -798,508 +796,31 @@ class CertificateService {
    */
   public createCertificate = async (params: IQueryUserToCertificate) => {
 
-    if (params.certificateHash)
-      console.log(`→→→ Execution of putCertificate(): ${params.certificateHash}`);
-    else
-      console.log("→→→ Execution of setCertificate()");
+    let certificateParamsArrayForRequest: ISetCertificateParams[] = [];  // return this Array
 
+    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
+    console.log("→→→ Execution of createCertificate()");
+    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
 
     try {
-      let logoDataArray: ILogoInformation[] = [];
-      let signatureDataArray: ISignatureInformation[] = [];
 
-      //#region  querying data for user to Certificate, param: username
-      let respDataUser: any = await userService.findBy({
-        query: QueryValues.ONE,
-        where: [{ field: '_id', value: params.userId }]
-      })
-      if (respDataUser.user && respDataUser.user.profile) {
-        respDataUser.user.profile.full_name = `${respDataUser.user.profile.first_name} ${respDataUser.user.profile.last_name}`
-      }
+      certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
 
-      // usuario no existe
-      if (respDataUser.status === "error") return respDataUser
-
-      //  course Scheduling Data
-      let respCourse: any = await courseSchedulingService.findBy({
-        query: QueryValues.ONE,
-        where: [{ field: '_id', value: params.courseId }]
-      });
-
-      //  course Scheduling Details data
-      let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
-        query: QueryValues.ALL,
-        where: [{ field: 'course_scheduling', value: params.courseId }]
-      });
-      // console.log('--------respCourse----------');
-      // console.log(respCourse);
-      // console.log('-------------------');
-      // console.log(respCourseDetails);
-      // console.log('--------respCourseDetails----------');
-
-      if (respCourse.status == 'error' || respCourseDetails.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null,
-          { error_key: { key: 'program.not_found' } })
-      }
-
-      const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: respCourse.scheduling.moodle_id, moduleType: this.selectActivitiesTest });
-      //#endregion
-
-      //#region Load Logos from CourseScheduling settings
-      //#region Base Path
-      let driver = attached['driver'];
-      let attached_config = attached[driver];
-      const upload_config_base_path = (attached_config.base_path) ? attached_config.base_path : 'uploads'
-
-      let base_path = path.resolve(`./${public_dir}/${upload_config_base_path}`)
-      if (attached_config.base_path_type === "absolute") {
-        base_path = upload_config_base_path
-      }
-      //#endregion Base Path
-
-      //#region Check for Logos and Signature
-      console.log(`Check for Logos and Signature:`);
-
-      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1);
-      if (logoImage64_1) {
-        logoDataArray.push({
-          imageBase64: logoImage64_1
-        });
-      }
-
-      let logoImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_2);
-      if (logoImage64_2) {
-        logoDataArray.push({
-          imageBase64: logoImage64_2
-        });
-      }
-
-      let signatureImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_1);
-      if (signatureImage64_1) {
-        signatureDataArray.push({
-          imageBase64: signatureImage64_1,
-          signatoryName: 'Primer firmante',
-          signatoryPosition: 'Cargo 1er',
-          signatoryCompanyName: 'Empresa 1'
-        });
-        console.log(`Signature : ${signatureDataArray[0].signatoryName}`);
-      }
-
-      let signatureImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_2);
-      if (signatureImage64_2) {
-        signatureDataArray.push({
-          imageBase64: signatureImage64_2,
-          signatoryName: 'Segundo firmante',
-          signatoryPosition: 'Cargo 2ndo',
-          signatoryCompanyName: 'Empresa 2'
-        });
-        console.log(`Signature : ${signatureDataArray[1].signatoryName}`);
-      }
-
-      //#endregion Check for Logos and Signature
-
-      //#endregion
-
-      //#region Validations to generate Certificate
-      //schedulingStatus
-      // 1. Estatus de Programa: se permite generar si está confirmado o ejecutado.
-      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
-      console.log(`enrollmentCode: ${params.certificateConsecutive}`);
-
-      if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
-        return responseUtility.buildResponseFailed('json', null,
-          { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
-      }
-
-      // 2. Tipo de programa
-      let programTypeName;
-      const programType = this.getProgramTypeFromCode(respCourse.scheduling.program.code);
-
-      //let programType = program_type_collection.find(element => element.abbr == respCourse.scheduling.program.code.substring(0, 2));
-      let schedulingMode = respCourse.scheduling.schedulingMode.name;
-
-      let isComplete = true;
-      let mapping_dato_1 = '';
-      let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
-      let mapping_template = '';
-      let mapping_intensidad = 0;
-      let mapping_titulo_certificado = '';
-      let mapping_pais = respCourse.scheduling.country.name;
-      let mapping_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
-      let mapping_listado_cursos = '';
-      let mapping_consecutive = parseInt(params.certificateConsecutive);
-
-      let mapping_numero_certificado = (params.certificateHash) ?
-        params.certificateConsecutive :
-        respCourse.scheduling.metadata.service_id + '-' + params.certificateConsecutive.padStart(4, '0');
-
-      let schedulingType = respCourse.scheduling.schedulingType;
-
-      console.log('........................................................................................................');
-      console.log('Certificado para ' + respDataUser.user.profile.full_name);
-      console.log('........................................................................................................');
-
-      // 3. Estatus de estudiante en Moodle
-      // - Asistencias
-      // - Entregas de actividades completas
-
-      let reviewAuditorCerficateRules = false;
-      let isAuditorCerficateByProgressEnabled = false;
-
-      //#region Tipo de programa
-      if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
-        programTypeName = 'curso';
-        mapping_template = certificate_template.curso;
-      }
-      if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
-        programTypeName = 'programa';
-        mapping_template = certificate_template.programa_diplomado;
-      }
-      if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-        programTypeName = 'diplomado';
-        mapping_template = certificate_template.programa_diplomado;
-      }
-
-      // applies for "interintitutional agreement"
-      if (logoDataArray.length != 0) {
-        console.log("Applies agreement:");
-
-        //if (signatureDataArray.length != 0) {
-        mapping_template = certificate_template.convenios;
-        //}
-        // else{
-        //   mapping_template = certificate_template.convenio_doble_logo;
-        // }
-        mapping_dato_13 = "Certifican que"
-      } else {
-        console.log("NO agreement:");
-
-        mapping_dato_13 = "Certifica que"
-      }
-
-      console.log("Choosen template: " + mapping_template);
-      //#endregion Tipo de programa
-
-      // console.log(programTypeName);
-      // console.log("---------------------");
-      // console.log(respDataUser);
-      // console.log(respCourse);
-      // console.log("---------------------");
-
-      //#endregion Tipo de programa
-
-      //#region  Reglas para Certificado de Auditor
-      if (respCourse.scheduling.auditor_certificate) {
-        reviewAuditorCerficateRules = true;
-      }
-      //#endregion  Reglas para Certificado de Auditor
-
-      //#region ↓↓↓↓↓↓↓ Reglas para cualquier tipo de formación
-      let studentProgressList: any = await this.rulesForCompleteProgress(
-        respCourse.scheduling.moodle_id,
-        this.selectActivitiesTest,
-        schedulingMode.toLowerCase(),
-        programTypeName,
-        respListOfActivitiesInModulesTest.courseModules,
-        respCourseDetails.schedulings,
-        reviewAuditorCerficateRules,
-        respCourse.scheduling.auditor_modules,
-        true,
-        respDataUser.user.moodle_id);
-
-      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
-      // console.dir(studentProgressList.listOfStudentProgress[0], { depth: null });
-      // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
-
-      if (studentProgressList.listOfStudentProgress[0]) {
-        console.log("Check rules for " + respCourse.scheduling.schedulingMode.name.toLowerCase());
-
-        let progressData = studentProgressList.listOfStudentProgress[0].student.studentProgress;
-        //#region Setting for VIRTUAL
-        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
-          console.log('=====');
-          console.log(progressData.attended_approved);
-
-          isComplete = true;
-          mapping_dato_1 = progressData.attended_approved;
-          mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-          console.log(mapping_titulo_certificado);
-
-          if (respCourseDetails.schedulings) {
-            mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-            mapping_listado_cursos += '<ul>'
-            respCourseDetails.schedulings.forEach(element => {
-              mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-            });
-            mapping_listado_cursos += '</ul>'
-          }
-          mapping_intensidad = respCourse.scheduling.duration;
-        }
-        //#endregion Setting for VIRTUAL
-
-        //#region Setting for ON SITE
-        if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
-          respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
-
-
-          if (progressData.status == 'ok') {
-            isComplete = true;
-            mapping_dato_1 = progressData.attended_approved;
-
-            mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-            //#region Listado de Módulos (cursos) que comprende el programa <li>
-
-            if (respCourseDetails.schedulings) {
-              mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-              mapping_listado_cursos += '<ul>'
-              respCourseDetails.schedulings.forEach(element => {
-                mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-              });
-              mapping_listado_cursos += '</ul>'
-            }
-            mapping_intensidad = respCourse.scheduling.duration;
-            //#endregion
-
-          }
-          else if (progressData.status == 'partial') {
-            // Certificado Parcial
-            let certificateName = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-            console.log('módulos aprobados:');
-            for (const apprMod of progressData.approved_modules) {
-              console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
-            }
-
-            isComplete = false;
-            //isAuditorCerficateEnabled = false; // deshabilita la solicitud de CertAuditor en caso que aplique
-
-            if (logoDataArray.length != 0)
-              mapping_template = certificate_template.parcial_convenios;
-            else
-              mapping_template = certificate_template.parcial;
-            mapping_dato_1 = 'Asistió a los cursos de';
-            mapping_titulo_certificado = 'CORRESPONDIENTE AL ' + certificateName + ', CUYA DURACIÓN TOTAL ES DE ' + generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration).toUpperCase();
-
-            //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
-            if (progressData.approved_modules) {
-
-              let finalDuration = 0;
-              mapping_listado_cursos = '<ul>'
-              progressData.approved_modules.forEach(element => {
-                finalDuration += element.duration;
-                mapping_listado_cursos += `<li>${element.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-              });
-              mapping_listado_cursos += '</ul>'
-              mapping_intensidad = finalDuration;
-            }
-            //#endregion
-          }
-
-        }
-        //#endregion Setting for ON SITE
-
-        isAuditorCerficateByProgressEnabled = (progressData.auditor && studentProgressList.auditorQuizApplies) ? true : false;
-
-        console.log('Progress for Student:');
-        console.log(progressData);
-        console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
-      }
-      else {
-        console.log('No hay datos de Estudiante para evaluar!')
-        return responseUtility.buildResponseFailed('json')
-      }
-      //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
-
-      //#region Build the certificate Parameters
-      const currentDate = new Date(Date.now());
-      let certificateParamsArray: ISetCertificateParams[] = [];
-
-      // location for logos setup
-      let location3 = null;
-      let location8 = null;
-
-      if (logoDataArray.length != 0) {
-        if (logoDataArray.length == 1) {
-          location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-        }
-        else {
-          location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-          location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
-        }
-      }
-
-      // Add first Certificate (academic)
-      let certificateParams: ICertificate = {
-        modulo: mapping_template,
-        numero_certificado: mapping_numero_certificado,
-        correo: respDataUser.user.email,
-        documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
-        nombre: respDataUser.user.profile.full_name.toUpperCase(),
-        asistio: null,
-        certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
-        certificado_ingles: '', // respCourse.scheduling.english_certificate,
-        alcance: '', //respCourse.scheduling.scope,
-        alcance_ingles: '', //respCourse.scheduling.scope,
-        intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
-        listado_cursos: mapping_listado_cursos,
-        regional: '',
-        ciudad: mapping_ciudad,
-        pais: mapping_pais,
-        fecha_certificado: currentDate,
-        fecha_aprobacion: respCourse.scheduling.endDate,
-        fecha_ultima_modificacion: null,
-        fecha_renovacion: null,
-        fecha_vencimiento: null,
-        fecha_impresion: currentDate,
-        dato_1: mapping_dato_1,
-        dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
-        // primer logo
-        dato_3: location3,
-        // primera firma
-        dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
-        dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
-        dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
-        dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
-
-        // segundo logo
-        dato_8: location8,
-        // segunda firma
-        dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
-        dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
-        dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
-        dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
-
-        dato_13: mapping_dato_13
-      }
-
-      //#endregion
-      // ******* ----*********
-
-      //#region --------*********----------
-
-      certificateParamsArray.push({
-        queueData: params,
-        template: mapping_template,
-        certificateType: certificate_type.academic,
-        paramsHuella: certificateParams,
-        programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
-        isComplete: isComplete
-      });
-      console.log("[1]------------------------------------------");
-      console.log("Set first Certificate: ");
-      //console.log(certificateParams);
-      console.log("[1]------------------------------------------");
-
-      // Second certificate: auditor Certificate
-      if (isAuditorCerficateByProgressEnabled) {
-        // get modules need to process Second certificate
-        isComplete = true;
-        // location for logos setup
-        let location3 = null;
-        let location8 = null;
-
-        let mappingAuditorList: any = this.formatAuditorModules(respCourse.scheduling.auditor_modules);
-        console.log(mappingAuditorList.mappingModules);
-
-        if (logoDataArray.length != 0) {
-          if (logoDataArray.length == 1) {
-            location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-          }
-          else {
-            location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-            location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
-          }
-        }
-
-        let auditorCertificateParams: ICertificate = {
-          modulo: mapping_template,
-          numero_certificado: mapping_numero_certificado + '-A',
-          correo: respDataUser.user.email,
-          documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
-          nombre: respDataUser.user.profile.full_name.toUpperCase(),
-          asistio: null,
-          certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
-          certificado_ingles: '',
-          alcance: '',
-          alcance_ingles: '',
-          intensidad: generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration),
-          listado_cursos: mappingAuditorList.mappingModules,
-          regional: '',
-          ciudad: mapping_ciudad,
-          pais: mapping_pais,
-          fecha_certificado: currentDate,
-          fecha_aprobacion: respCourse.scheduling.endDate,  //currentDate,
-          fecha_ultima_modificacion: null,
-          fecha_renovacion: null,
-          fecha_vencimiento: null,
-          fecha_impresion: currentDate,
-          dato_1: "Asistió y aprobó el",
-          dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
-
-          // primer logo
-          dato_3: location3,
-          // primera firma
-          dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
-          dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
-          dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
-          dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
-
-          // segundo logo
-          dato_8: location8,
-          // segunda firma
-          dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
-          dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
-          dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
-          dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
-
-          dato_13: mapping_dato_13
-        }
-        //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
-        //certificateParams.certificado = 'Auditor en ' + respCourse.scheduling.program.name;
-
-        certificateParamsArray.push({
-          queueData: {
-            certificateQueueId: null, // as new record
-            userId: params.userId, // Nombre de usario
-            courseId: params.courseId,
-            auxiliarId: params.auxiliarId,
-            certificateConsecutive: ''
-          },
-          certificateType: certificate_type.auditor,
-          template: mapping_template,
-          paramsHuella: auditorCertificateParams,
-          programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
-          isComplete: isComplete
-        });
-        console.log("[2]------------------------------------------");
-        console.log("Set Auditor Certificate: ");
-        console.log(certificateParams);
-        console.log("[2]------------------------------------------");
-      }
       // Request to Create Certificate(s)
       let respProcessCertificate: any;
-
-      if (!params.certificateHash) {
-        respProcessCertificate = await this.requestSetCertificate(certificateParamsArray);
-      }
-      // Request to Update Certificate(s)
-      else {
-        respProcessCertificate = await this.requestPutCertificate(certificateParamsArray);
-      }
-      //#endregion
+      respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           respProcessCertificate
         }
       });
-
     }
 
     catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
   }
-
 
 
   /**
@@ -1525,14 +1046,17 @@ class CertificateService {
 
         let mappingAcademicList: any;
 
+        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("Check rules for " + respCourse.scheduling.schedulingMode.name.toLowerCase());
 
         let progressData = studentProgressList.listOfStudentProgress[0].student.studentProgress;
 
+        console.log(`******** Academic Modules List -->`)
+        console.log(`progressData.approved_modules: `);
+        console.log(progressData.approved_modules);
+
         //#region Setting for VIRTUAL
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
-          console.log('=====');
-          console.log(progressData.attended_approved);
 
           isComplete = true;
           mapping_dato_1 = progressData.attended_approved;
@@ -1540,14 +1064,8 @@ class CertificateService {
           console.log(mapping_titulo_certificado);
 
           if (respCourseDetails.schedulings) {
-            mappingAcademicList = this.formatAcademicModulesList(respCourseDetails.schedulings, programTypeName);
-
-            // mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-            // mapping_listado_cursos += '<ul>'
-            // respCourseDetails.schedulings.forEach(element => {
-            //   mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-            // });
-            // mapping_listado_cursos += '</ul>'
+            mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, programTypeName);
+            mapping_listado_cursos = mappingAcademicList.mappingModules;
           }
           mapping_intensidad = respCourse.scheduling.duration;
         }
@@ -1557,25 +1075,15 @@ class CertificateService {
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'presencial' ||
           respCourse.scheduling.schedulingMode.name.toLowerCase() == 'en linea') {
 
-
           if (progressData.status == 'ok') {
 
             isComplete = true;
             mapping_dato_1 = progressData.attended_approved;
 
             mapping_titulo_certificado = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-            //#region Listado de Módulos (cursos) que comprende el programa <li>
-
+            //#region Listado de Módulos (cursos) que comprende el programa
             if (respCourseDetails.schedulings) {
-
-              mappingAcademicList = this.formatAcademicModulesList(respCourseDetails.schedulings, programTypeName);
-
-              // mapping_listado_cursos = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-              // mapping_listado_cursos += '<ul>'
-              // respCourseDetails.schedulings.forEach(element => {
-              //   mapping_listado_cursos += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-              // });
-              // mapping_listado_cursos += '</ul>'
+              mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, programTypeName);
               mapping_listado_cursos = mappingAcademicList.mappingModules;
             }
             mapping_intensidad = respCourse.scheduling.duration;
@@ -1585,7 +1093,7 @@ class CertificateService {
           else if (progressData.status == 'partial') {
             // Certificado Parcial
             let certificateName = (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name;
-            console.log('módulos aprobados:');
+            console.log('[ módulos aprobados: ]');
             for (const apprMod of progressData.approved_modules) {
               console.log(apprMod.name + ' - ' + generalUtility.getDurationFormatedForCertificate(apprMod.duration));
             }
@@ -1597,26 +1105,15 @@ class CertificateService {
               mapping_template = certificate_template.parcial_convenios;
             else
               mapping_template = certificate_template.parcial;
+
             mapping_dato_1 = 'Asistió a los cursos de';
             mapping_titulo_certificado = 'CORRESPONDIENTE AL ' + certificateName + ', CUYA DURACIÓN TOTAL ES DE ' + generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration).toUpperCase();
 
             //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
             if (progressData.approved_modules) {
-
               mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, null);
-
-              //let finalDuration = 0;
-              //mapping_listado_cursos = 'Asistió a los cursos de<br/>';
-              // mapping_listado_cursos = '<ul>'
-              // progressData.approved_modules.forEach(element => {
-              //   finalDuration += element.duration;
-              //   mapping_listado_cursos += `<li>${element.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-              //   //mapping_listado_cursos += '<li>' + element.name + '%28' + generalUtility.getDurationFormatedForCertificate(element.duration) + '%29' + '</li>';
-              // });
-              // mapping_listado_cursos += '</ul>'
               mapping_listado_cursos = mappingAcademicList.mappingModules;
               mapping_intensidad = mappingAcademicList.totalDuration;
-
             }
             //#endregion
           }
@@ -1636,6 +1133,7 @@ class CertificateService {
       }
       //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
 
+
       //#region Build the certificate Parameters
       const currentDate = new Date(Date.now());
 
@@ -1653,120 +1151,179 @@ class CertificateService {
       // check if is New Certificate or a re-issue
       if (isReissue == false) {
 
-      }
-      else {
-        // Only for re-issue.
-        if (params.certificateType == 'academic') {
+        // New Certificate
 
+        //#region certificate type 1 Parameters (Academic type)
 
+        let certificateParams: ICertificate = {
+          modulo: mapping_template,
+          numero_certificado: mapping_numero_certificado,
+          correo: respDataUser.user.email,
+          documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
+          nombre: respDataUser.user.profile.full_name.toUpperCase(),
+          asistio: null,
+          certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+          certificado_ingles: '',
+          alcance: '',
+          alcance_ingles: '',
+          intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
+          listado_cursos: mapping_listado_cursos,
+          regional: '',
+          ciudad: mapping_ciudad,
+          pais: mapping_pais,
+          fecha_certificado: currentDate,
+          fecha_aprobacion: respCourse.scheduling.endDate,
+          fecha_ultima_modificacion: null,
+          fecha_renovacion: null,
+          fecha_vencimiento: null,
+          fecha_impresion: currentDate,
+          dato_1: mapping_dato_1,
+          dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+          // primer logo
+          dato_3: location3,
+          // primera firma
+          dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
+          dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
+          dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
+          dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
+
+          // segundo logo
+          dato_8: location8,
+          // segunda firma
+          dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
+          dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
+          dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
+          dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
+
+          dato_13: mapping_dato_13
         }
-        else if (params.certificateType == 'auditor') {
+        console.log("[1]------------------------------------------");
+        console.log("Set first Certificate: ");
 
+        certificateParamsArray.push({
+          queueData: params,
+          template: mapping_template,
+          certificateType: certificate_type.academic,
+          paramsHuella: certificateParams,
+          programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+          isComplete: isComplete
+        });
+        //console.log(certificateParams);
+        console.log("[1]------------------------------------------");
 
+        //#endregion
+
+        //#region certificate type 2 (auditor Type)
+
+        // Second certificate: auditor Certificate
+        if (isAuditorCerficateByProgressEnabled) {
+          // get modules need to process Second certificate
+          isComplete = true;
+          // location for logos setup
+          let location3 = null;
+          let location8 = null;
+
+          let mappingAuditorList: any = this.formatAuditorModules(respCourse.scheduling.auditor_modules);
+          console.log(mappingAuditorList.mappingModules);
+
+          if (logoDataArray.length != 0) {
+            if (logoDataArray.length == 1) {
+              location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+            }
+            else {
+              location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+              location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
+            }
+          }
+
+          let auditorCertificateParams: ICertificate = {
+            modulo: mapping_template,
+            numero_certificado: mapping_numero_certificado + '-A',
+            correo: respDataUser.user.email,
+            documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
+            nombre: respDataUser.user.profile.full_name.toUpperCase(),
+            asistio: null,
+            certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            certificado_ingles: '',
+            alcance: '',
+            alcance_ingles: '',
+            intensidad: generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration),
+            listado_cursos: mappingAuditorList.mappingModules,
+            regional: '',
+            ciudad: mapping_ciudad,
+            pais: mapping_pais,
+            fecha_certificado: currentDate,
+            fecha_aprobacion: respCourse.scheduling.endDate,  //currentDate,
+            fecha_ultima_modificacion: null,
+            fecha_renovacion: null,
+            fecha_vencimiento: null,
+            fecha_impresion: currentDate,
+            dato_1: "Asistió y aprobó el",
+            dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+
+            // primer logo
+            dato_3: location3,
+            // primera firma
+            dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
+            dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
+            dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
+            dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
+
+            // segundo logo
+            dato_8: location8,
+            // segunda firma
+            dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
+            dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
+            dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
+            dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
+
+            dato_13: mapping_dato_13
+          }
+          //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
+          //certificateParams.certificado = 'Auditor en ' + respCourse.scheduling.program.name;
+
+          certificateParamsArray.push({
+            queueData: {
+              certificateQueueId: null, // as new record
+              userId: params.userId, // Nombre de usario
+              courseId: params.courseId,
+              auxiliarId: params.auxiliarId,
+              certificateConsecutive: ''
+            },
+            certificateType: certificate_type.auditor,
+            template: mapping_template,
+            paramsHuella: auditorCertificateParams,
+            programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+            isComplete: isComplete
+          });
+          console.log("[2]------------------------------------------");
+          console.log("Set Auditor Certificate: ");
+          console.log(certificateParams);
+          console.log("[2]------------------------------------------");
         }
+
+        //#endregion
+
       }
+      // else {
+      //   // Only for re-issue.
+      //   if (params.certificateType == 'academic') {
 
 
+      //   }
+      //   else if (params.certificateType == 'auditor') {
 
-      // certificate type 1 Parameters (Academic type)
-      let certificateParams: ICertificate = {
-        modulo: mapping_template,
-        numero_certificado: mapping_numero_certificado,
-        correo: respDataUser.user.email,
-        documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
-        nombre: respDataUser.user.profile.full_name.toUpperCase(),
-        asistio: null,
-        certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
-        certificado_ingles: '',
-        alcance: '',
-        alcance_ingles: '',
-        intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
-        listado_cursos: mapping_listado_cursos,
-        regional: '',
-        ciudad: mapping_ciudad,
-        pais: mapping_pais,
-        fecha_certificado: currentDate,
-        fecha_aprobacion: respCourse.scheduling.endDate,
-        fecha_ultima_modificacion: null,
-        fecha_renovacion: null,
-        fecha_vencimiento: null,
-        fecha_impresion: currentDate,
-        dato_1: mapping_dato_1,
-        dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
-        // primer logo
-        dato_3: location3,
-        // primera firma
-        dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
-        dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
-        dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
-        dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
+      //   }
+      // }
 
-        // segundo logo
-        dato_8: location8,
-        // segunda firma
-        dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
-        dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
-        dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
-        dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-        dato_13: mapping_dato_13
-      }
 
       //#endregion
 
+      return certificateParamsArray;
     }
     catch (e) {
       return responseUtility.buildResponseFailed('json')
-    }
-  }
-
-
-  private formatAuditorModules = (auditorModules: any) => {
-
-    let mappingAuditorModulesList = '';
-    let totalDuration = 0;
-    mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
-    mappingAuditorModulesList += '<ul>'
-    auditorModules.forEach(element => {
-      totalDuration += element.duration;
-      mappingAuditorModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
-    });
-    mappingAuditorModulesList += '</ul>'
-
-    return {
-      mappingModules: mappingAuditorModulesList,
-      totalDuration: totalDuration
-    };
-  }
-
-
-  private formatAcademicModulesList = (auditorModules: any, programTypeName: string) => {
-    let mappingAcademicModulesList = '';
-    let totalDuration = 0;
-    try {
-      if (programTypeName || programTypeName != null)
-        mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
-      else
-        mappingAcademicModulesList = 'Asistió a los cursos de<br/>'
-
-      mappingAcademicModulesList += '<ul>'
-      auditorModules.forEach(element => {
-        mappingAcademicModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
-
-        if (element.duration)
-          totalDuration += element.duration;
-      });
-      mappingAcademicModulesList += '</ul>'
-
-      return {
-        mappingModules: mappingAcademicModulesList,
-        totalDuration: totalDuration
-      };
-    }
-    catch (e) {
-      console.log(">>> ERROR ON MODULE LIST <<<");
-      console.log(e);
-      console.log("..................................");
     }
   }
 
@@ -2008,6 +1565,12 @@ class CertificateService {
           completionPercentage /= respCompletionStatus.completion.length;
           studentProgress.average_grade = Math.trunc(average);
           studentProgress.completion = Math.trunc(completionPercentage * 100);
+
+          // keep compatibilty with OnSitu/Online modes
+          respSchedulingsDetails.forEach(element => {
+            studentProgress.approved_modules.push({ name: element.course.name, duration: element.duration });
+          });
+
           //#endregion :::::::::::: Completion percentage ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
@@ -2713,6 +2276,69 @@ class CertificateService {
       programTypeName = 'diplomado';
     }
     return programTypeName;
+  }
+
+
+  /**
+   * Format the modules list for Certificate 1
+   */
+  private formatAcademicModulesList = (academicModules: any, programTypeName: string) => {
+    let mappingAcademicModulesList = '';
+    let totalDuration = 0;
+    try {
+
+      console.log(`¦---formatAcademicModulesList----¦`);
+      console.log(`programTypeName  ${programTypeName}`);
+
+      if (programTypeName || programTypeName != null)
+        mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
+      // else
+      //   mappingAcademicModulesList = 'Asistió a los cursos de<br/>'
+
+      mappingAcademicModulesList += '<ul>'
+      academicModules.forEach(element => {
+
+        console.log(`element ---> `);
+        console.log(element);
+
+        mappingAcademicModulesList += `<li>${element.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
+
+        if (element.duration)
+          totalDuration += element.duration;
+      });
+      mappingAcademicModulesList += '</ul>'
+
+      return {
+        mappingModules: mappingAcademicModulesList,
+        totalDuration: totalDuration
+      };
+    }
+    catch (e) {
+      console.log(">>> ERROR ON MODULE LIST <<<");
+      console.log(e);
+      console.log("..................................");
+    }
+  }
+
+  /**
+   * Format the modules list for Certificate 2
+   */
+  private formatAuditorModules = (auditorModules: any) => {
+
+    let mappingAuditorModulesList = '';
+    let totalDuration = 0;
+    mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
+    mappingAuditorModulesList += '<ul>'
+    auditorModules.forEach(element => {
+      totalDuration += element.duration;
+      mappingAuditorModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
+    });
+    mappingAuditorModulesList += '</ul>'
+
+    return {
+      mappingModules: mappingAuditorModulesList,
+      totalDuration: totalDuration
+    };
   }
 
   //#endregion Private Methods
