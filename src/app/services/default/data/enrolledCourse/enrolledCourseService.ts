@@ -51,7 +51,8 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name' }
+            { path: 'schedulingStatus', select: 'id name' },
+            { path: 'schedulingMode', select: 'id name' }
           ]
         })
         .lean()
@@ -68,6 +69,7 @@ class EnrolledCourseService {
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
+              schedulingMode: e.course_scheduling.schedulingMode
             }
             if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
               history.push(item)
@@ -86,7 +88,8 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name' }
+            { path: 'schedulingStatus', select: 'id name' },
+            { path: 'schedulingMode', select: 'id name' }
           ]
         })
         .lean()
@@ -103,6 +106,7 @@ class EnrolledCourseService {
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
+              schedulingMode: e.course_scheduling.schedulingMode
             }
 
             if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {

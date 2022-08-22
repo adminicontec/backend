@@ -1676,7 +1676,10 @@ class CourseSchedulingService {
         if (courseSchedulings.length > 0) {
           const enrolledByProgramQuery = await Enrollment.aggregate([
             {
-              $match: { course_scheduling: { $in: courseSchedulings } }
+              $match: {
+                course_scheduling: { $in: courseSchedulings },
+                deleted: false
+              }
             },
             {
               $group: { _id: "$course_scheduling", count: { $sum: 1 } }
