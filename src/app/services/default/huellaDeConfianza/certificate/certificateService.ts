@@ -388,7 +388,11 @@ class CertificateService {
 
   }
 
-
+  /**
+   * Permite a campus Digital poner en cola los participantes que son candidatos para generación de certificado (liberación)
+   * @param filters
+   * @returns
+   */
   public automaticRelease = async (filters: ICertificateCompletion) => {
     console.log("→→→ Execution of automaticRelease()");
     let enrollmentRegisters = [];
@@ -803,7 +807,6 @@ class CertificateService {
     console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
 
     try {
-
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
 
       // Request to Create Certificate(s)
@@ -819,6 +822,39 @@ class CertificateService {
 
     catch (e) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+* PutCertificate: Método de HdC para solicitar actualización de Certificado existente
+*/
+  public editCertificate = async (params: IQueryUserToCertificate) => {
+    let certificateParamsArrayForRequest: ISetCertificateParams[] = [];  // return this Array
+    let isAuditorCertificate = false;
+
+    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
+    console.log("→→→ Execution of editCertificate() " + params.userId);
+    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
+    try {
+
+      if (params.certificateType == 'auditor')
+        isAuditorCertificate = true;
+
+      certificateParamsArrayForRequest = await this.getStudentCertificateData(params, true, isAuditorCertificate);
+
+      // Request to Create Certificate(s)
+      let respProcessCertificate: any;
+      respProcessCertificate = await this.requestPutCertificate(certificateParamsArrayForRequest);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          respProcessCertificate
+        }
+      });
+    }
+    catch (e) {
+      console.log(e);
+      return responseUtility.buildResponseFailed('json');
     }
   }
 
@@ -1133,7 +1169,6 @@ class CertificateService {
       }
       //#endregion ↑↑↑↑↑↑ Reglas para cualquier tipo de formación
 
-
       //#region Build the certificate Parameters
       const currentDate = new Date(Date.now());
 
@@ -1147,11 +1182,10 @@ class CertificateService {
         }
       }
 
-
       // check if is New Certificate or a re-issue
       if (isReissue == false) {
 
-        // New Certificate
+        // ***** New Certificate ***********
 
         //#region certificate type 1 Parameters (Academic type)
 
@@ -1305,46 +1339,157 @@ class CertificateService {
         //#endregion
 
       }
-      // else {
-      //   // Only for re-issue.
-      //   if (params.certificateType == 'academic') {
+      else {
+        // Only for re-issue.
+        if (isAuditorCertificate == false) {
 
+          let certificateParams: ICertificate = {
+            modulo: mapping_template,
+            numero_certificado: mapping_numero_certificado,
+            correo: respDataUser.user.email,
+            documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
+            nombre: respDataUser.user.profile.full_name.toUpperCase(),
+            asistio: null,
+            certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            certificado_ingles: '',
+            alcance: '',
+            alcance_ingles: '',
+            intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
+            listado_cursos: mapping_listado_cursos,
+            regional: '',
+            ciudad: mapping_ciudad,
+            pais: mapping_pais,
+            fecha_certificado: currentDate,
+            fecha_aprobacion: respCourse.scheduling.endDate,
+            fecha_ultima_modificacion: null,
+            fecha_renovacion: null,
+            fecha_vencimiento: null,
+            fecha_impresion: currentDate,
+            dato_1: mapping_dato_1,
+            dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+            // primer logo
+            dato_3: location3,
+            // primera firma
+            dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
+            dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
+            dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
+            dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
 
-      //   }
-      //   else if (params.certificateType == 'auditor') {
+            // segundo logo
+            dato_8: location8,
+            // segunda firma
+            dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
+            dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
+            dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
+            dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-      //   }
-      // }
+            dato_13: mapping_dato_13
+          }
+          console.log("[3]------------------------------------------");
+          console.log("Re-issue first Certificate: ");
 
+          certificateParamsArray.push({
+            queueData: params,
+            template: mapping_template,
+            certificateType: certificate_type.academic,
+            paramsHuella: certificateParams,
+            programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+            isComplete: isComplete
+          });
+          //console.log(certificateParams);
+          console.log("[3]------------------------------------------");
+        }
+        else {
+          // Auditor Certificate re-issue
+          // get modules need to process Second certificate
+          isComplete = true;
+          // location for logos setup
+          let location3 = null;
+          let location8 = null;
 
+          let mappingAuditorList: any = this.formatAuditorModules(respCourse.scheduling.auditor_modules);
+          console.log(mappingAuditorList.mappingModules);
 
+          if (logoDataArray.length != 0) {
+            if (logoDataArray.length == 1) {
+              location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+            }
+            else {
+              location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+              location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
+            }
+          }
+
+          let auditorCertificateParams: ICertificate = {
+            modulo: mapping_template,
+            numero_certificado: mapping_numero_certificado + '-A',
+            correo: respDataUser.user.email,
+            documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
+            nombre: respDataUser.user.profile.full_name.toUpperCase(),
+            asistio: null,
+            certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            certificado_ingles: '',
+            alcance: '',
+            alcance_ingles: '',
+            intensidad: generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration),
+            listado_cursos: mappingAuditorList.mappingModules,
+            regional: '',
+            ciudad: mapping_ciudad,
+            pais: mapping_pais,
+            fecha_certificado: currentDate,
+            fecha_aprobacion: respCourse.scheduling.endDate,  //currentDate,
+            fecha_ultima_modificacion: null,
+            fecha_renovacion: null,
+            fecha_vencimiento: null,
+            fecha_impresion: currentDate,
+            dato_1: "Asistió y aprobó el",
+            dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+
+            // primer logo
+            dato_3: location3,
+            // primera firma
+            dato_4: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].imageBase64 : null,
+            dato_5: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryName : null,
+            dato_6: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryPosition : null,
+            dato_7: (signatureDataArray.length != 0 && signatureDataArray[0]) ? signatureDataArray[0].signatoryCompanyName : null,
+
+            // segundo logo
+            dato_8: location8,
+            // segunda firma
+            dato_9: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].imageBase64 : null,
+            dato_10: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryName : null,
+            dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
+            dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
+
+            dato_13: mapping_dato_13
+          }
+
+          console.log("[4]------------------------------------------");
+          console.log("Re-issue Second Certificate: ");
+
+          certificateParamsArray.push({
+            queueData: {
+              certificateQueueId: null, // as new record
+              userId: params.userId, // Nombre de usario
+              courseId: params.courseId,
+              auxiliarId: params.auxiliarId,
+              certificateConsecutive: ''
+            },
+            certificateType: certificate_type.auditor,
+            template: mapping_template,
+            paramsHuella: auditorCertificateParams,
+            programName: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
+            isComplete: isComplete
+          });
+          console.log("[4]------------------------------------------");
+        }
+      }
       //#endregion
 
       return certificateParamsArray;
     }
     catch (e) {
       return responseUtility.buildResponseFailed('json')
-    }
-  }
-
-  /**
-  * PutCertificate: Método de HdC para solicitar actualización de Certificado existente
-  */
-  public editCertificate = async (params: IQueryUserToCertificate) => {
-    console.log("→→→ Execution of putCertificate() " + params.userId);
-    try {
-
-
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-
-        }
-      });
-    }
-    catch (e) {
-      console.log(e);
-      return responseUtility.buildResponseFailed('json');
     }
   }
 
@@ -1875,6 +2020,10 @@ class CertificateService {
       console.log(responseCertificateQueue.certificateQueue);
 
       console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
+      console.log(`--> certificateReq.certificateHash ${certificateReq.certificateHash}`);
+      console.log('paramsHuella:');
+      console.log(`${certificateReq.paramsHuella}`);
+
       // Build request for Update Certificate
       let respHuella: any = await queryUtility.query({
         method: 'put',
@@ -1884,9 +2033,9 @@ class CertificateService {
         querystringParams: { id: certificateReq.certificateHash },
         params: JSON.stringify(certificateReq.paramsHuella)
       });
-      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log("**************************");
       console.log(respHuella);
-      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      console.log("**************************");
 
       let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
       console.log("--> Register to update " + registerId);
