@@ -51,7 +51,7 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name' },
+            { path: 'schedulingStatus', select: 'id name'},
             { path: 'schedulingMode', select: 'id name' }
           ]
         })
@@ -88,8 +88,7 @@ class EnrolledCourseService {
         .populate({
           path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name' },
-            { path: 'schedulingMode', select: 'id name' }
+            { path: 'schedulingStatus', select: 'id name'}
           ]
         })
         .lean()

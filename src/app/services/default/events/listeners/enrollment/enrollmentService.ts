@@ -131,7 +131,7 @@ class EnrollmentService {
                 lastname: element['Apellidos'].trim(),
                 phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
                 city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
-                country: element['País'],
+                country: (element['País']) ? element['País'].trim() : null,
                 emailAlt: element['Correo Alt'],
                 regional: element['Regional'],
                 birthdate: dob,
@@ -178,7 +178,8 @@ class EnrollmentService {
                     messageProcess: "Error al matricular al estudiante ",
                     details: {
                       user: singleUserEnrollmentContent.user,
-                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
+                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname,
+                      ...respEnrollment
                     }
                   }
                 }
