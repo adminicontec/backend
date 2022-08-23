@@ -126,6 +126,11 @@ export interface ICertificatePreview {
   showPreviewBase64?: boolean
 }
 
+export interface ICertificateReGenerate {
+  userId: string;
+  courseId: string
+}
+
 export interface IGenerateCertificatePdf {
   certificate: string,
   to_file: {
