@@ -553,6 +553,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_enrollment_viewer', description: 'Consultar programas'},
         {name: 'permission:course_scheduling_enrollment_generate_certifications', description: 'Generar certificados'},
         {name: 'permission:course_scheduling_enrollment_download_certifications', description: 'Descargar certificados'},
+        {name: 'permission:course_scheduling_enrollment_reissue_certifications', description: 'Reexpedir certificados'},
         // {name: 'permission:course_scheduling_enrollment_menu_access', description: 'Menu de programas'},
       ]},
       {name: 'module:modular', description: 'Módulo que permite administrar los modulares', permissions: [
@@ -638,6 +639,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         if (exists.status === 'success') p['id'] = exists.appModulePermission._id
 
         const response: any = await appModulePermissionService.insertOrUpdate(p)
+        console.log('response', response)
         if (response.status === 'success') {
           permissions.push(response.appModulePermission._id)
           module_permission_ids[p.name] = response.appModulePermission._id

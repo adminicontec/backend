@@ -39,7 +39,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import {
   IQueryUserToCertificate, ICertificate, IQueryCertificate,
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
-  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation
+  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { UpdateCACertificateParams } from "aws-sdk/clients/iot";
@@ -2043,6 +2043,46 @@ class CertificateService {
     }
 
     catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public reGenerateCertification = async (params: ICertificateReGenerate) => {
+    try {
+      if (!params.courseId) return responseUtility.buildResponseFailed('json', null, {error_key: "certificate.re_generate.params_invalid"})
+      if (!params.userId) return responseUtility.buildResponseFailed('json', null, {error_key: "certificate.re_generate.params_invalid"})
+
+      await CertificateQueue.updateMany({
+        userId: params.userId,
+        courseId: params.courseId,
+        deleted: false
+      }, {
+        $set: {
+          status: "Re-issue"
+        }
+      })
+      const certificates = []
+
+      const certificatesQuery = await CertificateQueue.find({
+        userId: params.userId,
+        courseId: params.courseId,
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue'] }
+      });
+
+      for (let itemCertificate of certificatesQuery) {
+        if (itemCertificate.certificate.pdfPath) {
+          itemCertificate.certificate.pdfPath = this.certificateUrl(itemCertificate.certificate.pdfPath)
+        }
+        if (itemCertificate.certificate.imagePath) {
+          itemCertificate.certificate.imagePath = this.certificateUrl(itemCertificate.certificate.imagePath)
+        }
+        certificates.push(itemCertificate);
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        certificates
+      }})
+    } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
   }

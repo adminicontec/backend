@@ -1093,6 +1093,13 @@ class ErrorResponse {
         }
       },
       "certificate": {
+        "re_generate": {
+          "params_invalid": {
+            "message": i18nUtility.__("app_error_messages.certificate.re_generate.params_invalid"),
+            "status_code": "certificate_re_generate_params_invalid",
+            "code": 400
+          },
+        },
         "login_invalid": {
           "message": i18nUtility.__("app_error_messages.certificate.login_invalid"),
           "status_code": "certificate_login_invalid",
