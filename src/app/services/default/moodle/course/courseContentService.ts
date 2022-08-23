@@ -97,7 +97,8 @@ class CourseContentService {
       isauditorquiz: false,
       name: '',
       visible: '',
-      uservisible: ''
+      uservisible: '',
+      completion: 0
     }
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
@@ -151,7 +152,8 @@ class CourseContentService {
               isauditorquiz: (respMoodleModules && respMoodleModules.cm && respMoodleModules.cm.idnumber) ? ((respMoodleModules.cm.idnumber.trim() == 'auditor') ? true : false) : false,
               instance: module.instance,
               visible: module.visible,
-              uservisible: module.uservisible
+              uservisible: module.uservisible,
+              completion: module.completion
             };
             responseCourseModules.push(singleModuleCourseContent);
           }

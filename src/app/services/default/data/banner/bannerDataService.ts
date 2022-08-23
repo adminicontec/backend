@@ -44,7 +44,7 @@ class BannerDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title content coverUrl isActive action location start_date end_date'
+      let select = 'id title content coverUrl isActive action location start_date end_date locations registerUrl'
       if (params.select) {
         select = params.select
       }
@@ -62,11 +62,19 @@ class BannerDataService {
         }
       }
 
-      if (params.location) {
-        where['location'] = params.location
-      } else {
-        where['location'] = {$in: [undefined, null]}
+      if (params.locations) {
+        if (params.locationsGrouped) {
+          where['locations'] = {$all: params.locations}
+        } else  {
+          where['locations'] = {$in: params.locations}
+        }
       }
+
+      // if (params.location) {
+      //   where['location'] = params.location
+      // } else {
+      //   where['location'] = {$in: [undefined, null]}
+      // }
 
       if (typeof params.isActive === 'undefined' || params.isActive === true) {
         where['isActive'] = true
@@ -77,7 +85,6 @@ class BannerDataService {
         sort = {}
         sort[params.sort.field] = params.sort.direction
       }
-
       let registers = []
       try {
         registers =  await Banner.find(where)

@@ -26,6 +26,7 @@ export interface ISectionQuestionsRange {
   title: string
   questions: Record<string, IQuestionsRange>
   average: number
+  category?: string
 }
 export interface ISectionQuestionsOpen {
   _id: string
@@ -83,5 +84,51 @@ export interface IGeneralReportSurvey {
   questionsWithOptions: any
   totalSurvey: number,
   isVirtual: boolean
+}
+
+export interface IConsolidateSurveyQuestionRangeQuestionAnswer {
+  totalPoints: number;
+  list: string[]
+}
+export interface IConsolidateSurveyQuestionRangeQuestion {
+  questionId: string;
+  questionAverage: number;
+  totalAnswers: number;
+  answers: IConsolidateSurveyQuestionRangeQuestionAnswer
+}
+export interface IConsolidateSurveyQuestionRange {
+  sectionId: string;
+  category?: string;
+  averageSection: number;
+  questions: IConsolidateSurveyQuestionRangeQuestion[]
+}
+
+export interface IConsolidateSurveyQuestionsWithOptionsAnswer {
+  unique: string;
+  totalAnswers: number;
+  averageQuestion: number
+}
+export interface IConsolidateSurveyQuestionsWithOptions {
+  questionId: string;
+  answers: IConsolidateSurveyQuestionsWithOptionsAnswer[],
+  totalAnswers: number
+}
+export interface IConsolidateSurvey {
+  courseScheduling: string;
+  courseSchedulingDetail?: string;
+  isVirtual: boolean;
+  endDate: string;
+  endDateMonth: string;
+  endDateYear: string;
+  totalSurvey: number;
+  teacher: string;
+  questionsRange: IConsolidateSurveyQuestionRange[],
+  questionsRangeAverage: number;
+  surveyPercentage: number;
+  questionsWithOptions: IConsolidateSurveyQuestionsWithOptions[]
+}
+
+export interface IConsolidateSurveyIn {
+  output_format?: 'db' | 'json'
 }
 //@end

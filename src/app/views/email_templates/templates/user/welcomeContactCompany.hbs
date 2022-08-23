@@ -1,0 +1,50 @@
+{{> partials/page/title title='¡Bienvenid@ al Campus Digital Icontec!'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) {{params.fullname}}</b></p>&nbsp;
+                    <p>Le damos la bienvenida al Campus Digital de Icontec.  En el Campus Digital de Icontec encontrará la siguiente información que es de su interés: </p>
+                    <ul>
+                      <li>
+                        <p>
+                          Recursos gratuitos como artículos, webinars, podcast, capsulas de conocimiento, noticias, eventos del servicio de educación de Icontec. Para acceder a estos recursos solo será necesario ingresar a la siguiente dirección del Campus Digital: <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>.
+                        </p>
+                      </li>
+                      <li>
+                        <p>
+                          En el Campus Digital encontrará información asociada a su empresa de nuestro servicio de educación (programación y certificados).  Para realizar la consulta, se ha creado un usuario para usted como persona de contacto de la empresa, lo invitamos a ingresar haciendo click al botón “iniciar sesión”, y acceder con las siguientes credenciales:
+                        </p>
+                      </li>
+                    </ul>
+
+                    <p><strong>Dirección:</strong>&nbsp;<a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></p>
+                    <p><strong>Usuario:</strong>&nbsp;{{params.username}}</p>
+                    <p><strong>Contraseña:</strong>&nbsp;{{params.password}}</p>
+
+                    <ul>
+                      <li>
+                        <p>
+                          Le informamos que la descarga de certificados se podrá realizar en el Campus Digital, después de ingresar a su cuenta, activando la ficha “certificaciones” y haciendo clic en el botón descargar certificado ⬇️ que encuentra en frente del nombre de cada participante (ver instructivo adjunto).
+                        </p>
+                      </li>
+                    </ul>
+
+                    <p class="mcSpecialText">Si requiere apoyo u orientación puede registrar un nuevo <a href="{{params.mailer.help_desk}}">ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>. Lo invitamos a consultar el <a href="{{params.mailer.campus_instructive_doc}}">instructivo de mesa de ayuda</a>.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

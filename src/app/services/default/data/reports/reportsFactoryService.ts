@@ -63,6 +63,7 @@ class ReportsFactoryService {
       const reportResponse = await service.generateReport(params)
       return reportResponse
     } catch(err) {
+      console.log('ReportsFactoryService - factoryGenerateReport', err)
       return responseUtility.buildResponseFailed('json')
     }
   }

@@ -563,6 +563,23 @@ class GeneralUtility {
   }
 
   /**
+   * @INFO Obtener duración con el formato
+   * @param seconds
+   */
+   public getHoursFromDuration = (seconds: number, format: 'short' | 'large' | null = 'short') => {
+    const hours = Math.trunc(seconds / 3600)
+    let response: string = ''
+    if (hours) {
+      let formatLabel = '';
+      if (format) {
+        formatLabel = (format === 'short') ? 'h' : ' Horas'
+      }
+      response = `${hours}${formatLabel}`
+    }
+    return response.trim();
+  }
+
+  /**
   * @INFO Obtener duración con el formato
   * @param seconds
   */

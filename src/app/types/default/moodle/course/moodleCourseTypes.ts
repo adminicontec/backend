@@ -37,4 +37,26 @@ export interface IMoodleCourse{
   visible?:number,
   status?:string
 }
+
+export interface IMoodleCourseContent{
+  id: number
+  sectionid: number
+  sectionname: string
+  instance: number
+  modname: string
+  isauditorquiz: boolean
+  name: string
+  visible: string
+  uservisible: string
+  completion: number
+}
+
+export interface IMoodleForumDiscussion{
+  id: number
+  name: string
+  timemodified: number
+  usermodified: number
+  timestart: number
+  timeend: number
+}
 //@end

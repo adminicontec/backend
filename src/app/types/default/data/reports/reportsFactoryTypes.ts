@@ -5,7 +5,8 @@
 export enum FactoryReportType {
   MODALITY = 'modality',
   OVERVIEW_PROGRAMS = 'overview_programs',
-  GENERAL_STUDENT_CERTIFICATES = 'general_student_certificates'
+  GENERAL_STUDENT_CERTIFICATES = 'general_student_certificates',
+  PROVISION_OF_PROFESSIONALS = 'provision_of_professionals'
 }
 export interface IFactoryGenerateReport {
   user: string;

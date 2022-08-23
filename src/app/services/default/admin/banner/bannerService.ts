@@ -48,7 +48,7 @@ class BannerService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id title content coverUrl isActive action location start_date end_date'
+      let select = 'id title content coverUrl isActive action location start_date end_date registerUrl locations'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Banner.find(where)
         .select(select)
@@ -94,7 +94,6 @@ class BannerService {
     try {
 
       // @INFO: Cargando imagen al servidor
-
       if (params.coverFile) {
         const defaulPath = this.default_cover_path
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
@@ -106,9 +105,9 @@ class BannerService {
         params.location = null
       }
 
-      // if (params.content && typeof params.content === 'string') {
-      //   params.content = JSON.parse(params.content)
-      // }
+      if (params.locations && typeof params.locations === 'string') {
+        params.locations = params.locations.split(',')
+      }
 
       if (params.id) {
         const register: any = await Banner.findOne({_id: params.id}).lean()
@@ -189,7 +188,7 @@ class BannerService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id title content coverUrl isActive action location start_date end_date'
+    let select = 'id title content coverUrl isActive action location start_date end_date registerUrl locations'
     if (filters.select) {
       select = filters.select
     }

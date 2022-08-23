@@ -59,11 +59,13 @@ class QualifiedTeachersService {
 
     if (filters.status) {
       where['status'] = filters.status;
+    } else if (filters.statuses) {
+      if (typeof filters.statuses === 'string') {
+        where['status'] = {$in: filters.statuses.split(',')}
+      } else {
+        where['status'] = {$in: filters.statuses}
+      }
     }
-
-    console.log('criteria: ');
-    console.dir(where, { depth: null, colors: true });
-
     let registers = []
     try {
       registers = await QualifiedTeachers.find(where)
