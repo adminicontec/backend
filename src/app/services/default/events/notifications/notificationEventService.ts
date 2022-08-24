@@ -63,6 +63,10 @@ class NotificationEventService {
         notification_source: paramsTemplate.notification_source
       })
 
+      if(mail.status == 'error'){
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'mailer.service_sending.fail_request' } });
+      }
+
       return responseUtility.buildResponseSuccess('json')
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
