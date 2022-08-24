@@ -423,6 +423,9 @@
       "not_found": "Los eventos del curso en Moodle no han sido encontrados"
     },
     "certificate": {
+      "re_generate": {
+        "params_invalid": "Los parametros para generar los certificados no son validos"
+      },
       "login_invalid": "El usuario o password no válido",
       "not_found": "El certificado no existe",
       "generation": "No se puede generar el certificado: :error",
