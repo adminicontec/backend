@@ -1195,7 +1195,7 @@ class ErrorResponse {
           },
         }
       },
-      "document" : {
+      "document": {
         "queue": {
           "type_required": {
             "message": i18nUtility.__("app_error_messages.document.queue.type_required"),
@@ -1261,7 +1261,15 @@ class ErrorResponse {
           }
         }
       },
-
+      "mailer": {
+        "service": {
+          "fail_request": {
+            "message": i18nUtility.__("app_error_messages.mailer.service.fail_request"),
+            "status_code": "qualified_teacher_not_found",
+            "code": 500
+          }
+        },
+      }
     };
     return json;
   }

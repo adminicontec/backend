@@ -15,6 +15,7 @@ export interface IQueryUserToCertificate {
   auxiliarId: string, // ID de Auxiliar qué liberó el certificado
   certificateConsecutive: string,
   certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
+  certificateType?: string
 }
 
 
@@ -101,9 +102,10 @@ export interface ICertificateQueue {
   certificateType?: string,
   certificateModule?: string,
   certificateConsecutive?: string,
-  status: string,
+  status?: string,
   message?: string,
   downloadDate?: Date,
+  notificationSent?: boolean,
   certificate?: {
     hash: string,
     url: string,

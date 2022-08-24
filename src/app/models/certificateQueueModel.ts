@@ -77,6 +77,10 @@ const CertificateQueueSchema = new Schema({
     },
     required: false,
   },
+  notificationSent: {
+    type: Schema.Types.Boolean,
+    required: false
+  },
   // @end
 }, {
   collection: 'certificate_queues', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

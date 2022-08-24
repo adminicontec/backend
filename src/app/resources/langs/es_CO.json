@@ -473,6 +473,9 @@
     "subject": "Solicitud de recuperación de contraseña"
   },
   "mailer": {
+    "service_sending" : {
+      "fail_request": "Fallo en el envío de correo"
+    },
     "welcome_user": {
       "subject": "¡Bienvenid@ al Campus Digital Icontec!"
     },

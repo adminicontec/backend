@@ -41,13 +41,16 @@ class CertificateQueueService {
  */
   public findBy = async (params: IQueryFind) => {
 
+    console.log('findBy params');
+    console.dir(params.where);
+
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate message';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate certificateType message notificationSent';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
           .select(select)
@@ -108,7 +111,9 @@ class CertificateQueueService {
               status: response.status,
               certificate: response.certificate,
               auxiliar: response.auxiliar,
-              certificateConsecutive: response.certificateConsecutive
+              certificateConsecutive: response.certificateConsecutive,
+              certificateType: response.certificateType,
+              notificationSent: response.notificationSent
             }
           }
         })
@@ -203,7 +208,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate'
+    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate message notificationSent'
     if (filters.select) {
       select = filters.select
     }
@@ -248,7 +253,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate'
+    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate message notificationSent'
     if (filters.select) {
       select = filters.select
     }
