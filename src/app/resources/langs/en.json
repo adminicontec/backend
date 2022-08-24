@@ -496,6 +496,9 @@
     "subject": "Solicitud de recuperación de contraseña"
   },
   "mailer": {
+    "service_sending" : {
+      "fail_request": "Fallo en el envío de correo"
+    },
     "participant_certificated_completed_notification": {
       "subject": "Emisión de Certificados completa - Servicio "
     },
