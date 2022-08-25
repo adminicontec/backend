@@ -1055,7 +1055,7 @@ class CertificateService {
       //#endregion  3.4 Tipo de programa
       //#endregion   >>>> 3. Validations to generate Certificate
 
-      //#region   >>>> 4. Reglas para Certificado de Auditor
+      //#region   >>>> 4. Reglas para Certificado 2 (Auditor)
       if (respCourse.scheduling.auditor_certificate) {
         reviewAuditorCerficateRules = true;
       }
@@ -1680,6 +1680,7 @@ class CertificateService {
         }
         //#endregion REGLAS PARA PRESENCIAL Y EN LINEA
 
+
         //#region REGLAS PARA VIRTUAL
 
         // Si la modalidad es , aplica esta regla
@@ -1749,7 +1750,7 @@ class CertificateService {
         //#endregion REGLAS PARA VIRTUAL
 
 
-        //#region REGLAS PARA CERTIFICADO DE AUDITOR
+        //#region REGLAS PARA CERTIFICADO DE AUDITOR - TIPO 2
         if (reviewAuditorCerficateRulesEnabled) {
           //console.log("Rules for Auditor Certificate: ")
           let flagAuditorActivities = true;
@@ -1945,9 +1946,9 @@ class CertificateService {
         headers: { Authorization: tokenHC },
         params: JSON.stringify(certificateReq.paramsHuella)
       });
-      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-      console.log(respHuella);
-      console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      // console.log(respHuella);
+      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 
       let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
       console.log("--> Register to update " + registerId);
@@ -2152,8 +2153,7 @@ class CertificateService {
         })
 
         var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
-        console.log('filename');
-        console.log(filename);
+        console.log(`   filename: ${filename}`);
 
         if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
           const time = new Date().getTime()
@@ -2217,6 +2217,7 @@ class CertificateService {
           tokenHC: tokenHC,
           preview: (params.showPreviewBase64 === true) ? respHuella.resultado : undefined,
           certificate: {
+            filename: filename,
             url: certificate?.certificate?.url,
             imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
             pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
