@@ -45,14 +45,16 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
     let respQueueToPreview: any = await certificateQueueService.
       findBy({
-        query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
+        query: QueryValues.ALL, where: [
+          { field: 'status', value: { $in: select } }
+        ]
       });
 
     if (respQueueToPreview.certificateQueue.length != 0) {
       console.log("[" + respQueueToPreview.certificateQueue.length + "] Certificate(s) to preview. ");
 
       // First loop: get certificate PDF
-      for await (const docPreview of respQueueToPreview.certificateQueue) {
+      for await (let docPreview of respQueueToPreview.certificateQueue) {
         let queuePreview: ICertificatePreview;
         queuePreview = {
           certificate_queue: docPreview._id.toString(),
@@ -64,12 +66,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
         //Get preview of recent certificate
         //responseProcessedDocument.push(docPreview);
-
         let responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
-        // console.log("---------------------- -----------");
-        // console.log("\n\rResponse preview: ");
-        // console.log(responsePreviewCertificate);
-        // console.log("---------------------- -----------");
 
         if (responsePreviewCertificate.status == 'success') {
           responseProcessedDocument.push(docPreview);
@@ -88,14 +85,15 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
           courseScheduling = await CourseScheduling.findOne({ _id: docProcessed.courseId }).select('id program metadata certificate auditor_certificate certificate_students certificate_clients')
             .populate({ path: 'program', select: 'id name code' })
 
-          console.log('Send notification to student:' + courseScheduling.certificate_students);
+          console.log(`Send notification to ${docProcessed.userId.profile.first_name} ${docProcessed.userId.profile.last_name}? ${courseScheduling.certificate_students}`);
 
           if (courseScheduling.certificate_students && courseScheduling.certificate_students == true) {
             console.log("---------------------- -----------");
-            console.log('Envío de notificación a Estudiante:');
+            console.log(`Envío de notificación a Estudiante ${docProcessed.filename} después de generar PDF :`);
             console.log("---------------------- -----------");
 
             const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+              certificateQueueId: docProcessed._id,
               participantId: docProcessed.userId._id,
               courseSchedulingId: docProcessed.courseId
             });
@@ -241,26 +239,37 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
     for (let notificationToSend of respNotificationsOnHold.certificateQueue) {
 
-      let flagNotificationSent = true;
-      console.log("---------------------- -----------");
-      console.log('Envío de notificación a Estudiante:');
-      console.log(`${notificationToSend.userId._id} - ${notificationToSend.courseId}`);
-      console.log("---------------------- -----------");
+      // Check if Certificate_students is enabled:
+      let courseScheduling: any;
+      courseScheduling = await CourseScheduling.findOne({ _id: notificationToSend.courseId }).select('id program metadata certificate auditor_certificate certificate_students certificate_clients')
+        .populate({ path: 'program', select: 'id name code' })
 
-      const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
-        participantId: notificationToSend.userId._id,
-        courseSchedulingId: notificationToSend.courseId
-      });
-      console.log(notificationResponse);
+      console.log(`Envío de notificación pendiente a ${notificationToSend.userId.profile.first_name} ${notificationToSend.userId.profile.last_name}? `);
 
-      if (notificationResponse.status == "error") {
-        flagNotificationSent = false;
+      if (courseScheduling.certificate_students && courseScheduling.certificate_students == true) {
+
+        const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+          certificateQueueId: notificationToSend._id,
+          participantId: notificationToSend.userId._id,
+          courseSchedulingId: notificationToSend.courseId
+        });
+        console.log("---------------------- -----------");
+        console.log(`${notificationToSend.userId._id} - ${notificationToSend.courseId}`);
+        console.log(notificationResponse);
+        console.log("---------------------- -----------");
+      }
+      else {
+        console.log('No se envía notificación pendiente a estudiante:');
       }
 
-      let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
-        id: notificationToSend._id,
-        notificationSent: flagNotificationSent
-      });
+      // if (notificationResponse.status == "error") {
+      //   flagNotificationSent = false;
+      // }
+
+      // let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+      //   id: notificationToSend._id,
+      //   notificationSent: flagNotificationSent
+      // });
 
     }
 

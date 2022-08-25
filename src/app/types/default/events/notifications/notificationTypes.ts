@@ -1,4 +1,5 @@
 export interface ISendNotificationParticipantCertificated {
+  certificateQueueId: string,
   courseSchedulingId: string,
   participantId: string
 }
