@@ -4,6 +4,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import services
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
 // @end
 
 // @import utilities
@@ -32,6 +33,9 @@ class NotificationEventService {
 
   public sendNotificationParticipantCertificated = async (params: ISendNotificationParticipantCertificated) => {
     try {
+      let flagNotificationSent = true;
+      let responseCertQueue: any;
+
       const user: any = await User.findOne({ _id: params.participantId }).select('id email profile.first_name profile.last_name')
       if (!user) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
@@ -45,30 +49,50 @@ class NotificationEventService {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         program_name: courseScheduling?.program?.name || '-',
         amount_notifications: 1,
-        notification_source: `participant_certificated_${user._id}_${courseScheduling._id}`,
+        notification_source: `participant_certificated_${user._id}_${courseScheduling._id}_${params.consecutive}`,
         mailer: customs['mailer'],
       }
 
-      const mail = await mailService.sendMail({
-        emails: [user.email],
-        mailOptions: {
-          subject: i18nUtility.__('mailer.participant_certificated_notification.subject'),
-          html_template: {
-            path_layout: 'icontec',
-            path_template: path_template,
-            params: { ...paramsTemplate }
-          },
-          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
-        },
-        notification_source: paramsTemplate.notification_source
-      })
-
-      if(mail.status == 'error'){
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'mailer.service_sending.fail_request' } });
+      // avoid sending seconc certificate Notification
+      if (params.consecutive.endsWith('-A')) {
+        flagNotificationSent = true;
       }
+      else {
+        const mail = await mailService.sendMail({
+          emails: [user.email],
+          mailOptions: {
+            subject: i18nUtility.__('mailer.participant_certificated_notification.subject'),
+            html_template: {
+              path_layout: 'icontec',
+              path_template: path_template,
+              params: { ...paramsTemplate }
+            },
+            amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+          },
+          notification_source: paramsTemplate.notification_source
+        })
+
+        if (mail.status == 'error') {
+          responseCertQueue = await certificateQueueService.insertOrUpdate({
+            id: params.certificateQueueId,
+            notificationSent: false
+          });
+          return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'mailer.service_sending.fail_request' } });
+        }
+        flagNotificationSent = true;
+      }
+      responseCertQueue = await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        notificationSent: flagNotificationSent
+      });
 
       return responseUtility.buildResponseSuccess('json')
     } catch (error) {
+
+      await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        notificationSent: false
+      });
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -85,7 +109,7 @@ class NotificationEventService {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
         participants: params?.participants || '-',
         amount_notifications: 10,
-        notification_source: `participant_certificated_${params.serviceId}_${user._id}`,
+        notification_source: `operative_assistant_certificated_${params.serviceId}_${user._id}`,
         mailer: customs['mailer'],
       }
 
