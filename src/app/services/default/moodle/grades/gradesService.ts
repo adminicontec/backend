@@ -15,7 +15,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { IMoodleGradesQuery } from '@scnode_app/types/default/moodle/grades/gradesTypes'
+import { IMoodleGradesQuery, ISingleGrade } from '@scnode_app/types/default/moodle/grades/gradesTypes'
 // @end
 
 class GradesService {
@@ -177,8 +177,9 @@ class GradesService {
           userid: usergrade.userid,
           userfullname: usergrade.userfullname
         }
-        let singleGrade = {
+        let singleGrade: ISingleGrade; /* = {
           id: 0,
+          idnumber: null, // here contents the "auditor" condition for quiz
           name: '',
           itemtype: '',
           itemmodule: '',
@@ -187,7 +188,7 @@ class GradesService {
           graderaw: 0,
           grademin: 0,
           grademax: 0,
-        }
+        }*/
         // console.log('+++++++++++++++++++++++++++++++++');
         // console.log(usergrade);
 
@@ -197,14 +198,17 @@ class GradesService {
             singleGrade = {
               id: element.id,
               name: element.itemname,
+              idnumber: element.idnumber,
               itemtype: element.itemtype,
               itemmodule: element.itemmodule,
               iteminstance: element.iteminstance,
-              cmid: element.cmid,
-              graderaw: element.graderaw,
+              cmid: element.cmid ? element.cmid : 0,
+              graderaw: element.graderaw ? element.graderaw : 0,
               grademin: element.grademin,
               grademax: element.grademax
             };
+            // console.log("usergrade ----------------");
+            // console.log(singleGrade);
             itemType[element.itemmodule].push(singleGrade);
           }
           // it applies only for finalGrade on Course
@@ -213,14 +217,17 @@ class GradesService {
             singleGrade = {
               id: element.id,
               name: element.itemname,
+              idnumber: element.idnumber,
               itemtype: element.itemtype,
               itemmodule: element.itemtype,
               iteminstance: element.iteminstance,
-              cmid: element.cmid,
-              graderaw: element.graderaw,
+              cmid: element.cmid ? element.cmid : 0,
+              graderaw: element.graderaw ? element.graderaw : 0,
               grademin: element.grademin,
               grademax: element.grademax
             };
+            // console.log("usergrade ----------------");
+            // console.log(singleGrade);
             itemType[element.itemtype].push(singleGrade);
           }
         });
