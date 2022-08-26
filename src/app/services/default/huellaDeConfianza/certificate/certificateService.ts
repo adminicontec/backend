@@ -41,6 +41,7 @@ import {
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
   ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
@@ -1539,9 +1540,9 @@ class CertificateService {
         return null;
       }
 
-      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
-      // console.dir(respUserGrades.grades, { depth: null });
-      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+      console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+      console.dir(respUserGrades.grades, { depth: null });
+      console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
 
       for await (const student of respUserGrades.grades) {
 
@@ -1557,7 +1558,8 @@ class CertificateService {
           auditor: false,
           auditorCertificate: '',
           auditorGrade: null
-        }
+        };
+        //let studentProgress: IStudentProgress;
 
         // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
         // console.log(`Progress for: ${student.userData.userfullname}`);
@@ -1567,17 +1569,18 @@ class CertificateService {
 
         if (schedulingMode == 'presencial' || schedulingMode == 'en linea') {
 
-          //#region  :::::::::::: Assistance ::::::::::::
-
-          /* Todas las asistencia debe estar igual o por encima de 75%.
-            Si alguna no cumple esta regla, no se emite Condición por Asistencia
-          */
           let flagAttendance = true;
           let flagAttendanceCount = 0;
           let flagQuiz = true;
           let flagQuizCount = 0;
 
+          //#region  :::::::::::: Attendance ::::::::::::
 
+          /* Todas las asistencia debe estar igual o por encima de 75%.
+            Si alguna no cumple esta regla, no se emite Condición por Asistencia
+          */
+
+          console.log("[ *** Attendance Grades *** ]");
           for (const grade of student.itemType.attendance) {
 
             if (grade.graderaw) {
@@ -1618,42 +1621,90 @@ class CertificateService {
           /* Todas los exámenes debe estar igual o por encima de 70%.
             Si alguna no cumple esta regla, no se emite Condición por Examen
           */
+          console.log("[ *** QUIZ Grades PR-ON*** ]");
           if (student.itemType.quiz.length > 0) {
-            for (const grade of student.itemType.quiz) {
-              if (grade.graderaw < 70) {
-                //flagQuiz = false;
-                continue;
+            // look up for idnumber: 'auditor' ONLY
+            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            console.log('auditorQuiz found?');
+            console.log(auditorQuiz);
+
+            if (auditorQuiz) {
+              if (auditorQuiz.graderaw < 70) {
+                flagQuiz = false;
               }
-              flagQuizCount++;
+              else {
+                flagQuiz = true;
+                flagQuizCount++;
+              }
             }
-            if (flagQuizCount < student.itemType.quiz.length)
+            else
               flagQuiz = false;
+
+            // for (const grade of student.itemType.quiz) {
+            //   if (grade.graderaw < 70) {
+            //     //flagQuiz = false;
+            //     continue;
+            //   }
+            //   flagQuizCount++;
+            // }
+            // if (flagQuizCount < student.itemType.quiz.length)
+            //   flagQuiz = false;
           }
           else
             flagQuiz = false;
           //#endregion :::::::::::: Quiz ::::::::::::
 
           //#region :::::::::::: Certification resolution ::::::::::::
+          // Resolución: texto que indicará el grado alcanzado en el certificado; puede ser
+          // * Asistencia
+          // * Asistencia Parcial
+          // * Asistencia y Aprobación (aplica solamente casos especiales)
           //console.log("Total attendance: " + flagAttendance);
           if (flagAttendance) {
-            if (flagQuiz && (programTypeName !== 'diplomado')) {
-              programTypeText = (programTypeName) ? ' el ' : '.';
 
+            if (programTypeName == 'diplomado') {
+              // this condition is to define where to put the text below: in Paper (certificate) or Review Screen
               if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
-              else
-                studentProgress.attended_approved = 'Asistencia y aprobación.';
-            }
-            else {
-              programTypeText = (programTypeName) ? ' al ' : '.';
-              //studentProgress.attended_approved = 'Asistió' + programTypeText;
-              if (isForCertificate)
-                studentProgress.attended_approved = 'Asistió al'; // + programTypeText;
+                studentProgress.attended_approved = 'Asistió al';
               else
                 studentProgress.attended_approved = 'Asistencia.';
 
             }
-            //studentProgress.auditor = isAuditorCerficateEnabled;
+            else if (programTypeName == 'curso' || programTypeName == 'programa') {
+              // flag for Auditor Quiz approved
+              if (flagQuiz) {
+                if (isForCertificate)
+                  studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
+                else
+                  studentProgress.attended_approved = 'Asistencia y aprobación.';
+              }
+              else {
+                if (isForCertificate)
+                  studentProgress.attended_approved = 'Asistió al';
+                else
+                  studentProgress.attended_approved = 'Asistencia.';
+              }
+
+            }
+
+            // if (flagQuiz && (programTypeName !== 'diplomado')) {
+            //   programTypeText = (programTypeName) ? ' el ' : '.';
+
+            //   if (isForCertificate)
+            //     studentProgress.attended_approved = 'Asistió y aprobó el '; // + programTypeText;
+            //   else
+            //     studentProgress.attended_approved = 'Asistencia y aprobación.';
+            // }
+            // else {
+            //   programTypeText = (programTypeName) ? ' al ' : '.';
+            //   //studentProgress.attended_approved = 'Asistió' + programTypeText;
+            //   if (isForCertificate)
+            //     studentProgress.attended_approved = 'Asistió al'; // + programTypeText;
+            //   else
+            //     studentProgress.attended_approved = 'Asistencia.';
+
+            // }
+
             studentProgress.status = 'ok';
           }
           else {
@@ -1667,6 +1718,7 @@ class CertificateService {
             }
           }
           studentProgress.assistance = `${flagAttendanceCount}/${student.itemType.attendance.length}`;
+          // en revisión este elemento: quizGrade
           studentProgress.quizGrade = (student.itemType.quiz.length != 0) ? `${flagQuizCount}/${student.itemType.quiz.length}` : '-';
 
           // console.log(`\t» Attendance:        ${studentProgress.assistance}`);
@@ -1685,6 +1737,7 @@ class CertificateService {
 
         // Si la modalidad es , aplica esta regla
         if (schedulingMode == 'virtual') {
+          let flagQuiz = true;
           const respCompletionStatus: any = await completionstatusService.activitiesCompletion({
             courseID: moodleCourseID, //register.courseID,
             userID: student.userData.userid, //register.user.moodle_id
@@ -1719,23 +1772,100 @@ class CertificateService {
 
           //#endregion :::::::::::: Completion percentage ::::::::::::
 
+          //#region :::::::::::: Quiz ::::::::::::
+          /* Todas los exámenes debe estar igual o por encima de 70%.
+            Si alguna no cumple esta regla, no se emite Condición por Examen
+          */
+          console.log("[ *** QUIZ Grades VIRTUAL *** ]");
+          if (student.itemType.quiz.length > 0) {
+            // look up for idnumber: 'auditor' ONLY
+            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            console.log('auditorQuiz found?');
+            console.log(auditorQuiz);
+
+            if (auditorQuiz) {
+              if (auditorQuiz.graderaw < 70) {
+                flagQuiz = false;
+              }
+              else {
+                flagQuiz = true;
+              }
+            }
+            else
+              flagQuiz = false;
+          }
+          else
+            flagQuiz = false;
+          //#endregion :::::::::::: Quiz ::::::::::::
+
           //#region :::::::::::: Certification resolution ::::::::::::
 
           //if (programTypeName === 'diplomado' || programTypeName === 'curso')
-          // Aplica para Diplomado - Curso o Programa
-          if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
-            programTypeText = (programTypeName) ? ' al ' : '.';
-            if (isForCertificate)
-              studentProgress.attended_approved = 'Asistió al ';
-            else
-              studentProgress.attended_approved = 'Asistencia.'
 
-            studentProgress.status = 'ok';
+          if (programTypeName === 'diplomado') {
+            if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+              programTypeText = (programTypeName) ? ' al ' : '.';
+              if (isForCertificate)
+                studentProgress.attended_approved = 'Asistió al ';
+              else
+                studentProgress.attended_approved = 'Asistencia.'
+
+              studentProgress.status = 'ok';
+            }
+            else {
+              studentProgress.attended_approved = 'No se certifica.';
+              studentProgress.status = 'no';
+            }
           }
-          else {
-            studentProgress.attended_approved = 'No se certifica.';
-            studentProgress.status = 'no';
+          else if (programTypeName == 'curso' || programTypeName == 'programa') {
+            if (flagQuiz) {
+
+              if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+                programTypeText = (programTypeName) ? ' el ' : '.';
+                if (isForCertificate)
+                  studentProgress.attended_approved = 'Asistió y aprobó el ';
+                else
+                  studentProgress.attended_approved = 'Asistencia y Aprobación.'
+
+                studentProgress.status = 'ok';
+              }
+              else {
+                studentProgress.attended_approved = 'No se certifica.';
+                studentProgress.status = 'no';
+              }
+            }
+            else {
+              if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+                programTypeText = (programTypeName) ? ' al ' : '.';
+                if (isForCertificate)
+                  studentProgress.attended_approved = 'Asistió al ';
+                else
+                  studentProgress.attended_approved = 'Asistencia.'
+
+                studentProgress.status = 'ok';
+              }
+              else {
+                studentProgress.attended_approved = 'No se certifica.';
+                studentProgress.status = 'no';
+              }
+
+            }
           }
+
+          // // Aplica para Diplomado - Curso o Programa
+          // if (studentProgress.completion == 100 && studentProgress.average_grade >= 70) {
+          //   programTypeText = (programTypeName) ? ' al ' : '.';
+          //   if (isForCertificate)
+          //     studentProgress.attended_approved = 'Asistió al ';
+          //   else
+          //     studentProgress.attended_approved = 'Asistencia.'
+
+          //   studentProgress.status = 'ok';
+          // }
+          // else {
+          //   studentProgress.attended_approved = 'No se certifica.';
+          //   studentProgress.status = 'no';
+          // }
 
 
           console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
@@ -2235,8 +2365,8 @@ class CertificateService {
 
   public reGenerateCertification = async (params: ICertificateReGenerate) => {
     try {
-      if (!params.courseId) return responseUtility.buildResponseFailed('json', null, {error_key: "certificate.re_generate.params_invalid"})
-      if (!params.userId) return responseUtility.buildResponseFailed('json', null, {error_key: "certificate.re_generate.params_invalid"})
+      if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+      if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
 
       await CertificateQueue.updateMany({
         userId: params.userId,
@@ -2265,9 +2395,11 @@ class CertificateService {
         certificates.push(itemCertificate);
       }
 
-      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-        certificates
-      }})
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificates
+        }
+      })
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
