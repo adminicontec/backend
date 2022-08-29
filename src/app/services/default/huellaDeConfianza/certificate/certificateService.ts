@@ -1637,10 +1637,10 @@ class CertificateService {
                 flagQuiz = false;
               }
               else {
-                studentProgress.auditorGradeC1 = auditorQuiz.graderaw;
                 flagQuiz = true;
                 flagQuizCount++;
               }
+              studentProgress.auditorGradeC1 = auditorQuiz.graderaw;
             }
             else
               flagQuiz = false;
@@ -1775,9 +1775,9 @@ class CertificateService {
                 flagQuiz = false;
               }
               else {
-                studentProgress.auditorGradeC1 = auditorQuiz.graderaw;
                 flagQuiz = true;
               }
+              studentProgress.auditorGradeC1 = auditorQuiz.graderaw;
             }
             else
               flagQuiz = false;
