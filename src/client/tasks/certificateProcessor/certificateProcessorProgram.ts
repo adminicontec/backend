@@ -33,20 +33,18 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
       });
 
-    console.log(respQueueToProcess);
-
     if (respQueueToProcess.status === "error") return respQueueToProcess;
 
     if (respQueueToProcess.certificateQueue.length != 0) {
       console.log("Request for " + respQueueToProcess.certificateQueue.length + " certificates.");
 
       for await (const element of respQueueToProcess.certificateQueue) {
-        console.log('.............................');
-        console.log(element._id);
-        console.log(`Liberado por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
+        // console.log('.............................');
+        // console.log(element._id);
+        // console.log(`Liberado por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
 
         // 1. Send request to process Certificate on HdC service.
-        let respSetCertificate: any = await certificateService.setCertificate({
+        let respSetCertificate: any = await certificateService.createCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
@@ -62,9 +60,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
           console.log("----------- END Process Set Certificate --------------------");
           console.log("Certificate generation successful!");
         }
-
       }
-
     }
     else {
       console.log("There're no certificates to request.");
@@ -72,6 +68,7 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
     //#endregion
 
     //#region Put certificate, only Re-issue requests
+
     console.log("2. Get all items on Certificate Queue [Re-issue] status")
     const selectIssue = ["Re-issue"];
     let respReissueQueueToProcess: any = await certificateQueueService.
@@ -88,18 +85,21 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
 
       for await (const element of respReissueQueueToProcess.certificateQueue) {
         console.log('.............................');
-        console.log(element._id);
+        console.log(element);
+        console.log('.............................');
+        console.log(`${element._id} - ${element.certificateType}`);
         console.log(`Re-expedido por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
         console.log(`Código: ${element.certificate.hash} `)
 
         // 1. Send request to process Certificate on HdC service.
-        let respPutCertificate: any = await certificateService.setCertificate({
+        let respPutCertificate: any = await certificateService.editCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
           auxiliarId: element.auxiliar._id,
           certificateConsecutive: element.certificateConsecutive,
-          certificateHash: element.certificate.hash
+          certificateHash: element.certificate.hash,
+          certificateType: element.certificateType
         });
 
         if (respPutCertificate.status === "error") {
@@ -109,10 +109,6 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
         else {
           console.log("----------- END Process re-issue Certificate --------------------");
           console.log("Certificate re-issue successful!");
-          // respPutCertificate.respProcessSetCertificates.forEach(element => {
-          //   console.log("..................");
-          //   console.log(element.certificateQueue);
-          // });
         }
 
       }

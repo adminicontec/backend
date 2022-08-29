@@ -4,6 +4,7 @@ import { customs } from '@scnode_core/config/globals'
 
 // @import services
 import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
 // @end
 
 // @import utilities
@@ -32,6 +33,9 @@ class NotificationEventService {
 
   public sendNotificationParticipantCertificated = async (params: ISendNotificationParticipantCertificated) => {
     try {
+      let flagNotificationSent = true;
+      let responseCertQueue: any;
+
       const user: any = await User.findOne({ _id: params.participantId }).select('id email profile.first_name profile.last_name')
       if (!user) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
@@ -63,8 +67,26 @@ class NotificationEventService {
         notification_source: paramsTemplate.notification_source
       })
 
+      if (mail.status == 'error') {
+        responseCertQueue = await certificateQueueService.insertOrUpdate({
+          id: params.certificateQueueId,
+          notificationSent: false
+        });
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'mailer.service_sending.fail_request' } });
+      }
+
+      responseCertQueue = await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        notificationSent: true
+      });
+
       return responseUtility.buildResponseSuccess('json')
     } catch (error) {
+
+      await certificateQueueService.insertOrUpdate({
+        id: params.certificateQueueId,
+        notificationSent: false
+      });
       return responseUtility.buildResponseFailed('json')
     }
   }

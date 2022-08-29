@@ -1100,6 +1100,13 @@ class ErrorResponse {
         }
       },
       "certificate": {
+        "re_generate": {
+          "params_invalid": {
+            "message": i18nUtility.__("app_error_messages.certificate.re_generate.params_invalid"),
+            "status_code": "certificate_re_generate_params_invalid",
+            "code": 400
+          },
+        },
         "login_invalid": {
           "message": i18nUtility.__("app_error_messages.certificate.login_invalid"),
           "status_code": "certificate_login_invalid",
@@ -1195,7 +1202,7 @@ class ErrorResponse {
           },
         }
       },
-      "document" : {
+      "document": {
         "queue": {
           "type_required": {
             "message": i18nUtility.__("app_error_messages.document.queue.type_required"),
@@ -1261,7 +1268,15 @@ class ErrorResponse {
           }
         }
       },
-
+      "mailer": {
+        "service": {
+          "fail_request": {
+            "message": i18nUtility.__("app_error_messages.mailer.service.fail_request"),
+            "status_code": "qualified_teacher_not_found",
+            "code": 500
+          }
+        },
+      }
     };
     return json;
   }

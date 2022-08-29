@@ -84,7 +84,7 @@ class EnrollmentService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Re-issue'] }
       })
         .select('id userId')
 
@@ -127,7 +127,7 @@ class EnrollmentService {
             const certificates = await CertificateQueue.find({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue'] }
             }); //.select('');
 
             register.certificate = [];
