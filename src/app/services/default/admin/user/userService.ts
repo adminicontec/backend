@@ -28,7 +28,7 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IUser, IUserDelete, IUserQuery, IUserDateTimezone } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
@@ -547,6 +547,36 @@ class UserService {
   }
 
   /**
+   * Metodo que permite hacer borrar un registro
+   * @param params Filtros para eliminar
+   * @returns
+   */
+  public deleteMany = async (params: IUserManyDelete) => {
+    try {
+      const where = {}
+      if (params.username) {
+        if (Array.isArray(params.username) && params.username.length > 0) {
+          where['username'] = {$in: params.username}
+        } else if (typeof params.username === 'string') {
+          where['username'] = params.username
+        }
+      }
+
+      if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.delete_many.query_required'})
+
+      // @ts-ignore
+      const response = await User.delete(where)
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        response
+      }})
+    } catch (error) {
+      console.log('UserService - deleteMany', error)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
    * Metodo que permite listar todos los registros
    * @param [filters] Estructura de filtros para la consulta
    * @returns
@@ -620,6 +650,13 @@ class UserService {
           where["roles"] = { $in: role_ids };
         }
       }
+    }
+
+    if (filters.username) {
+      if (typeof filters.username === "string") {
+        filters.username = filters.username.split(",");
+      }
+      where['username'] = {$in: filters.username}
     }
 
     if (filters.company) {

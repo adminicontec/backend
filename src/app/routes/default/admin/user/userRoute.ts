@@ -34,6 +34,7 @@ class UserRoute {
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'user', method: 'create', dir: 'admin/user' }], ['auth'])
     routerUtility.post(app, _route, '/update/:id', this.instanceController.update, [], ['auth'])
     routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
+    routerUtility.post(app, _route, '/delete-many', this.instanceController.deleteMany, [], ['auth'])
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
     routerUtility.post(app, _route, '/create-multiple', this.instanceController.createMultiple, [], ['auth']);
