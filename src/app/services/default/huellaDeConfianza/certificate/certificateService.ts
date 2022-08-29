@@ -299,6 +299,7 @@ class CertificateService {
 
       // double check if Auditor quiz is not enabled after review Moodle grades.
       isAuditorCerficateEnabled = (isAuditorCerficateEnabled && progressListResult.auditorQuizApplies) ? true : false;
+      firstCertificateIsAuditor = progressListResult.firstCertificateIsAuditor;
 
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
       // console.dir(progressListResult, { depth: null });
@@ -322,13 +323,10 @@ class CertificateService {
 
           let studentProgress = progressListResult.listOfStudentProgress.find(f => f.student.userData.userid == register.user.moodle_id);
           if (studentProgress) {
-            console.log('──·─···─·──');
-            console.dir(studentProgress.student.studentProgress, { depth: null });
-            console.log('──·─···─·──');
+            // console.log('──·─···─·──');
+            // console.dir(studentProgress.student.studentProgress, { depth: null });
+            // console.log('──·─···─·──');
             register.progress = studentProgress.student.studentProgress;
-
-            // firstCertificateIsAuditor check condition:
-            // if any Student has grade in auditorGradeC1
           }
 
           //#region Add certification to response
@@ -382,6 +380,7 @@ class CertificateService {
         schedulingMode: schedulingMode,
         previewCertificateParams: previewCertificateParams,
         isAuditorCerficateEnabled: isAuditorCerficateEnabled,
+        firstCertificateIsAuditor: firstCertificateIsAuditor,
         enrollment: [
           ...listOfStudents
         ],
@@ -616,6 +615,7 @@ class CertificateService {
 
     let count = 1
     let isAuditorCerficateEnabled = false;
+    let firstCertificateIsAuditor = false;
 
     //#region query Filters
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
@@ -753,8 +753,10 @@ class CertificateService {
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
       // console.dir(studentProgressList, { depth: null });
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
-      if (progressListResult)
+      if (progressListResult) {
+        firstCertificateIsAuditor = progressListResult.firstCertificateIsAuditor;
         listOfStudents.push(progressListResult);
+      }
       else {
         return responseUtility.buildResponseFailed('json', null,
           {
@@ -766,11 +768,6 @@ class CertificateService {
           });
       }
 
-
-      //#region  Reglas para Certificado de Auditor
-
-
-      //#endregion
 
     }
     catch (e) {
@@ -789,6 +786,7 @@ class CertificateService {
       additional_parameters: {
         schedulingMode: schedulingMode.toLowerCase(),
         isAuditorCerficateEnabled: isAuditorCerficateEnabled,
+        firstCertificateIsAuditor: firstCertificateIsAuditor,
         completion: [
           ...listOfStudents
         ],
@@ -1526,6 +1524,7 @@ class CertificateService {
       let listOfStudentProgress = [];
       let auditorQuizApplies = false;
       let responseStudentProgress;
+      let firstCertificateIsAuditor = false;
 
       // Presencial - Online
       // Asistencia >= 75
@@ -1987,8 +1986,15 @@ class CertificateService {
       // console.log("──────────────────────────────────────────────────────────");
       // console.log("Auditor Quiz applied: " + auditorQuizApplies);
       // console.log("──────────────────────────────────────────────────────────");
+
+      // firstCertificateIsAuditor check condition:
+      // if any Student has grade in auditorGradeC1
+      firstCertificateIsAuditor = Object.values(listOfStudentProgress).some(val => val.student.studentProgress.auditorGradeC1 != null);
+      console.log(`firstCertificateIsAuditor: ${firstCertificateIsAuditor}`);
+
       responseStudentProgress = {
         auditorQuizApplies,
+        firstCertificateIsAuditor,
         listOfStudentProgress
       };
 
