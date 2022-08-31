@@ -92,6 +92,10 @@ export interface IUserDelete {
   id: string // Identificador del usuario
 }
 
+export interface IUserManyDelete {
+  username?: Array<string> | string
+}
+
 export interface IUserQuery {
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina

@@ -185,6 +185,13 @@ class ErrorResponse {
         }
       },
       "user": {
+        "delete_many": {
+          "query_required": {
+            "message": i18nUtility.__("app_error_messages.user.delete_many.query_required"),
+            "status_code": "user_delete_many_query_required",
+            "code": 400
+          }
+        },
         "not_found": {
           "message": i18nUtility.__("app_error_messages.user.not_found"),
           "status_code": "user_not_found",

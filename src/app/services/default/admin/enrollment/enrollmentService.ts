@@ -340,7 +340,7 @@ class EnrollmentService {
             id: '',
             username: newUserID,//params.user,
             email: params.email,
-            password: passw,
+            password: newUserID,
             roles: [roles['student']], // Id de ROL sujeto a verificación en CV
             phoneNumber: params.phoneNumber,
             profile: {

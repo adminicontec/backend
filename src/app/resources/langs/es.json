@@ -75,6 +75,9 @@
       }
     },
     "user": {
+      "delete_many": {
+        "query_required": "No se han proporcionado filtros para el borrado masivo"
+      },
       "not_found": "El usuario no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",

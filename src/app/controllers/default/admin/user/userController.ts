@@ -80,6 +80,17 @@ class UserController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite eliminar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public deleteMany = async (req: Request, res: Response) => {
+		const response = await userService.deleteMany(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
 	/**
 	 * Metodo que permite listar los registros
 	 * @param req Objeto de clase Express
