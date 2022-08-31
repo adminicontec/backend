@@ -164,11 +164,14 @@ class CalendarEventsService {
 
           if (module.modname === 'forum' && module.completion === 2) {
             const respForumDiscussions: {discussions: IMoodleForumDiscussion[]} = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: {...moodleParamsForum, forumid: module.instance} });
-            const forumDiscussion = respForumDiscussions?.discussions?.length ? respForumDiscussions.discussions[0] : null
-            eventTimeStart = forumDiscussion.timestart ? new Date(forumDiscussion.timestart * 1000).toISOString() : null
-            eventTimeEnd = forumDiscussion.timeend ? new Date(forumDiscussion.timeend * 1000).toISOString() : null
-            isForum = true;
-            groupByInstance = []
+            if (respForumDiscussions?.discussions) {
+              // TODO: La funcionalidad de foros no esta correctamente configurada debe dedicarse tiempo
+              const forumDiscussion = respForumDiscussions?.discussions?.length ? respForumDiscussions.discussions[0] : null
+              eventTimeStart = forumDiscussion.timestart ? new Date(forumDiscussion.timestart * 1000).toISOString() : null
+              eventTimeEnd = forumDiscussion.timeend ? new Date(forumDiscussion.timeend * 1000).toISOString() : null
+              isForum = true;
+              groupByInstance = []
+            }
           } else {
             groupByInstance = respMoodleEvents.events.filter(e => e.instance == module.instance);
           }
