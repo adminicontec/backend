@@ -108,13 +108,6 @@ class CourseSchedulingDataService {
                 ]}
               ]}
             ]
-          } else {
-            sessions_where['sessions.startDate'] = {[`$${direction}`]: date.format('YYYY-MM-DD')}
-
-            selectDetails = selectDetails.split(' ').map((string) => {
-              if (string === 'sessions') string = 'sessions.$'
-              return string
-            }).join(' ')
           }
         }
       }
@@ -163,7 +156,49 @@ class CourseSchedulingDataService {
 
           scheduling.push(item)
         } else {
-          element.sessions.map((session) => {
+          const sessions = element.sessions.reduce((accum, itemSession) => {
+            if (params.sessionStartDate) {
+              let direction = 'lte'
+              if (params.sessionStartDate.direction) direction = params.sessionStartDate.direction
+
+              let date = moment.utc()
+              if (params.sessionStartDate.date !== 'today') {
+                date = moment.utc(params.sessionStartDate.date)
+              }
+
+              switch(direction) {
+                case 'lte':
+                  if (moment.utc(itemSession.startDate).isSameOrBefore(moment.utc(date.format('YYYY-MM-DD 23:59:59')))) {
+                    accum.push(itemSession)
+                  }
+                  break;
+                case 'lt':
+                  if (moment.utc(itemSession.startDate).isBefore(moment.utc(date.format('YYYY-MM-DD 00:00:00')))) {
+                    accum.push(itemSession)
+                  }
+                  break;
+                case 'gte':
+                  if (moment.utc(itemSession.startDate).isSameOrAfter(moment.utc(date.format('YYYY-MM-DD 00:00:00')))) {
+                    accum.push(itemSession)
+                  }
+                  break;
+                case 'gt':
+                  if (moment.utc(itemSession.startDate).isAfter(moment.utc(date.format('YYYY-MM-DD 23:59:59')))) {
+                    accum.push(itemSession)
+                  }
+                  break;
+                case 'eq':
+                  if (moment.utc(itemSession.startDate).isBetween(moment.utc(date.format('YYYY-MM-DD 00:00:00')), moment.utc(date.format('YYYY-MM-DD 23:59:59')))) {
+                    accum.push(itemSession)
+                  }
+                  break;
+              }
+            } else {
+              accum.push(itemSession)
+            }
+            return accum;
+          }, [])
+          sessions.map((session) => {
             total_scheduling += parseInt(session.duration)
 
             let row_content = {
@@ -173,7 +208,7 @@ class CourseSchedulingDataService {
               course_code: (element.course && element.course.code) ? element.course.code : '',
               course_name: (element.course && element.course.name) ? element.course.name : '',
               course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-              course_row_span: (element.sessions.length > 0) ? element.sessions.length : 0,
+              course_row_span: (sessions.length > 0) ? sessions.length : 0,
             }
 
             let schedule = ''
@@ -184,7 +219,7 @@ class CourseSchedulingDataService {
             let session_data = {
               consecutive: session_count + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-              start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+              start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
               duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
               schedule: schedule,
             }
