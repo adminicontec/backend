@@ -65,7 +65,6 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         };
 
         //Get preview of recent certificate
-        //responseProcessedDocument.push(docPreview);
         let responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
 
         if (responsePreviewCertificate.status == 'success') {
@@ -80,6 +79,8 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         // Second Loop: send email notifications to students whose certificate is OK and is enabled from Scheduling screen
         for await (const docProcessed of responseProcessedDocument) {
 
+          console.log('docProcessed');
+          console.log(docProcessed.certificateConsecutive);
           // Check if Certificate_students is enabled:
           let courseScheduling: any;
           courseScheduling = await CourseScheduling.findOne({ _id: docProcessed.courseId }).select('id program metadata certificate auditor_certificate certificate_students certificate_clients')
@@ -95,7 +96,8 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
             const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
               certificateQueueId: docProcessed._id,
               participantId: docProcessed.userId._id,
-              courseSchedulingId: docProcessed.courseId
+              courseSchedulingId: docProcessed.courseId,
+              consecutive: docProcessed.certificateConsecutive
             });
 
             console.log(notificationResponse);
@@ -251,7 +253,8 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
           certificateQueueId: notificationToSend._id,
           participantId: notificationToSend.userId._id,
-          courseSchedulingId: notificationToSend.courseId
+          courseSchedulingId: notificationToSend.courseId,
+          consecutive: notificationToSend.certificateConsecutive
         });
         console.log("---------------------- -----------");
         console.log(`${notificationToSend.userId._id} - ${notificationToSend.courseId}`);
