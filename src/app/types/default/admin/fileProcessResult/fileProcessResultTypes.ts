@@ -3,9 +3,11 @@
 
 // @add your types
 export interface IFileProcessResult{
-  row?: number,    // Nro de registro a cargar
-  status?: string, // status de carga
-  messageProcess?: string,
+  index?: number,
+  teacher?: string     // Identificador del usuario en Campus Digital
+  message?: string,
+  status?: string
   details?: object
+  sheetName?:string
 }
 //@end

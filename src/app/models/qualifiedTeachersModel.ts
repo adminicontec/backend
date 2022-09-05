@@ -11,11 +11,11 @@ const QualifiedTeachersSchema = new Schema({
     ref: "User",
     required: true,
   },
-  modular: {
-    type: Schema.Types.ObjectId,
-    ref: "Modular",
-    required: true,
-  },
+  // modular: {
+  //   type: Schema.Types.ObjectId,
+  //   ref: "Modular",
+  //   required: true,
+  // },
   courseCode: {
     type: Schema.Types.String,
     required: true,

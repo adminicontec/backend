@@ -1095,7 +1095,11 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.moodle_user.insertOrUpdate.failed"),
             "status_code": "moodle_user_insertOrUpdate_failed",
             "code": 400
-
+          },
+          "error": {
+            "message": i18nUtility.__("app_error_messages.moodle_user.insertOrUpdate.error"),
+            "status_code": "moodle_user_insertOrUpdate_error",
+            "code": 400
           }
         }
       },
