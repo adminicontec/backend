@@ -639,7 +639,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         if (exists.status === 'success') p['id'] = exists.appModulePermission._id
 
         const response: any = await appModulePermissionService.insertOrUpdate(p)
-        console.log('response', response)
+
         if (response.status === 'success') {
           permissions.push(response.appModulePermission._id)
           module_permission_ids[p.name] = response.appModulePermission._id
