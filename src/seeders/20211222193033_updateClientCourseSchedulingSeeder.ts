@@ -20,7 +20,7 @@ class UpdateClientCourseSchedulingSeeder extends DefaultPluginsSeederSeederServi
   public run = async () => {
     // @seeder_logic Add seeder logic
     // @end
-
+    return true;
     try {
       const response: any = await CourseScheduling.updateMany({client: {$exists: true}}, {$unset: {client: 1}}, {
         useFindAndModify: false,

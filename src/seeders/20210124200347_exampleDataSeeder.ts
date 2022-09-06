@@ -30,7 +30,7 @@ class ExampleDataSeeder extends DefaultPluginsSeederSeederService {
   public run = async () => {
     // @seeder_logic Add seeder logic
 
-    return false;
+    return true;
     let post_types = {}
     const postTypesResponse: any = await postTypeService.list()
     if (postTypesResponse.status === 'success') {
