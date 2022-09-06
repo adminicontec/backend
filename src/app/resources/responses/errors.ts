@@ -1057,6 +1057,18 @@ class ErrorResponse {
           "status_code": "enrollment_course_not_found",
           "code": 400
         },
+        "add_scheduling": {
+          "bad_params": {
+            "message": i18nUtility.__("app_error_messages.enrollment.add_scheduling.bad_params"),
+            "status_code": "enrollment_course_add_scheduling_bad_params",
+            "code": 400
+          }
+        },
+        "scheduling_already_config": {
+          "message": i18nUtility.__("app_error_messages.enrollment.scheduling_already_config"),
+          "status_code": "enrollment_course_scheduling_already_config",
+          "code": 400
+        },
         "insertOrUpdate": {
           "already_exists": {
             "message": i18nUtility.__("app_error_messages.enrollment.insertOrUpdate.already_exists"),

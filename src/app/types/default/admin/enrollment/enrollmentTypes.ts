@@ -2,6 +2,11 @@
 // @end
 
 // @add your types
+export interface IAddCourseSchedulingEnrollment {
+  enrollmentIds: string[]
+  force?: boolean
+  courseSchedulingId: string;
+}
 export interface IEnrollment{
   courseScheduling?: string    // Identificador de la programación
   user?: string | any // Identificador del usuario en campus

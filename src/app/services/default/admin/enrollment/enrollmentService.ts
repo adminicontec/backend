@@ -35,7 +35,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -239,18 +239,24 @@ class EnrollmentService {
       const courseSchedulingResponse: any = await courseSchedulingService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.courseScheduling }] })
       if (courseSchedulingResponse.status === 'success') {
         courseScheduling = courseSchedulingResponse.scheduling
+      }
+    } else if (params.courseID) {
+      const courseSchedulingResponse: any = await courseSchedulingService.findBy({ query: QueryValues.ONE, where: [{ field: 'moodle_id', value: params.courseID }] })
+      if (courseSchedulingResponse.status === 'success') {
+        courseScheduling = courseSchedulingResponse.scheduling
+      }
+    }
 
-        const courses = await CourseSchedulingDetails.find({
-          course_scheduling: courseScheduling._id
-        }).select('id teacher')
-          .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
-          .lean()
-        for await (const course of courses) {
-          if (course.teacher) {
-            teachers.push(course.teacher._id.toString())
-          }
+    if (courseScheduling) {
+      const courses = await CourseSchedulingDetails.find({
+        course_scheduling: courseScheduling._id
+      }).select('id teacher')
+        .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+        .lean()
+      for await (const course of courses) {
+        if (course.teacher) {
+          teachers.push(course.teacher._id.toString())
         }
-
       }
     }
 
@@ -330,7 +336,7 @@ class EnrollmentService {
           paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
 
           //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
-          var passw = params.password;
+          var passw = newUserID;
 
           let userEnrollment = null;
           let respCampusDataUser: any = null;
@@ -381,7 +387,7 @@ class EnrollmentService {
 
             // Insertar nuevo Usuario si no existe
             const respoUser = await userService.insertOrUpdate(cvUserParams);
-            console.log("Response from userService.insertOrUpdate():");
+            console.log("Response from userService.insertOrUpdate():", respoUser);
 
             if (respoUser.status == "success") {
               params.user = respoUser.user._id;
@@ -1090,6 +1096,55 @@ class EnrollmentService {
     })
 
 
+  }
+
+  public addCourseSchedulingToEnrollment = async (params: IAddCourseSchedulingEnrollment) => {
+    try {
+      if (!params.courseSchedulingId) return responseUtility.buildResponseFailed('json', null, {error_key: 'enrollment.add_scheduling.bad_params'})
+      if (!params.enrollmentIds) return responseUtility.buildResponseFailed('json', null, {error_key: 'enrollment.add_scheduling.bad_params'})
+
+      let enrollmentsList = [];
+      const enrollmentsToUpdate: {key: string}[] = []
+      const enrollmentsNotUpdated: {key: string, reason: string}[] = []
+
+      const enrollments = await Enrollment.find({
+        _id: {$in: params.enrollmentIds}
+      })
+      .select('id course_scheduling')
+      if (!enrollments) return responseUtility.buildResponseFailed('json', null, {error_key: 'enrollment.not_found'})
+      // if (enrollment.course_scheduling && !params.force) return responseUtility.buildResponseFailed('json', null, {error_key: 'enrollment.scheduling_already_config'})
+      const enrollmentIds = enrollments.reduce((accum, element) => {
+        if (element.course_scheduling && !params.force) {
+          enrollmentsNotUpdated.push({key: element._id, reason: `Ya se ha configurado el servicio para esta matricula`})
+        } else {
+          accum.push(element._id)
+          enrollmentsToUpdate.push({key: element._id})
+        }
+        return accum;
+      }, [])
+
+      if (enrollmentIds.length > 0) {
+        await Enrollment.updateMany({
+          _id: {$in: enrollmentIds},
+          deleted: false
+        }, {
+          $set: {
+            course_scheduling: params.courseSchedulingId
+          }
+        })
+        enrollmentsList = await Enrollment.find({
+          _id: {$in: enrollmentIds},
+          deleted: false
+        });
+      }
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        enrollmentsToUpdate,
+        enrollmentsNotUpdated,
+        enrollments: enrollmentsList,
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {message: err?.message})
+    }
   }
 
   private getLastEnrollmentCode = async (params: IEnrollmentQuery) => {
