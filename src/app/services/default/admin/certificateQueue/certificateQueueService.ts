@@ -2,6 +2,7 @@
 // @end
 
 // @import services
+import { certificateService } from "@scnode_app/services/default/huellaDeConfianza/certificate/certificateService";
 // @end
 
 // @import utilities
@@ -14,7 +15,7 @@ import { Enrollment, CertificateQueue } from '@scnode_app/models';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
 // @end
 
@@ -208,7 +209,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId auxiliar status certificateType certificateModule certificate message notificationSent'
+    let select = 'id courseId userId auxiliar status certificateConsecutive certificateType certificateModule certificate message notificationSent created_at'
     if (filters.select) {
       select = filters.select
     }
@@ -223,6 +224,19 @@ class CertificateQueueService {
           { name: { $regex: '.*' + search + '.*', $options: 'i' } },
         ]
       }
+    }
+
+    if (filters?.courseId) {
+      where['courseId'] = filters.courseId
+    }
+    if (filters?.userId) {
+      where['userId'] = filters.userId
+    }
+    if (filters?.auxiliar) {
+      where['auxiliar'] = filters.auxiliar
+    }
+    if (filters?.status) {
+      where['status'] = filters.status
     }
 
     let registers = []
@@ -350,6 +364,129 @@ class CertificateQueueService {
       return responseUtility.buildResponseSuccess('json')
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public processCertificateQueue = async (params: IProcessCertificateQueue) => {
+    try {
+      const output = params.output || 'process'
+
+      const where = {}
+      if (params?.certificateQueueId) {
+        where['_id'] = params.certificateQueueId
+      }
+      if (params?.courseId) {
+        where['courseId'] = params.courseId
+      }
+      if (params?.userId) {
+        where['userId'] = params.userId
+      }
+      if (params?.auxiliar) {
+        where['auxiliar'] = params.auxiliar
+      }
+      if (params?.status) {
+        where['status'] = params.status
+      }
+
+      if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {message: `Se deben proporcionar filtros para la busqueda`, code: 400})
+
+      const certificateQueues = await CertificateQueue.find(where).select()
+
+      if (output === 'query') {
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          certificateQueues
+        }})
+      }
+
+      if (certificateQueues.length === 0) return responseUtility.buildResponseFailed('json', null, {message: `No hay certificados a procesar`, code: 400})
+
+      const logs = ["Init Task: Certificate Processor "]
+
+      for (const certificate of certificateQueues) {
+        if (certificate?.status === 'New') {
+          logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process started`)
+          try {
+            let respSetCertificate: any = await certificateService.createCertificate({
+              certificateQueueId: certificate._id,
+              courseId: certificate.courseId,
+              userId: certificate.userId,
+              auxiliarId: certificate.auxiliar,
+              certificateConsecutive: certificate.certificateConsecutive
+            });
+            if (respSetCertificate.status === "error") {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)
+              logs.push(respSetCertificate)
+            }
+            else {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+            }
+          } catch (err) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+            logs.push(err?.message)
+          }
+        } else if (certificate?.status === 'Re-issue') {
+          logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
+
+          try {
+            let respPutCertificate: any = await certificateService.editCertificate({
+              certificateQueueId: certificate._id,
+              courseId: certificate.courseId,
+              userId: certificate.userId,
+              auxiliarId: certificate.auxiliar,
+              certificateConsecutive: certificate.certificateConsecutive,
+              certificateHash: certificate.certificate.hash,
+              certificateType: certificate.certificateType
+            });
+            if (respPutCertificate.status === "error") {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)
+              logs.push(respPutCertificate)
+            }
+            else {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+            }
+          } catch (err) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+            logs.push(err?.message)
+          }
+        } else if (certificate?.status === 'Requested') {
+          logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
+
+          try {
+            let queuePreview: ICertificatePreview = {
+              certificate_queue: certificate._id.toString(),
+              hash: certificate.certificate.hash,
+              format: 2,
+              template: 1,
+              updateCertificate: true,
+            };
+
+            //Get preview of recent certificate
+            let responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
+
+            if (responsePreviewCertificate.status == 'error') {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)
+              logs.push(responsePreviewCertificate)
+            } else {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+            }
+
+          } catch (err) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+            logs.push(err?.message)
+          }
+        }
+      }
+
+      logs.push(`End Task: Certificate Processor`)
+      const certificateQueuesAfter = await CertificateQueue.find(where).select()
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificateQueues: certificateQueuesAfter,
+          logs
+        }
+      })
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {error: err?.message}})
     }
   }
 

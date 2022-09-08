@@ -2353,7 +2353,7 @@ class CertificateService {
         deleted: false
       }, {
         $set: {
-          status: "Re-issue"
+          status: params.status || "Re-issue"
         }
       })
       const certificates = []

@@ -54,6 +54,10 @@ class CertificateLogsService {
       }
     }
 
+    if (filters?.idCertificateQueue) {
+      where['idCertificateQueue'] = filters.idCertificateQueue
+    }
+
     let registers = []
     try {
       registers = await CertificateLogs.find(where)

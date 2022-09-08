@@ -83,6 +83,9 @@ export interface ICertificateQueueQuery {
   nPerPage?: string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?: string, // Busca sobre los campos de la coleccion
+  courseId?: string,
+  userId?: string,
+  auxiliar?: string,
   status?: string,
 }
 export interface ICertificateQueueRequest {
@@ -130,6 +133,7 @@ export interface ICertificatePreview {
 export interface ICertificateReGenerate {
   userId: string;
   courseId: string
+  status?: string
 }
 
 export interface IGenerateCertificatePdf {
@@ -173,5 +177,14 @@ export interface ISignatureInformation{
   signatoryName: string,
   signatoryPosition: string,
   signatoryCompanyName: string
+}
+
+export interface IProcessCertificateQueue {
+  certificateQueueId?: string
+  courseId?: string,
+  userId?: string,
+  auxiliar?: string,
+  status?: string,
+  output?: 'process' | 'query'
 }
 //@end
