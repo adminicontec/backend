@@ -2136,11 +2136,11 @@ class CertificateService {
 
       // Build request for Update Certificate
       let respHuella: any = await queryUtility.query({
-        method: 'put',
-        url: certificate_setup.endpoint.update_certificate,
+        method: 'post',
+        url: certificate_setup.endpoint.create_certificate,
         api: 'huellaDeConfianza',
         headers: { Authorization: tokenHC },
-        querystringParams: { id: responseCertificateQueue.certificateQueue.certificate.hash },
+        // querystringParams: { id: responseCertificateQueue.certificateQueue.certificate.hash },
         params: JSON.stringify(certificateReq.paramsHuella)
       });
       console.log("**************************");
