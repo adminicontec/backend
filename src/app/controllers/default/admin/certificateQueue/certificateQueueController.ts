@@ -71,6 +71,11 @@ class CertificateQueueController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  public processCertificate = async (req: Request, res: Response) => {
+    const response = await certificateQueueService.processCertificateQueue(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
 }
 
 export const certificateQueueController = new CertificateQueueController();
