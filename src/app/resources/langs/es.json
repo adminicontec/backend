@@ -423,7 +423,8 @@
     "moodle_user": {
       "not_found": "El usuario en Moodle no ha sido encontrado",
       "insertOrUpdate": {
-        "failed": "Ya existe un usuario en Moodle :username"
+        "failed": "Ya existe un usuario en Moodle :username",
+        "error": "Error al insertar el usuario en Moodle - :error"
       }
     },
     "moodle_events": {

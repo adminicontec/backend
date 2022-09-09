@@ -236,8 +236,8 @@ class UserService {
         if (register.email !== params.email)
           sendWelcomEmail = true;
 
-        console.log("Ready to update");
-        console.log(params)
+        // console.log("Ready to update");
+        // console.log(params)
         try {
           const response: any = await User.findByIdAndUpdate(params.id, params, {
             useFindAndModify: false,
@@ -245,8 +245,8 @@ class UserService {
             lean: true,
           });
 
-          console.log("Search results for : " + params.id);
-          console.log(response);
+          // console.log("Search results for : " + params.id);
+          // console.log(response);
 
 
           await Role.populate(response, { path: 'roles', select: 'id name description' })
@@ -324,13 +324,13 @@ class UserService {
       }
       else {
         //#region INSERT NEW USER
-        console.log("* * User.findOne * *");
+        // console.log("* * User.findOne * *");
         const exist = await User.findOne({ username: params.username })
 
-        console.log("If user Exists --> [" + params.username + "]");
+        // console.log("If user Exists --> [" + params.username + "]");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
-        console.log("If Password --> ");
+        // console.log("If Password --> ");
         if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
         params.passwordHash = await this.hashPassword(params.password);
@@ -413,11 +413,13 @@ class UserService {
                   }
                   else {
                     await this.delete({ id: _id })
+                    if (respMoodleInsert?.status) return respMoodleInsert;
                     return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
                   }
                 }
                 else {
                   await this.delete({ id: _id })
+                  if (respMoodleInsert?.status) return respMoodleInsert;
                   return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
                 }
               }
