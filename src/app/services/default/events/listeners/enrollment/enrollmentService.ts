@@ -51,7 +51,7 @@ class EnrollmentService {
 
     console.log('llego aca', params)
 
-    let processResult: IFileProcessResult;
+    let processResult;
     let errors = [];
 
     console.log(">>>>>>>>>>> Begin Massive Enrollment")
