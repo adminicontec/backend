@@ -153,7 +153,7 @@ class QualifiedTeachersService {
             qualifiedTeacher: {
               _id: response._id,
               teacher: response.teacher,
-              modular: response.modular,
+              // modular: response.modular,
               courseCode: response.courseCode,
               courseName: response.courseName,
               evaluationDate: response.evaluationDate,
@@ -174,10 +174,10 @@ class QualifiedTeachersService {
         }
 
         // Query if Modular ID exists
-        const respModular = await modularService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.modular }] })
-        if (respModular.status == 'error') {
-          return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'modular.not_found' } });
-        }
+        // const respModular = await modularService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.modular }] })
+        // if (respModular.status == 'error') {
+        //   return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'modular.not_found' } });
+        // }
 
         // Query as unique register
         const respQualifiedTeacher = await QualifiedTeachers.findOne({ teacher: params.teacher, courseCode: params.courseCode })
@@ -196,7 +196,7 @@ class QualifiedTeachersService {
             qualifiedTeacher: {
               _id: response._id,
               teacher: response.teacher,
-              modular: response.modular,
+              // modular: response.modular,
               courseCode: response.courseCode,
               courseName: response.courseName,
               evaluationDate: response.evaluationDate,
@@ -211,7 +211,7 @@ class QualifiedTeachersService {
 
     } catch (e) {
       console.log(e);
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message})
     }
 
   }

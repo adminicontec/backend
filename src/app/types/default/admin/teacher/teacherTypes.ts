@@ -43,7 +43,7 @@ export interface ITeacherQuery {
 export interface IQualifiedProfessional {
   documentID?: string,     // Documento de identidad
   email: string,          // email de docente
-  modular: string,
+  // modular: string,
   courseCode: string,
   versionStatus: string,
   courseName: string,
