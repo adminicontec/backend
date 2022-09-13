@@ -119,8 +119,43 @@ const CourseSchedulingInformationSchema = new Schema({
     attendanceScore: {
       type: Schema.Types.Number
     },
-
-  }]
+    progressPercentage: {
+      type: Schema.Types.Number
+    }
+  }],
+  certificationData: {
+    isAuditorCerficateEnabled: {
+      type: Schema.Types.Boolean
+    },
+    firstCertificateIsAuditor:  {
+      type: Schema.Types.Boolean
+    },
+    certificationLabel:  {
+      type: Schema.Types.String
+    },
+    virtualProgress:  {
+      type: Schema.Types.Number
+    },
+    virtualActivities:  {
+      type: Schema.Types.Number
+    },
+    assistance:  {
+      type: Schema.Types.Number
+    },
+    auditorCertificate: {
+      certificationLabel:  {
+        type: Schema.Types.String
+      },
+      auditorExamScore:  {
+        type: Schema.Types.Number
+      },
+    },
+    firstCertificateIsAuditorContent: {
+      auditorExamScore:  {
+        type: Schema.Types.Number
+      },
+    },
+  }
   // @end
 }, {
   collection: 'course_scheduling_informations' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
