@@ -39,12 +39,36 @@ export interface ICourseSchedulingInformation{
   courses?: {                                   // Listado de cursos del servicio
     schedulingDetails: string;                  // Id del curso
     attendanceScore?: number;                   // Calificación de asistencia
-  }[]
+    progressPercentage?: number
+  }[],
+  certificationData?: {
+    isAuditorCerficateEnabled?: boolean,
+    firstCertificateIsAuditor?: boolean,
+    certificationLabel?: string,
+    virtualProgress: number,
+    virtualActivities: number,
+    assistance: number,
+    auditorCertificate: {
+      certificationLabel: string,
+      auditorExamScore: number,
+    },
+    firstCertificateIsAuditorContent: {
+      auditorExamScore: number
+    },
+  }
 }
 
 export interface IParamsCourseSchedulingInformationList extends IQueryFind{
   pageNumber?:string, // Numero de pagina
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la colección a buscar
+}
+
+export interface ICourseSchedulingInformationProcess {
+  courseSchedulings?: string | string[]
+}
+
+export interface IGetCourseSchedulingList {
+  courseSchedulings?: string | string[]
 }
 //@end

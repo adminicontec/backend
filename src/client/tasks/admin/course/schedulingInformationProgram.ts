@@ -13,15 +13,21 @@ import { courseSchedulingInformationService } from "@scnode_app/services/default
 import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
 // @end
 
+interface ITaskCustom {
+  courseSchedulings?: string
+}
+
 class SchedulingInformationProgram extends DefaultPluginsTaskTaskService {
 
   /**
    * Metodo que contiene la logica de la tarea
    * @return Booleano que identifica si se pudo o no ejecutar la tarea
    */
-  public run = async (taskParams: TaskParams) => {
+  public run = async (taskParams: TaskParams & ITaskCustom) => {
     // @task_logic Add task logic
-    await courseSchedulingInformationService.processInformation();
+    await courseSchedulingInformationService.processInformation({
+      courseSchedulings: taskParams.courseSchedulings
+    });
     // @end
 
     return true; // Always return true | false
