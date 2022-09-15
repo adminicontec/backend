@@ -66,7 +66,7 @@ class EnrollmentService {
       console.log("Sheet content:" + dataFromWorksheet.length + " records");
 
       const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
-        .select('id account_executive')
+        .select('id account_executive moodle_id')
         .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
         .populate({ path: 'schedulingType', select: 'id name' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -77,6 +77,19 @@ class EnrollmentService {
       console.log(`Modalidad: ${courseScheduling.schedulingMode.name}`);
 
       let index = 1;
+
+      let enrollmentCode = 1;
+      const lastEnrollmentCode: any = await enrollmentAdminService.getLastEnrollmentCode({
+        courseID: courseScheduling.moodle_id,
+      });
+      console.log(lastEnrollmentCode);
+
+      if (lastEnrollmentCode?.enrollmentCode) {
+        enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
+      }
+
+
+      console.log(`Code: ${enrollmentCode}`);
 
       for await (const element of dataFromWorksheet) {
 
@@ -144,10 +157,12 @@ class EnrollmentService {
                 courseID: params.courseID,
                 rolename: 'student',
                 courseScheduling: params.courseScheduling,
-                sendEmail: params.sendEmail
+                sendEmail: params.sendEmail,
+                enrollmentCode
               }
               const respEnrollment: any = await enrollmentAdminService.insertOrUpdate(singleUserEnrollmentContent);
               if (respEnrollment.status == 'success') {
+                enrollmentCode++;
                 processResult = {
                   row: index,
                   status: 'OK',
