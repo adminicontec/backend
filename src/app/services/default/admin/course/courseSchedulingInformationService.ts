@@ -16,7 +16,7 @@ import { CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enro
 
 // @import types
 import { ICourseScheduling } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
-import { ICourseSchedulingInformation, IParamsCourseSchedulingInformationList } from '@scnode_app/types/default/admin/course/courseSchedulingInformationTypes';
+import { ICourseSchedulingInformation, ICourseSchedulingInformationProcess, IGetCourseSchedulingList, IParamsCourseSchedulingInformationList } from '@scnode_app/types/default/admin/course/courseSchedulingInformationTypes';
 import { IEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import { ICourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 // @end
@@ -100,10 +100,10 @@ class CourseSchedulingInformationService {
     })
   }
 
-  public processInformation = async () => {
+  public processInformation = async (params: ICourseSchedulingInformationProcess) => {
     try {
       // Consultar los servicios confirmados y ejecutados
-      const schedulings = await this.getCourseSchedulingList();
+      const schedulings = await this.getCourseSchedulingList({courseSchedulings: params.courseSchedulings});
 
       for await (let scheduling of schedulings) {
         // Obtener todos los datos necesarios para procesar
@@ -128,20 +128,30 @@ class CourseSchedulingInformationService {
           }
         }
       }
-
+      return responseUtility.buildResponseSuccess('json')
     } catch (error) {
       console.log('Error CourseSchedulingInformationService => processInformation: ', error);
-      return responseUtility.buildResponseFailed('json');
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {err: error?.message}});
     }
   }
 
-  private getCourseSchedulingList = async (): Promise<ICourseScheduling[]> => {
+  private getCourseSchedulingList = async (params: IGetCourseSchedulingList): Promise<ICourseScheduling[]> => {
     const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
     const date = new Date();
     // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
     date.setMonth(date.getMonth() - 3);
     // const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, endDate: {$gt: date}}).select('id moodle_id duration').lean();
-    const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}}).select('id moodle_id duration').lean();
+    const query = {
+      schedulingStatus: {$in: status.map(s => s._id)},
+    }
+    if (params.courseSchedulings) {
+      if (typeof params.courseSchedulings === 'string') {
+        query['_id'] = {$in: params.courseSchedulings.split(',')}
+      } else if (Array.isArray(params.courseSchedulings)) {
+        query['_id'] = {$in: params.courseSchedulings}
+      }
+    }
+    const schedulings = await CourseScheduling.find(query).select('id moodle_id duration').lean();
     // const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, moodle_id: '421'}).select('id moodle_id duration').lean();
     return schedulings && schedulings.length ? schedulings : [];
   }
@@ -198,11 +208,11 @@ class CourseSchedulingInformationService {
       }
       if (student.studentProgress) {
         // Nota final
-        params.totalScore = student.studentProgress.average_grade;
+        params.totalScore = student.studentProgress.average_grade; // OK - Para virtual:
         // Porcentaje de completitud
-        params.completion = student.studentProgress.completion;
+        params.completion = student.studentProgress.completion; // OK
         // Calificación de examen de auditor
-        params.auditExamScore = student.studentProgress.auditorGrade;
+        params.auditExamScore = student.studentProgress.auditorGradeC1;
         // Verificar si aprueba o no el examen de auditor
         params.isAuditExamApprove = student.studentProgress.auditor;
         // Tipo de certificado de auditor
@@ -211,6 +221,23 @@ class CourseSchedulingInformationService {
         params.isPartialCertification = student.studentProgress.attended_approved === 'Certificado parcial.';
         // Verificar si es certificado de asistencia
         params.isAttendanceCertification = student.studentProgress.attended_approved === 'Asistencia.';
+
+        params.certificationData = {
+          isAuditorCerficateEnabled: rules?.isAuditorCerficateEnabled || false,
+          firstCertificateIsAuditor: rules?.firstCertificateIsAuditor || false,
+          certificationLabel: student.studentProgress.attended_approved, // OK - Para cualquier modalidad aparece
+          virtualProgress: student.studentProgress.completion || undefined, // OK - Para virtual representa el progreso
+          virtualActivities: student.studentProgress.average_grade || undefined, // OK - Para virtual representa el score de activides
+          assistance: student.studentProgress?.assistanceDetails?.percentage || undefined,
+          auditorCertificate: {
+            certificationLabel: student.studentProgress?.auditorCertificate || undefined,
+            auditorExamScore: Math.round(student.studentProgress?.auditorGradeC2 * 100) / 100 || undefined
+          },
+          firstCertificateIsAuditorContent: {
+            auditorExamScore: Math.round(student.studentProgress?.auditorGradeC1*100) / 100 || undefined
+          }
+        }
+
       }
     }
     return params;
@@ -238,27 +265,38 @@ class CourseSchedulingInformationService {
   }
 
   private getSchedulingDetailsStats = async (_params: ICourseSchedulingInformation, details: ICourseSchedulingDetail[], moduleList: any, rules: any, enrollment: IEnrollment): Promise<ICourseSchedulingInformation> => {
+
     const params = _params;
-    let attendanceScore: number = 0;
     params.courses = [];
-    if (details && details.length && moduleList && moduleList.courseModules) {
+    if (details && details.length) {
       for await (let detail of details) {
         // Encontrar el modulo en los módulos
-        const module = moduleList.courseModules.find((m)  => String(m.sectionid) === (detail.course as any)?.moodle_id);
-        if (module) {
-          const studentRule = await this.getStudentFromRules(rules, enrollment);
-          if (studentRule) {
-            // Encontrar la asistencia en las rules
-            const attendance = studentRule.itemType?.attendance?.find((a) => a.cmid === module.id);
-            if (attendance) {
-              attendanceScore = attendance.graderaw;
+        let attendanceScore: number = 0;
+        let progressPercentage = 0;
+        const studentRule = await this.getStudentFromRules(rules, enrollment);
+        if (studentRule) {
+          if (moduleList && moduleList.courseModules) {
+            const module = moduleList.courseModules.find((m)  => String(m.sectionid) === (detail.course as any)?.moodle_id);
+            if (module) {
+              // Encontrar la asistencia en las rules
+              const attendance = studentRule.itemType?.attendance?.find((a) => a.cmid === module.id);
+              if (attendance) {
+                attendanceScore = attendance.graderaw;
+              }
+            }
+          }
+
+          if (studentRule?.studentProgress?.progressByModule) {
+            if (studentRule?.studentProgress?.progressByModule[(detail.course as any)?.moodle_id]) {
+              progressPercentage = studentRule?.studentProgress?.progressByModule[(detail.course as any)?.moodle_id].percentage || 0
             }
           }
         }
         // Guardar la información
         params.courses.push({
           schedulingDetails: detail._id,
-          attendanceScore
+          attendanceScore,
+          progressPercentage
         });
       }
     }

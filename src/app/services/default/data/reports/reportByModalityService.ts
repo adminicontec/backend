@@ -55,6 +55,8 @@ export interface IReportPage {
   participants: IReportParticipant[];
   isVirtual: boolean;
   isAuditor: boolean;
+  isAuditorCerficateEnabled: boolean,
+  firstCertificateIsAuditor: boolean
 }
 
 export interface IReportCourse {
@@ -87,6 +89,21 @@ export interface IReportParticipant {
     evaluationNote: number;
     finalNote: number;
   },
+  certificationData?: {
+    isAuditorCerficateEnabled?: boolean,
+    firstCertificateIsAuditor?: boolean,
+    certificationLabel?: string,
+    virtualProgress: number,
+    virtualActivities: number,
+    assistance: number,
+    auditorCertificate: {
+      certificationLabel: string,
+      auditorExamScore: number,
+    },
+    firstCertificateIsAuditorContent: {
+      auditorExamScore: number
+    },
+  }
   certification: {
     totalAssistanceCertification: string;
     partialCertification: string;
@@ -107,6 +124,7 @@ export interface ICourseSchedulingInfoByParticipantAndCourse {
   _id: string,
   schedulingDetails: string,
   attendanceScore: number
+  progressPercentage: number
 }
 export interface ICourseSchedulingInfoByParticipant {
   generalData: {
@@ -116,6 +134,7 @@ export interface ICourseSchedulingInfoByParticipant {
     courseScheduling: string,
     totalAttendanceScore: number,
     totalAttendanceHours: number,
+    forumsScore: number,
     taskScore: number,
     examsScore: number,
     totalScore: number,
@@ -125,7 +144,22 @@ export interface ICourseSchedulingInfoByParticipant {
     isPartialCertification: boolean,
     isAttendanceCertification: boolean,
     certificationDate: string;
-    assistanceCertificate: string
+    assistanceCertificate: string,
+    certificationData?: {
+      isAuditorCerficateEnabled?: boolean,
+      firstCertificateIsAuditor?: boolean,
+      certificationLabel?: string,
+      virtualProgress: number,
+      virtualActivities: number,
+      assistance: number,
+      auditorCertificate: {
+        certificationLabel: string,
+        auditorExamScore: number,
+      },
+      firstCertificateIsAuditorContent: {
+        auditorExamScore: number
+      },
+    }
   },
   courses: Record<string, ICourseSchedulingInfoByParticipantAndCourse>
 }
@@ -165,8 +199,14 @@ class ReportByModalityService {
         schedulingStatus: {$in: [
           courseSchedulingStatusInfo['Confirmado']._id,
           courseSchedulingStatusInfo['Ejecutado']._id,
-          courseSchedulingStatusInfo['Cancelado']._id,
+          // courseSchedulingStatusInfo['Cancelado']._id,
         ]}
+      }
+
+      if (params.courseSchedulings) {
+        where['_id'] = {$in: params.courseSchedulings}
+      } else if (params.serviceIds) {
+        where['metadata.service_id'] = {$in: params.serviceIds}
       }
 
       if (params.auditor === true || params.auditor === false) {
@@ -290,7 +330,7 @@ class ReportByModalityService {
             },[])
           },
         })
-        .select('user courseScheduling totalAttendanceHours totalAttendanceScore auditCertificateType taskScore examsScore totalScore completion auditExamScore isAuditExamApprove isPartialCertification isAttendanceCertification courses certificationDate assistanceCertificate')
+        .select('user courseScheduling totalAttendanceHours totalAttendanceScore auditCertificateType forumsScore taskScore examsScore totalScore completion auditExamScore isAuditExamApprove isPartialCertification isAttendanceCertification courses certificationDate assistanceCertificate certificationData')
         .lean()
 
         if (courseSchedulingInformationByProgramQuery.length > 0) {
@@ -364,7 +404,10 @@ class ReportByModalityService {
           totalCourses: 0,
           participants: [],
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
-          isAuditor: courseScheduling?.program?.isAuditor || false,
+          // isAuditor: courseScheduling?.program?.isAuditor || false,
+          isAuditor: false,
+          isAuditorCerficateEnabled: false,
+          firstCertificateIsAuditor: false,
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -422,6 +465,21 @@ class ReportByModalityService {
                 evaluationNote: 0,
                 finalNote: 0
               },
+              certificationData: {
+                isAuditorCerficateEnabled: false,
+                firstCertificateIsAuditor: false,
+                certificationLabel: undefined,
+                virtualProgress: undefined,
+                virtualActivities: undefined,
+                assistance: undefined,
+                auditorCertificate: {
+                  certificationLabel: undefined,
+                  auditorExamScore: undefined,
+                },
+                firstCertificateIsAuditorContent: {
+                  auditorExamScore: undefined
+                },
+              },
               certification: {
                 totalAssistanceCertification: '-',
                 partialCertification: '-',
@@ -448,16 +506,25 @@ class ReportByModalityService {
               courseSchedulingInfoByParticipant = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]
             }
 
-
-            if (itemBase.isAuditor) {
-              // participantItemBase.auditor.examNote = Math.floor((Math.random() * (100-1)) +1);
-              participantItemBase.auditor.examNote = courseSchedulingInfoByParticipant?.generalData?.auditExamScore || 0; // @INFO: Dato extraido del consolidado
-              // participantItemBase.auditor.examApproval = courseSchedulingInfoByParticipant?.generalData?.isAuditExamApprove ? 'Si' : 'No' // @INFO: Dato extraido del consolidado
-              participantItemBase.auditor.examApproval = participantItemBase.auditor.examNote >= 70 ? 'Si' : 'No'  // -- @INFO: Dato calculado
-
-              // participantItemBase.certification.auditorCertificationType = 'No se certifica'
-              participantItemBase.certification.auditorCertificationType = courseSchedulingInfoByParticipant?.generalData?.auditCertificateType || '-' // @INFO: Dato extraido del consolidado
+            if (courseSchedulingInfoByParticipant?.generalData?.certificationData?.isAuditorCerficateEnabled) {
+              itemBase.isAuditor = true;
+              itemBase.isAuditorCerficateEnabled = true;
             }
+            if (courseSchedulingInfoByParticipant?.generalData?.certificationData?.firstCertificateIsAuditor) {
+              itemBase.isAuditor = true;
+              itemBase.firstCertificateIsAuditor = true
+            }
+
+
+            // if (itemBase.isAuditor) {
+            //   // participantItemBase.auditor.examNote = Math.floor((Math.random() * (100-1)) +1);
+            //   participantItemBase.auditor.examNote = courseSchedulingInfoByParticipant?.generalData?.auditExamScore || 0; // @INFO: Dato extraido del consolidado
+            //   // participantItemBase.auditor.examApproval = courseSchedulingInfoByParticipant?.generalData?.isAuditExamApprove ? 'Si' : 'No' // @INFO: Dato extraido del consolidado
+            //   participantItemBase.auditor.examApproval = participantItemBase.auditor.examNote >= 70 ? 'Si' : 'No'  // -- @INFO: Dato calculado
+
+            //   // participantItemBase.certification.auditorCertificationType = 'No se certifica'
+            //   participantItemBase.certification.auditorCertificationType = courseSchedulingInfoByParticipant?.generalData?.auditCertificateType || '-' // @INFO: Dato extraido del consolidado
+            // }
 
             if (!itemBase.isVirtual) {
               if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -508,7 +575,12 @@ class ReportByModalityService {
                 for (const course of courses) {
                   if (!participantItemBase.progress.progressByCourse[course?._id.toString()]) {
                     // const progressParticipantInCourse = Math.floor((Math.random() * (100-1)) +1)
-                    const progressParticipantInCourse = 0 // TODO: Extraer valor que debe salir del consolidado
+
+                    let participantInfoByCourse: ICourseSchedulingInfoByParticipantAndCourse;
+                    if (courseSchedulingInfoByParticipant?.courses && courseSchedulingInfoByParticipant.courses[course?._id.toString()]) {
+                      participantInfoByCourse = courseSchedulingInfoByParticipant.courses[course?._id.toString()];
+                    }
+                    const progressParticipantInCourse = participantInfoByCourse?.progressPercentage || 0 // @INFO: Dato extraido del consolidado
                     participantItemBase.progress.progressByCourse[course?._id.toString()] = {
                       value: progressParticipantInCourse
                     }
@@ -520,7 +592,7 @@ class ReportByModalityService {
                 }
 
                 // participantItemBase.progress.forumNote = Math.floor((Math.random() * (100-1)) +1)
-                participantItemBase.progress.forumNote = 0 // TODO: Extraer valor que debe salir del consolidado
+                participantItemBase.progress.forumNote = courseSchedulingInfoByParticipant?.generalData?.forumsScore || 0 // @INFO: Dato extraido del consolidado
                 // participantItemBase.progress.taskNote = Math.floor((Math.random() * (100-1)) +1)
                 // participantItemBase.progress.evaluationNote = Math.floor((Math.random() * (100-1)) +1)
                 // participantItemBase.progress.finalNote = Math.floor((Math.random() * (100-1)) +1)
@@ -529,39 +601,56 @@ class ReportByModalityService {
                 participantItemBase.progress.finalNote = courseSchedulingInfoByParticipant?.generalData?.totalScore || 0 // @INFO: Dato extraido del consolidado
 
 
-                const certificationStatus = []
-                if (participantItemBase.progress.percentageOfProgressInTheProgram === 100) {
-                  certificationStatus.push(true)
-                } else {
-                  certificationStatus.push(false)
-                }
+                // const certificationStatus = []
+                // if (participantItemBase.progress.percentageOfProgressInTheProgram === 100) {
+                //   certificationStatus.push(true)
+                // } else {
+                //   certificationStatus.push(false)
+                // }
 
-                if (participantItemBase.progress.evaluationNote >= 70) {
-                  certificationStatus.push(true)
-                } else {
-                  certificationStatus.push(false)
-                }
+                // if (participantItemBase.progress.evaluationNote >= 70) {
+                //   certificationStatus.push(true)
+                // } else {
+                //   certificationStatus.push(false)
+                // }
 
-                if (itemBase.isAuditor) {
-                  if (participantItemBase.auditor.examNote >= 70) {
-                    certificationStatus.push(true)
-                  } else {
-                    certificationStatus.push(false)
-                  }
-                }
+                // if (itemBase.isAuditor) {
+                //   if (participantItemBase.auditor.examNote >= 70) {
+                //     certificationStatus.push(true)
+                //   } else {
+                //     certificationStatus.push(false)
+                //   }
+                // }
+                // if (participant?.user?.profile?.doc_number === '1005848364') {
+                //   console.log('participantItemBase.progress.percentageOfProgressInTheProgram', participantItemBase.progress.percentageOfProgressInTheProgram)
+                //   console.log('participantItemBase.progress.evaluationNote', participantItemBase.progress.evaluationNote)
+                //   console.log('participantItemBase.auditor.examNote', participantItemBase.auditor.examNote)
+                //   console.log('certificationStatus', certificationStatus)
+                // }
 
-                let virtualCertification = 'NO'
-                if (certificationStatus.length > 0) {
-                  const anyFalse = certificationStatus.filter((i) => i === false)
-                  if (!anyFalse) {
-                    virtualCertification = 'SI'
-                  }
-                }
+                // let virtualCertification = 'NO'
+                // if (certificationStatus.length > 0) {
+                //   const anyFalse = certificationStatus.filter((i) => i === false)
+                //   if (!anyFalse) {
+                //     virtualCertification = 'SI'
+                //   }
+                // }
 
-                participantItemBase.certification.virtualCertification = virtualCertification
-                participantItemBase.certification.virtualApprovedExamAuditor = itemBase.isAuditor && participantItemBase.auditor.examNote > 70 ? 'SI' : 'NO'
-                participantItemBase.certification.virtualCertificationType = `${virtualCertification} SE CERTIFICA`
+                // participantItemBase.certification.virtualCertification = virtualCertification
+                // participantItemBase.certification.virtualApprovedExamAuditor = itemBase.isAuditor && participantItemBase.auditor.examNote > 70 ? 'SI' : 'NO'
+                // participantItemBase.certification.virtualCertificationType = `${virtualCertification} SE CERTIFICA`
+
+
               }
+            }
+
+            // @INFO: Items para certificación
+            participantItemBase.certificationData.certificationLabel = courseSchedulingInfoByParticipant?.generalData?.certificationData?.certificationLabel || '-'
+            if (courseSchedulingInfoByParticipant?.generalData?.certificationData?.isAuditorCerficateEnabled) {
+              participantItemBase.certificationData.auditorCertificate.certificationLabel = courseSchedulingInfoByParticipant?.generalData?.certificationData?.auditorCertificate?.certificationLabel || '-'
+              participantItemBase.certificationData.auditorCertificate.auditorExamScore = courseSchedulingInfoByParticipant?.generalData?.certificationData?.auditorCertificate?.auditorExamScore || 0
+            } else if (courseSchedulingInfoByParticipant?.generalData?.certificationData?.firstCertificateIsAuditor) {
+              participantItemBase.certificationData.auditorCertificate.auditorExamScore = courseSchedulingInfoByParticipant?.generalData?.certificationData?.firstCertificateIsAuditorContent?.auditorExamScore || 0
             }
 
             if (
@@ -751,9 +840,9 @@ class ReportByModalityService {
               headerParticipants.push(`NOTA EXAMEN DE AUDITORIA`)
               preHeaderParticipants.push('')
               colCount++;
-              headerParticipants.push(`APROBACIÓN EXAMEN DE AUDITORIA`)
-              preHeaderParticipants.push('')
-              colCount++;
+              // headerParticipants.push(`APROBACIÓN EXAMEN DE AUDITORIA`)
+              // preHeaderParticipants.push('')
+              // colCount++;
             }
             itemMerge['e'] = {r: row, c: (colCount - 1)}
             merge.push(itemMerge)
@@ -765,12 +854,13 @@ class ReportByModalityService {
             )
             let _itemMerge = {}
             _itemMerge['s'] = {r: row, c: colCount}
-            headerParticipants.push(`Certificación total asistencia al Curso/Programa/Diplomado`)
+            // headerParticipants.push(`Certificación total asistencia al Curso/Programa/Diplomado`)
+            headerParticipants.push(`CERTIFICACIÓN AL CURSO/PROGRAMA/DIPLOMADO`)
             colCount++;
-            headerParticipants.push(`Certificación parcial al Curso/Programa/Diplomado`)
-            colCount++;
-            if (reportData?.data?.isAuditor) {
-              headerParticipants.push(`TIPO DE CERTIFICADO DE FORMACIÓNDE AUDITORES`)
+            // headerParticipants.push(`Certificación parcial al Curso/Programa/Diplomado`)
+            // colCount++;
+            if (reportData?.data?.isAuditor && reportData?.data?.isAuditorCerficateEnabled) {
+              headerParticipants.push(`CERTIFICADO 2`)
               preHeaderParticipants.push('')
               colCount++;
             }
@@ -828,13 +918,14 @@ class ReportByModalityService {
             itemMerge['s'] = {r: row, c: colCount}
             headerParticipants.push(`CERTIFICACIÓN AL CURSO/PROGRAMA/DIPLOMADO`)
             colCount++;
-            if (reportData?.data?.isAuditor) {
-              headerParticipants.push(`APROBACIÓN DE EXAMEN DE AUDITORIA`)
+            // participantItemBase.certificationData.certificationLabel
+            if (reportData?.data?.isAuditor && reportData?.data?.isAuditorCerficateEnabled) {
+              headerParticipants.push(`CERTIFICACIÓN 2`)
               preHeaderParticipants.push('')
               colCount++;
-              headerParticipants.push(`TIPO DE CERTIFICADO DE FORMACIÓN DE AUDITORES`)
-              preHeaderParticipants.push('')
-              colCount++;
+              // headerParticipants.push(`TIPO DE CERTIFICADO DE FORMACIÓN DE AUDITORES`)
+              // preHeaderParticipants.push('')
+              // colCount++;
             }
             itemMerge['e'] = {r: row, c: (colCount - 1)}
             merge.push(itemMerge)
@@ -883,15 +974,18 @@ class ReportByModalityService {
               contentParticipants.push(`${participant?.attendance?.totalAttendancePercentage}%`)
 
               if (reportData?.data?.isAuditor) {
-                contentParticipants.push(participant?.auditor?.examNote.toString())
-                contentParticipants.push(participant?.auditor?.examApproval)
+                // contentParticipants.push(participant?.auditor?.examNote.toString())
+                // contentParticipants.push(participant?.auditor?.examApproval)
+                contentParticipants.push(participant?.certificationData?.auditorCertificate?.auditorExamScore)
               }
 
-              contentParticipants.push(participant?.certification?.totalAssistanceCertification)
-              contentParticipants.push(participant?.certification?.partialCertification)
+              // contentParticipants.push(participant?.certification?.totalAssistanceCertification)
+              // contentParticipants.push(participant?.certification?.partialCertification)
+              contentParticipants.push(participant?.certificationData?.certificationLabel)
 
-              if (reportData?.data?.isAuditor) {
-                contentParticipants.push(participant?.certification?.auditorCertificationType)
+              if (reportData?.data?.isAuditor && reportData?.data?.isAuditorCerficateEnabled) {
+                // contentParticipants.push(participant?.certification?.auditorCertificationType)
+                contentParticipants.push(participant?.certificationData?.auditorCertificate?.certificationLabel)
               }
               contentParticipants.push(participant?.certification?.certificateReleaseDate)
               contentParticipants.push(participant?.certification?.personWhoReleasesCertificate)
@@ -912,15 +1006,17 @@ class ReportByModalityService {
                 contentParticipants.push(participant?.progress?.evaluationNote)
 
                 if (reportData?.data?.isAuditor) {
-                  contentParticipants.push(participant?.auditor?.examNote)
+                  // contentParticipants.push(participant?.auditor?.examNote)
+                  contentParticipants.push(participant?.certificationData?.auditorCertificate?.auditorExamScore)
                 }
                 contentParticipants.push(participant?.progress?.finalNote)
               }
 
-              contentParticipants.push(participant?.certification?.virtualCertification)
-              if (reportData?.data?.isAuditor) {
-                contentParticipants.push(participant?.certification?.virtualApprovedExamAuditor)
-                contentParticipants.push(participant?.certification?.virtualCertificationType)
+              // contentParticipants.push(participant?.certification?.virtualCertification)
+              contentParticipants.push(participant?.certificationData?.certificationLabel)
+              if (reportData?.data?.isAuditor && reportData?.data?.isAuditorCerficateEnabled) {
+                contentParticipants.push(participant?.certificationData?.auditorCertificate?.certificationLabel)
+                // contentParticipants.push(participant?.certification?.virtualCertificationType)
               }
 
               contentParticipants.push(participant?.certification?.certificateReleaseDate)

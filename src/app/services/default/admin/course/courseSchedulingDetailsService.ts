@@ -175,12 +175,24 @@ class CourseSchedulingDetailsService {
         await User.populate(response, { path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
 
         if (register.teacher.moodle_id !== response.teacher.moodle_id) {
-          let respMoodle3: any = await moodleEnrollmentService.update({
-            roleid: 4,
-            courseid: response.course_scheduling.moodle_id,
-            olduserid: register.teacher.moodle_id,
-            newuserid: response.teacher.moodle_id
-          });
+          const teacherExistsInOtherCourseDetails = await CourseSchedulingDetails.find({
+            course_scheduling: register.course_scheduling,
+            teacher: register.teacher._id
+          })
+          if (teacherExistsInOtherCourseDetails && teacherExistsInOtherCourseDetails.length > 0) {
+            let respMoodle3: any = await moodleEnrollmentService.insert({
+              roleid: 4,
+              courseid: response.course_scheduling.moodle_id,
+              userid: response.teacher.moodle_id
+            });
+          } else {
+            let respMoodle3: any = await moodleEnrollmentService.update({
+              roleid: 4,
+              courseid: response.course_scheduling.moodle_id,
+              olduserid: register.teacher.moodle_id,
+              newuserid: response.teacher.moodle_id
+            });
+          }
         }
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {

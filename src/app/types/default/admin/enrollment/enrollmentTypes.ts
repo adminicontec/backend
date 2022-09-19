@@ -31,7 +31,7 @@ export interface IEnrollment{
   company?:string,
   genre?:string,
   origin?:string,
-
+  enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
 }
 

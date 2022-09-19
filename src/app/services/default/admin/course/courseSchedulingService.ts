@@ -662,10 +662,42 @@ class CourseSchedulingService {
       .limit(1)
       if (courseSchedulingDetails && courseSchedulingDetails[0]) {
         const endDate = courseSchedulingDetails[0].endDate.toISOString().split('T')[0]
-        await this.insertOrUpdate({
-          id: courseSchedulingId,
-          endDate: moment(endDate).format('YYYY-MM-DD')
+        const response: any = await CourseScheduling.findByIdAndUpdate(courseSchedulingId, {
+          endDate: moment(moment(endDate).format('YYYY-MM-DD')+"T23:59:59Z")
+        }, {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
         })
+        await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
+        await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
+        await City.populate(response, { path: 'city', select: 'id name' })
+        await Country.populate(response, { path: 'country', select: 'id name' })
+        let regional = null;
+        if (response) {
+          if (response.regional && response.regional.moodle_id) {
+            regional = response.regional.moodle_id;
+          } else if (response.regional_transversal) {
+            regional = response.regional_transversal;
+          }
+        }
+        var moodleCity = '';
+        let visibleAtMoodle = 0;
+        if (response.city) { moodleCity = response.city.name; }
+        if (['Confirmado', 'Cancelado'].includes(response.schedulingStatus.name)) {
+          visibleAtMoodle = 1;
+        }
+        const moodleResponse: any = await moodleCourseService.update({
+          "id": `${response.moodle_id}`,
+          "categoryId": `${regional}`,
+          "startDate": `${response.startDate}`,
+          "endDate": `${response.endDate}`,
+          "customClassHours": `${generalUtility.getDurationFormatedForCertificate(response.duration)}`,
+          "city": `${moodleCity}`,
+          "country": `${response.country.name}`,
+          "visible": visibleAtMoodle,
+          status: response.schedulingStatus.name
+        });
       }
     } catch (err) {}
   }

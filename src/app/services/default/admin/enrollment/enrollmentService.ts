@@ -480,7 +480,14 @@ class EnrollmentService {
             console.log("[  Campus  ] Matrícula NO existe: ");
             // Creación exitosa de Enrollment en CV
             // parámetros para Enrollment en CV, requiere nombre de Curso
-            let paramsCVEnrollment = { ...params };
+            let enrollmentCode = 1;
+            const lastEnrollmentCode: any = await this.getLastEnrollmentCode({
+              courseID: courseScheduling.moodle_id,
+            });
+            if (lastEnrollmentCode?.enrollmentCode) {
+              enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
+            }
+            let paramsCVEnrollment = { ...params, enrollmentCode };
             if (courseScheduling && courseScheduling._id) {
               paramsCVEnrollment['course_scheduling'] = courseScheduling._id
             }
@@ -1046,16 +1053,11 @@ class EnrollmentService {
       if (registers.length == 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'enrollment.not_found' })
 
       console.log(`lastEnrollmentCode`);
+      let enrollmentCode = 1;
       const lastEnrollmentCode: any = await this.getLastEnrollmentCode(params);
-      console.log(lastEnrollmentCode);
-
-      if (lastEnrollmentCode.enrollmentCode == null) {
-        console.log('No enrollmentCode, begin with 1');
-        enrollmentCode = 1;
-      }
-      else
+      if (lastEnrollmentCode?.enrollmentCode) {
         enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
-
+      }
       console.log(`Code: ${enrollmentCode}`);
 
       listOfEnrollment = registers;
@@ -1147,7 +1149,7 @@ class EnrollmentService {
     }
   }
 
-  private getLastEnrollmentCode = async (params: IEnrollmentQuery) => {
+  public getLastEnrollmentCode = async (params: IEnrollmentQuery) => {
 
     const lastEnrollmentcode = await Enrollment.findOne({
       courseID: params.courseID

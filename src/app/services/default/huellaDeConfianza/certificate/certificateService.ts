@@ -1519,6 +1519,20 @@ class CertificateService {
       //   console.log('* ' + element.sectionid + ' > ' + element.sectionname);
       //   console.log('* ' + element.instance + ' - (' + element.modname + ') - ' + element.name);
       // });
+
+      let modulesListByInstance = {}
+      const modulesForProgress: any = await courseContentService.moduleList({ courseID: moodleCourseID, moduleType: [...this.selectActivitiesTest, 'scorm'] });
+      if (modulesForProgress?.courseModules) {
+        modulesListByInstance = modulesForProgress.courseModules.reduce((accum, element) => {
+          if (element?.instance) {
+            if (!accum[element?.instance]) {
+              accum[element?.instance] = element;
+            }
+          }
+          return accum;
+        }, {});
+      }
+      // console.log('modulesListByInstance', modulesListByInstance)
       // console.log("===========================================")
 
       let listOfStudentProgress = [];
@@ -1543,9 +1557,9 @@ class CertificateService {
         return null;
       }
 
-      console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
-      console.dir(respUserGrades.grades, { depth: null });
-      console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
+      // console.dir(respUserGrades.grades, { depth: null });
+      // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø');
 
       for await (const student of respUserGrades.grades) {
 
@@ -1556,12 +1570,18 @@ class CertificateService {
           average_grade: null,
           completion: null,
           assistance: null,
+          assistanceDetails: {
+            total: 0,
+            attended: 0,
+            percentage: 0,
+          },
           quizGrade: null,
           auditorGradeC1: null,
           approved_modules: [],
           auditor: false,
           auditorCertificate: '',
-          auditorGradeC2: null      // auditor quiz grade only for C2
+          auditorGradeC2: null,      // auditor quiz grade only for C2
+          progressByModule: {}
         };
         //let studentProgress: IStudentProgress;
 
@@ -1584,7 +1604,7 @@ class CertificateService {
             Si alguna no cumple esta regla, no se emite Condición por Asistencia
           */
 
-          console.log("[ *** Attendance Grades *** ]");
+          // console.log("[ *** Attendance Grades *** ]");
           for (const grade of student.itemType.attendance) {
 
             if (grade.graderaw) {
@@ -1705,6 +1725,14 @@ class CertificateService {
             }
           }
           studentProgress.assistance = `${flagAttendanceCount}/${student.itemType.attendance.length}`;
+          studentProgress.assistanceDetails = {
+            total: student.itemType.attendance.length,
+            attended: flagAttendanceCount,
+            percentage: 0,
+          }
+          if (student.itemType.attendance.length > 0) {
+            studentProgress.assistanceDetails.percentage = Math.round(((flagAttendanceCount * 100)/student.itemType.attendance.length) * 100) / 100
+          }
           // en revisión este elemento: quizGrade
           studentProgress.quizGrade = (student.itemType.quiz.length != 0) ? `${flagQuizCount}/${student.itemType.quiz.length}` : '-';
 
@@ -1743,14 +1771,49 @@ class CertificateService {
 
           //#region :::::::::::: Completion percentage ::::::::::::
           let completionPercentage = 0;
+          const progressBySection = {}
           for (const completion of respCompletionStatus.completion) {
             if (completion.state == 1) {
               completionPercentage += 1;
+            }
+            if (modulesListByInstance[completion?.instance]) {
+              const instance = modulesListByInstance[completion?.instance];
+              if (instance?.sectionid) {
+                if (!progressBySection[instance?.sectionid]) {
+                  progressBySection[instance?.sectionid] = {
+                    totalComplete: 0,
+                    totalIncomplete: 0,
+                    total: 0,
+                  }
+                }
+                progressBySection[instance?.sectionid].total += 1;
+                if (completion.state == 1) {
+                  progressBySection[instance?.sectionid].totalComplete += 1;
+                } else {
+                  progressBySection[instance?.sectionid].totalIncomplete += 1;
+                }
+              }
             }
           }
           completionPercentage /= respCompletionStatus.completion.length;
           studentProgress.average_grade = Math.trunc(average);
           studentProgress.completion = Math.trunc(completionPercentage * 100);
+          for (const section in progressBySection) {
+            if (Object.prototype.hasOwnProperty.call(progressBySection, section)) {
+              const item = progressBySection[section];
+              if (!studentProgress.progressByModule[section]) {
+                studentProgress.progressByModule[section] = {
+                  totalComplete: item.totalComplete,
+                  totalIncomplete: item.totalIncomplete,
+                  total: item.total,
+                  percentage: 0
+                }
+                if (item.totalComplete > 0 && item.total > 0) {
+                  studentProgress.progressByModule[section].percentage = Math.round((item.totalComplete / item.total) * 100)
+                }
+              }
+            }
+          }
 
           // keep compatibilty with OnSitu/Online modes
           respSchedulingsDetails.forEach(element => {
@@ -1763,12 +1826,12 @@ class CertificateService {
           /* Todas los exámenes debe estar igual o por encima de 70%.
             Si alguna no cumple esta regla, no se emite Condición por Examen
           */
-          console.log("[ *** QUIZ Grades VIRTUAL *** ]");
+          // console.log("[ *** QUIZ Grades VIRTUAL *** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
             let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
-            console.log('auditorQuiz found?');
-            console.log(auditorQuiz);
+            // console.log('auditorQuiz found?');
+            // console.log(auditorQuiz);
 
             if (auditorQuiz) {
               if (auditorQuiz.graderaw < 70) {
@@ -1840,12 +1903,12 @@ class CertificateService {
             }
           }
 
-          console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
-          console.log(`\t» Completion:          ${studentProgress.completion}%`);
-          console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
-          console.log(`\t» Examn Certificate:   `);
-          console.log(`\t» Second Certificate:  `);
-          console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
+          // console.log(`\t» Final grade:         ${studentProgress.average_grade}`);
+          // console.log(`\t» Completion:          ${studentProgress.completion}%`);
+          // console.log(`\t» Certificate:         ${studentProgress.attended_approved}`);
+          // console.log(`\t» Examn Certificate:   `);
+          // console.log(`\t» Second Certificate:  `);
+          // console.log('øøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøøø\r\n');
 
           //#endregion :::::::::::: Certification resolution ::::::::::::
         }
@@ -1990,7 +2053,7 @@ class CertificateService {
       // firstCertificateIsAuditor check condition:
       // if any Student has grade in auditorGradeC1
       firstCertificateIsAuditor = Object.values(listOfStudentProgress).some(val => val.student.studentProgress.auditorGradeC1 != null);
-      console.log(`firstCertificateIsAuditor: ${firstCertificateIsAuditor}`);
+      // console.log(`firstCertificateIsAuditor: ${firstCertificateIsAuditor}`);
 
       responseStudentProgress = {
         auditorQuizApplies,
