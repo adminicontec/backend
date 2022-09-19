@@ -199,12 +199,14 @@ class ReportByModalityService {
         schedulingStatus: {$in: [
           courseSchedulingStatusInfo['Confirmado']._id,
           courseSchedulingStatusInfo['Ejecutado']._id,
-          courseSchedulingStatusInfo['Cancelado']._id,
+          // courseSchedulingStatusInfo['Cancelado']._id,
         ]}
       }
 
       if (params.courseSchedulings) {
         where['_id'] = {$in: params.courseSchedulings}
+      } else if (params.serviceIds) {
+        where['metadata.service_id'] = {$in: params.serviceIds}
       }
 
       if (params.auditor === true || params.auditor === false) {

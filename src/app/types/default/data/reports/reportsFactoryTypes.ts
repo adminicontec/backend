@@ -18,5 +18,6 @@ export interface IFactoryGenerateReport {
   reportEndDate?: string | undefined
   modality?: string;
   courseSchedulings?: string[]
+  serviceIds?: string[]
 }
 //@end
