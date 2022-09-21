@@ -41,6 +41,7 @@ class CourseSchedulingRoute {
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
 
     routerUtility.post(app, _route, '/change-scheduling-modular', this.instanceController.changeSchedulingModular, [], ['auth'])
+    routerUtility.post(app, _route, '/change-scheduling-element', this.instanceController.changeSchedulingElement, [], ['auth'])
     // @end
   }
 }

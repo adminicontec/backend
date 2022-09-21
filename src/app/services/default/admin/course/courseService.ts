@@ -376,7 +376,7 @@ class CourseService {
     }
 
     if (filters.schedulingMode) where['schedulingMode'] = filters.schedulingMode
-
+    if (filters?.program) where['program'] = filters.program
 
     let registers = []
     try {
@@ -451,6 +451,8 @@ class CourseService {
 
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
         params.program = await courseSchedulingService.saveLocalProgram(params.program)
+      } else if (params?.forceProgram) {
+        params.program = params.forceProgram
       }
 
       // @INFO: Cargando imagen al servidor
