@@ -158,6 +158,10 @@ class ProgramService {
       }
     }
 
+    if (filters.code) where['code'] = filters.code
+    if (filters.moodle_id) where['moodle_id'] = filters.moodle_id
+    if (filters.isAuditor !== undefined) where['isAuditor'] = filters.isAuditor
+
     let registers = []
     try {
       registers =  await Program.find(where)

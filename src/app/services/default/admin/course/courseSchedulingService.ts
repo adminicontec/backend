@@ -31,6 +31,7 @@ import { City, Company, Country, Course, CourseScheduling, CourseSchedulingDetai
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
+  IChangeSchedulingElement,
   IChangeSchedulingModular,
   ICourseScheduling,
   ICourseSchedulingDelete,
@@ -223,17 +224,22 @@ class CourseSchedulingService {
       steps.push('4')
 
       if (params.city) {
-        const isObjectID = await ObjectID.isValid(params.city);
-
-        if (!isObjectID) {
-          const cityExists = await City.findOne({ name: params.city }).select('id').lean()
-          if (!cityExists) {
-            const response = await City.create({ name: params.city });
-            params.city = response._id;
-          } else {
-            params.city = cityExists._id;
-          }
+        let findByIdOrName;
+        try {
+          findByIdOrName = await City.findOne({
+            $or: [
+              { _id: params.city },
+              { name: params.city },
+            ]
+          }).select('id').lean()
+        } catch (err) {}
+        if (!findByIdOrName) {
+          const response = await City.create({ name: params.city });
+          params.city = response._id;
+        } else {
+          params.city = findByIdOrName._id
         }
+
       }
       steps.push('5')
       if (params.country === '') delete params.country
@@ -1362,6 +1368,7 @@ class CourseSchedulingService {
     if (filters.start_date) where.push({ $match: { startDate: { $gte: new Date(filters.start_date) } } })
     if (filters.end_date) where.push({ $match: { endDate: { $lte: new Date(filters.end_date) } } })
     if (filters.schedulingAssociation) where.push({ $match: {'schedulingAssociation.slug': { $regex: '.*' + filters.schedulingAssociation + '.*', $options: 'i' }}})
+    if (filters.program) where.push({$match: {'program': ObjectID(filters.program)}})
 
     // if (filters.user) {
     // where['metadata.user'] = filters.user
@@ -2116,6 +2123,61 @@ class CourseSchedulingService {
               modular: params.modularEnd
             }
             await CourseScheduling.findByIdAndUpdate(courseScheduling._id, dataToUpdate, {
+              useFindAndModify: false,
+              new: true,
+              lean: true,
+            })
+          }
+          schedulingUpdated.push({
+            key: courseScheduling._id
+          })
+        } catch (err) {
+          schedulingNotUpdated.push({
+            key: courseScheduling._id,
+            message: err?.message
+          })
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        schedulingFound: courseSchedulings,
+        schedulingUpdated,
+        schedulingNotUpdated,
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
+        err
+      }})
+    }
+  }
+
+  public changeSchedulingElement = async (params: IChangeSchedulingElement) => {
+    try {
+      if (!params.databaseElement?.query) return responseUtility.buildResponseFailed('json', null, {message: 'La query a ejecutar es obligatoria'})
+      if (!params.databaseElement?.update) return responseUtility.buildResponseFailed('json', null, {message: 'El valor de reemplazo es obligatorio'})
+
+      const output = params.output || 'json'
+      const courseSchedulingIds = params.courseSchedulings || []
+
+      const schedulingUpdated = []
+      const schedulingNotUpdated = []
+
+      const courseSchedulings = await CourseScheduling.find(params.databaseElement.query)
+      .lean()
+
+      for (const courseScheduling of courseSchedulings) {
+        try {
+          if (courseSchedulingIds.length > 0) {
+            if (!courseSchedulingIds.includes(courseScheduling._id.toString())) {
+              schedulingNotUpdated.push({
+                key: courseScheduling._id,
+                message: `La programación no esta incluida en la lista permitida para actualizar`
+              })
+              continue;
+            }
+          }
+          if (output === 'db') {
+            await CourseScheduling.findByIdAndUpdate(courseScheduling._id, params.databaseElement.update, {
               useFindAndModify: false,
               new: true,
               lean: true,

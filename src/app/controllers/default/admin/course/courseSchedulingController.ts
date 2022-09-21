@@ -165,6 +165,18 @@ class CourseSchedulingController {
     const response = await courseSchedulingService.changeSchedulingModular(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public changeSchedulingElement = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseSchedulingService.changeSchedulingElement(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const courseSchedulingController = new CourseSchedulingController();

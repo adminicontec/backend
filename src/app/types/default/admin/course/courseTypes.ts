@@ -5,6 +5,7 @@
 export interface ICourse {
   schedulingMode: { value: number, label: string } | string // Identificador del modo de programación
   program: { value: number, label: string } | string // Identificador del programa
+  forceProgram: string,
   // moodleID?: number,
   // name             : string,             // Nombre del curso
   // fullname?         : string,             // Nombre Completo del curso
@@ -78,6 +79,7 @@ export interface ICourseQuery {
   mode?: Array<string>,             // Modalidad
   course_scheduling_code?: string // Busca por codigo
   schedulingMode?: string // Busca por modalidad
+  program?: string
 }
 
 export interface ICourseDelete {

@@ -95,6 +95,7 @@ export interface ICourseSchedulingQuery {
   company?: string
   schedulingAssociation?: string;
   teacher?: string;
+  program?: string
 }
 
 export interface ICourseSchedulingReport {
@@ -141,6 +142,15 @@ export interface IDuplicateService {
 export interface IChangeSchedulingModular {
   modularOrigin: string;
   modularEnd: string;
+  output: 'json' | 'db'
+  courseSchedulings: string[]
+}
+
+export interface IChangeSchedulingElement {
+  databaseElement: {
+    query: any,
+    update: any
+  }
   output: 'json' | 'db'
   courseSchedulings: string[]
 }
