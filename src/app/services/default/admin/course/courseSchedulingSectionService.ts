@@ -41,7 +41,7 @@ class CourseSchedulingSectionService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name'
+      let select = 'id name moodle_id'
       if (params.query === QueryValues.ALL) {
         const registers = await CourseSchedulingSection.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {

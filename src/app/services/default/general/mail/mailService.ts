@@ -22,7 +22,7 @@ interface IMailerUtilityConfig {
   from?: string
 }
 
-interface IMailMessageData {
+export interface IMailMessageData {
   emails: Array<string>
   mailOptions: Partial<MailOptions>
   notification_source: string
@@ -61,7 +61,7 @@ class MailService {
       if (mailMessageData.mailOptions && mailMessageData.mailOptions.amount_notifications) {
         const amountNotifications = await MailMessageLog.find({ notification_source: mailMessageData.notification_source }).count()
         if (amountNotifications >= mailMessageData.mailOptions.amount_notifications) {
-          return responseUtility.buildResponseFailed('json')
+          return responseUtility.buildResponseFailed('json', null, {message: 'Limite de notificaciones'})
         }
       }
 

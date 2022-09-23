@@ -42,13 +42,15 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   // @add_more_methods
 
   private sendSchedulingExamNotification = async () => {
-    // Obtener todos los servicios confirmados y finalizados con fecha de finalización inferior a 3 meses
+    // Obtener todos los servicios confirmados y finalizados que ya haya terminado su fecha de fin
     // TODO: Revisar si es necesario el status de Ejecutado
     const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado', 'Ejecutado'] } });
     const date = new Date();
-    // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
-    date.setMonth(date.getMonth() - 3);
-    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date } }).select('id moodle_id endDate metadata').lean();
+    // date.setMonth(date.getMonth() - 3);
+    const schedulings = await CourseScheduling.find({
+      schedulingStatus: { $in: status.map(s => s._id) },
+      endDate: { $lt: date }
+    }).select('id moodle_id endDate metadata').lean();
 
     console.log("---------------------------");
     console.log("schedulings found");
@@ -67,9 +69,6 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
           const response: any = await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
           console.log("response sendNotification to Aux");
           console.log(response);
-          // ! ==================================================================
-          // ! NICO!!! Aquí va la linea para enviar la notificación de examen
-          // ! ==================================================================
 
           //Get list of PArticipants and send individual notifications:
           const responseEnrollment: any = await enrollmentService.list({ courseID: scheduling.moodle_id });

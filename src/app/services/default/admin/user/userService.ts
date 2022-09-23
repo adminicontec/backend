@@ -8,7 +8,7 @@ const ObjectID = require('mongodb').ObjectID
 // @import services
 import { uploadService } from '@scnode_core/services/default/global/uploadService'
 import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
-import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { IMailMessageData, mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
 // @end
 
@@ -476,8 +476,7 @@ class UserService {
   private sendRegisterUserEmail = async ({emails, paramsTemplate, resend = false, isCompanyUser = false}: SendRegisterUserEmailParams) => {
 
     try {
-
-      const mail = await mailService.sendMail({
+      const mailOptions: IMailMessageData = {
         emails,
         mailOptions: {
           subject: i18nUtility.__('mailer.welcome_user.subject'),
@@ -487,16 +486,20 @@ class UserService {
             params: { ...paramsTemplate }
           },
           amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null,
-          attachments: isCompanyUser ? [
-            {
-              filename: 'Instructivo Consulta y Descarga de Certificaciones.pptx',
-              path: customs['mailer'].company_help_instructive
-            }
-          ]: []
         },
         notification_source: paramsTemplate.notification_source,
         resend_notification: resend
-      })
+      }
+      if (isCompanyUser) {
+        mailOptions.mailOptions['attachments'] = [
+          {
+            filename: 'Instructivo Consulta y Descarga de Certificaciones.pptx',
+            path: customs['mailer'].company_help_instructive
+          }
+        ]
+      }
+
+      const mail = await mailService.sendMail(mailOptions)
 
       return mail
 
