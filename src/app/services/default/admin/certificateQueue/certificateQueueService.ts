@@ -186,6 +186,7 @@ class CertificateQueueService {
       }
 
     } catch (e) {
+      console.log('certificateQueueService-InsertOrUpdate-error', e)
       return responseUtility.buildResponseFailed('json', null,
         {
           additional_parameters: {

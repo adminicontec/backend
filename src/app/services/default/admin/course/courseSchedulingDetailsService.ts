@@ -358,9 +358,13 @@ class CourseSchedulingDetailsService {
         message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
-    if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
+    let endDate = (typeof params.endDate === 'string') ? `${params.endDate}T00:00:00.000Z` : params.endDate.toISOString()
+    if (register.endDate && params.endDate) {
+      const registerFormated = register.endDate.toISOString().split('T')
+      const endDateFormated = endDate.split('T')
+      if (endDateFormated[0] !== registerFormated[0])
       changes.push({
-        message: `<div>La fecha de fin del curso ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.endDate}</div>`
+        message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -378,7 +382,7 @@ class CourseSchedulingDetailsService {
       ((register.number_of_sessions && params.number_of_sessions) && params.number_of_sessions.toString() !== register.number_of_sessions.toString()) ||
       sessionsChange.length > 0
     ) {
-      let message = `La programación de sesiones ha cambiado:<br><br>`
+      let message = `La programación de sesiones del curso ${register?.course?.name} ha cambiado:<br><br>`
       message += `<p>Programación anterior</p>`
       message += `<table border="1">`;
       message += `  <thead>`;

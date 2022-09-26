@@ -110,7 +110,8 @@ class CourseDataService {
           if (register.enrollmentDeadline) {
             const enrollmentDeadline = moment(register.enrollmentDeadline.toISOString().replace('T23:59:59.999Z', ''))
             if (today.format('YYYY-MM-DD') <= enrollmentDeadline.format('YYYY-MM-DD')) {
-              if (register.schedulingType.name.toLowerCase() == 'abierto' && register.schedulingMode.name.toLowerCase() == 'virtual')
+              // if (register.schedulingType.name.toLowerCase() == 'abierto' && register.schedulingMode.name.toLowerCase() == 'virtual')
+              if (register.schedulingType.name.toLowerCase() == 'abierto')
                 register['enrollment_enabled'] = true
             }
           }

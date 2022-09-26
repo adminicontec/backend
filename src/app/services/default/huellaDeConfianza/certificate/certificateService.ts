@@ -310,16 +310,16 @@ class CertificateService {
 
         register.count = count;
 
-        console.log("~~~~~~~~~~~~~");
-        console.log("Counter:" + count);
+        // console.log("~~~~~~~~~~~~~");
+        // console.log("Counter:" + count);
 
         if (register.user && register.user.profile) {
           register.user.profile.full_name = `${register.user.profile.first_name} ${register.user.profile.last_name}`;
 
-          console.log('++++++++++++++++++++++++++');
-          console.log(`Fetch grades for: ${register.user.moodle_id} - ${register.user.profile.full_name}`);
-          //console.dir(register.user, { depth: null });
-          console.log('++++++++++++++++++++++++++');
+          // console.log('++++++++++++++++++++++++++');
+          // console.log(`Fetch grades for: ${register.user.moodle_id} - ${register.user.profile.full_name}`);
+          // //console.dir(register.user, { depth: null });
+          // console.log('++++++++++++++++++++++++++');
 
           let studentProgress = progressListResult.listOfStudentProgress.find(f => f.student.userData.userid == register.user.moodle_id);
           if (studentProgress) {
@@ -1645,12 +1645,12 @@ class CertificateService {
           /* Todas los exámenes debe estar igual o por encima de 70%.
             Si alguna no cumple esta regla, no se emite Condición por Examen
           */
-          console.log("[ *** QUIZ Grades PR-ON*** ]");
+          // console.log("[ *** QUIZ Grades PR-ON*** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
             let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
-            console.log('auditorQuiz found?');
-            console.log(auditorQuiz);
+            // console.log('auditorQuiz found?');
+            // console.log(auditorQuiz);
 
             if (auditorQuiz) {
               if (auditorQuiz.graderaw < 70) {
