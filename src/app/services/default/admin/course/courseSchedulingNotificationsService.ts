@@ -47,10 +47,19 @@ class CourseSchedulingNotificationsService {
 
       // Notificar al correo especificado en el env.json
       if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service) {
-        email_to_notificate.push({
-          email: (customs as any).mailer.email_confirm_service,
-          name: 'Jhonatan Malaver'
-        });
+        if (typeof (customs as any).mailer.email_confirm_service === 'string') {
+          email_to_notificate.push({
+            email: (customs as any).mailer.email_confirm_service,
+            name: 'Jhonatan Malaver'
+          });
+        } else if (Array.isArray((customs as any).mailer.email_confirm_service)) {
+          for (const email_confirm_service of (customs as any).mailer.email_confirm_service) {
+            email_to_notificate.push({
+              email: email_confirm_service.email,
+              name: email_confirm_service.name
+            });
+          }
+        }
       }
 
       // @INFO Notificar al programador
@@ -135,7 +144,7 @@ class CourseSchedulingNotificationsService {
                   assistant_name: emailNotificate.name
                 }
               },
-              amount_notifications: type === 'modify' ? null : 4
+              amount_notifications: type === 'modify' ? null : 10
             },
             notification_source: params.notification_source
           })

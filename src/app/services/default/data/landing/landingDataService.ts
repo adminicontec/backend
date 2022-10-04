@@ -43,7 +43,7 @@ class LandingDataService {
       .populate({path: 'trainings.course', select: 'id program', populate: {
         path: 'program', select: 'id name'
       }})
-      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references forums')
+      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references forums alliances')
       .lean()
 
       if (landing) {
@@ -61,6 +61,15 @@ class LandingDataService {
             if (scheduling.attachedUrl) {
               // @ts-ignore
               scheduling.attachedFile = landingService.schedulingAttachedUrl(scheduling)
+            }
+          }
+        }
+
+        if (landing.alliances) {
+          for (const alliance of landing.alliances) {
+            if (alliance.logoUrl) {
+              // @ts-ignore
+              alliance.logoFile = landingService.allianceLogoUrl(alliance)
             }
           }
         }

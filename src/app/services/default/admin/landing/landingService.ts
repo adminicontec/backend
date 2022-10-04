@@ -34,7 +34,9 @@ import {
   ILandingOurClients,
   ILandingReference,
   ILandingReferenceDelete,
-  ILandingForum
+  ILandingForum,
+  ILandingAlliance,
+  ILandingAllianceDelete
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -42,6 +44,7 @@ class LandingService {
 
   private default_cover_article_path = 'landings/article'
   private default_cover_training_path = 'landings/training'
+  private default_cover_alliance_path = 'landings/alliance'
   private default_cover_scheduling_path = 'landings/scheduling'
   private default_cover_descriptive_training_path = 'landings/descriptiveTraining'
   private default_cover_our_clients_path = 'landings/ourClients'
@@ -222,6 +225,132 @@ class LandingService {
           ...params
         }
       })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar una alianzas dentro de un landing
+   * @param params
+   * @returns
+   */
+  public insertOrUpdateAlliance = async (params: ILandingAlliance) => {
+
+    try {
+      let alliances: Array<ILandingAlliance> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id alliances').lean()
+      if (exists) {
+        alliances = exists.alliances || []
+      }
+
+      if (params.programs !== undefined && typeof params.programs === 'string') {
+        if (params.programs === '') {
+          params.programs = []
+        } else {
+          params.programs = params.programs.trim().split(',')
+        }
+      }
+
+      // @INFO: Cargando imagen al servidor
+      if (params.logoFile && params.logoFile !== '{}') {
+        const defaulPath = this.default_cover_alliance_path
+        const response_upload: any = await uploadService.uploadFile(params.logoFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.logoUrl = response_upload.name
+      }
+
+      let allianceExists = alliances.findIndex((t) => t.unique === params.unique)
+      if (allianceExists !== -1) {
+        alliances[allianceExists] = {...params}
+      } else {
+        alliances.push({
+          ...params
+        })
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        alliances
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite eliminar una capacitación de un landing
+   * @param params
+   * @returns
+   */
+  public deleteAlliance = async (params: ILandingAllianceDelete) => {
+    try {
+      let alliances: Array<ILandingAlliance> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id alliances').lean()
+      if (exists) {
+        alliances = exists.alliances
+      }
+
+      let itemExists = alliances.findIndex((t) => t.unique === params.unique)
+      if (itemExists === -1) {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'landing.alliances.delete.not_found'})
+      } else {
+        alliances.splice(itemExists, 1)
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        alliances: alliances
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar una alianzas dentro de un landing
+   * @param params
+   * @returns
+   */
+  public saveAllianceBrochure = async (params: ILandingAlliance) => {
+
+    try {
+      // TODO: Agregar funcionalidad de guardar brochure de alianza
+      // let alliances: Array<ILandingAlliance> = []
+      // const exists = await Landing.findOne({ slug: params.slug }).select('id alliances').lean()
+      // if (exists) {
+      //   alliances = exists.alliances || []
+      // }
+
+      // if (params.programs !== undefined && typeof params.programs === 'string') {
+      //   if (params.programs === '') {
+      //     params.programs = []
+      //   } else {
+      //     params.programs = params.programs.trim().split(',')
+      //   }
+      // }
+
+      // // @INFO: Cargando imagen al servidor
+      // if (params.logoFile && params.logoFile !== '{}') {
+      //   const defaulPath = this.default_cover_alliance_path
+      //   const response_upload: any = await uploadService.uploadFile(params.logoFile, defaulPath)
+      //   if (response_upload.status === 'error') return response_upload
+      //   if (response_upload.hasOwnProperty('name')) params.logoUrl = response_upload.name
+      // }
+
+      // let allianceExists = alliances.findIndex((t) => t.unique === params.unique)
+      // if (allianceExists !== -1) {
+      //   alliances[allianceExists] = {...params}
+      // } else {
+      //   alliances.push({
+      //     ...params
+      //   })
+      // }
+
+      // return await this.insertOrUpdate({
+      //   slug: params.slug,
+      //   alliances
+      // })
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -591,6 +720,17 @@ class LandingService {
     ? `${customs['uploads']}/${this.default_cover_scheduling_path}/${attachedUrl}`
     : null
   }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public allianceLogoUrl = ({ logoUrl }) => {
+    return logoUrl && logoUrl !== ''
+    ? `${customs['uploads']}/${this.default_cover_alliance_path}/${logoUrl}`
+    : null
+  }
+
 
   /**
    * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso

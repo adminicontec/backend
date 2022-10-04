@@ -125,6 +125,63 @@ class LandingController {
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
+	public insertOrUpdateAlliance = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+    if (files && Object.prototype.hasOwnProperty.call(files, 'logo')) {
+      params['logoFile'] = files['logo']
+    }
+
+		const response = await landingService.insertOrUpdateAlliance(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public deleteAlliance = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+		const response = await landingService.deleteAlliance(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public saveAllianceBrochure = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+    if (files && Object.prototype.hasOwnProperty.call(files, 'brochure')) {
+      params['brochureFile'] = files['brochure']
+    }
+
+		const response = await landingService.saveAllianceBrochure(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
 	public insertOrUpdateTraining = async (req: Request, res: Response) => {
     const user_id = req.user.sub
     let params = req.getParameters.all()

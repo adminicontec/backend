@@ -31,7 +31,7 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, User } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -153,6 +153,13 @@ class CertificateService {
       }, [])
       if (user_ids.length > 0) {
         where['user'] = { $nin: user_ids }
+      }
+    }
+
+    if (filters?.userMoodleID && filters?.userMoodleID !== '' && filters?.userMoodleID !== '0') {
+      const user = await User.findOne({moodle_id: filters?.userMoodleID}).select('id').lean()
+      if (user?._id) {
+        where['user'] = user._id;
       }
     }
     //#endregion query Filters

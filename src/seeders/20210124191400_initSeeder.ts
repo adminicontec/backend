@@ -544,6 +544,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_associations_add', description: 'Crear/Actualizar asociaciones de programaciones'},
 
         {name: 'permission:course_scheduling_reactivate', description: 'Reactiva programaciones'},
+
+        {name: 'permission:course_scheduling_upload_business_report', description: 'Carga de informe empresarial'},
+        {name: 'permission:course_scheduling_upload_partial_report', description: 'Carga de informe empresarial parcial'},
       ]},
       {name: 'module:course_scheduling_enrollment', description: 'Módulo que permite administrar los programas', permissions: [
         {name: 'permission:course_scheduling_enrollment_create', description: 'Crear programas'},
@@ -599,6 +602,14 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_student_training', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_scheduling', description: 'Landing de estudiantes'},
         {name: 'permission:landings_student_forums', description: 'Landing de estudiantes'},
+
+
+        {name: 'permission:landings_alliances', description: 'Landing de alianzas'},
+        {name: 'permission:landings_alliances_article', description: 'Articulos en landing de alianzas'},
+        {name: 'permission:landings_alliances_items', description: 'Lista de alianzas'},
+        {name: 'permission:landings_alliances_items_create', description: 'Crear nueva alianza'},
+        {name: 'permission:landings_alliances_items_update', description: 'Actualizar alianza'},
+        {name: 'permission:landings_alliances_items_delete', description: 'Eliminar alianza'},
 
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},

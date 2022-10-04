@@ -12,6 +12,34 @@ export interface ILandingArticle {
   content: any
 }
 
+export type TypeAgreement = 'alliance' | 'agreement'
+export interface IAllianceBrochure {
+  unique: string,
+  file: string
+}
+export interface ILandingAlliance {
+  slug?: string
+  unique?: string,
+  status?: boolean
+  typeAgreement?: TypeAgreement
+  logo?: string
+  logoFile?: string,
+  logoUrl?: string,
+  name?: string
+  country?: string
+  regional?: string
+  creationYear?: string,
+  programs?: string[] | string,
+  webSite?:string
+  contact?:string
+  brochures?: IAllianceBrochure[]
+}
+
+export interface ILandingAllianceDelete {
+  slug: string
+  unique: string
+}
+
 export interface ILandingTrainingsDelete {
   slug: string
   unique: string
@@ -93,6 +121,7 @@ export interface ILanding {
   title_page?: string
   article?: ILandingArticle
   trainings?: Array<ILandingTrainings>
+  alliances?: Array<ILandingAlliance>
   scheduling?: Array<ILandingScheduling>
   our_clients?: Array<ILandingOurClients>
   references?: Array<ILandingReference>
