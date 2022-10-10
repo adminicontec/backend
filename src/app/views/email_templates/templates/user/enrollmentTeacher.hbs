@@ -32,6 +32,14 @@
                       <p><b>Cliente: </b>{{params.program.client}}</p>
                       <p><b>Regional: </b>{{params.program.regional}}</p>
                       <p><b>Ejecutivo de cuenta: </b>{{params.program.account_executive}}</p>
+                      {{#if params.program.address}}
+                        <p><b>Dirección del curso: </b>{{params.program.address}}</p>
+                      {{/if}}
+                      {{#if params.program.contact}}
+                        <p><b>Nombre de persona de contacto: </b>{{params.program.contact.fullName}}</p>
+                        <p><b>Teléfono de persona de contacto: </b>{{params.program.contact.phoneNumber}}</p>
+                        <p><b>Correo de persona de contacto: </b>{{params.program.contact.email}}</p>
+                      {{/if}}
                     {{/if}}
                     <p class="mcSpecialText">Para ingresar al campus acceda al link <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a>. Consulte el <a href="{{params.mailer.campus_instructive_doc}}">instructivo</a> podrá conocer como ingresar a su sesión docente y posteriormente al curso.</p>
                     <p class="mcSpecialText">En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.help_desk_instructive_doc}}">instructivo de mesa de ayuda</a>. También dentro del campus puede acceder a soporte con la asistente virtual Daniela en la opción 2. <img src="{{params.mailer.virtual_help}}" style="width: 100px"></p>
