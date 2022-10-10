@@ -236,7 +236,7 @@ class CompletionstatusService {
       notes: [],
       finalNote: undefined,
       emissionCertificate: {
-        label: `Por Liberar`,
+        label: `Sin emitir`,
       },
       certification: {
         type: undefined,
