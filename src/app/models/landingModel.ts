@@ -15,6 +15,32 @@ const LandingSchema = new Schema({
     content: {type: Schema.Types.Mixed},
   },
   title_training: {type: Schema.Types.String},
+  alliances: [
+    {
+      unique: {type: Schema.Types.String, require: true},
+      status: {type: Schema.Types.Boolean, default: true},
+      typeAgreement: {
+        type: Schema.Types.String,
+        enum: ['alliance','agreement'],
+      },
+      logoUrl: {type: Schema.Types.String},
+      name: {type: Schema.Types.String},
+      country: {type: Schema.Types.String},
+      regional: {type: Schema.Types.String},
+      creationYear: {type: Schema.Types.Date},
+      programs: [
+        { type: Schema.Types.String }
+      ],
+      webSite: {type: Schema.Types.String},
+      contact: {type: Schema.Types.String},
+      brochures: [
+        {
+          unique: {type: Schema.Types.String, require: true},
+          file: {type: Schema.Types.String},
+        }
+      ]
+    }
+  ],
   trainings: [
     {
       unique: {type: Schema.Types.String, require: true},

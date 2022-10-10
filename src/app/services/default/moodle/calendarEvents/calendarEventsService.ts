@@ -104,6 +104,14 @@ class CalendarEventsService {
         moodlewsrestformat: moodle_setup.restformat,
       }
 
+      let moodleParamsGrades = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.gradeReport,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': courseID,
+        'userid': userID,
+      };
+
       // 1. módulos asociados al curso en moodle
       var select = ['assign', 'attendance', 'quiz', 'forum'];
       let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
@@ -146,6 +154,9 @@ class CalendarEventsService {
           });
       }
 
+      let respGrades = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsGrades });
+      const grades = respGrades?.usergrades && respGrades.usergrades[0] ? respGrades.usergrades[0] : undefined
+      // console.log('grades', grades)
       // 4. group the events by Instance
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
@@ -154,6 +165,7 @@ class CalendarEventsService {
           let eventTimeEnd;
           let timeStart;
           let timeEnd;
+          let customStatus = false;
 
           let statusActivity = '';
           let timecompleted;
@@ -165,10 +177,9 @@ class CalendarEventsService {
           if (module.modname === 'forum' && module.completion === 2) {
             const respForumDiscussions: {discussions: IMoodleForumDiscussion[]} = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: {...moodleParamsForum, forumid: module.instance} });
             if (respForumDiscussions?.discussions) {
-              // TODO: La funcionalidad de foros no esta correctamente configurada debe dedicarse tiempo
               const forumDiscussion = respForumDiscussions?.discussions?.length ? respForumDiscussions.discussions[0] : null
-              eventTimeStart = forumDiscussion.timestart ? new Date(forumDiscussion.timestart * 1000).toISOString() : null
-              eventTimeEnd = forumDiscussion.timeend ? new Date(forumDiscussion.timeend * 1000).toISOString() : null
+              eventTimeStart = forumDiscussion?.timestart ? new Date(forumDiscussion.timestart * 1000).toISOString() : null
+              eventTimeEnd = forumDiscussion?.timeend ? new Date(forumDiscussion.timeend * 1000).toISOString() : null
               isForum = true;
               groupByInstance = []
             }
@@ -180,11 +191,52 @@ class CalendarEventsService {
             if (groupByInstance[0]?.modulename === 'attendance') {
               eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
               eventTimeStart = null;
+
+              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+              statusActivity = statusByDate.statusActivity
+              timecompleted = statusByDate.timecompleted;
+
+              customStatus = true
+
+              if (grades?.gradeitems) {
+                const index = grades?.gradeitems.findIndex((i) => i.iteminstance == module.instance)
+                if (index !== -1) {
+                  const item = grades?.gradeitems[index];
+                  if (item?.graderaw >= 75) {
+                    statusActivity = 'delivered';
+                    timecompleted = generalUtility.unixTimeToString(item?.gradedategraded || 0);
+                  }
+                }
+              }
             }
+
             if (groupByInstance[0]?.modulename === 'assign') {
               let assignment = respMoodleAssignement.courses[0].assignments.find(t => t.id == module.instance);
               eventTimeStart = assignment.allowsubmissionsfromdate ? generalUtility.unixTimeToString(assignment.allowsubmissionsfromdate) : null;
               eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
+
+              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+              statusActivity = statusByDate.statusActivity
+              timecompleted = statusByDate.timecompleted;
+
+              try {
+                const moodleParamsAssignGetSumission = {
+                  wstoken: moodle_setup.wstoken,
+                  wsfunction: moodle_setup.services.calendarEvents.assignGetSubmissionStatus,
+                  moodlewsrestformat: moodle_setup.restformat,
+                  'userid': userID,
+                  'assignid': module.instance
+                };
+                customStatus = true
+                const responseMoodleParamsAssignGetSumission = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsAssignGetSumission });
+                if (responseMoodleParamsAssignGetSumission?.lastattempt) {
+                  const attempt = responseMoodleParamsAssignGetSumission?.lastattempt;
+                  if (attempt?.submission?.status === 'submitted') {
+                    statusActivity = 'delivered';
+                    timecompleted = generalUtility.unixTimeToString(attempt?.submission?.timecreated || 0);
+                  }
+                }
+              } catch (err) {}
             }
             if (groupByInstance[0]?.modulename === 'quiz') {
               timeStart = groupByInstance.filter(g => g.eventtype == 'open');
@@ -192,29 +244,55 @@ class CalendarEventsService {
 
               eventTimeStart =  timeStart[0] ? new Date(timeStart[0]?.timestart * 1000).toISOString() : null;
               eventTimeEnd = timeEnd[0] ? new Date(timeEnd[0]?.timestart * 1000).toISOString() : null;
+
+              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+              statusActivity = statusByDate.statusActivity
+              timecompleted = statusByDate.timecompleted;
+
+              customStatus = true
+
+              if (grades?.gradeitems) {
+                const index = grades?.gradeitems.findIndex((i) => i.iteminstance == module.instance)
+                if (index !== -1) {
+                  const item = grades?.gradeitems[index];
+                  if (item?.graderaw !== null && item?.graderaw !== undefined) {
+                    statusActivity = 'delivered';
+                    timecompleted = generalUtility.unixTimeToString(item?.gradedategraded || 0);
+                  }
+                }
+              }
             }
 
-            // respActivitiesCompletion
-            let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
+            if (isForum && module.modname === 'forum') {
+              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+              statusActivity = statusByDate.statusActivity
+              timecompleted = statusByDate.timecompleted;
 
-            if (completionActivity.timecompleted) {
-              statusActivity = 'delivered';
-              timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
+              customStatus = true
+
+              if (grades?.gradeitems) {
+                const index = grades?.gradeitems.findIndex((i) => i.iteminstance == module.instance)
+                if (index !== -1) {
+                  const item = grades?.gradeitems[index];
+                  if (item?.graderaw !== null && item?.graderaw !== undefined) {
+                    statusActivity = 'delivered';
+                    timecompleted = generalUtility.unixTimeToString(item?.gradedategraded || 0);
+                  }
+                }
+              }
             }
-            else {
-              if (today.isBefore(eventTimeStart)) {
-                statusActivity = 'not_enabled';
-                timecompleted = null;
+
+            if (customStatus === false) {
+              let completionActivity = respActivitiesCompletion.statuses.find(e => e.instance == module.instance);
+
+              if (completionActivity?.timecompleted) {
+                statusActivity = 'delivered';
+                timecompleted = generalUtility.unixTimeToString(completionActivity.timecompleted);
               }
               else {
-                if (today.isBefore(eventTimeEnd)) {
-                  statusActivity = 'pending';
-                  timecompleted = null;
-                }
-                else {
-                  statusActivity = 'not_delivered';
-                  timecompleted = null;
-                }
+                let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+                statusActivity = statusByDate.statusActivity
+                timecompleted = statusByDate.timecompleted;
               }
             }
 
@@ -268,6 +346,30 @@ class CalendarEventsService {
           }
         });
 
+    }
+  }
+
+  private getStatusActivityByDate = (eventTimeStart, eventTimeEnd) => {
+    let statusActivity = undefined;
+    let timecompleted = undefined;
+    const today = moment();
+    if (today.isBefore(eventTimeStart)) {
+      statusActivity = 'not_enabled';
+      timecompleted = null;
+    }
+    else {
+      if (today.isBefore(eventTimeEnd)) {
+        statusActivity = 'pending';
+        timecompleted = null;
+      }
+      else {
+        statusActivity = 'not_delivered';
+        timecompleted = null;
+      }
+    }
+    return {
+      statusActivity,
+      timecompleted
     }
   }
 }

@@ -355,6 +355,7 @@ class CourseSchedulingService {
         await Country.populate(response, { path: 'country', select: 'id name' })
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
         await Company.populate(response, { path: 'client', select: 'id name' })
+        await User.populate(response, {path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
@@ -534,6 +535,7 @@ class CourseSchedulingService {
           .populate({ path: 'country', select: 'id name' })
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
           .populate({ path: 'client', select: 'id name' })
+          .populate({path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'})
           // .populate({path: 'course', select: 'id name'})
           // .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
           .lean()
@@ -838,6 +840,39 @@ class CourseSchedulingService {
 
     for await (const course of courses) {
       if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
+        let isBusiness = false
+        let modality = undefined;
+
+        let contact = undefined;
+        let address = undefined;
+        if (courseScheduling?.schedulingType?.name === 'Empresarial') {
+          isBusiness = true;
+        }
+        if (courseScheduling.schedulingMode.name === 'Presencial') {
+          modality = 'in_situ'
+        } else if (courseScheduling.schedulingMode.name === 'En linea') {
+          modality = 'online'
+        } else {
+          modality = 'virtual'
+        }
+
+        // if (isBusiness) {
+          if (modality === 'in_situ') {
+            address = courseScheduling?.address || '-'
+            contact = {
+              fullName: `${courseScheduling?.contact?.profile ? `${courseScheduling?.contact?.profile?.first_name} ${courseScheduling?.contact?.profile?.last_name}` : '-'}`,
+              phoneNumber: courseScheduling?.contact?.phoneNumber || '-',
+              email: courseScheduling?.contact?.email || '-',
+            }
+          } else if (modality === 'online') {
+            contact = {
+              fullName: `${courseScheduling?.contact?.profile ? `${courseScheduling?.contact?.profile?.first_name} ${courseScheduling?.contact?.profile?.last_name}` : '-'}`,
+              phoneNumber: courseScheduling?.contact?.phoneNumber || '-',
+              email: courseScheduling?.contact?.email || '-',
+            }
+          }
+        // }
+
         notificationsByTeacher[course.teacher._id] = {
           teacher: {
             _id: course.teacher._id,
@@ -857,6 +892,8 @@ class CourseSchedulingService {
             amountParticipants: (courseScheduling?.amountParticipants) ? courseScheduling?.amountParticipants : '-',
             regional: (courseScheduling?.regional?.name) ? courseScheduling?.regional?.name : '-',
             account_executive: (courseScheduling?.account_executive?.profile?.first_name) ? `${courseScheduling?.account_executive?.profile?.first_name} ${courseScheduling?.account_executive?.profile?.last_name}` : '-',
+            contact,
+            address
             // course_code: (course.course && course.course.code) ? course.course.code : '',
             // course_name: (course.course && course.course.name) ? course.course.name : '',
           },
@@ -918,6 +955,7 @@ class CourseSchedulingService {
     for (const key in notificationsByTeacher) {
       if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {
         const teacherData = notificationsByTeacher[key];
+        console.log('teacherData', teacherData)
         await this.sendEnrollmentUserEmail([teacherData.teacher.email], {
           mailer: customs['mailer'],
           subject: i18nUtility.__('mailer.enrollment_teacher.subject'),

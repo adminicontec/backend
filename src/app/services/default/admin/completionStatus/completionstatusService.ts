@@ -9,10 +9,11 @@ import { certificateService } from '@scnode_app/services/default/huellaDeConfian
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { moodle_setup } from '@scnode_core/config/globals';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
-import { CertificateQueue, User } from '@scnode_app/models';
+import { CertificateQueue, CourseScheduling, User } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -224,101 +225,156 @@ class CompletionstatusService {
     console.log('activitiesSummary');
     console.log(params);
 
-    let summary = {
+    const summary = {
       schedulingMode: '',
-      totalAdvance: 0,
+      totalAdvance: undefined,
       finalGrade: '',
       programFinalState: '',
       certificateIssueState: '',
       auditor: false,
-      auditorGrade: 0
+      auditorGrade: 0,
+      notes: [],
+      finalNote: undefined,
+      emissionCertificate: {
+        label: `Sin emitir`,
+      },
+      certification: {
+        type: undefined,
+        label: undefined,
+        exam: undefined,
+        status: {
+          generated: false,
+          label: 'Sin emitir'
+        }
+      },
+      auditorCertification: {
+        type: undefined,
+        label: undefined,
+        exam: undefined,
+        status: {
+          generated: false,
+          label: 'Sin emitir'
+        }
+      },
+      attendance: undefined,
+      activities: undefined
     }
 
     try {
 
+      const existUser = await User.findOne({ username: params.username })
+
+      if (!existUser) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
+
       // Get Rules for completion:
       console.log('Get Rules for completion:');
-      const response: any = await certificateService.rulesForCompletion(params);
+      // const response: any = await certificateService.rulesForCompletion(params);
+      const response: any = await certificateService.completion(params)
 
       if (response.status == 'error') {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.not_found' } });
       }
 
-      if (response.completion[0].listOfStudentProgress) {
-        let studentData = response.completion[0].listOfStudentProgress[0].student;
-        summary.schedulingMode = response.schedulingMode.toLowerCase();
-        summary.finalGrade = `${studentData.itemType.course[0].graderaw} / 100`;
-        summary.auditor = studentData.studentProgress.auditor;
-        summary.auditorGrade = studentData.studentProgress.auditorGrade;
+      if (response?.enrollment) {
+        let courseSchedling = undefined;
+        const studentData = response?.enrollment[0] || undefined;
+        if (studentData) {
+          courseSchedling = await CourseScheduling.findOne({_id: studentData.course_scheduling}).select('endDate').lean()
 
-        if (response.schedulingMode.toLowerCase() == 'virtual') {
-          summary.totalAdvance = studentData.studentProgress.completion;
+          summary.schedulingMode = response?.schedulingMode?.toLowerCase() || ''
+          const progress = studentData?.progress || undefined;
+          if (progress) {
+            if (response?.isAuditorCerficateEnabled) {
+              summary.certification.label = progress?.attended_approved || '-';
+              summary.certification.type = 'academic'
+
+              summary.auditorCertification.label = progress?.auditorCertificate || '-'
+              summary.auditorCertification.exam = (progress?.auditorGradeC2) ? generalUtility.round(progress?.auditorGradeC2) : '-'
+              summary.auditorCertification.type = 'auditor'
+              summary.notes.push(progress?.auditorGradeC2 ? progress?.auditorGradeC2 : 0)
+            } else if (response?.firstCertificateIsAuditor) {
+              summary.certification.label = progress?.attended_approved || '-'
+              summary.certification.exam = (progress?.auditorGradeC1) ? generalUtility.round(progress?.auditorGradeC1) : '-'
+              summary.certification.type = 'auditor'
+              summary.notes.push(progress?.auditorGradeC1 ? progress?.auditorGradeC1 : 0)
+            } else {
+              summary.certification.label = progress?.attended_approved || '-'
+              summary.certification.type = 'academic'
+            }
+
+            if (summary.schedulingMode !== '') {
+              if (summary.schedulingMode == 'virtual') {
+                summary.totalAdvance = progress?.completion || 0;
+                summary.activities = progress?.average_grade || '-'
+                summary.notes.push(progress?.average_grade ? progress?.average_grade : 0)
+                summary.finalNote = progress?.average_grade ? generalUtility.round(progress.average_grade) : '-'
+              } else {
+                // summary.totalAdvance = progress?.assistanceDetails?.percentage || 0;
+                summary.attendance = progress?.assistanceDetails?.percentage || 0
+                // summary.notes.push(progress?.assistanceDetails?.percentage ? progress?.assistanceDetails?.percentage : 0)
+                summary.notes = [];
+              }
+            }
+          }
+
+          // if (summary.notes.length > 0) {
+          //   const note = summary.notes.reduce((accum, element) => {
+          //     accum += element;
+          //     return accum
+          //   }, 0) / summary.notes.length
+          //   summary.finalNote = generalUtility.round(note);
+          // }
+
+          // let studentData = response.completion[0].listOfStudentProgress[0].student;
+          // summary.schedulingMode = response.schedulingMode.toLowerCase();
+          // summary.finalGrade = `${studentData.itemType.course[0].graderaw} / 100`;
+          // summary.auditor = studentData.studentProgress.auditor;
+          // summary.auditorGrade = studentData.studentProgress.auditorGrade;
+
+          // if (response.schedulingMode.toLowerCase() == 'virtual') {
+          //   summary.totalAdvance = studentData.studentProgress.completion;
+          // }
+
+          // if (response.schedulingMode.toLowerCase() == 'presencial' || response.schedulingMode == 'en linea') {
+          //   var arrNum = studentData.studentProgress.assistance.split('/');
+
+          //   summary.totalAdvance = arrNum[0] / arrNum[1];
+          // }
+
+
+          // if (studentData.studentProgress.status == 'ok')
+          //   summary.programFinalState = 'Aprobado';
+          // else
+          //   summary.programFinalState = 'No aprobado';
+
+          const certifications = await CertificateQueue.find({
+            userId: existUser._id,
+            courseId: params.course_scheduling,
+            // certificateType: 'academic'
+          });
+
+          if (certifications.length > 0) {
+            for (const certification of certifications) {
+              if (certification?.certificateType === 'academic') {
+                summary.certification.status.generated = true;
+                summary.certification.status.label = this.findCertificationsStatus(certification.status);
+              } else if (certification?.certificateType === 'auditor') {
+                summary.auditorCertification.status.generated = true;
+                summary.auditorCertification.status.label = this.findCertificationsStatus(certification.status);
+              } else {
+                summary.certification.status.generated = true;
+                summary.certification.status.label = this.findCertificationsStatus(certification.status);
+              }
+              summary.emissionCertificate.label = `Emitido`;
+            }
+          } else {
+            if (studentData?.progress?.status === 'no') {
+              summary.emissionCertificate.label = `No se certifica`;
+            }
+          }
         }
-
-        if (response.schedulingMode.toLowerCase() == 'presencial' || response.schedulingMode == 'en linea') {
-          var arrNum = studentData.studentProgress.assistance.split('/');
-
-          summary.totalAdvance = arrNum[0] / arrNum[1];
-        }
-
-
-        if (studentData.studentProgress.status == 'ok')
-          summary.programFinalState = 'Aprobado';
-        else
-          summary.programFinalState = 'No aprobado';
       }
 
-
-      // Get status of Certificate Issue:
-
-      //params.username
-      const existUser = await User.findOne({ username: params.username })
-      console.log('existUser');
-      console.log(existUser);
-
-      const respCertification = await CertificateQueue.findOne({
-        userId: existUser._id,
-        courseId: params.course_scheduling,
-        certificateType: 'academic'
-      });
-
-      console.log('Certifications');
-      console.log(respCertification);
-      if (respCertification) {
-        console.log(respCertification.status);
-
-        //['New', 'In-process', 'Requested', 'Complete', 'Error', 'Re-issue']
-        switch (respCertification.status) {
-          case 'New':
-            summary.certificateIssueState = 'En cola';
-            break;
-          case 'In-process':
-            summary.certificateIssueState = 'En proceso';
-            break;
-          case 'Requested':
-            summary.certificateIssueState = 'En emisión';
-            break;
-          case 'Complete':
-            summary.certificateIssueState = 'Disponible';
-            break;
-          case 'Error':
-            summary.certificateIssueState = 'Error';
-            break;
-          case 'Re-issue':
-            summary.certificateIssueState = 'Reexpedido';
-            break;
-          case 'Deleted':
-            summary.certificateIssueState = 'Borrado';
-            break;
-
-          default:
-            summary.certificateIssueState = 'En cola';
-            break;
-        }
-      }
-      else {
-        summary.certificateIssueState = 'Sin emitir';
-      }
 
     }
     catch (e) {
@@ -339,6 +395,36 @@ class CompletionstatusService {
       }
     });
 
+  }
+  private findCertificationsStatus = (certificationStatus) => {
+    let label = 'En cola'
+    switch (certificationStatus) {
+      case 'New':
+        label = 'En cola';
+        break;
+      case 'In-process':
+        label = 'En proceso';
+        break;
+      case 'Requested':
+        label = 'En emisión';
+        break;
+      case 'Complete':
+        label = 'Disponible';
+        break;
+      case 'Error':
+        label = 'Error';
+        break;
+      case 'Re-issue':
+        label = 'Reexpedido';
+        break;
+      case 'Deleted':
+        label = 'Borrado';
+        break;
+      default:
+        label = 'En cola';
+        break;
+    }
+    return label;
   }
 
 }

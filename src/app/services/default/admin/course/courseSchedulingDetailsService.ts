@@ -159,7 +159,7 @@ class CourseSchedulingDetailsService {
         })
 
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming address contact', populate: [
             { path: 'city', select: 'id name' },
             { path: 'schedulingStatus', select: 'id name' },
             { path: 'schedulingMode', select: 'id name' },
@@ -167,7 +167,8 @@ class CourseSchedulingDetailsService {
             { path: 'regional', select: 'id name' },
             { path: 'program', select: 'id name' },
             { path: 'client', select: 'id name' },
-            { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
+            { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' },
+            {path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'}
           ]
         })
         await CourseSchedulingSection.populate(response, { path: 'course', select: 'id code name moodle_id' })
@@ -305,7 +306,7 @@ class CourseSchedulingDetailsService {
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
           .populate({
-            path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive', populate: [
+            path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive address', populate: [
               { path: 'city', select: 'id name' },
               { path: 'schedulingStatus', select: 'id name' },
               { path: 'schedulingMode', select: 'id name' },
@@ -313,7 +314,8 @@ class CourseSchedulingDetailsService {
               { path: 'regional', select: 'id name' },
               { path: 'program', select: 'id name' },
               { path: 'client', select: 'id name' },
-              { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' }
+              { path: 'account_executive', select: 'id profile.first_name profile.last_name moodle_id email' },
+              {path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'}
             ]
           })
           .populate({ path: 'course', select: 'id name moodle_id' })

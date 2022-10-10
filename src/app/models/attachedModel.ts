@@ -18,12 +18,10 @@ const AttachedSchema = new Schema({
     },
     uuid: {
       type: Schema.Types.String,
-      unique: true,
       required: true
     },
     unique: {
       type: Schema.Types.String,
-      unique: true,
       required: true
     }
   }]
