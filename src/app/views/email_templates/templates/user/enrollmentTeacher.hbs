@@ -32,8 +32,14 @@
                       <p><b>Cliente: </b>{{params.program.client}}</p>
                       <p><b>Regional: </b>{{params.program.regional}}</p>
                       <p><b>Ejecutivo de cuenta: </b>{{params.program.account_executive}}</p>
+                      {{#if params.program.city}}
+                        <p><b>Ciudad: </b>{{params.program.city}}</p>
+                      {{/if}}
                       {{#if params.program.address}}
                         <p><b>Dirección del curso: </b>{{params.program.address}}</p>
+                      {{/if}}
+                      {{#if params.program.classroom}}
+                        <p><b>Salón: </b>{{params.program.classroom}}</p>
                       {{/if}}
                       {{#if params.program.contact}}
                         <p><b>Nombre de persona de contacto: </b>{{params.program.contact.fullName}}</p>

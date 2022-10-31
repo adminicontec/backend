@@ -7,6 +7,8 @@ import moment from 'moment'
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService'
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
+import { attendanceService } from '@scnode_app/services/default/moodle/attendance/attendanceService'
 // @end
 
 // @import config
@@ -24,7 +26,8 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseSchedulingDetailsService {
@@ -46,9 +49,6 @@ class CourseSchedulingDetailsService {
   public findBy = async (params: IQueryFind) => {
 
     try {
-      console.log('params');
-      console.log(params);
-
       let where = {}
       if (params.where && Array.isArray(params.where)) {
         params.where.map((p) => where[p.field] = p.value)
@@ -159,7 +159,7 @@ class CourseSchedulingDetailsService {
         })
 
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming address contact', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming address contact classroom', populate: [
             { path: 'city', select: 'id name' },
             { path: 'schedulingStatus', select: 'id name' },
             { path: 'schedulingMode', select: 'id name' },
@@ -194,6 +194,86 @@ class CourseSchedulingDetailsService {
               newuserid: response.teacher.moodle_id
             });
           }
+        }
+
+        if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
+          const logReprograming = courseSchedulingService.addReprogramingLog(params.reprograming, response.course_scheduling, { identifier: response._id, sourceType: 'course_scheduling_detail' });
+          await CourseScheduling.findByIdAndUpdate(
+            response.course_scheduling._id,
+            {
+              logReprograming
+            },
+            {
+              useFindAndModify: false,
+              new: true,
+              lean: true,
+            }
+          )
+        }
+
+        let syncupSessionsInMoodle: CourseSchedulingDetailsSync = CourseSchedulingDetailsSync.DISABLED;
+        try {
+          console.log('Syncup Sessions')
+          if (params?.sessions && response?.sessions && register?.sessions) {
+            const moduleConfig = customs?.modules?.courseSchedulingSync?.update || undefined;
+            let moduleEnabled = true;
+            if (moduleConfig?.minDate) {
+              const createdAt = moment.utc(response.created_at)
+              const minDate = moment.utc(`${moduleConfig?.minDate} 00:00:00`)
+              const maxDate = moment.utc(`${moduleConfig?.minDate} 23:59:59`)
+              if (!(createdAt.isSameOrAfter(minDate))) {
+                moduleEnabled = false
+              }
+              // console.log('createdAt', createdAt)
+              // console.log('minDate', minDate)
+              // console.log('maxDate', maxDate)
+            }
+            // console.log('moduleEnabled', moduleEnabled)
+            // console.log('moduleConfig', moduleConfig)
+
+            if (moduleEnabled === true) {
+              // console.log('params?.sessions', params?.sessions)
+              const sessionsChanged = params?.sessions.reduce((accum, element) => {
+                if (element?.hasChanges === 'on' && element?.oldValues?.moodle_id) {
+                  accum.push(element?.oldValues?.moodle_id);
+                }
+                return accum;
+              }, [])
+              const newSessionsByMoodleId = response?.sessions?.reduce((accum, element) => {
+                if (element?.moodle_id) {
+                  if (!accum[element?.moodle_id]) {
+                    accum[element.moodle_id] = element
+                  }
+                }
+                return accum
+              }, {})
+              const sessionsRemoved = register?.sessions?.reduce((accum, element) => {
+                if (element?.moodle_id) {
+                  if (!newSessionsByMoodleId[element?.moodle_id]) {
+                    sessionsChanged.push(element?.moodle_id)
+                  }
+                  if (!accum[element?.moodle_id]) {
+                    accum[element.moodle_id] = element
+                  }
+                }
+                return accum;
+              }, {})
+
+              await this.syncClassSessions(
+                response._id,
+                response?.sessions,
+                response?.course?.moodle_id,
+                response?.course_scheduling?.moodle_id,
+                sessionsChanged
+              )
+              syncupSessionsInMoodle = CourseSchedulingDetailsSync.SYNCHRONIZED
+            } else {
+              console.log('Modulo antiguo se debe enviar notificación')
+              syncupSessionsInMoodle = CourseSchedulingDetailsSync.PENDING
+            }
+          }
+        } catch (err) {
+          console.log('syncClassSessions-update-failed', err)
         }
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
@@ -272,23 +352,9 @@ class CourseSchedulingDetailsService {
             await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
               course: response.course,
               courseSchedulingDetail: register,
+              syncupSessionsInMoodle
             })
           }
-        }
-
-        if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
-          const logReprograming = courseSchedulingService.addReprogramingLog(params.reprograming, response.course_scheduling, { identifier: response._id, sourceType: 'course_scheduling_detail' });
-          await CourseScheduling.findByIdAndUpdate(
-            response.course_scheduling._id,
-            {
-              logReprograming
-            },
-            {
-              useFindAndModify: false,
-              new: true,
-              lean: true,
-            }
-          )
         }
 
         await courseSchedulingService.updateCourseSchedulingEndDate(register.course_scheduling);
@@ -306,7 +372,7 @@ class CourseSchedulingDetailsService {
         const { _id } = await CourseSchedulingDetails.create(params)
         const response: any = await CourseSchedulingDetails.findOne({ _id })
           .populate({
-            path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive address', populate: [
+            path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive address classroom', populate: [
               { path: 'city', select: 'id name' },
               { path: 'schedulingStatus', select: 'id name' },
               { path: 'schedulingMode', select: 'id name' },
@@ -329,7 +395,22 @@ class CourseSchedulingDetailsService {
           courseid: response.course_scheduling.moodle_id,
           userid: response.teacher.moodle_id
         });
-        console.log('respMoodle3', respMoodle3)
+
+        try {
+          if (response?.sessions) {
+            await this.syncClassSessions(
+              response._id,
+              response?.sessions,
+              response?.course?.moodle_id,
+              response?.course_scheduling?.moodle_id,
+              []
+            )
+          }
+        } catch (err) {
+          console.log('syncClassSessions-create-failed', err)
+        }
+
+
 
         if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.course_scheduling && response.course_scheduling.schedulingStatus && response.course_scheduling.schedulingStatus.name === 'Confirmado')) {
           await courseSchedulingService.checkEnrollmentTeachers(response.course_scheduling, response.teacher._id, 1)
@@ -349,6 +430,75 @@ class CourseSchedulingDetailsService {
     } catch (e) {
       console.log('error', e)
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private syncClassSessions = async (
+    courseSchedulingDetailsId: string,
+    sessions: {_id: string, startDate: Date, duration: number, moodle_id?: string}[],
+    sectionMoodleID: string,
+    courseMoodleID: string,
+    sessionsChanged: string[]
+  ) => {
+    if (!sessions) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'course_scheduling.sync_details.params_invalid', params: {error: 'Las sesiones son obligatorias'}}})
+    if (!sectionMoodleID) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'course_scheduling.sync_details.params_invalid', params: {error: 'El ID del modulo asociado a moodle es obligatorio'}}})
+    if (!courseMoodleID) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'course_scheduling.sync_details.params_invalid', params: {error: 'El ID del curso asociado a moodle es obligatorio'}}})
+    if (sessions.length > 0) {
+      console.log('syncClassSessions started')
+      let modulesBySection = {}
+      const courseContent: any = await courseContentService.moduleList({ courseID: courseMoodleID, moduleType: ['attendance'] });
+      // console.log('courseContent', courseContent)
+      if (courseContent?.courseModules) {
+        modulesBySection = courseContent.courseModules.reduce((accum, element) => {
+          if (element?.sectionid) {
+            if (!accum[element?.sectionid]) {
+              accum[element?.sectionid] = element;
+            }
+          }
+          return accum;
+        }, {});
+      }
+      const attendanceByModule = modulesBySection[sectionMoodleID] || undefined
+      // console.log('attendanceByModule', attendanceByModule)
+      if (!attendanceByModule) return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'course_scheduling.sync_details.attendance_module_not_found', params: {error: 'El ID del curso asociado a moodle es obligatorio'}}})
+
+      for (const moodle_id of sessionsChanged) {
+        try {
+          await attendanceService.removeSession({
+            sessionId: moodle_id
+          })
+        } catch (err) {
+          console.log('RemoveSession-error', err)
+        }
+      }
+
+      for (const session of sessions) {
+        let addSession = false;
+        if (!session?.moodle_id) {
+          addSession = true;
+        }
+        // console.log('session', session, 'add', addSession)
+        if (addSession) {
+          const attendanceResponse: any = await attendanceService.addSession({
+            attendanceId: attendanceByModule?.instance,
+            sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+            duration: session.duration,
+          })
+          if (attendanceResponse?.sessionId) {
+            session.moodle_id = attendanceResponse?.sessionId;
+          }
+        }
+      }
+
+      await CourseSchedulingDetails.findByIdAndUpdate(courseSchedulingDetailsId, {
+        $set: {
+          sessions,
+        }
+      }, {
+        useFindAndModify: false,
+        new: true,
+        lean: true,
+      })
     }
   }
 

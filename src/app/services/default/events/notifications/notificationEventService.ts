@@ -107,7 +107,9 @@ class NotificationEventService {
 
       const paramsTemplate = {
         user_name: `${user.profile.first_name} ${user.profile.last_name}`,
-        participants: params?.participants || '-',
+        programName: params.programName || '-',
+        serviceId: params.serviceId || '-',
+        certifications: params?.certifications || [],
         amount_notifications: 10,
         notification_source: `operative_assistant_certificated_${params.serviceId}_${user._id}`,
         mailer: customs['mailer'],

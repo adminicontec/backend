@@ -13,6 +13,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 // @import models
+import { CourseScheduling } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -50,8 +51,8 @@ class CalendarEventsService {
         durationFormated: '',
         //timemodified: ""
         status: '',
-        timecompleted: ''
-
+        timecompleted: '',
+        url: undefined
       }
 
       let courseID;
@@ -112,8 +113,14 @@ class CalendarEventsService {
         'userid': userID,
       };
 
+      const courseScheduling = await CourseScheduling.findOne({
+        moodle_id: params.courseID
+      }).select('id startDate')
+      .lean()
+
       // 1. módulos asociados al curso en moodle
-      var select = ['assign', 'attendance', 'quiz', 'forum'];
+      let select = ['assign', 'attendance', 'quiz', 'forum'];
+      if (params.events) select = params.events
       let respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: courseID, moduleType: select });
 
       // 2. Validación si hay eventos asociados al curso en moodle
@@ -310,7 +317,8 @@ class CalendarEventsService {
               duration: 0,
               durationFormated: '',
               status: statusActivity,
-              timecompleted: timecompleted
+              timecompleted: timecompleted,
+              url: undefined
             };
 
             responseEvents.push(singleEvent);
@@ -326,6 +334,63 @@ class CalendarEventsService {
               params: { respMoodleCourseModules }
             }
           });
+      }
+
+      const findSessions = select.find((field) => field === 'session')
+      if (findSessions && respMoodleEvents?.events) {
+        const startServiceDate = moment(moment(courseScheduling.startDate).format('YYYY-MM-DD'))
+        const urlWebex = respMoodleCourseModules?.courseModules.find(field => field.modname === 'session')
+        for (const event of respMoodleEvents.events) {
+          if (event?.modulename === null) {
+            let eventTimeStart = event?.timestart ? generalUtility.unixTimeToString(event.timestart) : null;
+            let eventTimeEnd = (eventTimeStart && event?.timeduration) ? moment(eventTimeStart).add(event?.timeduration, 'seconds').toISOString() : null;
+            // if (event?.name === 'Sesión Jhonatan :) 2') {
+            //   eventTimeStart = '2022-10-24T14:00:22.000Z'
+            //   eventTimeEnd = '2022-10-24T16:00:22.000Z'
+            // }
+
+            if (!moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00')).isSameOrAfter(startServiceDate)) continue;
+
+            let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd, true)
+            let statusActivity = statusByDate.statusActivity
+            let timecompleted = statusByDate.timecompleted;
+
+
+            let description;
+
+            if (event?.description) {
+              const today = moment.utc();
+              if (eventTimeStart && eventTimeEnd) {
+                const timeStartMoment = moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00'))
+                const timeEndMoment = moment.utc(moment(eventTimeEnd).format('YYYY-MM-DD 23:59:59'))
+                if (today.isSameOrAfter(timeStartMoment) && today.isSameOrBefore(timeEndMoment)) {
+                  description = event?.description
+                }
+              }
+              else if (eventTimeStart) {}
+              else if (eventTimeEnd) {}
+            }
+
+            singleEvent = {
+              id: event.id,
+              name: event?.name,
+              description,
+              courseid: courseID,
+              modulename: undefined,
+              eventtype: 'webex',
+              instance: undefined,
+              timestart: eventTimeStart,
+              timefinish: eventTimeEnd,
+              duration: 0,
+              durationFormated: '',
+              status: statusActivity,
+              timecompleted: timecompleted,
+              url: urlWebex ? urlWebex?.url : undefined
+            };
+
+            responseEvents.push(singleEvent);
+          }
+        }
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -349,7 +414,7 @@ class CalendarEventsService {
     }
   }
 
-  private getStatusActivityByDate = (eventTimeStart, eventTimeEnd) => {
+  private getStatusActivityByDate = (eventTimeStart, eventTimeEnd, forceDelivered: boolean = false) => {
     let statusActivity = undefined;
     let timecompleted = undefined;
     const today = moment();
@@ -365,6 +430,9 @@ class CalendarEventsService {
       else {
         statusActivity = 'not_delivered';
         timecompleted = null;
+        if (forceDelivered) {
+          statusActivity = 'delivered';
+        }
       }
     }
     return {

@@ -154,4 +154,10 @@ export interface IChangeSchedulingElement {
   output: 'json' | 'db'
   courseSchedulings: string[]
 }
+
+export enum CourseSchedulingDetailsSync {
+  SYNCHRONIZED = 'synchronized',
+  PENDING = 'pending',
+  DISABLED = 'disabled',
+}
 //@end

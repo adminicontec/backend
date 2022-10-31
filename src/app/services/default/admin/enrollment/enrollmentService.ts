@@ -61,7 +61,6 @@ class EnrollmentService {
    */
   public list = async (filters: IEnrollmentQuery = {}) => {
 
-    console.log('»» enrollment');
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
 
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
@@ -96,9 +95,6 @@ class EnrollmentService {
         where['user'] = { $nin: user_ids }
       }
     }
-
-    console.log('Conditions:');
-    console.log(where);
 
     let registers = []
     try {

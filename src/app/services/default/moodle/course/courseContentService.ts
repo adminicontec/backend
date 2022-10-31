@@ -98,7 +98,8 @@ class CourseContentService {
       name: '',
       visible: '',
       uservisible: '',
-      completion: 0
+      completion: 0,
+      url: undefined
     }
 
     // Params for Moodle, fetch the complete list. Filtering only from results.
@@ -153,9 +154,28 @@ class CourseContentService {
               instance: module.instance,
               visible: module.visible,
               uservisible: module.uservisible,
-              completion: module.completion
+              completion: module.completion,
+              url: undefined
             };
             responseCourseModules.push(singleModuleCourseContent);
+          } else {
+            const isWebex = this.isWebex(module.name)
+            if (isWebex && params.moduleType.find(field => field === 'session')) {
+              singleModuleCourseContent = {
+                id: module.id,
+                sectionid: section.id,
+                sectionname: section.name,
+                name: module.name,
+                modname: 'session',
+                isauditorquiz: false,
+                instance: module.instance,
+                visible: module.visible,
+                uservisible: module.uservisible,
+                completion: module.completion,
+                url: module?.url || undefined
+              };
+              responseCourseModules.push(singleModuleCourseContent);
+            }
           }
         }
       }
@@ -165,6 +185,10 @@ class CourseContentService {
         courseModules: responseCourseModules
       }
     })
+  }
+
+  private isWebex (str: string) {
+    return (str.includes('Webex -'))
   }
 }
 

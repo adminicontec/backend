@@ -45,7 +45,8 @@ const CourseSchedulingDetailsSchema = new Schema({
     duration: {
       type: Schema.Types.Number,
       required: true,
-    }
+    },
+    moodle_id: { type: Schema.Types.String }
   }],
   observations: {
     type: Schema.Types.String

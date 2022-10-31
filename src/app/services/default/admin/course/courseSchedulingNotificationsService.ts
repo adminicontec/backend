@@ -21,6 +21,7 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 // @import types
 import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
+import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseSchedulingNotificationsService {
@@ -37,7 +38,13 @@ class CourseSchedulingNotificationsService {
   /**
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
-  public sendNotificationOfServiceToAssistant = async (courseScheduling: any, type: 'started' | 'cancel' | 'modify' = 'started', populate?: boolean, changes?: any) => {
+  public sendNotificationOfServiceToAssistant = async (
+    courseScheduling: any,
+    type: 'started' | 'cancel' | 'modify' = 'started',
+    populate?: boolean,
+    changes?: any,
+    syncupSessionsInMoodle?: CourseSchedulingDetailsSync
+  ) => {
     try {
       let email_to_notificate: { email: string, name: string }[] = []
 
@@ -104,6 +111,22 @@ class CourseSchedulingNotificationsService {
       const exam: IQuizModuleData = await this.verifyCourseSchedulingExercise(courseScheduling.moodle_id);
 
       if (email_to_notificate.length > 0) {
+        let syncupSessionsInMoodleMessage = undefined;
+        let material_address = undefined;
+        if (syncupSessionsInMoodle && [CourseSchedulingDetailsSync.SYNCHRONIZED, CourseSchedulingDetailsSync.PENDING].includes(syncupSessionsInMoodle)) {
+          switch(syncupSessionsInMoodle) {
+            case CourseSchedulingDetailsSync.SYNCHRONIZED:
+              syncupSessionsInMoodleMessage = 'Las sesiones fueron actualizadas en moodle.'
+              break;
+            case CourseSchedulingDetailsSync.PENDING:
+              syncupSessionsInMoodleMessage = 'Las sesiones aún no han sido actualizadas en moodle.'
+              break;
+          }
+        }
+
+        if (courseScheduling?.material_delivery === 'physic' && courseScheduling?.material_address) {
+          material_address = courseScheduling?.material_address;
+        }
         const params = {
           mailer: customs['mailer'],
           today: moment.utc().format('YYYY-MM-DD'),
@@ -121,9 +144,11 @@ class CourseSchedulingNotificationsService {
           observations: courseScheduling.observations,
           exam: exam?.hasExam ? 'SI' : 'NO',
           changes,
+          syncupSessionsInMoodle: syncupSessionsInMoodleMessage,
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
-          regional: courseScheduling.regional.name
+          regional: courseScheduling.regional.name,
+          material_address
         };
 
         // @ts-ignore
@@ -524,11 +549,12 @@ class CourseSchedulingNotificationsService {
 
       let auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
 
-      console.log('::::::::::::::');
-      console.log(auditorQuizModule);
-      console.log('::::::::::::::');
+      // console.log('::::::::::::::');
+      // console.log(auditorQuizModule);
+      // console.log('::::::::::::::');
       if (auditorQuizModule) {
         let quizModuleData: IQuizModuleData = {
+          sectionid: auditorQuizModule.sectionid,
           moduleName: auditorQuizModule.sectionname,
           examnName: auditorQuizModule.name,
           hasExam: true,

@@ -33,6 +33,7 @@ export interface ICompletionStatusQuery {
 }
 
 export interface IQuizModuleData {
+  sectionid: string,
   hasExam: boolean,
   examnName: string,
   moduleName: string,
