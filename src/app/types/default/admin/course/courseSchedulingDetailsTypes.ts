@@ -3,9 +3,17 @@
 
 // @add your types
 export interface ICourseSchedulingDetailSession {
+  _id?: string,
   startDate: string // Fecha de inicio
   duration: number // Duración
-  hasChanges?: 'on' | 'off'
+  hasChanges?: 'on' | 'off',
+  oldValues?: {
+    _id: string,
+    startDate: string,
+    duration: number,
+    moodle_id: string,
+    uuid: string
+  }
 }
 
 export interface ICourseSchedulingDetail {

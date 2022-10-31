@@ -43,7 +43,7 @@ export const external_api = (env.hasOwnProperty('external_api')) ? env['external
 export const main_external_api = (env.hasOwnProperty('main_external_api')) ? env['main_external_api'] : null;
 export const server_access_control = (env.hasOwnProperty('server_access_control')) ? env['server_access_control'] : {};
 export const sms_config = (env.hasOwnProperty('sms')) ? env['sms'] : {};
-export const customs = (env.hasOwnProperty('customs')) ? env['customs'] : {};
+export const customs: any = (env.hasOwnProperty('customs')) ? env['customs'] : {};
 export const socket = (env.hasOwnProperty('socket') && env['socket'] === true) ? { io: null, instance: null } : null;
 export const i18n_config = (env.hasOwnProperty('i18n_config')) ? env['i18n_config'] : null;
 // export const i18n_global           = i18nUtility

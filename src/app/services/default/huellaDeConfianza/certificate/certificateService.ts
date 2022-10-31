@@ -122,7 +122,7 @@ class CertificateService {
     let firstCertificateIsAuditor = false;
     let previewCertificateParams;
     let currentDate = new Date(Date.now());
-    console.log("→→→ Execution of completion()");
+    // console.log("→→→ Execution of completion()");
 
     //#region query Filters
     const paging = (filters.pageNumber && filters.nPerPage) ? true : false
@@ -183,7 +183,7 @@ class CertificateService {
 
       // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
       schedulingMode = respCourse.scheduling.schedulingMode.name;
-      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      // console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
       if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
@@ -225,10 +225,10 @@ class CertificateService {
       if (respCourse.scheduling.auditor_certificate) {
         isAuditorCerficateEnabled = true;
         // get modules need to process Second certificate
-        console.log(`Módulos para Segundo Certificado: \"${respCourse.scheduling.auditor_certificate}\"`);
-        respCourse.scheduling.auditor_modules.forEach(element => {
-          console.log(`→ ${element.course.name}`);
-        });
+        // console.log(`Módulos para Segundo Certificado: \"${respCourse.scheduling.auditor_certificate}\"`);
+        // respCourse.scheduling.auditor_modules.forEach(element => {
+        //   console.log(`→ ${element.course.name}`);
+        // });
 
         let total_intensidad = 0;
         mapping_listado_modulos_auditor = 'El contenido del programa comprendió: <br/>';
@@ -271,10 +271,10 @@ class CertificateService {
         .limit(paging ? nPerPage : null)
         .lean();
 
-      console.log("Total de estudiantes: " + enrollmentRegisters.length);
+      // console.log("Total de estudiantes: " + enrollmentRegisters.length);
 
       //#region Revisión de Progreso en Actividades para todo el curso
-      console.log(`→→ Modalidad: ${schedulingMode.toLowerCase()}`);
+      // console.log(`→→ Modalidad: ${schedulingMode.toLowerCase()}`);
       const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: filters.courseID, moduleType: this.selectActivitiesTest });
 
       // console.log("««««««««««««««« »»»»»»»»»»»»»»»»»»»»»»»");

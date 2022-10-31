@@ -8,5 +8,6 @@ export interface IMoodleCalendarEventsQuery {
   userID?:string, // ID de estudiante en Moodle
   timeStart?: string,     // fecha inicial
   timeEnd?: string,        // fecha final
+  events?: string[]
 }
 //@end

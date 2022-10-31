@@ -21,33 +21,32 @@
                   <td valign="top" class="mcnTextContent"
                     style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
                     <p><b>Estimado(a) Auxiliar {{params.user_name}}:</b></p>&nbsp;
-                    <p>A continuación se relaciona los participantes y su correspondiente certificado emitido.</p>
+                    <p>A continuación se relaciona los participantes y su correspondiente certificado emitido para el programa {{params.programName}} con código de servicio {{params.serviceId}}.</p>
                     <p></p>
 
-                    {{#each params.participants}}
-                    <p><b>{{{this.certificateName}}}</b></p>
                     <table align="left" border="0" cellpadding="5" cellspacing="5"
                       style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%">
                       <thead>
                         <tr>
-                          <th style="background: #B4BCBC;">Documento</th>
-                          <th style="background: #B4BCBC;">Participante</th>
-                          <th style="background: #B4BCBC;">Regional</th>
+                          <th style="background: #B4BCBC;width: 18.3%;">Documento</th>
+                          <th style="background: #B4BCBC;width: 18.3%;">Participante</th>
+                          <th style="background: #B4BCBC;width: 18.3%;">Regional</th>
+                          <th style="background: #B4BCBC;width: 45%;">Certificado</th>
                         </tr>
                       </thead>
                       <tbody style="font-size: 12px;">
-                        {{#each this.participants}}
+                        {{#each params.certifications}}
                         <tr>
                           <td>{{{this.document}}}</td>
                           <td>{{{this.participantFullName}}}</td>
                           <td>{{{this.regional}}}</td>
+                          <td>{{{this.certificationName}}}</td>
                         </tr>
                         {{/each}}
                       </tbody>
                     </table>
                     <p></p>
                     <p></p>
-                    {{/each}}
 
                     &nbsp;
                     <p class="mcSpecialText">En caso de cualquier inquietud comuníquese con el programador (coordinador

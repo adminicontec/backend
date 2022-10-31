@@ -10,20 +10,20 @@ export interface IParticipantData {
   serviceId?: string,
   participantId: string,
   participantFullName: string,
-  courseSchedulingName: string,
-  courseSchedulingId: string,
+  certificationName: string,
   certificateType?: string,
   document: string,
   regional: string
 }
 
 export interface IParticipantDataByCertificateType {
-  certificateName: string,
-  participants: IParticipantData[]
+  participants: IParticipantData[],
+  serviceId: string,
 }
 
 export interface ISendNotificationAssistantCertificateGeneration {
   auxiliarId: string,
-  participants: IParticipantDataByCertificateType[],
-  serviceId: string
+  serviceId: string,
+  programName: string
+  certifications: IParticipantData[]
 }

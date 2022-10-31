@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import * as path from 'path';
 import * as XLSX from "xlsx";
 const ObjectID = require('mongodb').ObjectID
 import moment from 'moment'
@@ -6,7 +7,7 @@ import moment from 'moment'
 
 // @import services
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
-import { mailService } from "@scnode_app/services/default/general/mail/mailService";
+import { IMailMessageData, mailService } from "@scnode_app/services/default/general/mail/mailService";
 import { uploadService } from '@scnode_core/services/default/global/uploadService';
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 // @end
@@ -25,12 +26,13 @@ import { mapUtility } from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
-import { City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
+import { Attached, City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
+  CourseSchedulingDetailsSync,
   IChangeSchedulingElement,
   IChangeSchedulingModular,
   ICourseScheduling,
@@ -45,6 +47,7 @@ import {
   ReprogramingLabels
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
+import { attachedService } from "../attached/attachedService";
 // @end
 
 class CourseSchedulingService {
@@ -845,6 +848,8 @@ class CourseSchedulingService {
 
         let contact = undefined;
         let address = undefined;
+        let classroom = undefined;
+        let city = undefined;
         if (courseScheduling?.schedulingType?.name === 'Empresarial') {
           isBusiness = true;
         }
@@ -859,6 +864,8 @@ class CourseSchedulingService {
         // if (isBusiness) {
           if (modality === 'in_situ') {
             address = courseScheduling?.address || '-'
+            classroom = courseScheduling?.classroom || '-'
+            city = (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-'
             contact = {
               fullName: `${courseScheduling?.contact?.profile ? `${courseScheduling?.contact?.profile?.first_name} ${courseScheduling?.contact?.profile?.last_name}` : '-'}`,
               phoneNumber: courseScheduling?.contact?.phoneNumber || '-',
@@ -885,7 +892,7 @@ class CourseSchedulingService {
             name: courseScheduling.program.name,
             observations: courseScheduling.observations,
             client: (courseScheduling.client?.name) ? courseScheduling.client?.name : '-',
-            city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
+            city,
             scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
             duration: (courseScheduling?.duration) ? generalUtility.getDurationFormated(courseScheduling?.duration, 'large') : '-',
             scheduling_type: (courseScheduling?.schedulingType?.name) ? courseScheduling?.schedulingType?.name : '-',
@@ -893,7 +900,8 @@ class CourseSchedulingService {
             regional: (courseScheduling?.regional?.name) ? courseScheduling?.regional?.name : '-',
             account_executive: (courseScheduling?.account_executive?.profile?.first_name) ? `${courseScheduling?.account_executive?.profile?.first_name} ${courseScheduling?.account_executive?.profile?.last_name}` : '-',
             contact,
-            address
+            address,
+            classroom
             // course_code: (course.course && course.course.code) ? course.course.code : '',
             // course_name: (course.course && course.course.name) ? course.course.name : '',
           },
@@ -1105,8 +1113,14 @@ class CourseSchedulingService {
     }
   }
 
-  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any }) => {
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(typeof courseScheduling === 'string' ? courseScheduling : courseScheduling?._id, 'modify', true, changes);
+  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any, syncupSessionsInMoodle?: CourseSchedulingDetailsSync }) => {
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(
+      typeof courseScheduling === 'string' ? courseScheduling : courseScheduling?._id,
+      'modify',
+      true,
+      changes,
+      course?.syncupSessionsInMoodle
+    );
 
     let students_to_notificate = []
     let teachers_to_notificate = []
@@ -1204,7 +1218,30 @@ class CourseSchedulingService {
         path_template = 'user/enrollmentTeacher'
       }
 
-      const mail = await mailService.sendMail({
+      let messageAttacheds = []
+      if (paramsTemplate?.service_id && paramsTemplate?.type === 'student') {
+        const courseScheduling = await CourseScheduling.findOne({"metadata.service_id": paramsTemplate?.service_id}).select('id attachments_student')
+        if (courseScheduling && courseScheduling?.attachments_student) {
+          const attacheds = await Attached.find({_id: courseScheduling?.attachments_student}).select('files')
+          let count = 1;
+          for (const attached of attacheds) {
+            if (attached?.files) {
+              for (const file of attached?.files) {
+                if (file?.url) {
+                  const ext = path.extname(file?.url);
+                  messageAttacheds.push({
+                    filename: `Adjunto ${count}${ext}`,
+                    path: attachedService.getFileUrl(file?.url)
+                  })
+                  count++;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      const mailOptions: IMailMessageData = {
         emails,
         mailOptions: {
           subject: (paramsTemplate.subject) ? paramsTemplate.subject : i18nUtility.__('mailer.enrollment_user.subject'),
@@ -1216,7 +1253,14 @@ class CourseSchedulingService {
           amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
         },
         notification_source: paramsTemplate.notification_source
-      })
+      }
+      if (messageAttacheds) {
+        if (Array.isArray(messageAttacheds) && messageAttacheds.length > 0) {
+          mailOptions.mailOptions['attachments'] = messageAttacheds
+        }
+      }
+
+      const mail = await mailService.sendMail(mailOptions)
       return mail
 
     } catch (e) {

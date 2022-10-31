@@ -366,6 +366,10 @@
           "already_exists": "Ya existe un tipo de programación con el nombre :name"
         }
       },
+      "sync_details": {
+        "params_invalid": "Parametro invalido - :error",
+        "attendance_module_not_found": "El modulo de asistencia no ha sido encontrado"
+      },
       "mode": {
         "not_found": "La modalidad de programación no ha sido encontrada",
         "insertOrUpdate": {
@@ -374,6 +378,9 @@
           "course_not_found": "No existe el curso con id :id a replicar."
         }
       }
+    },
+    "moodle_attendance": {
+      "exception":"Error con petición de Moodle - :error"
     },
     "calendarEvent": {
       "exception": "Error con petición de Moodle."

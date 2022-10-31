@@ -988,6 +988,18 @@ class ErrorResponse {
             }
           }
         },
+        "sync_details": {
+          "params_invalid": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.sync_details.params_invalid"),
+            "status_code": "course_scheduling_sync_details_params_invalid",
+            "code": 400
+          },
+          "attendance_module_not_found": {
+            "message": i18nUtility.__("app_error_messages.course_scheduling.sync_details.attendance_module_not_found"),
+            "status_code": "course_scheduling_sync_details_attendance_module_not_found",
+            "code": 400
+          }
+        }
       },
       "calendarEvent": {
         "exception": {
@@ -1019,6 +1031,13 @@ class ErrorResponse {
           "status_code": "moodle_error",
           "code": 400
         }
+      },
+      "moodle_attendance": {
+        "exception": {
+          "message": i18nUtility.__("app_error_messages.moodle_attendance.exception"),
+          "status_code": "moodle_attendance_exception",
+          "code": 400
+        },
       },
       "moodle_category": {
         "not_found": {
