@@ -48,9 +48,8 @@ class MoodleEnrollmentService {
 
     let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle != null) {
-      // ERROR al crear la matrícula en MOODLE
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
-      // return
+      return responseUtility.buildResponseFailed('json', null, {message: respMoodle?.message})
     }
     else {
       // La matrícula fue creada con éxito

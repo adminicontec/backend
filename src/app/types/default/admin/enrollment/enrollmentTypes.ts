@@ -77,4 +77,10 @@ export interface IParamsUpdateLoadParticipantsSchedule{
   success?: any[];
   lastUploadDate?: Date;
 }
+
+export interface ILogEnrollment {
+  status: 'ERROR' | 'OK'
+  message?: string
+  row: number
+}
 //@end

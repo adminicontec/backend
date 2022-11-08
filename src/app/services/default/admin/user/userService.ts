@@ -116,15 +116,7 @@ class UserService {
     //@ts-ignore
     if (params.sendEmail === 'true') params.sendEmail = true
     try {
-
-      // TODO: Que va en los siguientes campos
-      // 1. normalizedusername
-      // 2. normalizedEmail
-      // 3. securityStamp
-      // 4. concurrencyStamp
-
       console.log("====================== USER SERVICE ====================== ");
-      console.log("1.1. UserService.insertOrUpdate()--> ");
       console.log(params);
 
       let countryCode = '';
@@ -162,15 +154,11 @@ class UserService {
         params.roles = params.roles.split(",");
       }
 
-      // TODO: Guardar los siguientes campos, debo proporcionar un usuario
-      // createdBy
-      // lastModifiedBy
       if (params.id) {
         let sendWelcomEmail = false;
-        console.log(":: :: Update User ID --> " + params.id);
-        let register: any = await User.findOne({ _id: params.id })
-        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
+        const register: any = await User.findOne({ _id: params.id })
+        if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
 
         // @INFO: Validando campos unicos
         if (params.username) {
@@ -205,50 +193,36 @@ class UserService {
         if (params.profile.country) {
           // Si el valor de Country no es hexadecimal, se consulta para modificar el Profile y UserMoodle
           if (!generalUtility.checkHexadecimalCode(params.profile.country)) {
-            console.log("nombre de país: " + params.profile.country)
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
-            if (respCountry.status != 'error') {
-              params.profile.country = respCountry.country._id;
-              countryCode = respCountry.country.iso2;
+            if (respCountry?.status === 'error') {
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
+                errorMessage: `${params.profile.country} no existe en la lista de paises permitidos`
+              }}})
             }
-            else {
-              // valores predeterminados
-              params.profile.country = defaultCountryCode;
-              countryCode = defaultCountryISO;
-            }
+            params.profile.country = respCountry.country._id;
+            countryCode = respCountry.country.iso2;
           }
           else {
-            console.log("código de país: " + params.profile.country)
-            const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'id', value: params.profile.country.toString() }] })
-            if (respCountry.status != 'error') {
-              console.log(respCountry)
-              params.profile.country = respCountry.country._id;
-              countryCode = respCountry.country.iso2;
+            const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.profile.country.toString() }] })
+            if (respCountry?.status === 'error') {
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
+                errorMessage: `${params.profile.country.toString()} no existe en la lista de paises permitidos`
+              }}})
             }
-            else {
-              // valores predeterminados
-              params.profile.country = defaultCountryCode;
-              countryCode = defaultCountryISO;
-            }
+            params.profile.country = respCountry.country._id;
+            countryCode = respCountry.country.iso2;
           }
         }
 
         if (register.email !== params.email)
           sendWelcomEmail = true;
 
-        // console.log("Ready to update");
-        // console.log(params)
         try {
           const response: any = await User.findByIdAndUpdate(params.id, params, {
             useFindAndModify: false,
             new: true,
             lean: true,
           });
-
-          // console.log("Search results for : " + params.id);
-          // console.log(response);
-
-
           await Role.populate(response, { path: 'roles', select: 'id name description' })
           await Country.populate(response, { path: 'profile.country', select: 'id name iso2 iso3' })
           if (response.profile) {
@@ -256,10 +230,7 @@ class UserService {
             response.profile.avatar = response.profile.avatarImageUrl
           }
 
-          // update usario existente en MOODLE
-          console.log("Moodle: Actualizando Usuario --> " + response.moodle_id);
-
-          var paramsMoodleUser: IMoodleUser = {
+          const paramsMoodleUser: IMoodleUser = {
             id: response.moodle_id,
             city: params.profile.city,
             country: countryCode,
@@ -281,11 +252,7 @@ class UserService {
             empresa: params.profile.company,
           }
 
-          let respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
-          console.log("------> update from Moodle: ");
-          console.log(respMoodleUpdate);
-
-
+          const respMoodleUpdate: any = await moodleUserService.update(paramsMoodleUser);
 
           // @INFO: Se envia email de bienvenida
           if (params.sendEmail === true && sendWelcomEmail === true) {
@@ -316,41 +283,32 @@ class UserService {
           })
         }
         catch (e) {
-          console.log("error on update");
-          console.log(e);
-          return responseUtility.buildResponseFailed('json')
+          return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error al actualizar el usuario'})
         }
 
       }
       else {
-        //#region INSERT NEW USER
-        // console.log("* * User.findOne * *");
         const exist = await User.findOne({ username: params.username })
-
-        // console.log("If user Exists --> [" + params.username + "]");
         if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
 
-        // console.log("If Password --> ");
         if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
         params.passwordHash = await this.hashPassword(params.password);
 
-        console.log("User --> " + params.username + "[Country]:" + params.profile.country);
         try {
           let userParams = params;
-          if (params.profile.country) {
+          if (params?.profile?.country) {
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
-
-            console.log("Resultados de País:");
-            console.log(respCountry);
-
+            if (respCountry?.status === 'error') {
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
+                errorMessage: `${params.profile.country} no existe en la lista de paises permitidos`
+              }}})
+            }
             userParams.profile.country = respCountry.country._id;
             countryCode = respCountry.country.iso2;
           }
 
           const { _id } = await User.create(userParams)
-
-          console.log("Get created  User --> ");
           const response: any = await User.findOne({ _id })
             .populate({ path: 'roles', select: 'id name description' })
             .populate({ path: 'profile.country', select: 'id name iso2 iso3' })
@@ -364,8 +322,7 @@ class UserService {
           console.log("=================== VALIDACION USUARIO EN MOODLE =================== ");
           console.log('params.moodle', params.moodle)
           if (!params.moodle || (params.moodle && params.moodle === 'on')) {
-            console.log('entro a guardar en moodle')
-            var paramUserMoodle = {
+            const paramUserMoodle = {
               username: params.username
             }
             let respMoodleSearch: any = await moodleUserService.findBy(paramUserMoodle);
@@ -373,9 +330,7 @@ class UserService {
             console.log(respMoodleSearch);
             if (respMoodleSearch.status == "success") {
               if (respMoodleSearch.user == null) {
-                console.log("Moodle: user NO exists ");
-                // [revisión[]
-                var paramsMoodleUser: IMoodleUser = {
+                const paramsMoodleUser: IMoodleUser = {
                   city: params.profile.city,
                   country: countryCode,
                   documentNumber: params.profile.doc_number,
@@ -395,10 +350,8 @@ class UserService {
                   nivel_educativo: params.profile.educationalLevel,
                   empresa: params.profile.company,
                 }
-                console.log(paramsMoodleUser);
 
-                // crear nuevo uusario en MOODLE
-                let respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
+                const respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
                 console.log("Moodle: Usuario creado con Éxito.");
                 console.log(respMoodleInsert);
 
@@ -422,10 +375,17 @@ class UserService {
                   if (respMoodleInsert?.status) return respMoodleInsert;
                   return responseUtility.buildResponseFailed('json', null, { error_key: 'moodle_user.insertOrUpdate.failed' })
                 }
+              } else {
+                await this.delete({ id: _id })
+                return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                  errorMessage: `El usuario ${params.username} ya esta registrado en moodle, no es posible crear otro usuario`
+                }}})
               }
-              else {
-                console.log("Moodle: user exists with name: " + JSON.stringify(respMoodleSearch.user.fullname));
-              }
+            } else {
+              await this.delete({ id: _id })
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                errorMessage: respMoodleSearch?.message || 'Se ha presentado un error al consultar el usuario en moodle'
+              }}})
             }
           }
 
@@ -459,11 +419,13 @@ class UserService {
         }
         catch (error) {
           console.log(error);
+          return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+            errorMessage: error?.message || 'Se ha presentado un error al crear el usuario'
+          }}})
         }
-        //#endregion
       }
     } catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error inesperado al crear el usuario'})
     }
   }
 

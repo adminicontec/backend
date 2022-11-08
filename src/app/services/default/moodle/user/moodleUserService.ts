@@ -63,6 +63,9 @@ class MoodleUserService {
       let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
       if (respMoodle.exception) {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
+        return responseUtility.buildResponseFailed('json', null, {
+          message: `Error al consultar el usuario en moodle - ${respMoodle.message}`
+        })
       }
       else if (respMoodle.length == 0) {
         console.log("Moodle: No hay usuario");
@@ -106,7 +109,7 @@ class MoodleUserService {
       }
 
     } catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error al buscar el usuario en moodle'})
     }
   }
 
@@ -202,7 +205,7 @@ class MoodleUserService {
     var jsonPropertyValue = 'users[0][customfields][0][value]';
     var customFieldValue = '';
 
-    console.log(`Check if Password must be updated: ${params.password}`);
+    // console.log(`Check if Password must be updated: ${params.password}`);
 
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
@@ -242,8 +245,8 @@ class MoodleUserService {
       }
     }
 
-    console.log("-------------- Update user in Moodle with: --------------");
-    console.log(moodleParams);
+    // console.log("-------------- Update user in Moodle with: --------------");
+    // console.log(moodleParams);
 
     try {
       let respMoodle = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });

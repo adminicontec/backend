@@ -220,7 +220,6 @@ class EnrollmentService {
  */
   public insertOrUpdate = async (params: IEnrollment) => {
 
-    console.log("Begin: enrollmentService.insertOrUpdate()");
     let roles = {}
     const rolesResponse: any = await roleService.list()
     if (rolesResponse.status === 'success') {
@@ -279,17 +278,13 @@ class EnrollmentService {
 
         // @INFO: Validando matrícula única: email y courseID
         if (params.documentID && params.email && params.courseID) {
-          console.log("Inicio de Enrollment");
 
           // If the usename (document ID) has uppercase letters or spaces, must be replace to avoid mooodle's username wrong format
-          var newUserID = params.documentID.toLowerCase().replace(/ /g, "_");
+          const newUserID = params.documentID.toLowerCase().replace(/ /g, "_");
 
           let email_old = null
-          var isNew = false;
-          // check rolename, if not exists, guest as default in moodle, viewer in CV
-          //if(params.rolename ==)
-
-          var paramToEnrollment = {
+          let isNew = false;
+          const paramToEnrollment = {
             user: {
               moodleUserID: 0,
               moodleFirstName: '',
@@ -318,29 +313,20 @@ class EnrollmentService {
             moodleCourseID: 0
           };
 
-          //#region  [ 1. Consultar Id del curso para verificar ]
-          // Llamado a Servicio MoodleGetCourse
           const respMoodle: any = await moodleCourseService.findBy(params);
-          if (respMoodle.status == "error") {
-            // No hay curso para hacer matrícula
-            console.log('Curso ' + params.courseID + ' en Moodle NO existe.');
+          if (respMoodle.status == "error")
             return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'moodle_course.not_found', params: { name: params.courseID } } })
-          }
 
-          // Info del curso existe!
           paramToEnrollment.course.moodleCourseID = respMoodle.course.id;
           paramToEnrollment.course.moodleCourseName = respMoodle.course.name;
 
-          //#region  [ 2. Validación de Usuario en CampusVirtual si Existe ]
-          var passw = newUserID;
+          const passw = newUserID;
 
           let userEnrollment = null;
-          let respCampusDataUser: any = null;
 
-          // 2.1. Insertar nuevo Usuario con Rol de Estudiante (pendiente getRoleIdByName)
-          var cvUserParams: IUser = {
+          const cvUserParams = {
             id: '',
-            username: newUserID,//params.user,
+            username: newUserID,
             email: params.email,
             password: newUserID,
             roles: [roles['student']], // Id de ROL sujeto a verificación en CV
@@ -366,19 +352,19 @@ class EnrollmentService {
           }
           paramToEnrollment.user.moodleFirstName = params.firstname;
           paramToEnrollment.user.moodleLastName = params.lastname;
-          paramToEnrollment.user.moodleUserName = newUserID;  // docId as UserName
+          paramToEnrollment.user.moodleUserName = newUserID;
           paramToEnrollment.user.moodleEmail = params.email;
           paramToEnrollment.user.moodlePassword = passw;
 
-          respCampusDataUser = await userService.findBy({
+          const respCampusDataUser: any = await userService.findBy({
             query: QueryValues.ONE,
-            where: [{ field: 'profile.doc_number', value: params.documentID }]
+            // where: [{ field: 'profile.doc_number', value: params.documentID }]
+            where: [{ field: 'username', value: params.documentID }]
           });
-          console.log('Search by doc_number: ');
 
-          if (respCampusDataUser.status == "error") {
-            // USUARIO NO EXISTE EN CAMPUS VIRTUAL
-            console.log(">>[CampusVirtual]: El usuario no existe. Creación de Nuevo Usuario");
+
+          if (respCampusDataUser.status === "error") {
+            // @INFO: El usuario no existe en campus - se procede a crearlo
             isNew = true;
 
             // Insertar nuevo Usuario si no existe
@@ -392,64 +378,51 @@ class EnrollmentService {
               paramToEnrollment.user.moodleUserID = respoUser.user.moodle_id;
             }
             else {
-              // Retornar ERROR: revisar con equipo
-
-              // const respoUser = await userService.insertOrUpdate(cvUserParams);
-              // if (respoUser.status == "success") {
-              // }
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                errorMessage: respoUser.message
+              }}})
             }
-          }
-          else {
-            console.log(">>[CampusVirtual]: El usuario existe: " + respCampusDataUser.user._id);
-            console.log(">>>>>>>>>>>>>>>>>>>>");
-            email_old = respCampusDataUser.user.email;
-
+          } else {
+            email_old = respCampusDataUser?.user?.email;
             paramToEnrollment.user.moodleUserID = respCampusDataUser.user.moodle_id;
+            respCampusDataUser?.user?.roles.map((role) => {
+              if (role._id.toString() !== roles['student'].toString()) {
+                cvUserParams.roles.push(role._id)
+              }
+            })
             cvUserParams.id = respCampusDataUser.user._id.toString();
-            //  cvUserParams.profile.country = countryID;
-            console.log(cvUserParams);
+
             try {
+              if (teachers.includes(respCampusDataUser.user._id.toString())) {
+                return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                  errorMessage: `El usuario ${newUserID} esta registrado como docente y no puede matricularse`
+                }}})
+              }
+
               const respoExistingUser = await userService.insertOrUpdate(cvUserParams);
 
-              if (respoExistingUser.status == "success") {
-                console.log("---------------- SUCCESS ----------------------- ");
+              if (respoExistingUser?.status === 'error') {
+                return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                  errorMessage: respoExistingUser.message
+                }}})
               }
-              else {
-                console.log(respoExistingUser);
-              }
-
-            }
-            catch (e) {
-              return responseUtility.buildResponseFailed('json')
+            } catch (e) {
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                errorMessage: e?.message || 'Se ha presentado un error en la matricula'
+              }}})
             }
 
-
-            if (teachers.includes(respCampusDataUser.user._id.toString())) {
-              return responseUtility.buildResponseFailed('json')
-            }
             userEnrollment = respCampusDataUser.user
             params.user = respCampusDataUser.user._id
-
-            // Usuario ya existe en CV:
-            // console.log("[  Campus  ] Usuario ya existe: ");
-            // console.log(respCampusDataUser.user.profile.first_name + " " + respCampusDataUser.user.profile.last_name);
-
-            // Si existe Usuario en CV, debe existir en Moodle
             paramToEnrollment.user.moodleFirstName = params.firstname;
             paramToEnrollment.user.moodleLastName = params.lastname;
             paramToEnrollment.user.moodleUserName = params.documentID;
             paramToEnrollment.user.moodleEmail = params.email;
             paramToEnrollment.user.moodlePassword = passw;
           }
-          //#endregion
 
-          //#region [ 3. Creación de la matrícula en CV (enrollment) ]
           const exist = await Enrollment.findOne({ documentID: params.documentID, courseID: params.courseID })
           if (exist) {
-            // Si existe la matrícula en CV, intentar matricular en Moodle
-            console.log("[  Campus  ] Matrícula ya existe: ");
-            console.log(exist);
-
             // @INFO: Se envia email de bienvenida
             if (
               (params.sendEmail === true || params.sendEmail === 'true') &&
@@ -473,9 +446,6 @@ class EnrollmentService {
               { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
           }
           else {
-            console.log("[  Campus  ] Matrícula NO existe: ");
-            // Creación exitosa de Enrollment en CV
-            // parámetros para Enrollment en CV, requiere nombre de Curso
             let enrollmentCode = 1;
             const lastEnrollmentCode: any = await this.getLastEnrollmentCode({
               courseID: courseScheduling.moodle_id,
@@ -487,18 +457,24 @@ class EnrollmentService {
             if (courseScheduling && courseScheduling._id) {
               paramsCVEnrollment['course_scheduling'] = courseScheduling._id
             }
-            const respCampusDataEnrollment: any = await Enrollment.create(paramsCVEnrollment)
 
-            // Creación de Enrollment en Moodle
-            var enrollment = {
+            const { _id } = await Enrollment.create(paramsCVEnrollment)
+
+            const enrollment = {
               roleid: paramToEnrollment.moodleRoleID,
               courseid: paramToEnrollment.course.moodleCourseID,
               userid: paramToEnrollment.user.moodleUserID
             }
-            let respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
-            console.log('respMoodle3', respMoodle3);
 
-            console.log('Validación de envio de email: ', params.sendEmail, courseScheduling)
+            const respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
+            if (respMoodle3?.status === 'error') {
+              const find: any = await Enrollment.findOne({ _id })
+              if (find) await find.delete()
+
+              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+                errorMessage: respMoodle3.message || 'Se ha presentado un error al matricular en moodle'
+              }}})
+            }
             // @INFO: Se envia email de bienvenida
             if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
               await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
@@ -513,10 +489,7 @@ class EnrollmentService {
                 type: 'student'
               })
             }
-            // console.log("[  Campus  ] Enrollment: ");
-            // console.log(respCampusDataEnrollment);
           }
-          //#endregion
 
           const timeElapsed = Date.now();
           const currentDate = new Date(timeElapsed);
@@ -535,18 +508,16 @@ class EnrollmentService {
               }
             }
           });
-
-          //#endregion
         }
         else {
-          // console.log("ERROR en Enrolamiento");
+          return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'enrollment.insertOrUpdate.error', params: {
+            errorMessage: 'Los campos documento de identidad, correo electronico y el ID del curso son obligatorios'
+          }}})
         }
       }
 
     } catch (e) {
-      // console.log("catch Exception ");
-      // console.log(e);
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error inesperado'})
     }
   }
 
@@ -632,209 +603,7 @@ class EnrollmentService {
    * @returns
    */
   public massive = async (params: IMassiveEnrollment) => {
-    console.log('masive')
     eventEmitterUtility.emit('enrollment:massive', params)
-
-
-    // let processResult: IFileProcessResult;
-    // let errors = [];
-
-    // console.log(">>>>>>>>>>> Begin Massive Enrollment")
-    // let userEnrollmentResponse = [];
-    // let singleUserEnrollmentContent: IEnrollment;
-    // // console.log("Begin file process for courseID: " + params.courseID)
-    // let content = params.contentFile;
-
-    // let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0, 100);
-
-    // if (dataFromWorksheet != null) {
-    //   console.log("Sheet content:" + dataFromWorksheet.length + " records");
-
-    //   const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
-    //     .select('id account_executive')
-    //     .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
-    //     .populate({ path: 'schedulingType', select: 'id name' })
-    //     .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-    //     .lean()
-
-    //   console.log("Datos Curso");
-    //   console.log(`Línea: ${courseScheduling.schedulingType.name}`);
-    //   console.log(`Modalidad: ${courseScheduling.schedulingMode.name}`);
-
-    //   let index = 1;
-
-    //   for await (const element of dataFromWorksheet) {
-
-    //     let dob = '';
-    //     // check for element['Fecha Nacimiento']
-    //     if (element['Fecha Nacimiento']) {
-    //       dob = moment.utc(element['Fecha Nacimiento'].toString()).format('YYYY-MM-DD');
-    //     }
-    //     else {
-    //       dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
-    //     }
-
-    //     //#region   Revisión Documento de identidad para Casos especiales
-
-    //     if (!element['Tipo Documento']) {
-    //       processResult = {
-    //         row: index,
-    //         status: 'ERROR',
-    //         messageProcess: 'El campo Tipo Documento está vacío.',
-    //       }
-    //       errors.push(processResult);
-    //       continue;
-    //     }
-
-    //     if (element['Documento de Identidad']) {
-
-    //       var newUserID = generalUtility.normalizeUsername(element['Documento de Identidad']);
-    //       console.log(">>> Insert Username " + newUserID);
-    //       let checkEmail = element['Correo Electrónico'];
-    //       if (checkEmail != null) {
-    //         checkEmail = generalUtility.normalizeEmail(checkEmail);
-
-    //         if (generalUtility.validateEmailFormat(checkEmail)) {
-
-    //           let originField = '';
-    //           if (courseScheduling.schedulingType.name.toLowerCase() == 'abierto' && (courseScheduling.schedulingMode.name.toLowerCase() == 'virtual' || courseScheduling.schedulingMode.name.toLowerCase() == 'en linea')) {
-    //             originField = element['Ejecutivo'];
-    //           }
-    //           else {
-    //             originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
-    //           }
-
-    //           console.log(`Origin for ${element['Nombres']}: ${originField}`);
-    //           singleUserEnrollmentContent =
-    //           {
-    //             documentType: element['Tipo Documento'].trim().toUpperCase(),
-    //             documentID: element['Documento de Identidad'].trim().replace(/\./g, ""),
-    //             user: element['Documento de Identidad'].trim(),
-    //             password: element['Documento de Identidad'].trim().replace(/\./g, ""), // <-- Contraseña provisional
-    //             email: checkEmail,
-    //             firstname: element['Nombres'].trim(),
-    //             lastname: element['Apellidos'].trim(),
-    //             phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
-    //             city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
-    //             country: element['País'],
-    //             emailAlt: element['Correo Alt'],
-    //             regional: element['Regional'],
-    //             birthdate: dob,
-    //             job: element['Cargo'],
-    //             title: element['Profesión'],
-    //             educationalLevel: element['Nivel Educativo'],
-    //             company: element['Empresa'],
-    //             genre: element['Género'],
-    //             origin: originField,
-    //             courseID: params.courseID,
-    //             rolename: 'student',
-    //             courseScheduling: params.courseScheduling,
-    //             sendEmail: params.sendEmail
-    //           }
-    //           const respEnrollment: any = await this.insertOrUpdate(singleUserEnrollmentContent);
-    //           if (respEnrollment.status == 'success') {
-    //             processResult = {
-    //               row: index,
-    //               status: 'OK',
-    //               messageProcess: '',
-    //               details: {
-    //                 user: singleUserEnrollmentContent.user,
-    //                 fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-    //               }
-    //             }
-    //           }
-    //           else {
-    //             if (respEnrollment.status_code === 'enrollment_insertOrUpdate_already_exists') {
-    //               processResult = {
-    //                 row: index,
-    //                 status: 'WARN',
-    //                 messageProcess: "Ya existe una matricula para el estudiante " + singleUserEnrollmentContent.user,
-    //                 details: {
-    //                   user: singleUserEnrollmentContent.user,
-    //                   fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-    //                 }
-    //               }
-
-    //             }
-    //             else {
-    //               processResult = {
-    //                 row: index,
-    //                 status: 'ERROR',
-    //                 messageProcess: "Error al matricular al estudiante ",
-    //                 details: {
-    //                   user: singleUserEnrollmentContent.user,
-    //                   fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-    //                 }
-    //               }
-    //             }
-    //           }
-    //           // build process Response
-    //           userEnrollmentResponse.push(respEnrollment);
-    //         }
-    //         else {
-    //           processResult = {
-    //             row: index,
-    //             status: 'ERROR',
-    //             messageProcess: 'Campo email no tiene formato adecuado: ' + checkEmail,
-    //           }
-    //         }
-    //       }
-    //       else {
-    //         // error por email vacío
-    //         processResult = {
-    //           row: index,
-    //           status: 'ERROR',
-    //           messageProcess: 'Campo email está vacío.',
-    //           details: {
-    //             user: 'Empty'
-    //           }
-    //         }
-    //       }
-    //       console.log("<<<<<<<<< Resultado individual >>>>>>>>>>>>>>>>>>><<<<");
-    //       console.log(processResult);
-    //       errors.push(processResult);
-    //     }
-    //     else {
-    //       // Log the Error
-    //       processResult = {
-    //         row: index,
-    //         status: 'ERROR',
-    //         messageProcess: 'El campo Documento de Identidad está vacío.',
-    //       }
-    //       errors.push(processResult);
-    //     }
-    //     index++;
-    //     //#endregion
-    //   }
-
-    // }
-    // else {
-    //   errors.push(
-    //     {
-    //       row: 0,
-    //       status: 'ERROR',
-    //       messageProcess: 'La hoja con nombre "Estudiantes" no existe en el archivo cargado',
-    //     }
-    //   );
-    // }
-
-    // console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-    // console.log("         Resultados de carga de archivo:");
-    // console.log(errors)
-    // console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-
-    // let extError = errors.filter(e => e.status === 'ERROR');
-    // let extSuccess = errors.filter(e => e.status === 'OK');
-
-    // if (extError.length > 0) {
-    //   return responseUtility.buildResponseFailed('json', null, {
-    //     additional_parameters: {
-    //       total_created: extSuccess.length,
-    //       errors: extError
-    //     }
-    //   })
-    // }
-
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         // successfully: extSuccess
