@@ -21,7 +21,8 @@ import { CourseScheduling } from '@scnode_app/models';
 import {
   IEnrollment,
   IMassiveEnrollment,
-  IParamsUpdateLoadParticipantsSchedule
+  IParamsUpdateLoadParticipantsSchedule,
+  ILogEnrollment
 } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 // @end
 
@@ -47,228 +48,177 @@ class EnrollmentService {
 
   public enrollmentMassiveEvent = async (params: IMassiveEnrollment) => {
 
-    await this.updateLoadParticipantsScheduling({ loading: true, schedulingId: params.courseScheduling })
+    try {
+      await this.updateLoadParticipantsScheduling({
+        loading: true,
+        schedulingId: params.courseScheduling
+      })
 
-    console.log('llego aca', params)
+      let log: ILogEnrollment[] = [];
+      const content = params.contentFile;
 
-    let processResult;
-    let errors = [];
+      const dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0, 500);
 
-    console.log(">>>>>>>>>>> Begin Massive Enrollment")
-    let userEnrollmentResponse = [];
-    let singleUserEnrollmentContent: IEnrollment;
-    // console.log("Begin file process for courseID: " + params.courseID)
-    let content = params.contentFile;
+      if (dataFromWorksheet) {
+        if (Array.isArray(dataFromWorksheet)) {
+          if (dataFromWorksheet.length > 0) {
+            const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
+              .select('id account_executive moodle_id')
+              .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
+              .populate({ path: 'schedulingType', select: 'id name' })
+              .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+              .lean()
 
-    let dataFromWorksheet = await xlsxUtility.extractXLSX(content.data, 'Estudiantes', 0, 500);
+            let index = 2;
 
-    if (dataFromWorksheet != null) {
-      console.log("Sheet content:" + dataFromWorksheet.length + " records");
+            let enrollmentCode = 1;
+            const lastEnrollmentCode: any = await enrollmentAdminService.getLastEnrollmentCode({
+              courseID: courseScheduling.moodle_id,
+            });
+            if (lastEnrollmentCode?.enrollmentCode) enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
 
-      const courseScheduling = await CourseScheduling.findOne({ _id: params.courseScheduling })
-        .select('id account_executive moodle_id')
-        .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
-        .populate({ path: 'schedulingType', select: 'id name' })
-        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-        .lean()
+            for await (const element of dataFromWorksheet) {
 
-      console.log("Datos Curso");
-      console.log(`Línea: ${courseScheduling.schedulingType.name}`);
-      console.log(`Modalidad: ${courseScheduling.schedulingMode.name}`);
+              try {
 
-      let index = 1;
-
-      let enrollmentCode = 1;
-      const lastEnrollmentCode: any = await enrollmentAdminService.getLastEnrollmentCode({
-        courseID: courseScheduling.moodle_id,
-      });
-      console.log(lastEnrollmentCode);
-
-      if (lastEnrollmentCode?.enrollmentCode) {
-        enrollmentCode = lastEnrollmentCode.enrollmentCode + 1;
-      }
+                this.checkHeaderField(element,'Tipo Documento','La columna Tipo Documento no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Documento de Identidad','La columna Documento de Identidad no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Apellidos','La columna Apellidos no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Nombres','La columna Nombres no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Correo Electrónico','La columna Correo Electrónico no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Regional','La columna Regional no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'Ciudad','La columna Ciudad no esta presente en el documento o esta vacia')
+                this.checkHeaderField(element,'País','La columna País no esta presente en el documento o esta vacia')
 
 
-      console.log(`Code: ${enrollmentCode}`);
-
-      for await (const element of dataFromWorksheet) {
-
-        let dob = '';
-        // check for element['Fecha Nacimiento']
-        if (element['Fecha Nacimiento']) {
-          dob = moment.utc(element['Fecha Nacimiento'].toString()).format('YYYY-MM-DD');
-        }
-        else {
-          dob = moment.utc('1990-01-01').format('YYYY-MM-DD');
-        }
-
-        //#region   Revisión Documento de identidad para Casos especiales
-
-        if (!element['Tipo Documento']) {
-          processResult = {
-            row: index,
-            status: 'ERROR',
-            messageProcess: 'El campo Tipo Documento está vacío.',
-          }
-          errors.push(processResult);
-          continue;
-        }
-
-        if (element['Documento de Identidad']) {
-
-          var newUserID = generalUtility.normalizeUsername(element['Documento de Identidad']);
-          console.log(">>> Insert Username " + newUserID);
-          let checkEmail = element['Correo Electrónico'];
-          if (checkEmail != null) {
-            checkEmail = generalUtility.normalizeEmail(checkEmail);
-
-            if (generalUtility.validateEmailFormat(checkEmail)) {
-
-              let originField = '';
-              if (courseScheduling.schedulingType.name.toLowerCase() == 'abierto' && (courseScheduling.schedulingMode.name.toLowerCase() == 'virtual' || courseScheduling.schedulingMode.name.toLowerCase() == 'en linea')) {
-                originField = element['Ejecutivo'];
-              }
-              else {
-                originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
-              }
-
-              console.log(`Origin for ${element['Nombres']}: ${originField}`);
-              singleUserEnrollmentContent =
-              {
-                documentType: element['Tipo Documento'].trim().toUpperCase(),
-                documentID: element['Documento de Identidad'].trim().replace(/\./g, ""),
-                user: element['Documento de Identidad'].trim(),
-                password: element['Documento de Identidad'].trim().replace(/\./g, ""), // <-- Contraseña provisional
-                email: checkEmail,
-                firstname: element['Nombres'].trim(),
-                lastname: element['Apellidos'].trim(),
-                phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
-                city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
-                country: (element['País']) ? element['País'].trim() : null,
-                emailAlt: element['Correo Alt'],
-                regional: element['Regional'],
-                birthdate: dob,
-                job: element['Cargo'],
-                title: element['Profesión'],
-                educationalLevel: element['Nivel Educativo'],
-                company: element['Empresa'],
-                genre: element['Género'],
-                origin: originField,
-                courseID: params.courseID,
-                rolename: 'student',
-                courseScheduling: params.courseScheduling,
-                sendEmail: params.sendEmail,
-                enrollmentCode
-              }
-              const respEnrollment: any = await enrollmentAdminService.insertOrUpdate(singleUserEnrollmentContent);
-              if (respEnrollment.status == 'success') {
-                enrollmentCode++;
-                processResult = {
-                  row: index,
-                  status: 'OK',
-                  messageProcess: '',
-                  details: {
-                    user: singleUserEnrollmentContent.user,
-                    fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-                  }
+                let dob = moment.utc('1990-01-01');
+                if (element['Fecha Nacimiento']) {
+                  const dateString = element['Fecha Nacimiento'].toString()
+                  dob = moment.utc(dateString, 'YYYY-MM-DD', true);
+                  if (!dob.isValid()) throw new Error(`El formato de fecha de nacimiento ${dateString} no es valido`)
                 }
-              }
-              else {
-                if (respEnrollment.status_code === 'enrollment_insertOrUpdate_already_exists') {
-                  processResult = {
-                    row: index,
-                    status: 'WARN',
-                    messageProcess: "Ya existe una matricula para el estudiante " + singleUserEnrollmentContent.user,
-                    details: {
-                      user: singleUserEnrollmentContent.user,
-                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname
-                    }
-                  }
 
+                // const newUserID = generalUtility.normalizeUsername(element['Documento de Identidad']);
+
+                let newUserEmail = generalUtility.normalizeEmail(element['Correo Electrónico']);
+                newUserEmail = generalUtility.removeAccents(newUserEmail)
+                if (!generalUtility.validateEmailFormat(newUserEmail)) throw new Error(`El correo electrónico ${newUserEmail} no tiene formato adecuado`)
+
+                let originField = '';
+                const schedulingType = courseScheduling?.schedulingType?.name?.toLowerCase() || ''
+                const schedulingMode = courseScheduling?.schedulingMode?.name.toLowerCase() || ''
+                if (
+                  schedulingType == 'abierto' &&
+                  (schedulingMode == 'virtual' || schedulingMode == 'en linea')
+                ) {
+                  this.checkHeaderField(element,'Ejecutivo','El campo Ejecutivo es obligatorio')
+                  originField = element['Ejecutivo'];
                 }
                 else {
-                  processResult = {
+                  originField = (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : null;
+                }
+                const documentID = element['Documento de Identidad'].trim().replace(/\./g, "");
+                let singleUserEnrollmentContent: IEnrollment = {
+                  documentType: element['Tipo Documento'].trim().toUpperCase(),
+                  documentID: documentID,
+                  user: documentID,
+                  password: documentID,
+                  email: newUserEmail,
+                  firstname: element['Nombres'].trim(),
+                  lastname: element['Apellidos'].trim(),
+                  phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
+                  city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
+                  country: (element['País']) ? element['País'].trim() : null,
+                  emailAlt: element['Correo Alt'], // TODO: revisar si esto hace algo
+                  regional: element['Regional'],
+                  birthdate: dob.format('YYYY-MM-DD'),
+                  job: element['Cargo'], // TODO: revisar si esto hace algo
+                  title: element['Profesión'], // TODO: revisar si esto hace algo
+                  educationalLevel: element['Nivel Educativo'], // TODO: revisar si esto hace algo
+                  company: element['Empresa'], // TODO: revisar si esto hace algo
+                  genre: element['Género'], // TODO: revisar si esto hace algo
+                  origin: originField,
+                  courseID: params.courseID,
+                  rolename: 'student',
+                  courseScheduling: params.courseScheduling,
+                  sendEmail: params.sendEmail,
+                  enrollmentCode
+                }
+
+                const respEnrollment: any = await enrollmentAdminService.insertOrUpdate(singleUserEnrollmentContent);
+                console.log('respEnrollment', respEnrollment)
+                if (respEnrollment.status === 'success') {
+                  enrollmentCode++;
+                  log.push({
                     row: index,
-                    status: 'ERROR',
-                    messageProcess: "Error al matricular al estudiante ",
-                    details: {
-                      user: singleUserEnrollmentContent.user,
-                      fullname: singleUserEnrollmentContent.firstname + " " + singleUserEnrollmentContent.lastname,
-                      ...respEnrollment
-                    }
+                    status: 'OK'
+                  })
+                }
+                else {
+                  if (respEnrollment.status_code === 'enrollment_insertOrUpdate_already_exists') {
+                    log.push({
+                      row: index,
+                      status: 'OK',
+                      message: `El usuario ${documentID} ya se encuentra matriculado`
+                    })
+                  }
+                  else {
+                    log.push({
+                      row: index,
+                      status: 'ERROR',
+                      message: respEnrollment.message || 'Se ha presentado un error al matricular al estudiante'
+                    })
                   }
                 }
+              } catch (err) {
+                log.push({
+                  row: index,
+                  status: 'ERROR',
+                  message: err?.message || 'Se ha presentado un error inesperado'
+                })
               }
-              // build process Response
-              userEnrollmentResponse.push(respEnrollment);
+              index++;
             }
-            else {
-              processResult = {
-                row: index,
+          } else {
+            log.push(
+              {
+                row: 0,
                 status: 'ERROR',
-                messageProcess: 'Campo email no tiene formato adecuado: ' + checkEmail,
+                message: 'La hoja con nombre "Estudiantes" no tiene información para cargar',
               }
-            }
+            );
           }
-          else {
-            // error por email vacío
-            processResult = {
-              row: index,
-              status: 'ERROR',
-              messageProcess: 'Campo email está vacío.',
-              details: {
-                user: 'Empty'
-              }
-            }
-          }
-          console.log("<<<<<<<<< Resultado individual >>>>>>>>>>>>>>>>>>><<<<");
-          console.log(processResult);
-          errors.push(processResult);
         }
-        else {
-          // Log the Error
-          processResult = {
-            row: index,
+      }
+      else {
+        log.push(
+          {
+            row: 0,
             status: 'ERROR',
-            messageProcess: 'El campo Documento de Identidad está vacío.',
+            message: 'La hoja con nombre "Estudiantes" no existe en el archivo cargado',
           }
-          errors.push(processResult);
-        }
-        index++;
-        //#endregion
+        );
       }
 
-    }
-    else {
-      errors.push(
-        {
-          row: 0,
-          status: 'ERROR',
-          messageProcess: 'La hoja con nombre "Estudiantes" no existe en el archivo cargado',
-        }
-      );
-    }
+      const extError = log.filter(e => e.status === 'ERROR');
+      const extSuccess = log.filter(e => e.status === 'OK');
 
-    console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-    console.log("         Resultados de carga de archivo:");
-    console.log(errors)
-    console.log("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°")
-
-    let extError = errors.filter(e => e.status === 'ERROR');
-    let extSuccess = errors.filter(e => e.status === 'OK');
-
-    console.log('extError', extError)
-    console.log('extSuccess', extSuccess)
-
-    if (extError.length > 0) {
-      await this.updateLoadParticipantsScheduling({
+      const updateData = {
         loading: false,
-        status: 'error',
         schedulingId: params.courseScheduling,
-        errors: extError,
-        success: [],
-        lastUploadDate: new Date()
-      })
+        lastUploadDate: new Date(),
+        status: undefined,
+        errors: [],
+        success: extSuccess
+      }
+
+      if (extError.length > 0) {
+        updateData.status = 'error';
+        updateData.errors = extError;
+      } else {
+        updateData.status = 'success';
+      }
+      await this.updateLoadParticipantsScheduling(updateData)
 
       return responseUtility.buildResponseFailed('json', null, {
         additional_parameters: {
@@ -276,22 +226,32 @@ class EnrollmentService {
           errors: extError
         }
       })
+
+    } catch (err) {
+      await this.updateLoadParticipantsScheduling({
+        loading: false,
+        status: 'error',
+        schedulingId: params.courseScheduling,
+        errors: [{
+          row: 0,
+          status: 'ERROR',
+          message: err?.message || 'Se ha presentado un error inesperado en el procesamiento del archivo de matriculas'
+        }],
+        success: [],
+        lastUploadDate: new Date()
+      })
     }
 
-    await this.updateLoadParticipantsScheduling({
-      loading: false,
-      status: 'success',
-      schedulingId: params.courseScheduling,
-      errors: [],
-      success: extSuccess,
-      lastUploadDate: new Date()
-    })
+  }
 
-    return responseUtility.buildResponseSuccess('json', null, {
-      additional_parameters: {
-        successfully: extSuccess
-      }
-    })
+
+  private checkHeaderField = (register: any, field: string, messsage: string) => {
+    try {
+      if (!register[field]) throw new Error(messsage)
+      return true;
+    } catch (err) {
+      throw new Error(err.message)
+    }
   }
 }
 

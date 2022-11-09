@@ -242,6 +242,10 @@ class GeneralUtility {
     return isValid;
   }
 
+  public removeAccents = (str) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
   /**
    * Metodo que genera un numero entero aleatorio entre un minimo y un maximo
    * @param min Entero minimo para generar el numero aleatorio

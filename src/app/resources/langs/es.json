@@ -81,7 +81,8 @@
       "not_found": "El usuario no ha sido encontrado",
       "insertOrUpdate": {
         "already_exists": "Ya existe un usuario :data",
-        "password_required": "La contraseña es obligatoria"
+        "password_required": "La contraseña es obligatoria",
+        "error": ":errorMessage"
       },
       "current_password_invalid": "La contraseña actual es incorrecta"
     },
@@ -417,7 +418,8 @@
       },
       "scheduling_already_config": "Ya se ha configurado una matricula",
       "insertOrUpdate": {
-        "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename"
+        "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename",
+        "error": ":errorMessage"
       }
     },
     "moodle_enrollment": {

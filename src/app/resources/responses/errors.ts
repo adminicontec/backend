@@ -207,6 +207,11 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.user.insertOrUpdate.password_required"),
             "status_code": "user_insertOrUpdate_password_required",
             "code": 400
+          },
+          "error": {
+            "message": i18nUtility.__("app_error_messages.user.insertOrUpdate.error"),
+            "status_code": "user_insertOrUpdate_error",
+            "code": 400
           }
         },
         "current_password_invalid": {
@@ -1093,8 +1098,13 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.enrollment.insertOrUpdate.already_exists"),
             "status_code": "enrollment_insertOrUpdate_already_exists",
             "code": 400
+          },
+          "error": {
+            "message": i18nUtility.__("app_error_messages.enrollment.insertOrUpdate.error"),
+            "status_code": "enrollment_insertOrUpdate_error",
+            "code": 400
           }
-        }
+        },
       },
       "moodle_enrollment": {
         "not_found": {
