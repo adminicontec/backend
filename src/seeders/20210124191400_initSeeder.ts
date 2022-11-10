@@ -557,6 +557,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_enrollment_generate_certifications', description: 'Generar certificados'},
         {name: 'permission:course_scheduling_enrollment_download_certifications', description: 'Descargar certificados'},
         {name: 'permission:course_scheduling_enrollment_reissue_certifications', description: 'Reexpedir certificados'},
+        {name: 'permission:course_scheduling_enrollment_force_preview_certifications', description: 'Forzar previsualización de certificados'}
         // {name: 'permission:course_scheduling_enrollment_menu_access', description: 'Menu de programas'},
       ]},
       {name: 'module:modular', description: 'Módulo que permite administrar los modulares', permissions: [

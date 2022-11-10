@@ -150,7 +150,7 @@ class CourseSchedulingDetailsService {
           .populate({ path: 'course', select: 'id name code' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
-        const changes = this.validateChanges(params, register)
+        const changes = await this.validateChanges(params, register)
 
         const response: any = await CourseSchedulingDetails.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -349,7 +349,9 @@ class CourseSchedulingDetailsService {
           if (changes.length > 0) {
             // @INFO Notificar al auxiliar logisto del servicio
             // await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
-            await courseSchedulingService.sendServiceSchedulingUpdated(response.course_scheduling, changes, {
+            await courseSchedulingService.sendServiceSchedulingUpdated(
+              response.course_scheduling,
+              changes, {
               course: response.course,
               courseSchedulingDetail: register,
               syncupSessionsInMoodle
@@ -502,11 +504,12 @@ class CourseSchedulingDetailsService {
     }
   }
 
-  private validateChanges = (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
+  private validateChanges = async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
     const changes = []
 
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
+        type: 'startDate',
         message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
@@ -516,11 +519,13 @@ class CourseSchedulingDetailsService {
       const endDateFormated = endDate.split('T')
       if (endDateFormated[0] !== registerFormated[0])
       changes.push({
+        type: 'endDate',
         message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
       changes.push({
+        type: 'duration',
         message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
       })
     }
@@ -587,8 +592,21 @@ class CourseSchedulingDetailsService {
       //   }
       // })
       changes.push({
+        type: 'sessions',
         message
       })
+    }
+
+    if (params.teacher && register.teacher?._id && register?.course?.name) {
+      if (params.teacher.toString() !== register.teacher._id.toString()) {
+        const newTeacher: any = await User.findOne({_id: params.teacher}).select('id profile.first_name profile.last_name')
+        if (newTeacher) {
+          changes.push({
+            type: 'teacher',
+            message: `<div>El docente ${register.teacher?.profile?.first_name} ${register.teacher?.profile?.last_name} del curso ${register.course.name} fue cambiado por ${newTeacher.profile?.first_name} ${newTeacher.profile?.last_name}</div>`
+          })
+        }
+      }
     }
 
     return changes

@@ -39,7 +39,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import {
   IQueryUserToCertificate, ICertificate, IQueryCertificate,
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
-  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate
+  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate, ICertificateForceStage, CertificateCategory
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -2412,16 +2412,81 @@ class CertificateService {
     }
   }
 
+  public forceStage = async (params: ICertificateForceStage) => {
+    try {
+      if (!params.category) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
+      if (!params.certificateQueueIds) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
+
+      let status = undefined;
+      switch (params.category) {
+        case CertificateCategory.FORCE_PREVIEW:
+          status = 'Requested'
+          break;
+      }
+      if (!status) return responseUtility.buildResponseFailed('json', null, { error_key: {key: "certificate.force_stage.error", params: {errorMessage: 'La categoria no tiene un valor valido'}} })
+
+      const query: any = {
+        _id: {$in: params.certificateQueueIds},
+        deleted: false
+      }
+
+      await CertificateQueue.updateMany(query, {
+        $set: {
+          status: status
+        }
+      })
+      const certificatesQuery = await CertificateQueue.find({
+        _id: {$in: params.certificateQueueIds},
+      });
+
+      const certificateLogs: {key: string, message: string, status: 'success' | 'error'}[] = []
+
+      for (let certificate of certificatesQuery) {
+        try {
+          const processResponse: any = await certificateQueueService.processCertificateQueue({
+            certificateQueueId: certificate._id,
+            output: 'process'
+          })
+          certificateLogs.push({
+            key: certificate._id,
+            message: processResponse?.message || '-',
+            status: processResponse?.status || undefined
+          })
+        } catch (err) {
+          certificateLogs.push({
+            key: certificate._id,
+            message: err?.message || 'Se ha presentado un error al procesar el certificado',
+            status: 'error'
+          })
+          continue
+        }
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificateLogs
+        }
+      })
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {message: err?.message || 'Se ha presentado un error'})
+    }
+  }
+
   public reGenerateCertification = async (params: ICertificateReGenerate) => {
     try {
       if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
       if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
 
-      await CertificateQueue.updateMany({
+      const query: any = {
         userId: params.userId,
         courseId: params.courseId,
         deleted: false
-      }, {
+      }
+      if (params.certificateQueueId) {
+        query['_id'] = params.certificateQueueId
+      }
+
+      await CertificateQueue.updateMany(query, {
         $set: {
           status: params.status || "Re-issue"
         }

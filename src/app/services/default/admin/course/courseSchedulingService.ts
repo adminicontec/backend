@@ -1122,58 +1122,61 @@ class CourseSchedulingService {
       course?.syncupSessionsInMoodle
     );
 
-    let students_to_notificate = []
-    let teachers_to_notificate = []
-    const userEnrolled = await Enrollment.find({
-      courseID: courseScheduling.moodle_id
-    }).select('id user')
-      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
-      .lean()
+    const _changes = changes.filter(val => !val.type || val.type !== 'teacher')
+    if (_changes.length > 0) {
+      let students_to_notificate = []
+      let teachers_to_notificate = []
+      const userEnrolled = await Enrollment.find({
+        courseID: courseScheduling.moodle_id
+      }).select('id user')
+        .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+        .lean()
 
-    for await (const enrolled of userEnrolled) {
-      students_to_notificate.push(enrolled.user.email.toString())
-    }
-
-    const where: any = {
-      course_scheduling: courseScheduling._id
-    }
-
-    if (course) {
-      where._id = course.courseSchedulingDetail._id
-    }
-
-    const courses = await CourseSchedulingDetails.find(where).select('id startDate endDate duration course sessions teacher')
-      .populate({ path: 'course', select: 'id name code' })
-      .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
-      .lean()
-
-    for await (const course of courses) {
-      if (!teachers_to_notificate.includes(course.teacher.email.toString())) {
-        teachers_to_notificate.push(course.teacher.email.toString())
+      for await (const enrolled of userEnrolled) {
+        students_to_notificate.push(enrolled.user.email.toString())
       }
-    }
 
-    if (students_to_notificate.length > 0) {
-      await this.serviceSchedulingUpdated(students_to_notificate, {
-        mailer: customs['mailer'],
-        service_id: courseScheduling.metadata.service_id,
-        program_name: courseScheduling.program.name,
-        course_name: course?.course?.name || undefined,
-        notification_source: `course_updated_${courseScheduling._id}`,
-        changes,
-        type: 'student'
-      })
-    }
-    if (teachers_to_notificate.length > 0) {
-      await this.serviceSchedulingUpdated(teachers_to_notificate, {
-        mailer: customs['mailer'],
-        service_id: courseScheduling.metadata.service_id,
-        program_name: courseScheduling.program.name,
-        course_name: course?.course?.name || undefined,
-        notification_source: `course_updated_${courseScheduling._id}`,
-        changes,
-        type: 'teacher'
-      })
+      const where: any = {
+        course_scheduling: courseScheduling._id
+      }
+
+      if (course) {
+        where._id = course.courseSchedulingDetail._id
+      }
+
+      const courses = await CourseSchedulingDetails.find(where).select('id startDate endDate duration course sessions teacher')
+        .populate({ path: 'course', select: 'id name code' })
+        .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+        .lean()
+
+      for await (const course of courses) {
+        if (!teachers_to_notificate.includes(course.teacher.email.toString())) {
+          teachers_to_notificate.push(course.teacher.email.toString())
+        }
+      }
+
+      if (students_to_notificate.length > 0) {
+        await this.serviceSchedulingUpdated(students_to_notificate, {
+          mailer: customs['mailer'],
+          service_id: courseScheduling.metadata.service_id,
+          program_name: courseScheduling.program.name,
+          course_name: course?.course?.name || undefined,
+          notification_source: `course_updated_${courseScheduling._id}`,
+          changes: _changes,
+          type: 'student'
+        })
+      }
+      if (teachers_to_notificate.length > 0) {
+        await this.serviceSchedulingUpdated(teachers_to_notificate, {
+          mailer: customs['mailer'],
+          service_id: courseScheduling.metadata.service_id,
+          program_name: courseScheduling.program.name,
+          course_name: course?.course?.name || undefined,
+          notification_source: `course_updated_${courseScheduling._id}`,
+          changes: _changes,
+          type: 'teacher'
+        })
+      }
     }
   }
 
@@ -1703,8 +1706,8 @@ class CourseSchedulingService {
               course_row_span: 0,
               consecutive: index + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-              start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
-              end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
+              start_date: (element.startDate) ? moment(element.startDate).format('DD/MM/YYYY') : '',
+              end_date: (element.endDate) ? moment(element.endDate).format('DD/MM/YYYY') : '',
               duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
               schedule: '-',
             }
@@ -1729,7 +1732,7 @@ class CourseSchedulingService {
               let session_data = {
                 consecutive: session_count + 1,
                 teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
-                start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
+                start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
                 duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
                 schedule: schedule,
               }

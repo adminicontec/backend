@@ -30,6 +30,7 @@ class CertificateRoute {
     routerUtility.get(app, _route, '/alltemplates', this.instanceController.alltemplates, [], ['auth'])
     routerUtility.post(app, _route, '/create', this.instanceController.setCertificate, [], ['auth'])
     routerUtility.post(app, _route, '/preview', this.instanceController.previewCertificate, [], ['auth'])
+    routerUtility.post(app, _route, '/force-stage', this.instanceController.forceStage, [], ['auth'])
     routerUtility.post(app, _route, '/re-generate-certification', this.instanceController.reGenerateCertification, [], ['auth'])
     routerUtility.post(app, _route, '/completion', this.instanceController.completion, [], ['auth'])
     routerUtility.post(app, _route, '/rulesforcompletion', this.instanceController.rulesForCompletion, [], ['auth'])
