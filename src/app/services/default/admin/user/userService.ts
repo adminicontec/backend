@@ -195,22 +195,28 @@ class UserService {
           if (!generalUtility.checkHexadecimalCode(params.profile.country)) {
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: 'name', value: params.profile.country }] })
             if (respCountry?.status === 'error') {
-              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
-                errorMessage: `${params.profile.country} no existe en la lista de paises permitidos`
-              }}})
+              // return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
+              //   errorMessage: `${params.profile.country} no existe en la lista de paises permitidos`
+              // }}})
+              params.profile.country = undefined;
+              countryCode = defaultCountryISO;
+            } else {
+              params.profile.country = respCountry.country._id;
+              countryCode = respCountry.country.iso2;
             }
-            params.profile.country = respCountry.country._id;
-            countryCode = respCountry.country.iso2;
           }
           else {
             const respCountry: any = await countryService.findBy({ query: QueryValues.ONE, where: [{ field: '_id', value: params.profile.country.toString() }] })
             if (respCountry?.status === 'error') {
-              return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
-                errorMessage: `${params.profile.country.toString()} no existe en la lista de paises permitidos`
-              }}})
+              // return responseUtility.buildResponseFailed('json', null, {error_key: {key: 'user.insertOrUpdate.error', params: {
+              //   errorMessage: `${params.profile.country.toString()} no existe en la lista de paises permitidos`
+              // }}})
+              params.profile.country = undefined;
+              countryCode = defaultCountryISO;
+            } else {
+              params.profile.country = respCountry.country._id;
+              countryCode = respCountry.country.iso2;
             }
-            params.profile.country = respCountry.country._id;
-            countryCode = respCountry.country.iso2;
           }
         }
 
