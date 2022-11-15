@@ -1145,6 +1145,18 @@ class ErrorResponse {
         }
       },
       "certificate": {
+        "force_stage": {
+          "params_invalid": {
+            "message": i18nUtility.__("app_error_messages.certificate.force_stage.params_invalid"),
+            "status_code": "certificate_force_stage_params_invalid",
+            "code": 400
+          },
+          "error": {
+            "message": i18nUtility.__("app_error_messages.certificate.force_stage.error"),
+            "status_code": "certificate_force_stage_error",
+            "code": 400
+          },
+        },
         "re_generate": {
           "params_invalid": {
             "message": i18nUtility.__("app_error_messages.certificate.re_generate.params_invalid"),

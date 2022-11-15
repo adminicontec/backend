@@ -130,9 +130,19 @@ export interface ICertificatePreview {
   showPreviewBase64?: boolean
 }
 
+export enum CertificateCategory {
+  FORCE_PREVIEW = 'force_preview'
+}
+
+export interface ICertificateForceStage {
+  certificateQueueIds: string[]
+  category: CertificateCategory
+}
+
 export interface ICertificateReGenerate {
   userId: string;
   courseId: string
+  certificateQueueId?: string
   status?: string
 }
 

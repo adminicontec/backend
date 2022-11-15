@@ -434,6 +434,10 @@
       "not_found": "Los eventos del curso en Moodle no han sido encontrados"
     },
     "certificate": {
+      "force_stage": {
+        "params_invalid": "Los parametros para forzar los certificados no son validos",
+        "error": ":errorMessage"
+      },
       "re_generate": {
         "params_invalid": "Los parametros para generar los certificados no son validos"
       },

@@ -43,6 +43,11 @@ class CertificateController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public forceStage = async (req: Request, res: Response) => {
+    const response = await certificateService.forceStage(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
   public reGenerateCertification = async (req: Request, res: Response) => {
     const response = await certificateService.reGenerateCertification(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
