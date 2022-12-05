@@ -100,6 +100,10 @@ const CourseSchema = new Schema({
   //   type: Schema.Types.Number,
   //   required: false,
   // },
+  duration: {
+    type: Schema.Types.String,
+    required: false
+  },
   coverUrl: {
     type: Schema.Types.String
   },
