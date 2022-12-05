@@ -56,7 +56,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program courseType short_description alternative_title platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date'
+      let select = 'id schedulingMode program courseType short_description alternative_title platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })

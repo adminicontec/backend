@@ -241,7 +241,7 @@ class CourseDataService {
         context: {
           title: course.program.name,
           // cover_url: course?.extra_info?.coverUrl ? course?.extra_info?.coverUrl : null,
-          cover_url: courseService.coverUrl({ coverUrl: course?.extra_info?.originalCoverUrl }, { format: 'file' }),
+          cover_url: courseService.coverUrl({ coverUrl: course?.extra_info?.originalCoverUrl }, { format: 'link' }),
           duration: course.duration ? generalUtility.getDurationFormated(course.duration, 'large') : null,
           long_description: course?.extra_info?.description?.blocks ? editorjsService.jsonToHtml(course.extra_info.description.blocks) : null,
           competencies: course?.extra_info?.competencies?.blocks ? editorjsService.jsonToHtml(course.extra_info.competencies.blocks) : null,
@@ -301,12 +301,16 @@ class CourseDataService {
 
     if (withDiscount === true && moment().isSameOrBefore(moment(course?.endDiscountDate).endOf('day'))) {
       if (discount) {
-        finalPrice += parseFloat(Math.round(priceWithIva * (1 - (discount / 100))).toString()).toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace(',00', '')
+        const _priceFloat = parseFloat(Math.round(priceWithIva * (1 - (discount / 100))).toString());
+        const currency = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP',  }).format(_priceFloat)
+        finalPrice += currency.replace('.00', '').replace('COP', 'COP$').replace(/,/g,'.')
       } else {
-        finalPrice += priceWithIva.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace('.00', '')
+        const currency = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP',  }).format(priceWithIva)
+        finalPrice += currency.replace('.00', '').replace('COP', 'COP$').replace(/,/g,'.')
       }
     } else {
-      finalPrice += priceWithIva.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }).replace('.00', '')
+      const currency = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP',  }).format(priceWithIva)
+      finalPrice += currency.replace('.00', '').replace('COP', 'COP$').replace(/,/g,'.')
     }
     return finalPrice
   }
@@ -429,6 +433,16 @@ class CourseDataService {
         }
         if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
         where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+      }
+
+      if (params.startDate) {
+        let direction = 'gte'
+        let date = moment()
+        if (params.startDate.date !== 'today') {
+          date = moment(params.startDate.date)
+        }
+        if (params.startDate.direction) direction = params.startDate.direction
+        where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
       // @INFO: Filtro según ciudad

@@ -71,7 +71,7 @@ class CourseSchedulingNotificationsService {
 
       // @INFO Notificar al programador
       const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
-      if (serviceScheduler && (type === 'started')) {
+      if (serviceScheduler) {
         email_to_notificate.push({
           email: serviceScheduler.email,
           name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`
