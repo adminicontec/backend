@@ -1092,14 +1092,14 @@ class CertificateService {
 
         let mappingAcademicList: any;
 
-        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        console.log("Check rules for " + respCourse.scheduling.schedulingMode.name.toLowerCase());
+        // console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // console.log("Check rules for " + respCourse.scheduling.schedulingMode.name.toLowerCase());
 
         let progressData = studentProgressList.listOfStudentProgress[0].student.studentProgress;
 
-        console.log(`******** Academic Modules List -->`)
-        console.log(`progressData.approved_modules: `);
-        console.log(progressData.approved_modules);
+        // console.log(`******** Academic Modules List -->`)
+        // console.log(`progressData.approved_modules: `);
+        // console.log(progressData.approved_modules);
 
         //#region Setting for VIRTUAL
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
@@ -1169,9 +1169,9 @@ class CertificateService {
 
         isAuditorCerficateByProgressEnabled = (progressData.auditor && studentProgressList.auditorQuizApplies) ? true : false;
 
-        console.log('Progress for Student:');
-        console.log(progressData);
-        console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
+        // console.log('Progress for Student:');
+        // console.log(progressData);
+        // console.log("-->" + respDataUser.user.profile.full_name + " " + mapping_dato_1);
       }
       else {
         console.log('No hay datos de Estudiante para evaluar!')
@@ -2113,8 +2113,8 @@ class CertificateService {
         auxiliar: certificateReq.queueData.auxiliarId
       });
 
-      console.log("--> After Insert/update cerfificateQueue:");
-      console.log(responseCertificateQueue.certificateQueue);
+      // console.log("--> After Insert/update cerfificateQueue:");
+      // console.log(responseCertificateQueue.certificateQueue);
 
       console.log("--> Send request to Huella de Confianza:");
       // Build request for Create Certificate
@@ -2132,17 +2132,18 @@ class CertificateService {
       let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
       console.log("--> Register to update " + registerId);
 
-      let responseLog: any = await certificateLogsService.insertOrUpdate({
+      await certificateLogsService.insertOrUpdate({
         serviceResponse: respHuella.estado,
         idCertificateQueue: registerId,
         message: '',
         process: 'Set certificate',
-        requestData: certificateReq.paramsHuella
+        requestData: certificateReq.paramsHuella,
+        responseService: respHuella
       });
 
-      console.log("***************************");
-      console.log(responseLog);
-      console.log("***************************");
+      // console.log("***************************");
+      // console.log(responseLog);
+      // console.log("***************************");
 
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
         id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
@@ -2196,13 +2197,13 @@ class CertificateService {
         auxiliar: certificateReq.queueData.auxiliarId
       });
 
-      console.log("--> After Insert/update cerfificateQueue:");
-      console.log(responseCertificateQueue.certificateQueue);
+      // console.log("--> After Insert/update cerfificateQueue:");
+      // console.log(responseCertificateQueue.certificateQueue);
 
-      console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
-      console.log(`--> certificateReq.certificateQueue.hash ${responseCertificateQueue.certificateQueue.certificate.hash}`);
-      console.log('paramsHuella:');
-      console.log(certificateReq.paramsHuella);
+      // console.log("--> Send request to UPDATE Certificate on Huella de Confianza:");
+      // console.log(`--> certificateReq.certificateQueue.hash ${responseCertificateQueue.certificateQueue.certificate.hash}`);
+      // console.log('paramsHuella:');
+      // console.log(certificateReq.paramsHuella);
 
       // Build request for Update Certificate
       let respHuella: any = await queryUtility.query({
@@ -2218,19 +2219,20 @@ class CertificateService {
       console.log("**************************");
 
       let registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
-      console.log("--> Register to update " + registerId);
+      // console.log("--> Register to update " + registerId);
 
-      let responseLog: any = await certificateLogsService.insertOrUpdate({
+      await certificateLogsService.insertOrUpdate({
         serviceResponse: respHuella.estado,
         idCertificateQueue: registerId,
         message: "",
         process: 'Re-issue certificate',
-        reissueRequestData: certificateReq.paramsHuella
+        reissueRequestData: certificateReq.paramsHuella,
+        responseService: respHuella
       });
 
-      console.log("***************************");
-      console.log(responseLog);
-      console.log("***************************");
+      // console.log("***************************");
+      // console.log(responseLog);
+      // console.log("***************************");
 
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
         id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
@@ -2256,8 +2258,8 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
-      console.log("Params for Preview Certificate: ");
-      console.log(params);
+      // console.log("Params for Preview Certificate: ");
+      // console.log(params);
 
       // params.format:
       // Imagen PNG: 1
@@ -2276,9 +2278,9 @@ class CertificateService {
       const tokenHC = respToken.token;
 
       // get Log
-      let responseLog: any = await certificateLogsService.findBy({ query: QueryValues.ONE, where: [{ field: 'idCertificateQueue', value: params.certificate_queue }] });
-      console.log('certificateLogsService');
-      console.log(responseLog.certificateLogs._id);
+      // let responseLog: any = await certificateLogsService.findBy({ query: QueryValues.ONE, where: [{ field: 'idCertificateQueue', value: params.certificate_queue }] });
+      // console.log('certificateLogsService');
+      // console.log(responseLog.certificateLogs._id);
 
       // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
       // console.log('params:');
@@ -2292,34 +2294,31 @@ class CertificateService {
         params: detailParams
       });
 
+      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+      // console.log(respHuella);
+      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+      // record the error on Log
+      await certificateLogsService.insertOrUpdate({
+        serviceResponse: respHuella.estado,
+        idCertificateQueue: params.certificate_queue,
+        message: '',
+        process: 'Preview certificate',
+        previewRequestData: detailParams,
+        responseService: respHuella
+      });
+
       if (respHuella.estado === 'error') {
-        console.log(respHuella);
-
-        // record the error on Log
-        let response2Log: any = await certificateLogsService.insertOrUpdate({
-          id: responseLog.certificateLogs._id,
-          process: 'Preview certificate',
-          serviceResponse: respHuella.estado,
-          message: respHuella.resultado,
-          previewRequestData: detailParams
+        return responseUtility.buildResponseFailed('json', null, {
+          error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
         });
-
-        return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: { key: 'certificate.generation' }
-          });
       }
 
-      // if (respHuella.resultado === "") {
-      //   console.log("Resp from Huella: ");
-      //   console.log(respHuella);
-      //   return responseUtility.buildResponseFailed('json', null,
-      //     {
-      //       error_key: { key: 'certificate.preview' }
-      //     })
-      // }
-
-      console.log("Update register on certificate queue:");
+      if (respHuella.resultado === "") {
+        return responseUtility.buildResponseFailed('json', null, {
+          error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
+        });
+      }
 
       if (params.updateCertificate && params.format) {
         let updateData = null
@@ -2332,7 +2331,6 @@ class CertificateService {
         })
 
         var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
-        console.log(`   filename: ${filename}`);
 
         if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
           const time = new Date().getTime()
@@ -2378,17 +2376,14 @@ class CertificateService {
         }
       }
 
-      // record the error on Log
-      let responseUpdateLog: any = await certificateLogsService.insertOrUpdate({
-        id: responseLog.certificateLogs._id,
-        process: 'Complete',
+      await certificateLogsService.insertOrUpdate({
         serviceResponse: respHuella.estado,
-        message: 'Complete',
-        previewRequestData: detailParams
+        idCertificateQueue: params.certificate_queue,
+        message: 'Certificate complete',
+        process: 'Complete',
       });
 
       const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
-
 
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
@@ -2723,8 +2718,8 @@ class CertificateService {
     let totalDuration = 0;
     try {
 
-      console.log(`¦---formatAcademicModulesList----¦`);
-      console.log(`programTypeName  ${programTypeName}`);
+      // console.log(`¦---formatAcademicModulesList----¦`);
+      // console.log(`programTypeName  ${programTypeName}`);
 
       if (programTypeName || programTypeName != null)
         mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
@@ -2734,8 +2729,8 @@ class CertificateService {
       mappingAcademicModulesList += '<ul>'
       academicModules.forEach(element => {
 
-        console.log(`element ---> `);
-        console.log(element);
+        // console.log(`element ---> `);
+        // console.log(element);
 
         mappingAcademicModulesList += `<li>${element.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`
 

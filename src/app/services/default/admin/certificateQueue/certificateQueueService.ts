@@ -88,10 +88,10 @@ class CertificateQueueService {
 
     try {
       if (params.id) {
-        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        console.log("UPDATE certificate queue");
-        console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-        console.log(params);
+        // console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // console.log("UPDATE certificate queue");
+        // console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+        // console.log(params);
 
         const register = await CertificateQueue.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.queue.not_found' })
