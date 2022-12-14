@@ -30,7 +30,9 @@ const CertificateLogsSchema = new Schema({
     type: Schema.Types.String,
     enum: ['Set certificate', 'Preview certificate', 'Re-issue certificate', 'Complete']
   },
-
+  responseService: {
+    type: Schema.Types.Mixed
+  }
   // @end
 }, {
   collection: 'certificate_logs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

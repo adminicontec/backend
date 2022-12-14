@@ -14,7 +14,7 @@ import { CertificateLogs } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificateLog, ICertificateLogQuery, ICertificateDelete } from '@scnode_app/types/default/admin/certificate/certificateLogTypes'
+import { ICertificateLog, ICertificateLogQuery, ICertificateDelete, ProcessList } from '@scnode_app/types/default/admin/certificate/certificateLogTypes'
 // @end
 
 class CertificateLogsService {
@@ -56,6 +56,17 @@ class CertificateLogsService {
 
     if (filters?.idCertificateQueue) {
       where['idCertificateQueue'] = filters.idCertificateQueue
+    } else if (filters?.idCertificateQueues) {
+      where['idCertificateQueue'] = {$in: filters.idCertificateQueues}
+    }
+    if (filters?.process) {
+      const processAvailable = Object.keys(ProcessList).filter((key) => ProcessList[key] === filters.process)
+      if (processAvailable.length === 0) {
+        return responseUtility.buildResponseFailed('json', null, {code: 400, message: `Los tipos de proceso permitidos son ${Object.keys(
+          ProcessList,
+        ).map((key) => ProcessList[key])}`})
+      }
+      where['process'] = filters.process
     }
 
     let registers = []
@@ -120,12 +131,6 @@ class CertificateLogsService {
         const register = await CertificateLogs.findOne({ _id: params.id })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'country.not_found' })
 
-        // @INFO: Validando nombre unico
-        // if (params.name) {
-        //   const exist = await Country.findOne({ name: params.name, _id: {$ne: params.id}})
-        //   if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'country.insertOrUpdate.already_exists', params: {name: params.name}} })
-        // }
-
         const response: any = await CertificateLogs.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
 
         return responseUtility.buildResponseSuccess('json', null, {
@@ -140,9 +145,6 @@ class CertificateLogsService {
         })
 
       } else {
-        // const exist = await CertificateLogs.findOne({ name: params.idCertificateQueue })
-        // if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'country.insertOrUpdate.already_exists', params: {name: params.name}} })
-
         const response: any = await CertificateLogs.create(params)
 
         return responseUtility.buildResponseSuccess('json', null, {

@@ -3,6 +3,13 @@
 
 // @add your types
 
+export enum ProcessList {
+  SET_CERTIFICATE = 'Set certificate',
+  PREVIEW = 'Preview certificate',
+  RE_ISSUE = 'Re-issue certificate',
+  COMPLETE = 'Complete',
+}
+
 export interface ICertificateLogQuery {
   pageNumber?: string, // Numero de pagina
   nPerPage?: string, // Cantidad de elementos por pagina
@@ -10,6 +17,8 @@ export interface ICertificateLogQuery {
   search?: string, // Busca sobre los campos de la coleccion
   status?: string,
   idCertificateQueue?: string
+  idCertificateQueues?: string[]
+  process?: ProcessList
 }
 
 export interface ICertificateLog {
@@ -21,6 +30,7 @@ export interface ICertificateLog {
   requestData?: any,
   previewRequestData?: any,
   reissueRequestData?: any
+  responseService?: any
 }
 
 export interface ICertificateDelete {
