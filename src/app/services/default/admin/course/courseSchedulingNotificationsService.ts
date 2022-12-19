@@ -300,7 +300,7 @@ class CourseSchedulingNotificationsService {
       const params = {
         mailer: customs['mailer'],
         today: moment.utc().format('YYYY-MM-DD'),
-        notification_source: `scheduling_notification_exam_participant_${studentParams.courseSchedulingId}`,
+        notification_source: `scheduling_notification_exam_participant_${studentParams.courseSchedulingId}_${studentParams.studentId}`,
         // Información
         studentParams: studentParams
       };
@@ -555,6 +555,7 @@ class CourseSchedulingNotificationsService {
       if (auditorQuizModule) {
         let quizModuleData: IQuizModuleData = {
           sectionid: auditorQuizModule.sectionid,
+          instanceid: auditorQuizModule.instance,
           moduleName: auditorQuizModule.sectionname,
           examnName: auditorQuizModule.name,
           hasExam: true,

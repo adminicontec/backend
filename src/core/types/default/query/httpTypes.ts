@@ -24,7 +24,7 @@ export interface OptionsRequestPromise {
 }
 
 export interface HttpCustomStructure {
-  method      : 'get' | 'post' | 'put'  // Metodos HTTP habilitados para envio de peticiones
+  method      : 'get' | 'post' | 'put' | 'delete'  // Metodos HTTP habilitados para envio de peticiones
   url         : string,         // Ruta parcial del punto destino de la petición
   api?        : string,         // URL del sistema hacia el cual se van a realizar las peticiones. Por defecto toma el valor de main_external_api
   api_link?   : string,         // URL del api a la que se desa conectar, de la forma http(s)://..

@@ -2145,6 +2145,8 @@ class CertificateService {
       // console.log(responseLog);
       // console.log("***************************");
 
+      // TODO: No se esta controlando el estado de error
+
       let responseCertQueue: any = await certificateQueueService.insertOrUpdate({
         id: registerId, //(certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id,
         status: 'Requested',

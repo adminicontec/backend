@@ -34,6 +34,59 @@ class CalendarEventsService {
 
   constructor() { }
 
+  public fetchOnlyEvents = async (params: {courseID: string}) => {
+    try {
+
+      let courseID = params.courseID || undefined
+      if (!courseID) {
+        return responseUtility.buildResponseFailed('json', null, {
+          error_key: {
+            key: 'moodle_events.message.invalid'
+          }
+        });
+      }
+
+      let moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.calendarEvents.get,
+        moodlewsrestformat: moodle_setup.restformat,
+        'events[courseids][0]': courseID
+      };
+
+      // 2. Validación si hay eventos asociados al curso en moodle
+      let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+      if (respMoodleEvents.exception) {
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'calendarEvent.exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
+            }
+          });
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          events: respMoodleEvents.events,
+        }
+      })
+
+    } catch (e) {
+      console.log('CalendarEventsService => fetchEvents error: ', e);
+
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'calendarEvent.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+
+    }
+  }
+
   public fetchEvents = async (params: IMoodleCalendarEventsQuery) => {
     try {
       let responseEvents = [];

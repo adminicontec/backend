@@ -4,6 +4,7 @@
 // @add your types
 export interface IStudentExamNotification {
   courseSchedulingId: string,
+  studentId: string,
   studentName: string,
   email: string,
   serviceId: string,

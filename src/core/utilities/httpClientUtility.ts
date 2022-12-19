@@ -33,6 +33,21 @@ class HttpClientUtility {
    * @param http_structure Configuracion del punto destino hacia el cual se va a generar la peticion
    * @returns [json] Objeto en formato JSON
    */
+  public delete = async (http_structure: HttpStructure) => {
+
+    const options: OptionsRequestPromise = {
+      method: 'DELETE',
+      qs: (http_structure.hasOwnProperty("params") && typeof http_structure["params"] === "object") ? http_structure["params"] : {},   // Parametros que se envian al metodo destino
+    };
+
+    return this.sendHttpRequest(http_structure, options);
+  }
+
+  /**
+   * Metodo que envia peticiones HTTP por el metodo GET
+   * @param http_structure Configuracion del punto destino hacia el cual se va a generar la peticion
+   * @returns [json] Objeto en formato JSON
+   */
   public get = async (http_structure: HttpStructure) => {
 
     const options: OptionsRequestPromise = {
