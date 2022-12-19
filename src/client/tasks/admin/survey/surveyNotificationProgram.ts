@@ -16,6 +16,7 @@ import moment from 'moment';
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
+import { calendarEventsService } from "@scnode_app/services/default/moodle/calendarEvents/calendarEventsService";
 // @end
 
 class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
@@ -63,6 +64,8 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
 
   private sendSchedulingExamNotification = async () => {
     const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado'] } });
+    const today = moment.utc();
+    // const ids = ['6331b3249cfa2f84c37518b7']
 
     const schedulings = await CourseScheduling.find({
       schedulingStatus: { $in: status.map(s => s._id) },
@@ -78,116 +81,105 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
       for await (let scheduling of schedulings) {
         console.group(`--------  Service ${scheduling?.metadata?.service_id} - ${scheduling?.schedulingMode?.name} --------`)
         const isVirtual = scheduling?.schedulingMode?.name === 'Virtual' ? true : false;
-
-        // const attendanceComplete = await courseSchedulingNotificationsService.isAttendanceComplete(scheduling.moodle_id, scheduling._id);
-
         const examData = await courseSchedulingNotificationsService.verifyCourseSchedulingExercise(scheduling.moodle_id);
-        // console.log('attendanceComplete', attendanceComplete)
-        console.log('examData', examData)
 
-        // if (attendanceComplete && examData?.hasExam) {
         if (examData?.hasExam) {
-          const courseSchedulingDetails = await CourseSchedulingDetails.find({course_scheduling: scheduling._id})
-          .populate({path: 'course', select: 'id moodle_id'})
-          .select('id startDate endDate course')
+          const eventsByCourse: any = await calendarEventsService.fetchOnlyEvents({
+            courseID: scheduling.moodle_id
+          })
 
-          const auditorModule = courseSchedulingDetails.find((item) => item?.course?.moodle_id.toString() === examData.sectionid.toString())
-          console.log('auditorModule', auditorModule)
-          if (auditorModule && auditorModule?.startDate && auditorModule?.endDate) {
-            const today = moment.utc();
-            let examEndDate = undefined;
-            console.log('today', today)
-            let examEnabled = false;
-            if (isVirtual) {
-              // @INFO: Virtual: El examen esta activo desde el inicio del curso auditor
-              const startDate = moment.utc(auditorModule?.startDate)
-              const endDate = moment.utc(auditorModule?.endDate)
-              console.log('Virtual - startDate', startDate)
+          if (eventsByCourse?.events) {
+            const events: {open: number, close: number} = eventsByCourse.events.reduce((accum, element) => {
+              if (element?.instance && element?.timestart && element?.instance === examData.instanceid) {
+                if (['open', 'close'].includes(element?.eventtype)) {
+                  accum[element.eventtype] = element.timestart
+                }
+              }
+              return accum;
+            }, {})
+
+            if (events?.open && events?.close) {
+              let examEndDate = undefined;
+              const startDate = moment.unix(events.open)
+              const endDate = moment.unix(events.close)
+              let examEnabled = false;
+
               if (today.isSameOrAfter(startDate) && today.isSameOrBefore(endDate)) {
                 examEnabled = true;
               }
-              examEndDate = moment.utc(auditorModule?.endDate).format('YYYY-MM-DD 23:59:59');
 
-            } else {
-              // @INFO: Presencial/En linea: Dos dias despues de finalizar el curso de auditor
-              const endDate = moment.utc(auditorModule?.endDate).add('2', 'days')
-              console.log('Presencial En linea - endDate', endDate)
-              if (today.isSameOrAfter(endDate)) {
-                examEnabled = true;
-              }
+              if (examEnabled) {
+                // console.log('events', events)
+                // console.log('today', today)
+                // console.log('startDate', startDate)
+                // console.log('endDate', endDate)
+                console.log(`Examen habilitado desde ${startDate.format('YYYY-MM-DD')} hasta ${endDate.format('YYYY-MM-DD')}`)
+                const response: any = await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
+                console.log("response sendNotification to Aux");
+                console.log(response);
+                examEndDate = moment(endDate).format('YYYY-MM-DD 23:59:59');
 
-              const aux = this.getExamEndDate(auditorModule?.endDate)
-              console.log('ExamEndDate', aux)
-              if (!aux) continue;
-
-              examEndDate = aux;
-            }
-            console.log('examEnabled', examEnabled)
-
-            if (examEnabled) {
-              const response: any = await courseSchedulingNotificationsService.sendNotificationExamToAssistance(scheduling._id);
-              console.log("response sendNotification to Aux");
-              console.log(response);
-
-              // @INFO: Lista de participantes del servicio
-              const responseEnrollment: any = await enrollmentService.list({ courseID: scheduling.moodle_id });
-              if (responseEnrollment.status == 'error') {
-                continue;
-              }
-
-              let counter = 1;
-              const academicDataResponse: any = await certificateService.completion({
-                courseID: scheduling?.moodle_id,
-                course_scheduling: scheduling._id,
-                // without_certification: true
-              })
-              const academicDataByUser = academicDataResponse?.enrollment.reduce((accum, element) => {
-                if (element?.user?._id) {
-                  if (!accum[element?.user?._id]) {
-                    accum[element?.user?._id] = element;
-                  }
+                // @INFO: Lista de participantes del servicio
+                const responseEnrollment: any = await enrollmentService.list({ courseID: scheduling.moodle_id });
+                if (responseEnrollment.status == 'error') {
+                  continue;
                 }
-                return accum;
-              }, {})
 
-              for await (let student of responseEnrollment.enrollment) {
-                let sendNotificationToStudent = false;
-                console.log(`++++++++++++++++++++++++++++++++`);
-                console.log(`Student ${student.user.fullname}: ${student.user.email}`)
-                if (isVirtual) {
-                  sendNotificationToStudent = true;
-                } else {
-                  if (academicDataByUser[student.user._id]) {
-                    console.log('Presencial/En linea - Check attendance')
-                    // @INFO: Para presencial / enlinea se debe validar la asistencia
-                    const progress = academicDataByUser[student.user._id].progress || undefined
-                    const percentage = progress && progress?.assistanceDetails?.percentage || 0
-                    if (percentage >= 100) {
-                      sendNotificationToStudent = true;
+                // let counter = 1;
+                const academicDataResponse: any = await certificateService.completion({
+                  courseID: scheduling?.moodle_id,
+                  course_scheduling: scheduling._id,
+                  // without_certification: true
+                })
+                const academicDataByUser = academicDataResponse?.enrollment.reduce((accum, element) => {
+                  if (element?.user?._id) {
+                    if (!accum[element?.user?._id]) {
+                      accum[element?.user?._id] = element;
                     }
                   }
-                }
-                console.log(`Status to notificate: ${sendNotificationToStudent}`)
+                  return accum;
+                }, {})
 
-                if (sendNotificationToStudent) {
-
-                  const emailParams: IStudentExamNotification = {
-                    courseSchedulingId: scheduling._id + '_' + counter,
-                    studentName: student.user.fullname,
-                    email: student.user.email,
-                    serviceId: scheduling.metadata.service_id,
-                    endDate: examEndDate,
-                    moduleName: examData.moduleName,
-                    numberOfQuestions: examData.numberOfQuestions
+                for await (let student of responseEnrollment.enrollment) {
+                  let sendNotificationToStudent = false;
+                  console.log(`++++++++++++++++++++++++++++++++`);
+                  console.log(`Student ${student.user.fullname}: ${student.user.email}`)
+                  if (isVirtual) {
+                    sendNotificationToStudent = true;
+                  } else {
+                    if (academicDataByUser[student.user._id]) {
+                      console.log('Presencial/En linea - Check attendance')
+                      // @INFO: Para presencial / enlinea se debe validar la asistencia
+                      const progress = academicDataByUser[student.user._id].progress || undefined
+                      const percentage = progress && progress?.assistanceDetails?.percentage || 0
+                      if (percentage >= 100) {
+                        sendNotificationToStudent = true;
+                      }
+                    }
                   }
-                  console.log(`→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→`);
-                  console.log(`Send notification to ${student.user.fullname} : ${student.user.email}`);
-                  console.log(emailParams)
-                  const response: any = await courseSchedulingNotificationsService.sendNotificationExamToParticipant(emailParams);
-                  console.log(response);
+                  console.log(`Status to notificate: ${sendNotificationToStudent}`)
+
+                  if (sendNotificationToStudent) {
+
+                    const emailParams: IStudentExamNotification = {
+                      courseSchedulingId: scheduling._id,
+                      studentId: student.user._id,
+                      studentName: student.user.fullname,
+                      email: student.user.email,
+                      serviceId: scheduling.metadata.service_id,
+                      endDate: examEndDate,
+                      moduleName: examData.moduleName,
+                      numberOfQuestions: examData.numberOfQuestions
+                    }
+                    console.log(`→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→`);
+                    console.log(`Send notification to ${student.user.fullname} : ${student.user.email}`);
+                    console.log(emailParams)
+                    const response: any = await courseSchedulingNotificationsService.sendNotificationExamToParticipant(emailParams);
+                    console.log(response);
+                  }
+                  console.log(`++++++++++++++END++++++++++++++++++`);
+                  // counter++;
                 }
-                console.log(`++++++++++++++END++++++++++++++++++`);
-                counter++;
               }
             }
           }

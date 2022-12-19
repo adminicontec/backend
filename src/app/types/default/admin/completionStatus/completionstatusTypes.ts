@@ -35,6 +35,7 @@ export interface ICompletionStatusQuery {
 export interface IQuizModuleData {
   sectionid: string,
   hasExam: boolean,
+  instanceid: string,
   examnName: string,
   moduleName: string,
   numberOfQuestions: number

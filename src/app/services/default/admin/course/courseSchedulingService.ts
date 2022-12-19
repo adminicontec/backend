@@ -190,6 +190,32 @@ class CourseSchedulingService {
    * @param params Elementos a registrar
    * @returns
    */
+  public updateClean = async (params: ICourseScheduling) => {
+
+    try {
+      if (params.id) {
+        const register = await CourseScheduling.findOne({_id: params.id})
+        if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+
+        const response: any = await CourseScheduling.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            courseScheduling: response
+          }
+        })
+      }
+      return responseUtility.buildResponseFailed('json', null, {message: 'No es posible actualizar sin un ID'})
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message})
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar un registro
+   * @param params Elementos a registrar
+   * @returns
+   */
   public insertOrUpdate = async (params: ICourseScheduling, files?: any) => {
 
     let steps = [];
