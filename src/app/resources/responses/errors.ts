@@ -13,6 +13,23 @@ class ErrorResponse {
     const json = {
       // Add errors
       "reports": {
+        "customReport": {
+          "fail_build_xlsx": {
+            "message": i18nUtility.__("app_error_messages.reports.customReport.fail_build_xlsx"),
+            "status_code": "reports_customReport_fail_build_xlsx",
+            "code": 400
+          },
+          "fail_upload_xlsx": {
+            "message": i18nUtility.__("app_error_messages.reports.customReport.fail_upload_xlsx"),
+            "status_code": "reports_customReport_fail_upload_xlsx",
+            "code": 400
+          },
+          "no_data": {
+            "message": i18nUtility.__("app_error_messages.reports.customReport.no_data"),
+            "status_code": "reports_customReport_no_data",
+            "code": 400
+          }
+        },
         "factory": {
           "no_data": {
             "message": i18nUtility.__("app_error_messages.reports.factory.no_data"),

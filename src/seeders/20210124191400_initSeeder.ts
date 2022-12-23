@@ -472,6 +472,19 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:users', description: 'Módulo que permite administrar los usuarios', permissions: [
         {name: 'permission:users_create', description: 'Crear usuarios'},
         {name: 'permission:users_update', description: 'Editar usuarios'},
+        {name: 'permission:students_update', description: 'Editar estudiantes'},
+        {name: 'permission:users_field_first_name', description: 'Condición para campo de usuarios (Nombres)'},
+        {name: 'permission:users_field_last_name', description: 'Condición para campo de usuarios (Apellidos)'},
+        {name: 'permission:users_field_username', description: 'Condición para campo de usuarios (Usuario)'},
+        {name: 'permission:users_field_email', description: 'Condición para campo de usuarios (Email)'},
+        {name: 'permission:users_field_phone_number', description: 'Condición para campo de usuarios (Numero celular)'},
+        {name: 'permission:users_field_doc_number', description: 'Condición para campo de usuarios (Numero de documento)'},
+        {name: 'permission:users_field_doc_type', description: 'Condición para campo de usuarios (Tipo de documento)'},
+        {name: 'permission:users_field_programming_code', description: 'Condición para campo de usuarios (Codigo de programación)'},
+        {name: 'permission:users_field_password', description: 'Condición para campo de usuarios (Contraseña)'},
+        {name: 'permission:users_field_timezone', description: 'Condición para campo de usuarios (Zona horaria)'},
+        {name: 'permission:users_field_dialect', description: 'Condición para campo de usuarios (Idiom)'},
+        {name: 'permission:users_field_roles', description: 'Condición para campo de usuarios (Roles)'},
         {name: 'permission:users_delete', description: 'Eliminar usuarios'},
         {name: 'permission:users_list', description: 'Ver usuarios'},
         {name: 'permission:users_viewer', description: 'Consultar usuarios'},
@@ -479,6 +492,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:account_executives', description: 'Módulo que permite administrar los ejecutivos de cuenta', permissions: [
         {name: 'permission:account_executives_menu_access', description: 'Menu de ejecutivos de cuenta'},
+      ]},
+      {name: 'module:students', description: 'Módulo que permite administrar los estudiantes', permissions: [
+        {name: 'permission:students_menu_access', description: 'Menu de estudiantes'},
       ]},
       {name: 'module:company_collaborator', description: 'Módulo que permite administrar los colaboradores de Empresa', permissions: [
         {name: 'permission:company_collaborator_access', description: 'Menu de colaboradores de Empresa'},

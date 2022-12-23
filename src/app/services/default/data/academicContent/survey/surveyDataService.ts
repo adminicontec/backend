@@ -176,6 +176,7 @@ class SurveyDataService {
 
       const reportStartDate = params.startDate || undefined
       const reportEndDate = params.endDate || undefined
+      const statusQuery = params.status || 'enabled'
 
       // @INFO: Consultando encuestas programadas
       const courseSchedulingModes = await CourseSchedulingMode.find({moodle_id: {$exists: true}}).select('id name')
@@ -187,12 +188,12 @@ class SurveyDataService {
         }
         return accum
       }, {})
-      const courseSchedulingModesInfoByName = courseSchedulingModes.reduce((accum, element) => {
-        if (!accum[element.name]) {
-          accum[element.name] = element;
-        }
-        return accum
-      }, {})
+      // const courseSchedulingModesInfoByName = courseSchedulingModes.reduce((accum, element) => {
+      //   if (!accum[element.name]) {
+      //     accum[element.name] = element;
+      //   }
+      //   return accum
+      // }, {})
       const courseSchedulingModesIds = courseSchedulingModes.reduce((accum, element) => {
         accum.push(ObjectID(element._id))
         return accum
@@ -207,6 +208,14 @@ class SurveyDataService {
         }
         return accum
       }, {})
+
+      let matchCourseModes = {
+        'config.content.config.course_modes': {$in: courseSchedulingModesIds},
+        'deleted': false,
+      }
+      if (['enabled', 'disabled'].includes(statusQuery))  {
+        matchCourseModes['status'] = statusQuery
+      }
 
       const aggregateQuery = [
         {
@@ -228,11 +237,7 @@ class SurveyDataService {
         },
         { $unwind: '$config.content.academic_resource' },
         {
-          $match: {
-            'config.content.config.course_modes': {$in: courseSchedulingModesIds},
-            'deleted': false,
-            'status': 'enabled'
-          }
+          $match: matchCourseModes
         },
         {
           $group: {
@@ -449,6 +454,11 @@ class SurveyDataService {
       }
 
       if (output_format === 'xlsx') {
+        if (reportData.length === 0) {
+          return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'reports.customReport.no_data', params: {
+            customMessage: ' Las encuestas debe estar activas y tener preguntas configuradas para que se pueda generar el reporte'
+          }} })
+        }
         // @INFO: Generación de reporte excel
         const wb = await this.buildGeneralSurveyReportXLSX(reportData, title)
         if (!wb) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_build_xlsx' })
@@ -470,7 +480,8 @@ class SurveyDataService {
         })
       }
     } catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      console.log('generalSurveyReport-error', e)
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error generando el reporte'})
     }
   }
 
@@ -909,6 +920,7 @@ class SurveyDataService {
       return wb
 
     } catch (e) {
+      console.log('buildGeneralSurveyReportXLSX-error', e)
       return null
     }
   }

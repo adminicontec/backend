@@ -1,6 +1,11 @@
 {
   "app_error_messages": {
     "reports": {
+      "customReport": {
+        "fail_build_xlsx": "Se ha presentado un error al generar el excel",
+        "fail_upload_xlsx": "Se ha presentado un error al cargar el excel",
+        "no_data": "No hay información para generar el reporte.:customMessage"
+      },
       "factory": {
         "no_data": "No hay información para generar el reporte",
         "report_modality_required": "La modalidad es obligatoria",
@@ -508,6 +513,10 @@
   },
   "passwordRecover": {
     "subject": "Solicitud de recuperación de contraseña"
+  },
+  "labels": {
+    "survey_enabled": "Activa",
+    "survey_disabled": "Desactivada"
   },
   "mailer": {
     "service_sending" : {
