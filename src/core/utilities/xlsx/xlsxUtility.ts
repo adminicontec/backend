@@ -124,6 +124,7 @@ class XlsxUtility {
 
       return filePath
     } catch (e) {
+      console.log('uploadXLSX-error', e)
       return null
     }
   }

@@ -9,6 +9,7 @@ import {academicResourceService} from '@scnode_app/services/default/admin/academ
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
+import { i18nUtility } from '@scnode_core/utilities/i18nUtility';
 // @end
 
 // @import models
@@ -309,6 +310,13 @@ class SurveyService {
         .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
+        for (const register of registers) {
+          if (register?.status) {
+            if (['enabled', 'disabled'].includes(register?.status)) {
+              register['statusLabel'] = i18nUtility.__(`labels.survey_${register.status}`)
+            }
+          }
+        }
       } catch (e) {}
 
       return responseUtility.buildResponseSuccess('json', null, {
