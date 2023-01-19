@@ -214,7 +214,7 @@ const CourseSchedulingSchema = new Schema({
     }],
   logistics_supply: {
     type: Schema.Types.String,
-    enum: ['business', 'icontec']
+    enum: ['business', 'icontec', 'not_applicable']
   },
   certificate_address: {type: Schema.Types.String},
   // Material delivery
