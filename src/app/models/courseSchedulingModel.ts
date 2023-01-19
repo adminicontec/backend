@@ -278,6 +278,15 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.String
     }
   },
+  forceStatusTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoForce: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+  },
   cancelationTracking: {
     date: {
       type: Schema.Types.Date,

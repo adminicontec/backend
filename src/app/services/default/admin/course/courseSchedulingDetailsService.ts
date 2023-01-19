@@ -729,6 +729,7 @@ class CourseSchedulingDetailsService {
         ...courseSchedulingDetail,
         _id: undefined,
         course_scheduling: params.courseSchedulingId,
+        course: params.course,
         sendEmail: false
       }
 
