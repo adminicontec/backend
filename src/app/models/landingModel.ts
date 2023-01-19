@@ -23,6 +23,7 @@ const LandingSchema = new Schema({
         type: Schema.Types.String,
         enum: ['alliance','agreement'],
       },
+      agreementDescription: { type: Schema.Types.String },
       logoUrl: {type: Schema.Types.String},
       name: {type: Schema.Types.String},
       country: {type: Schema.Types.String},
