@@ -23,7 +23,7 @@ export interface ICourseSchedulingDetail {
   }
   reprograming?: string
   user?: string // Identificador del usuario logueado
-  course?: {value: number, label: string} | string // Curso de la programación
+  course?: {value: number, label: string, code: string} | string // Curso de la programación
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
@@ -51,5 +51,6 @@ export interface ICourseSchedulingDetailQuery {
 export interface IDuplicateCourseSchedulingDetail {
   courseSchedulingId: string;
   courseSchedulingDetailId: string;
+  course?: {value: number, label: string, code: string} | string // Curso de la programación
 }
 //@end

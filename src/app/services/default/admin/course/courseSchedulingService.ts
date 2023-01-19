@@ -26,13 +26,14 @@ import { mapUtility } from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
-import { Attached, City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, Modular, Program, Regional, Role, User } from '@scnode_app/models'
+import { Attached, City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, MailMessageLog, Modular, Program, Regional, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
   CourseSchedulingDetailsSync,
+  ForceStatus,
   IChangeSchedulingElement,
   IChangeSchedulingModular,
   ICourseScheduling,
@@ -42,12 +43,14 @@ import {
   ICourseSchedulingReportData,
   IDuplicateCourseScheduling,
   IDuplicateService,
+  IForceStatusService,
   IReactivateService,
   ItemsToDuplicate,
   ReprogramingLabels
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 // @end
 
 class CourseSchedulingService {
@@ -1574,7 +1577,12 @@ class CourseSchedulingService {
     try {
       if (where.length) {
         where.push({$match: {deleted: false}})
-        registers = await CourseScheduling.aggregate(where)
+        const whereAggregate = [].concat(where)
+        if (paging) {
+          whereAggregate.push({$skip: ((pageNumber - 1) * nPerPage)})
+          whereAggregate.push({$limit: nPerPage})
+        }
+        registers = await CourseScheduling.aggregate(whereAggregate)
           // .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           // .limit(paging ? nPerPage : null)
           .sort({ startDate: -1 })
@@ -2105,25 +2113,47 @@ class CourseSchedulingService {
 
       if (newCourseSchedulingResponse.status === 'error') return newCourseSchedulingResponse;
 
-      const newCourseScheduling = newCourseSchedulingResponse.scheduling;
+      const newCourseScheduling = await CourseScheduling.findOne(newCourseSchedulingResponse.scheduling._id).select('id moodle_id');
+      const newCourseMoodleId = newCourseScheduling.moodle_id;
       logs.push(
         {key: newCourseScheduling._id, type: 'CourseScheduling'}
       )
 
       if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
-        const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
-        .select('id')
-        .lean()
-        for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
-          const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
-            courseSchedulingDetailId: courseSchedulingDetail._id,
-            courseSchedulingId: newCourseScheduling._id
-          })
-          if (newCourseSchedulingDetailResponse.status === 'success') {
-            const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
-            logs.push(
-              {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
-            )
+        const {courseContents}: any = await courseContentService.list({courseID: newCourseMoodleId})
+        if (courseContents && Array.isArray(courseContents)) {
+          const courseContentGrouped = courseContents.reduce((accum, element) => {
+            if (element?.description) {
+              accum[element.description.toString()] = element
+            }
+            return accum
+          }, {})
+
+          const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
+          .select('id course')
+          .populate({path: 'course', select: 'id name moodle_id code'})
+          .lean()
+          for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
+            if (courseSchedulingDetail?.course?.code && courseContentGrouped[courseSchedulingDetail?.course?.code.toString()]) {
+              const courseSection = courseContentGrouped[courseSchedulingDetail?.course?.code.toString()];
+              const newCourseData: {value: number, label: string, code: string} = {
+                code: courseSection.description,
+                label: `${courseSection.description} | ${courseSection.name}`,
+                value: courseSection.id
+              }
+              const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
+                courseSchedulingDetailId: courseSchedulingDetail._id,
+                courseSchedulingId: newCourseScheduling._id,
+                course: newCourseData
+              })
+              if (newCourseSchedulingDetailResponse.status === 'success') {
+                const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
+                logs.push(
+                  {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
+                )
+              }
+
+            }
           }
         }
       }
@@ -2132,6 +2162,67 @@ class CourseSchedulingService {
         newCourseScheduling: newCourseSchedulingResponse.scheduling,
         logs
       }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {message: err?.getMessage() || 'Se ha presentado un error al duplicar'})
+    }
+  }
+
+  public forceStatusService = async (params: IForceStatusService) => {
+    try {
+
+      const user = await User.findOne({_id: params.user}).select('id')
+      if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
+
+      let status = undefined;
+      switch (params.status) {
+        case ForceStatus.PROGRAMMED:
+          status = 'Programado'
+          break;
+        case ForceStatus.PROGRAMMED:
+          status = 'Confirmado'
+          break;
+        case ForceStatus.PROGRAMMED:
+          status = 'Ejecutado'
+          break;
+        case ForceStatus.PROGRAMMED:
+          status = 'Cancelado'
+          break;
+        default:
+          break;
+      }
+
+      if (!status) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+
+      const schedulingStatus = await CourseSchedulingStatus.findOne({name: status}).select('id')
+      const courseScheduling = await CourseScheduling.findOne({_id: params.id})
+      .populate({path: 'schedulingStatus', select: 'id name'})
+      .select('id schedulingStatus')
+      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+
+      if (courseScheduling?.schedulingStatus?.name === 'Confirmado') {
+        await MailMessageLog.delete({
+          notification_source: {
+            $regex: `.*${courseScheduling.id}.*`,
+            $options: 'i'
+          } })
+      }
+
+      await CourseScheduling.findByIdAndUpdate(
+        courseScheduling._id,
+        {
+          forceStatusTracking: {
+            date: moment().format('YYYY-MM-DD'),
+            personWhoForce: user._id,
+          },
+          schedulingStatus: schedulingStatus._id
+        },
+        {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
+        }
+      )
+      return responseUtility.buildResponseSuccess('json')
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -2183,7 +2274,7 @@ class CourseSchedulingService {
       const user = await User.findOne({_id: params.user}).select('id')
       if (!user) return responseUtility.buildResponseFailed('json', null, {error_key: 'user.not_found'})
 
-      const duplicateResponse = await this.duplicateCourseScheduling({
+      const duplicateResponse: any = await this.duplicateCourseScheduling({
         courseSchedulingId: params.id,
         itemsToDuplicate: params.itemsToDuplicate,
         user: user._id

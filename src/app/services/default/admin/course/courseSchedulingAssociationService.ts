@@ -305,7 +305,7 @@ class CourseSchedulingAssociationService {
       if (!courseSchedulingMaster) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.associations.course_scheduling_not_found'})
 
       // console.log('courseSchedulingMaster', courseSchedulingMaster)
-      const duplicateResponse = await courseSchedulingService.duplicateCourseScheduling({
+      const duplicateResponse: any = await courseSchedulingService.duplicateCourseScheduling({
         courseSchedulingId: courseSchedulingMaster._id,
         itemsToDuplicate: [ItemsToDuplicate.COURSE_SCHEDULING, ItemsToDuplicate.COURSE_SCHEDULING_DETAILS]
       })

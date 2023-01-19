@@ -40,8 +40,6 @@ class CourseContentService {
       description: ""
     }
 
-    console.log("Fetch Course sections for " + params.courseID);
-
     // Params for Moodle, fetch the complete list. Filtering only from results.
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
@@ -50,15 +48,12 @@ class CourseContentService {
       "courseid": params.courseID
     };
 
-    console.log("--------------- Fetch contents for CourseID " + params.courseID + ": ---------------------------");
-
     let respMoodle = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
     if (respMoodle.exception) {
       // ERROR al consultar las categorías de curso en Moodle
       console.log("Moodle: ERROR." + JSON.stringify(respMoodle));
     }
     else {
-      console.log(respMoodle);
 
       respMoodle.forEach(element => {
 
