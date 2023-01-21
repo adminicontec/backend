@@ -71,6 +71,10 @@ class LandingDataService {
               // @ts-ignore
               alliance.logoFile = landingService.allianceLogoUrl(alliance)
             }
+            const brochuresLength = alliance?.brochures?.length ? alliance.brochures.length : 0
+            for (let idx = 0; idx < brochuresLength; idx++) {
+              alliance.brochures[idx].fileUrl = landingService.allianceBrochureUrl(alliance.brochures[idx])
+            }
           }
         }
 

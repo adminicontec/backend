@@ -15,7 +15,18 @@ export interface ILandingArticle {
 export type TypeAgreement = 'alliance' | 'agreement'
 export interface IAllianceBrochure {
   unique: string,
-  file: string
+  file: string,
+  fileUrl?: string,
+  name: string
+}
+export interface IAllianceBrochureCreate {
+  allianceUnique: string
+  slug: string
+  brochures: (Omit<IAllianceBrochure, 'unique'> & {
+    unique?: string
+    fileToUpload?: any
+  })[]
+  user?: string
 }
 export interface ILandingAlliance {
   slug?: string

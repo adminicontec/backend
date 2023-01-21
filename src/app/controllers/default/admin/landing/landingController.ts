@@ -16,6 +16,7 @@ import { requestUtility } from "@scnode_core/utilities/requestUtility";
 
 // @import_types Import types
 import {QueryValues} from '@scnode_app/types/default/global/queryTypes'
+import { IAllianceBrochureCreate } from '@scnode_app/types/default/admin/landing/landingTypes';
 // @end
 
 class LandingController {
@@ -162,18 +163,37 @@ class LandingController {
 	 * @returns
 	 */
 	public saveAllianceBrochure = async (req: Request, res: Response) => {
-    const user_id = req.user.sub
-    let params = req.getParameters.all()
-    let files = req.files
+    try {
+      const user_id = req.user.sub
+      let params = req.getParameters.all()
+      let files = req.files
 
-    params['user'] = user_id
+      params['user'] = user_id
 
-    if (files && Object.prototype.hasOwnProperty.call(files, 'brochure')) {
-      params['brochureFile'] = files['brochure']
+      const paramsController: IAllianceBrochureCreate = {
+        allianceUnique: params.allianceUnique,
+        slug: params.slug,
+        brochures: JSON.parse(params.brochures ? params.brochures : '[]'),
+        user: user_id
+      }
+
+      if (!!files) {
+        Object.keys(files).forEach((key) => {
+          const unique = key.split('__')[0]
+          const idx = paramsController.brochures.findIndex((brochure) => brochure.unique === unique)
+          if (idx >= 0) {
+            paramsController.brochures[idx].fileToUpload = files[key]
+          }
+        })
+      }
+
+      const response = await landingService.saveAllianceBrochure(paramsController)
+      return responseUtility.sendResponseFromObject(res, response)
+    } catch(err) {
+      console.log("[landingController] [saveAllianceBrochure] ERROR: ", err)
+      const response = responseUtility.buildResponseFailed('json')
+      return responseUtility.sendResponseFromObject(res, response)
     }
-
-		const response = await landingService.saveAllianceBrochure(params)
-		return responseUtility.sendResponseFromObject(res, response)
   }
 
   /**

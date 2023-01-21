@@ -35,10 +35,12 @@ const LandingSchema = new Schema({
       ],
       webSite: {type: Schema.Types.String},
       contact: {type: Schema.Types.String},
+      observations: {type: Schema.Types.String},
       brochures: [
         {
           unique: {type: Schema.Types.String, require: true},
           file: {type: Schema.Types.String},
+          name: {type: Schema.Types.String}
         }
       ]
     }
