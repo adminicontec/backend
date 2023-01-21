@@ -133,6 +133,19 @@ export interface IReactivateService {
   user: string;
 }
 
+export enum ForceStatus {
+  PROGRAMMED = 'programmed',
+  CONFIRMED = 'confirmed',
+  EXECUTED = 'executed',
+  CANCELLED = 'cancelled',
+}
+
+export interface IForceStatusService {
+  id: string,
+  user: string,
+  status: ForceStatus
+}
+
 export interface IDuplicateService {
   id: string;
   user: string;
