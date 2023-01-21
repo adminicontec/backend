@@ -5,6 +5,7 @@
 import {academicResourceService} from '@scnode_app/services/default/admin/academicContent/academicResource/academicResourceService'
 import {academicResourceDataService} from '@scnode_app/services/default/data/academicContent/academicResource/academicResourceDataService'
 import {questionService} from '@scnode_app/services/default/admin/academicContent/questions/questionService'
+import { academicResourceDataAttemptService } from '@scnode_app/services/default/data/academicContent/academicResource/academicResourceDataAttemptService';
 // @end
 
 // @import utilities
@@ -78,17 +79,10 @@ class AcademicResourceDataSurveyService {
       }
 
       // @INFO: Consultando el intento activo de un usuario para el ejercicio
-      // if (
-      //   params.academicResourceConfig.config.continue_exercise &&
-      //   params.academicResourceConfig.config.continue_exercise === true
-      // ) {
-      //   params.academicResource.config.attempt_active = await academicResourceDataAttemptService.getAttemptActive({
-      //     structure: (params.structure && params.structure._id) ? params.structure._id : null,
-      //     user: params.user._id,
-      //     alliance_id: params.user.alliance_id,
-      //     academic_resource_config: params.academicResourceConfig._id
-      //   })
-      // }
+      params.academicResource.config.attempt_active = await academicResourceDataAttemptService.getAttemptActive({
+        user: params.user._id,
+        academic_resource_config: params.academicResourceConfig._id
+      })
     }
 
     return responseUtility.buildResponseSuccess('json', null, {
