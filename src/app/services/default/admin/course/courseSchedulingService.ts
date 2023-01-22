@@ -353,18 +353,24 @@ class CourseSchedulingService {
           if (register.priceUSD) hasParamsCost = true
 
           if (!hasParamsCost) return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.cost_required' })
-        } else {
+        } else if (params?.hasCost === false) {
           params.priceCOP = 0
           params.priceUSD = 0
         }
-        if (!params.discount || params.discount && params.discount === 0) params.endDiscountDate = null;
+        if (params?.discount === 0) params.endDiscountDate = null;
 
-        if (params.endDate) {
+        if (!!params.endDate) {
           params.endDate = moment(params.endDate + "T23:59:59Z");
         }
-        params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
-        params.endPublicationDate = (params.endPublicationDate) ? moment(params.endPublicationDate + "T23:59:59Z") : null;
-        params.enrollmentDeadline = (params.enrollmentDeadline) ? moment(params.enrollmentDeadline + "T23:59:59Z") : null;
+        if (!!params.endDiscountDate) {
+          params.endDiscountDate = moment(params.endDiscountDate + "T23:59:59Z")
+        }
+        if (!!params.endPublicationDate) {
+          params.endPublicationDate = moment(params.endPublicationDate + "T23:59:59Z")
+        }
+        if (!!params.enrollmentDeadline) {
+          params.enrollmentDeadline = moment(params.enrollmentDeadline + "T23:59:59Z")
+        }
 
         if (params.reprograming && params.reprograming !== "" && params.reprograming !== "undefined") {
           params.logReprograming = this.addReprogramingLog(params.reprograming, register, {identifier: register._id, sourceType: 'course_scheduling'});
