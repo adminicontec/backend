@@ -169,6 +169,17 @@ class LandingService {
         const register: any = await Landing.findOne({ _id: params.id }).lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'landing.not_found' })
 
+        if (params.alliances?.length) {
+          for (let idx = 0; idx < params.alliances?.length; idx++) {
+            if (params.alliances[idx].brochures === undefined) {
+              const savedAlliance = register.alliances?.find((alliance) => alliance.unique === params.alliances[idx].unique)
+              if (savedAlliance) {
+                params.alliances[idx].brochures = savedAlliance.brochures
+              }
+            }
+          }
+        }
+
         const response: any = await Landing.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
           new: true,
