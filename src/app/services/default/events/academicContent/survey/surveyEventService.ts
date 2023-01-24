@@ -102,8 +102,9 @@ class SurveyEventService {
               whereDetailScheduling['_id'] = {$nin: survey_related}
             }
             const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
-            .select('id course startDate endDate sessions')
+            .select('id course startDate endDate sessions teacher')
             .populate({path: 'course', select: 'id name code'})
+            .populate({path: 'teacher', select: 'id email profile'})
             .lean()
             .sort({startDate: 1})
 
@@ -137,7 +138,8 @@ class SurveyEventService {
                         surveyRelatedContent = {
                           name: course.course.name,
                           endDate: lastSession.endDate,
-                          mode_id: enrollment.course_scheduling.schedulingMode._id
+                          mode_id: enrollment.course_scheduling.schedulingMode._id,
+                          teacher: course.teacher,
                         }
                         // Para el log de encuestas
                         course_scheduling = enrollment.course_scheduling._id;
@@ -157,12 +159,14 @@ class SurveyEventService {
             console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
             if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
               if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
+                const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
                 surveyAvailable = true
                 surveyRelated = enrollment.course_scheduling._id
                 surveyRelatedContent = {
                   name: enrollment.course_scheduling.program.name,
                   endDate: enrollment.course_scheduling.endDate,
-                  mode_id: enrollment.course_scheduling.schedulingMode._id
+                  mode_id: enrollment.course_scheduling.schedulingMode._id,
+                  teacher,
                 }
                 // Para el log de encuestas
                 course_scheduling = enrollment.course_scheduling._id;
@@ -230,6 +234,18 @@ class SurveyEventService {
       console.log(error)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  private getTeacherInfoFromCourseScheduling = async (courseSchedulingId: string) => {
+    const courseSchedulingDetails = await CourseSchedulingDetails.find({ course_scheduling: courseSchedulingId })
+    .select('id teacher')
+    .populate({path: 'teacher', select: 'id email profile'})
+    .lean()
+    .sort({endDate: -1})
+    if (courseSchedulingDetails?.length) {
+      return courseSchedulingDetails[0].teacher
+    }
+    return {}
   }
 }
 
