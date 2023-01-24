@@ -160,6 +160,23 @@ class CourseSchedulingController {
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
+	public forceStatusService = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await courseSchedulingService.forceStatusService(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
 	public duplicateService = async (req: Request, res: Response) => {
     const user_id = req.user.sub
     let params = req.getParameters.all()

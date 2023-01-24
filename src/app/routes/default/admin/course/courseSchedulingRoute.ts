@@ -32,6 +32,7 @@ class CourseSchedulingRoute {
     routerUtility.get(app, _route, '/generate-report', this.instanceController.generateReport, [], ['auth'])
 
     routerUtility.post(app, _route, '/:id/reactivate-service', this.instanceController.reactivateService, [], ['auth'])
+    routerUtility.post(app, _route, '/:id/force-status-service', this.instanceController.forceStatusService, [], ['auth'])
     routerUtility.post(app, _route, '/:id/duplicate-service', this.instanceController.duplicateService, [], ['auth'])
 
     routerUtility.post(app, _route, '/create', this.instanceController.create, [{ middleware: 'course-scheduling', method: 'create', dir: 'admin/course' }], ['auth'])

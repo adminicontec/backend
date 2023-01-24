@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+import { v4 as uuidv4 } from 'uuid';
 // @end
 
 // @import services
@@ -36,7 +37,9 @@ import {
   ILandingReferenceDelete,
   ILandingForum,
   ILandingAlliance,
-  ILandingAllianceDelete
+  ILandingAllianceDelete,
+  IAllianceBrochure,
+  IAllianceBrochureCreate
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -45,6 +48,7 @@ class LandingService {
   private default_cover_article_path = 'landings/article'
   private default_cover_training_path = 'landings/training'
   private default_cover_alliance_path = 'landings/alliance'
+  private default_cover_alliance_brochure_path = 'landings/allianceBrochure'
   private default_cover_scheduling_path = 'landings/scheduling'
   private default_cover_descriptive_training_path = 'landings/descriptiveTraining'
   private default_cover_our_clients_path = 'landings/ourClients'
@@ -164,6 +168,17 @@ class LandingService {
       if (params.id) {
         const register: any = await Landing.findOne({ _id: params.id }).lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'landing.not_found' })
+
+        if (params.alliances?.length) {
+          for (let idx = 0; idx < params.alliances?.length; idx++) {
+            if (params.alliances[idx].brochures === undefined) {
+              const savedAlliance = register.alliances?.find((alliance) => alliance.unique === params.alliances[idx].unique)
+              if (savedAlliance) {
+                params.alliances[idx].brochures = savedAlliance.brochures
+              }
+            }
+          }
+        }
 
         const response: any = await Landing.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -312,45 +327,39 @@ class LandingService {
    * @param params
    * @returns
    */
-  public saveAllianceBrochure = async (params: ILandingAlliance) => {
+  public saveAllianceBrochure = async ({ slug, allianceUnique, brochures }: IAllianceBrochureCreate) => {
 
     try {
-      // TODO: Agregar funcionalidad de guardar brochure de alianza
-      // let alliances: Array<ILandingAlliance> = []
-      // const exists = await Landing.findOne({ slug: params.slug }).select('id alliances').lean()
-      // if (exists) {
-      //   alliances = exists.alliances || []
-      // }
+      let alliances: Array<ILandingAlliance> = []
+      const exists = await Landing.findOne({ slug: slug }).select('id alliances').lean()
+      if (exists) {
+        alliances = exists.alliances || []
+      }
 
-      // if (params.programs !== undefined && typeof params.programs === 'string') {
-      //   if (params.programs === '') {
-      //     params.programs = []
-      //   } else {
-      //     params.programs = params.programs.trim().split(',')
-      //   }
-      // }
+      const alliance = alliances.find((a) => a.unique === allianceUnique)
 
-      // // @INFO: Cargando imagen al servidor
-      // if (params.logoFile && params.logoFile !== '{}') {
-      //   const defaulPath = this.default_cover_alliance_path
-      //   const response_upload: any = await uploadService.uploadFile(params.logoFile, defaulPath)
-      //   if (response_upload.status === 'error') return response_upload
-      //   if (response_upload.hasOwnProperty('name')) params.logoUrl = response_upload.name
-      // }
+      const newBrochures: IAllianceBrochure[] = []
+      for (const brochure of brochures) {
+        if (brochure.fileToUpload && brochure.fileToUpload !== '{}') {
+          const defaulPath = this.default_cover_alliance_brochure_path
+          const response_upload: any = await uploadService.uploadFile(brochure.fileToUpload, defaulPath)
+          if (response_upload.status === 'error') return response_upload
+          if (response_upload.hasOwnProperty('name')) brochure.file = response_upload.name
+        }
+        newBrochures.push({
+          file: brochure.file,
+          name: brochure.name,
+          unique: brochure.unique ? brochure.unique : uuidv4()
+        })
+      }
 
-      // let allianceExists = alliances.findIndex((t) => t.unique === params.unique)
-      // if (allianceExists !== -1) {
-      //   alliances[allianceExists] = {...params}
-      // } else {
-      //   alliances.push({
-      //     ...params
-      //   })
-      // }
+      alliance.brochures = [...newBrochures]
 
-      // return await this.insertOrUpdate({
-      //   slug: params.slug,
-      //   alliances
-      // })
+      return await this.insertOrUpdate({
+        slug: slug,
+        alliances
+      })
+
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -728,6 +737,16 @@ class LandingService {
    public allianceLogoUrl = ({ logoUrl }) => {
     return logoUrl && logoUrl !== ''
     ? `${customs['uploads']}/${this.default_cover_alliance_path}/${logoUrl}`
+    : null
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un articulo a la URL donde se aloja el recurso
+   * @param {config} Objeto con data
+   */
+   public allianceBrochureUrl = ({ file }) => {
+    return file && file !== ''
+    ? `${customs['uploads']}/${this.default_cover_alliance_brochure_path}/${file}`
     : null
   }
 

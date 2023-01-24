@@ -23,6 +23,8 @@ const LandingSchema = new Schema({
         type: Schema.Types.String,
         enum: ['alliance','agreement'],
       },
+      agreementDescription: { type: Schema.Types.String },
+      sectional: { type: Schema.Types.String },
       logoUrl: {type: Schema.Types.String},
       name: {type: Schema.Types.String},
       country: {type: Schema.Types.String},
@@ -33,10 +35,12 @@ const LandingSchema = new Schema({
       ],
       webSite: {type: Schema.Types.String},
       contact: {type: Schema.Types.String},
+      observations: {type: Schema.Types.String},
       brochures: [
         {
           unique: {type: Schema.Types.String, require: true},
           file: {type: Schema.Types.String},
+          name: {type: Schema.Types.String}
         }
       ]
     }

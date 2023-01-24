@@ -214,7 +214,7 @@ const CourseSchedulingSchema = new Schema({
     }],
   logistics_supply: {
     type: Schema.Types.String,
-    enum: ['business', 'icontec']
+    enum: ['business', 'icontec', 'not_applicable']
   },
   certificate_address: {type: Schema.Types.String},
   // Material delivery
@@ -277,6 +277,15 @@ const CourseSchedulingSchema = new Schema({
     slug: {
       type: Schema.Types.String
     }
+  },
+  forceStatusTracking: {
+    date: {
+      type: Schema.Types.Date,
+    },
+    personWhoForce: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
   },
   cancelationTracking: {
     date: {
