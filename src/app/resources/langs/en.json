@@ -425,6 +425,9 @@
       "insertOrUpdate": {
         "already_exists": "Ya existe una matricula para el estudiante :username del curso :coursename",
         "error": ":errorMessage"
+      },
+      "timezone_not_allowed": {
+        "error": "La zona horaria del usuario no es permitida, las zonas permitidas son :timezones"
       }
     },
     "moodle_enrollment": {
