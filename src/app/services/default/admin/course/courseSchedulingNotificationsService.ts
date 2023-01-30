@@ -6,6 +6,7 @@ import moment from 'moment';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 // @end
 
 // @import utilities
@@ -22,6 +23,7 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 class CourseSchedulingNotificationsService {
@@ -46,7 +48,7 @@ class CourseSchedulingNotificationsService {
     syncupSessionsInMoodle?: CourseSchedulingDetailsSync
   ) => {
     try {
-      let email_to_notificate: { email: string, name: string }[] = []
+      let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
 
       if (populate) {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
@@ -70,29 +72,33 @@ class CourseSchedulingNotificationsService {
       }
 
       // @INFO Notificar al programador
-      const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
+      const serviceScheduler: IUser = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
+      serviceScheduler.profile.timezone
       if (serviceScheduler) {
         email_to_notificate.push({
           email: serviceScheduler.email,
-          name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`
+          name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`,
+          timezone: serviceScheduler?.profile?.timezone,
         })
       }
 
       // @INFO Notificar al ejecutivo de cuenta
-      const accountExecutive = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
+      const accountExecutive: IUser = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
       if (accountExecutive) {
         email_to_notificate.push({
           email: accountExecutive.email,
-          name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`
+          name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`,
+          timezone: accountExecutive?.profile?.timezone,
         })
       }
 
       // @INFO: Solo enviar al auxiliar logístico
-      const logisticAssistant = courseScheduling.material_assistant;
+      const logisticAssistant: IUser = courseScheduling.material_assistant;
       if (logisticAssistant && logisticAssistant.email) {
         email_to_notificate.push({
           email: logisticAssistant.email,
-          name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`
+          name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`,
+          timezone: logisticAssistant?.profile?.timezone,
         });
       }
 
@@ -156,6 +162,7 @@ class CourseSchedulingNotificationsService {
 
         let mail: any = undefined;
         for await (let emailNotificate of email_to_notificate) {
+          // params.changes = courseSchedulingDetailsService.
           mail = await mailService.sendMail({
             emails: [emailNotificate.email],
             mailOptions: {

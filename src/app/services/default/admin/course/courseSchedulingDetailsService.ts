@@ -28,6 +28,7 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { TIME_ZONES_WITH_OFFSET, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 class CourseSchedulingDetailsService {
@@ -504,7 +505,7 @@ class CourseSchedulingDetailsService {
     }
   }
 
-  private validateChanges = async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
+  private validateChanges = async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails, timezone: TimeZone = TimeZone.GMT_5) => {
     const changes = []
 
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
@@ -552,7 +553,7 @@ class CourseSchedulingDetailsService {
         let schedule = ''
         if (session.startDate && session.duration) {
           let endDate = moment(session.startDate).add(session.duration, 'seconds')
-          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+          schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
         message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
@@ -576,7 +577,7 @@ class CourseSchedulingDetailsService {
         let schedule = ''
         if (session.startDate && session.duration) {
           let endDate = moment(session.startDate).add(session.duration, 'seconds')
-          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+          schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
         message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
