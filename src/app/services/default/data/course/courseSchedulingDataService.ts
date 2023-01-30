@@ -222,6 +222,8 @@ class CourseSchedulingDataService {
               start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
               duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
               schedule: schedule,
+              startDate: session.startDate,
+              durationOnSeconds: session.duration,
             }
             let item = {}
             // if (first_session) {

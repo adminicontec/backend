@@ -1122,6 +1122,13 @@ class ErrorResponse {
             "code": 400
           }
         },
+        "timezone_not_allowed": {
+          "error": {
+            "message": i18nUtility.__("app_error_messages.enrollment.timezone_not_allowed.error"),
+            "status_code": "enrollment_timezone_not_allowed",
+            "code": 400
+          }
+        }
       },
       "moodle_enrollment": {
         "not_found": {

@@ -2,6 +2,22 @@
 // @end
 
 // @add your types
+export enum TimeZone {
+  GMT_4 = 'GMT-4',
+  GMT_5 = 'GMT-5',
+  GMT_6 = 'GMT-6',
+  GMT_7 = 'GMT-7',
+  GMT_8 = 'GMT-8',
+}
+
+export const TIME_ZONES = [
+  TimeZone.GMT_4,
+  TimeZone.GMT_5,
+  TimeZone.GMT_6,
+  TimeZone.GMT_7,
+  TimeZone.GMT_8
+]
+
 export interface IUser {
   moodle?: 'off' | 'on',
   username?: string, // Nombre de usuario que es utilizado para iniciar sesión

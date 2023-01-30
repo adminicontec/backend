@@ -36,7 +36,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
-import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
@@ -255,6 +255,14 @@ class EnrollmentService {
       }
     }
 
+    if (params.timezone) {
+      if (!TIME_ZONES.includes(params.timezone)) {
+        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'enrollment.timezone_not_allowed.error', params: { timezones: TIME_ZONES.join(', ') } } })
+      }
+    } else {
+      delete params.timezone
+    }
+
 
     try {
       if (params.id) {
@@ -347,6 +355,7 @@ class EnrollmentService {
               currentPosition: params.job,
               educationalLevel: params.educationalLevel,
               origen: params.origin,
+              timezone: params.timezone,
             },
             sendEmail: true
           }
@@ -517,6 +526,7 @@ class EnrollmentService {
       }
 
     } catch (e) {
+      console.log('[EnrollmentService] [insertOrUpdate] ERROR: ', e)
       return responseUtility.buildResponseFailed('json', null, {message: e?.message || 'Se ha presentado un error inesperado'})
     }
   }
