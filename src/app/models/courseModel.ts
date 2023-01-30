@@ -38,6 +38,10 @@ const CourseSchema = new Schema({
   alternative_title: {
     type: Schema.Types.String
   },
+  is_alternative_title_active: {
+    type: Schema.Types.Boolean,
+    default: false,
+  },
   short_description: {
     type: Schema.Types.Mixed,
   },
