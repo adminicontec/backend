@@ -702,14 +702,21 @@ class CourseSchedulingService {
 
   public updateCourseSchedulingEndDate = async (courseSchedulingId: string) => {
     try {
+      const courseScheduling = await CourseScheduling.findOne({_id: courseSchedulingId})
+      .select('id schedulingMode')
+      .populate({path: 'schedulingMode', select: 'id name'})
+
       const courseSchedulingDetails = await CourseSchedulingDetails.find({course_scheduling: courseSchedulingId})
       .select('id startDate endDate')
       .sort({endDate: -1})
       .limit(1)
       if (courseSchedulingDetails && courseSchedulingDetails[0]) {
-        const endDate = courseSchedulingDetails[0].endDate.toISOString().split('T')[0]
+        const endDate = moment(courseSchedulingDetails[0].endDate.toISOString().split('T')[0])
+        if (['Presencial', 'En linea'].includes(courseScheduling?.schedulingMode?.name)) {
+          endDate.add(15, 'days')
+        }
         const response: any = await CourseScheduling.findByIdAndUpdate(courseSchedulingId, {
-          endDate: moment(moment(endDate).format('YYYY-MM-DD')+"T23:59:59Z")
+          endDate: moment(endDate.format('YYYY-MM-DD')+"T23:59:59Z")
         }, {
           useFindAndModify: false,
           new: true,
