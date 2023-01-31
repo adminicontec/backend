@@ -22,8 +22,9 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 // @import types
 import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
-import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 // @end
 
 class CourseSchedulingNotificationsService {
@@ -44,10 +45,12 @@ class CourseSchedulingNotificationsService {
     courseScheduling: any,
     type: 'started' | 'cancel' | 'modify' = 'started',
     populate?: boolean,
-    changes?: any,
+    changesFn?: TCourseSchedulingDetailsModificationFn | TCourseSchedulingModificationFn,
     syncupSessionsInMoodle?: CourseSchedulingDetailsSync
   ) => {
     try {
+      const changes = await changesFn()
+
       let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
 
       if (populate) {
@@ -162,7 +165,7 @@ class CourseSchedulingNotificationsService {
 
         let mail: any = undefined;
         for await (let emailNotificate of email_to_notificate) {
-          // params.changes = courseSchedulingDetailsService.
+          params.changes = await changesFn(emailNotificate.timezone)
           mail = await mailService.sendMail({
             emails: [emailNotificate.email],
             mailOptions: {
@@ -502,11 +505,11 @@ class CourseSchedulingNotificationsService {
       .populate({ path: 'schedulingType', select: 'id name' })
       .populate({ path: 'schedulingStatus', select: 'id name' })
       .populate({ path: 'regional', select: 'id name moodle_id' })
-      .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
-      .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name profile.timezone email' })
+      .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name profile.timezone email' })
       .populate({ path: 'city', select: 'id name' })
       .populate({ path: 'country', select: 'id name' })
-      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name profile.timezone email' })
       .populate({ path: 'client', select: 'id name' })
       .lean();
 

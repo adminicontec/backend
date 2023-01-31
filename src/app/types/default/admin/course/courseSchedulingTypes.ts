@@ -1,7 +1,15 @@
+import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @import types
 // @end
 
 // @add your types
+export interface ICourseSchedulingModification {
+  message: string;
+  type?: string;
+}
+
+export type TCourseSchedulingModificationFn = (timezone?: TimeZone) => Promise<ICourseSchedulingModification[]>
+
 export interface ICourseSchedulingSession {
   startDate: string // Fecha de inicio
   duration: number // Duración

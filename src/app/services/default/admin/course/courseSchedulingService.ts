@@ -38,6 +38,7 @@ import {
   IChangeSchedulingModular,
   ICourseScheduling,
   ICourseSchedulingDelete,
+  ICourseSchedulingModification,
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
   ICourseSchedulingReportData,
@@ -46,11 +47,14 @@ import {
   IForceStatusService,
   IReactivateService,
   ItemsToDuplicate,
-  ReprogramingLabels
+  ReprogramingLabels,
+  TCourseSchedulingModificationFn
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
+import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
+import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 class CourseSchedulingService {
@@ -387,11 +391,11 @@ class CourseSchedulingService {
         await CourseSchedulingType.populate(response, { path: 'schedulingType', select: 'id name' })
         await CourseSchedulingStatus.populate(response, { path: 'schedulingStatus', select: 'id name' })
         await Regional.populate(response, { path: 'regional', select: 'id name moodle_id' })
-        await User.populate(response, { path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
-        await User.populate(response, { path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
+        await User.populate(response, { path: 'account_executive', select: 'id profile.first_name profile.last_name email profile.timezone' })
+        await User.populate(response, { path: 'material_assistant', select: 'id profile.first_name profile.last_name email profile.timezone' })
         await City.populate(response, { path: 'city', select: 'id name' })
         await Country.populate(response, { path: 'country', select: 'id name' })
-        await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+        await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email profile.timezone' })
         await Company.populate(response, { path: 'client', select: 'id name' })
         await User.populate(response, {path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
@@ -567,11 +571,11 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingType', select: 'id name' })
           .populate({ path: 'schedulingStatus', select: 'id name' })
           .populate({ path: 'regional', select: 'id name moodle_id' })
-          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
-          .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
+          .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email profile.timezone' })
+          .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email profile.timezone' })
           .populate({ path: 'city', select: 'id name' })
           .populate({ path: 'country', select: 'id name' })
-          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+          .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email profile.timezone' })
           .populate({ path: 'client', select: 'id name' })
           .populate({path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'})
           // .populate({path: 'course', select: 'id name'})
@@ -1090,8 +1094,8 @@ class CourseSchedulingService {
     }
   }
 
-  private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling) => {
-    const changes = []
+  private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling): TCourseSchedulingModificationFn => async (timezone: TimeZone = TimeZone.GMT_5) => {
+    const changes: ICourseSchedulingModification[] = []
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
         message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
@@ -1148,16 +1152,22 @@ class CourseSchedulingService {
     }
   }
 
-  public sendServiceSchedulingUpdated = async (courseScheduling, changes, course?: { course: any, courseSchedulingDetail: any, syncupSessionsInMoodle?: CourseSchedulingDetailsSync }) => {
+  public sendServiceSchedulingUpdated = async (
+    courseScheduling,
+    changesFn: TCourseSchedulingDetailsModificationFn | TCourseSchedulingModificationFn,
+    course?: { course: any, courseSchedulingDetail: any, syncupSessionsInMoodle?: CourseSchedulingDetailsSync },
+  ) => {
     await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(
       typeof courseScheduling === 'string' ? courseScheduling : courseScheduling?._id,
       'modify',
       true,
-      changes,
+      changesFn,
       course?.syncupSessionsInMoodle
     );
 
-    const _changes = changes.filter(val => !val.type || val.type !== 'teacher')
+    const changes = await changesFn()
+
+    const _changes = changes.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
     if (_changes.length > 0) {
       let students_to_notificate = []
       let teachers_to_notificate = []

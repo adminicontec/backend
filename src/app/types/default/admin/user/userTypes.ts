@@ -3,6 +3,7 @@
 
 // @add your types
 export enum TimeZone {
+  GMT_3 = 'GMT-3',
   GMT_4 = 'GMT-4',
   GMT_5 = 'GMT-5',
   GMT_6 = 'GMT-6',
@@ -11,6 +12,7 @@ export enum TimeZone {
 }
 
 export const TIME_ZONES = [
+  TimeZone.GMT_3,
   TimeZone.GMT_4,
   TimeZone.GMT_5,
   TimeZone.GMT_6,
@@ -19,6 +21,7 @@ export const TIME_ZONES = [
 ]
 
 export const TIME_ZONES_WITH_OFFSET = {
+  [TimeZone.GMT_3]: "-03:00",
   [TimeZone.GMT_4]: "-04:00",
   [TimeZone.GMT_5]: "-05:00",
   [TimeZone.GMT_6]: "-06:00",

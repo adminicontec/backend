@@ -26,7 +26,7 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+import { CourseSchedulingDetailsModification, ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, ICourseSchedulingDetailsModification, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { TIME_ZONES_WITH_OFFSET, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
@@ -151,7 +151,8 @@ class CourseSchedulingDetailsService {
           .populate({ path: 'course', select: 'id name code' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
-        const changes = await this.validateChanges(params, register)
+        const changesFn = await this.validateChanges(params, register)
+        const changes = await changesFn()
 
         const response: any = await CourseSchedulingDetails.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -348,11 +349,9 @@ class CourseSchedulingDetailsService {
           }
 
           if (changes.length > 0) {
-            // @INFO Notificar al auxiliar logisto del servicio
-            // await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
             await courseSchedulingService.sendServiceSchedulingUpdated(
               response.course_scheduling,
-              changes, {
+              changesFn, {
               course: response.course,
               courseSchedulingDetail: register,
               syncupSessionsInMoodle
@@ -505,12 +504,13 @@ class CourseSchedulingDetailsService {
     }
   }
 
-  private validateChanges = async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails, timezone: TimeZone = TimeZone.GMT_5) => {
-    const changes = []
+  private validateChanges =
+  async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => async (timezone: TimeZone = TimeZone.GMT_5) => {
+    const changes: ICourseSchedulingDetailsModification[] = []
 
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        type: 'startDate',
+        type: CourseSchedulingDetailsModification.START_DATE,
         message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
@@ -520,13 +520,13 @@ class CourseSchedulingDetailsService {
       const endDateFormated = endDate.split('T')
       if (endDateFormated[0] !== registerFormated[0])
       changes.push({
-        type: 'endDate',
+        type: CourseSchedulingDetailsModification.END_DATE,
         message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
       changes.push({
-        type: 'duration',
+        type: CourseSchedulingDetailsModification.DURATION,
         message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
       })
     }
@@ -593,7 +593,7 @@ class CourseSchedulingDetailsService {
       //   }
       // })
       changes.push({
-        type: 'sessions',
+        type: CourseSchedulingDetailsModification.SESSIONS,
         message
       })
     }
@@ -603,7 +603,7 @@ class CourseSchedulingDetailsService {
         const newTeacher: any = await User.findOne({_id: params.teacher}).select('id profile.first_name profile.last_name')
         if (newTeacher) {
           changes.push({
-            type: 'teacher',
+            type: CourseSchedulingDetailsModification.TEACHER,
             message: `<div>El docente ${register.teacher?.profile?.first_name} ${register.teacher?.profile?.last_name} del curso ${register.course.name} fue cambiado por ${newTeacher.profile?.first_name} ${newTeacher.profile?.last_name}</div>`
           })
         }
