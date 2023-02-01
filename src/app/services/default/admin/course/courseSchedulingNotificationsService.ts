@@ -25,7 +25,10 @@ import { IStudentExamNotification } from '@scnode_app/types/default/admin/notifi
 import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
+import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
+
+const DATE_FORMAT = 'YYYY-MM-DD'
 
 class CourseSchedulingNotificationsService {
 
@@ -49,8 +52,6 @@ class CourseSchedulingNotificationsService {
     syncupSessionsInMoodle?: CourseSchedulingDetailsSync
   ) => {
     try {
-      const changes = await changesFn()
-
       let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
 
       if (populate) {
@@ -138,7 +139,7 @@ class CourseSchedulingNotificationsService {
         }
         const params = {
           mailer: customs['mailer'],
-          today: moment.utc().format('YYYY-MM-DD'),
+          today: moment.utc().format(DATE_FORMAT),
           notification_source: `scheduling_notification_${type}_assistant_${courseScheduling._id}`,
           // Información
           assistant_name: `${courseScheduling.material_assistant.profile.first_name} ${courseScheduling.material_assistant.profile.last_name}`,
@@ -148,11 +149,11 @@ class CourseSchedulingNotificationsService {
           modality: courseScheduling.schedulingMode.name,
           modules: modules,
           duration: this.formatSecondsToHours(courseScheduling.duration),
-          startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-          endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+          startDate: moment.utc(courseScheduling.startDate).format(DATE_FORMAT),
+          endDate: moment.utc(courseScheduling.endDate).format(DATE_FORMAT),
           observations: courseScheduling.observations,
           exam: exam?.hasExam ? 'SI' : 'NO',
-          changes,
+          changes: undefined,
           syncupSessionsInMoodle: syncupSessionsInMoodleMessage,
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
@@ -165,7 +166,9 @@ class CourseSchedulingNotificationsService {
 
         let mail: any = undefined;
         for await (let emailNotificate of email_to_notificate) {
-          params.changes = await changesFn(emailNotificate.timezone)
+          if (changesFn) {
+            params.changes = await changesFn(emailNotificate.timezone)
+          }
           mail = await mailService.sendMail({
             emails: [emailNotificate.email],
             mailOptions: {
@@ -591,6 +594,7 @@ class CourseSchedulingNotificationsService {
     return response;
   }
 
+  private getTimezoneOffset = (timezone: TimeZone = TimeZone.GMT_5) => TIME_ZONES_WITH_OFFSET[timezone]
 
 }
 

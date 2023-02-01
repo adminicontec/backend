@@ -33,15 +33,18 @@ import { Attached, City, Company, Country, Course, CourseScheduling, CourseSched
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
   CourseSchedulingDetailsSync,
+  CourseSchedulingUpdateNotification,
   ForceStatus,
   IChangeSchedulingElement,
   IChangeSchedulingModular,
   ICourseScheduling,
   ICourseSchedulingDelete,
+  ICourseSchedulingEmailDestination,
   ICourseSchedulingModification,
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
   ICourseSchedulingReportData,
+  ICourseSchedulingUpdatedNotificationParams,
   IDuplicateCourseScheduling,
   IDuplicateService,
   IForceStatusService,
@@ -54,7 +57,7 @@ import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService
 import { attachedService } from "../attached/attachedService";
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
-import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 class CourseSchedulingService {
@@ -322,7 +325,8 @@ class CourseSchedulingService {
           .lean()
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
         const prevSchedulingStatus = (register && register.schedulingStatus && register.schedulingStatus.name) ? register.schedulingStatus.name : null
-        const changes = this.validateChanges(params, register)
+        const changesFn = this.validateChanges(params, register)
+        const changes = await changesFn()
 
         let paramsStatus: any = undefined;
         if (params.schedulingStatus) {
@@ -411,7 +415,7 @@ class CourseSchedulingService {
           }
           if (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado' && prevSchedulingStatus === 'Confirmado') {
             if (changes.length > 0) {
-              await this.sendServiceSchedulingUpdated(response, changes);
+              await this.sendServiceSchedulingUpdated(response, changesFn);
             }
             visibleAtMoodle = 1;
           }
@@ -1098,12 +1102,12 @@ class CourseSchedulingService {
     const changes: ICourseSchedulingModification[] = []
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
+        message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
-        message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.endDate}</div>`
+        message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.endDate}</div>`
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -1169,16 +1173,19 @@ class CourseSchedulingService {
 
     const _changes = changes.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
     if (_changes.length > 0) {
-      let students_to_notificate = []
-      let teachers_to_notificate = []
+      let students_to_notificate: ICourseSchedulingEmailDestination[] = []
+      let teachers_to_notificate: ICourseSchedulingEmailDestination[] = []
       const userEnrolled = await Enrollment.find({
         courseID: courseScheduling.moodle_id
       }).select('id user')
-        .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+        .populate({ path: 'user', select: 'id email profile.first_name profile.last_name profile.timezone' })
         .lean()
 
       for await (const enrolled of userEnrolled) {
-        students_to_notificate.push(enrolled.user.email.toString())
+        students_to_notificate.push({
+          email: enrolled.user.email.toString(),
+          timezone: enrolled?.user?.profile?.timezone,
+        })
       }
 
       const where: any = {
@@ -1191,12 +1198,16 @@ class CourseSchedulingService {
 
       const courses = await CourseSchedulingDetails.find(where).select('id startDate endDate duration course sessions teacher')
         .populate({ path: 'course', select: 'id name code' })
-        .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+        .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name profile.timezone' })
         .lean()
 
       for await (const course of courses) {
-        if (!teachers_to_notificate.includes(course.teacher.email.toString())) {
-          teachers_to_notificate.push(course.teacher.email.toString())
+        const teacherEmail = course?.teacher?.email?.toString()
+        if (teacherEmail && !teachers_to_notificate.some((teacher) => teacher.email === teacherEmail)) {
+          teachers_to_notificate.push({
+            email: teacherEmail,
+            timezone: course?.teacher?.profile?.timezone,
+          })
         }
       }
 
@@ -1207,8 +1218,8 @@ class CourseSchedulingService {
           program_name: courseScheduling.program.name,
           course_name: course?.course?.name || undefined,
           notification_source: `course_updated_${courseScheduling._id}`,
-          changes: _changes,
-          type: 'student'
+          changesFn,
+          type: CourseSchedulingUpdateNotification.STUDENT
         })
       }
       if (teachers_to_notificate.length > 0) {
@@ -1218,33 +1229,51 @@ class CourseSchedulingService {
           program_name: courseScheduling.program.name,
           course_name: course?.course?.name || undefined,
           notification_source: `course_updated_${courseScheduling._id}`,
-          changes: _changes,
-          type: 'teacher'
+          changesFn,
+          type: CourseSchedulingUpdateNotification.TEACHER
         })
       }
     }
   }
 
-  public serviceSchedulingUpdated = async (emails: Array<string>, paramsTemplate: any) => {
+  public serviceSchedulingUpdated = async (receivers: ICourseSchedulingEmailDestination[], paramsTemplate: ICourseSchedulingUpdatedNotificationParams) => {
     try {
       let path_template = 'course/schedulingUpdate'
-      if (paramsTemplate.type === 'teacher') {
+      if (paramsTemplate.type === CourseSchedulingUpdateNotification.TEACHER) {
         path_template = 'course/schedulingUpdateTeacher'
       }
 
-      const mail = await mailService.sendMail({
-        emails,
-        mailOptions: {
-          subject: i18nUtility.__('mailer.scheduling_update.subject'),
-          html_template: {
-            path_layout: 'icontec',
-            path_template: path_template,
-            params: { ...paramsTemplate }
-          },
-          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
-        },
-        notification_source: paramsTemplate.notification_source
+      const changesFn = paramsTemplate.changesFn;
+
+      const emailsByTimezone = {};
+      receivers.forEach((receiver) => {
+        const timezone = receiver?.timezone ? receiver?.timezone : TimeZone.GMT_5
+        if (emailsByTimezone[timezone]) {
+          emailsByTimezone[timezone].push(receiver.email)
+        } else {
+          emailsByTimezone[timezone] = [receiver.email]
+        }
       })
+
+      const timezoneKeys = Object.keys(emailsByTimezone) as TimeZone[]
+      let mail = undefined;
+      for (let timezone of timezoneKeys) {
+        paramsTemplate.changes = await changesFn(timezone);
+        const emails = emailsByTimezone[timezone];
+        mail = await mailService.sendMail({
+          emails,
+          mailOptions: {
+            subject: i18nUtility.__('mailer.scheduling_update.subject'),
+            html_template: {
+              path_layout: 'icontec',
+              path_template: path_template,
+              params: { ...paramsTemplate }
+            },
+            amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+          },
+          notification_source: paramsTemplate.notification_source
+        })
+      }
       return mail
 
     } catch (e) {

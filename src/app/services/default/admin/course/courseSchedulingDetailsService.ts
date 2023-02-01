@@ -511,7 +511,7 @@ class CourseSchedulingDetailsService {
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
         type: CourseSchedulingDetailsModification.START_DATE,
-        message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
+        message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     let endDate = (typeof params.endDate === 'string') ? `${params.endDate}T00:00:00.000Z` : params.endDate.toISOString()
@@ -521,7 +521,7 @@ class CourseSchedulingDetailsService {
       if (endDateFormated[0] !== registerFormated[0])
       changes.push({
         type: CourseSchedulingDetailsModification.END_DATE,
-        message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
+        message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -556,7 +556,7 @@ class CourseSchedulingDetailsService {
           schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
-        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${moment.utc(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('DD/MM/YYYY')}</td>`;
         message += `        <td>${schedule}</td>`;
         message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
         duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
@@ -580,7 +580,7 @@ class CourseSchedulingDetailsService {
           schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
-        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${moment.utc(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('DD/MM/YYYY')}</td>`;
         message += `        <td>${schedule}</td>`;
         message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
         message += `      </tr>`;
