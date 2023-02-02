@@ -879,12 +879,13 @@ class CourseSchedulingService {
       course_scheduling: courseScheduling._id
     }).select('id startDate endDate duration course sessions teacher')
       .populate({ path: 'course', select: 'id name code' })
-      .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name' })
+      .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name profile.timezone' })
       .lean()
 
     let notificationsByTeacher = {}
 
     for await (const course of courses) {
+      const timezone: TimeZone = course?.teacher?.profile?.timezone ? course?.teacher?.profile?.timezone : TimeZone.GMT_5
       if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
         let isBusiness = false
         let modality = undefined;
@@ -893,6 +894,7 @@ class CourseSchedulingService {
         let address = undefined;
         let classroom = undefined;
         let city = undefined;
+
         if (courseScheduling?.schedulingType?.name === 'Empresarial') {
           isBusiness = true;
         }
@@ -959,9 +961,6 @@ class CourseSchedulingService {
       if (course.sessions.length === 0) {
 
         let item = {
-          // client: (courseScheduling.client) ? courseScheduling.client : '-',
-          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '-',
-          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '-',
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
           info: {
@@ -976,25 +975,13 @@ class CourseSchedulingService {
         }
       } else {
         let item = {
-          // client: (courseScheduling.client) ? courseScheduling.client : '',
-          // city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
-          // scheduling_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
           sessions: []
         }
         course.sessions.map((session) => {
-          let schedule = ''
-          if (session.startDate && session.duration) {
-            let endDate = moment(session.startDate).add(session.duration, 'seconds')
-            schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
-          }
-          let session_data = {
-            start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
-            duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
-            schedule: schedule,
-          }
-          item.sessions.push({ ...session_data })
+          const sessionData = courseSchedulingDetailsService.formatSessionNotificationInfo(session, timezone)
+          item.sessions.push({ ...sessionData })
         })
         if (notificationsByTeacher[course.teacher._id]) {
           notificationsByTeacher[course.teacher._id].courses.push(item)

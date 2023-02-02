@@ -126,10 +126,10 @@ class EnrollmentService {
                   email: newUserEmail,
                   firstname: element['Nombres'].trim(),
                   lastname: element['Apellidos'].trim(),
-                  phoneNumber: (element['N° Celular']) ? element['N° Celular'].toString().replace(/ /g, "").trim() : '',
+                  phoneNumber: (element['N° Celular (opcional)']) ? element['N° Celular (opcional)'].toString().replace(/ /g, "").trim() : '',
                   city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
                   country: (element['País']) ? element['País'].trim() : null,
-                  timezone: (element['Zona horaria']) ? element['Zona horaria'].trim() : null,
+                  timezone: (element['Zona horaria (opcional)']) ? element['Zona horaria (opcional)'].split(' - ')[0].trim() : null,
                   emailAlt: element['Correo Alt'], // TODO: revisar si esto hace algo
                   regional: element['Regional'],
                   birthdate: dob.format('YYYY-MM-DD'),

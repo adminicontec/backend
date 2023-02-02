@@ -31,6 +31,9 @@ import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/cou
 import { TIME_ZONES_WITH_OFFSET, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
+const SESSION_HOUR_FORMAT = 'hh:mm a'
+const SESSION_DATE_FORMAT = 'DD/MM/YYYY'
+
 class CourseSchedulingDetailsService {
 
   /*===============================================
@@ -147,7 +150,7 @@ class CourseSchedulingDetailsService {
 
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
-          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.timezone moodle_id email' })
           .populate({ path: 'course', select: 'id name code' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
@@ -303,17 +306,8 @@ class CourseSchedulingDetailsService {
                 sessions: []
               }
               register.sessions.map((session) => {
-                let schedule = ''
-                if (session.startDate && session.duration) {
-                  let endDate = moment(session.startDate).add(session.duration, 'seconds')
-                  schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
-                }
-                let session_data = {
-                  start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
-                  duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
-                  schedule: schedule,
-                }
-                item.sessions.push({ ...session_data })
+                const sessionData = this.formatSessionNotificationInfo(session, register?.teacher?.profile?.timezone)
+                item.sessions.push({ ...sessionData })
               })
               courses.push(item)
             }
@@ -746,6 +740,21 @@ class CourseSchedulingDetailsService {
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public formatSessionNotificationInfo = (session, timezone: TimeZone = TimeZone.GMT_5) => {
+    let schedule = ''
+    const timezoneOffset = TIME_ZONES_WITH_OFFSET[timezone]
+    if (session.startDate && session.duration) {
+      let endDate = moment(session.startDate).add(session.duration, 'seconds')
+      schedule += `${moment(session.startDate).zone(timezoneOffset).format(SESSION_HOUR_FORMAT)} a ${moment(endDate).zone(timezoneOffset).format(SESSION_HOUR_FORMAT)}`
+    }
+    let sessionData = {
+      start_date: (session.startDate) ? moment.utc(session.startDate).zone(timezoneOffset).format(SESSION_DATE_FORMAT) : '',
+      duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+      schedule: schedule,
+    }
+    return sessionData
   }
 
 }
