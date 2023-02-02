@@ -721,7 +721,8 @@ class CourseSchedulingService {
       if (courseSchedulingDetails && courseSchedulingDetails[0]) {
         const endDate = moment(courseSchedulingDetails[0].endDate.toISOString().split('T')[0])
         if (['Presencial', 'En linea'].includes(courseScheduling?.schedulingMode?.name)) {
-          endDate.add(15, 'days')
+          // TODO: Desactivado temporalmente hasta confirmación de Icontec
+          // endDate.add(15, 'days')
         }
         const response: any = await CourseScheduling.findByIdAndUpdate(courseSchedulingId, {
           endDate: moment(endDate.format('YYYY-MM-DD')+"T23:59:59Z")
