@@ -6,6 +6,7 @@ import moment from 'moment';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
 // @end
 
 // @import utilities
@@ -21,8 +22,13 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 // @import types
 import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
-import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
+import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
+
+const DATE_FORMAT = 'YYYY-MM-DD'
 
 class CourseSchedulingNotificationsService {
 
@@ -42,11 +48,11 @@ class CourseSchedulingNotificationsService {
     courseScheduling: any,
     type: 'started' | 'cancel' | 'modify' = 'started',
     populate?: boolean,
-    changes?: any,
+    changesFn?: TCourseSchedulingDetailsModificationFn | TCourseSchedulingModificationFn,
     syncupSessionsInMoodle?: CourseSchedulingDetailsSync
   ) => {
     try {
-      let email_to_notificate: { email: string, name: string }[] = []
+      let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
 
       if (populate) {
         courseScheduling = await this.getCourseSchedulingFromId(courseScheduling);
@@ -70,29 +76,33 @@ class CourseSchedulingNotificationsService {
       }
 
       // @INFO Notificar al programador
-      const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
+      const serviceScheduler: IUser = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
+      serviceScheduler.profile.timezone
       if (serviceScheduler) {
         email_to_notificate.push({
           email: serviceScheduler.email,
-          name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`
+          name: `${serviceScheduler.profile.first_name} ${serviceScheduler.profile.last_name}`,
+          timezone: serviceScheduler?.profile?.timezone,
         })
       }
 
       // @INFO Notificar al ejecutivo de cuenta
-      const accountExecutive = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
+      const accountExecutive: IUser = (courseScheduling && courseScheduling.account_executive) ? courseScheduling.account_executive : null
       if (accountExecutive) {
         email_to_notificate.push({
           email: accountExecutive.email,
-          name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`
+          name: `${accountExecutive.profile.first_name} ${accountExecutive.profile.last_name}`,
+          timezone: accountExecutive?.profile?.timezone,
         })
       }
 
       // @INFO: Solo enviar al auxiliar logístico
-      const logisticAssistant = courseScheduling.material_assistant;
+      const logisticAssistant: IUser = courseScheduling.material_assistant;
       if (logisticAssistant && logisticAssistant.email) {
         email_to_notificate.push({
           email: logisticAssistant.email,
-          name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`
+          name: `${logisticAssistant.profile.first_name} ${logisticAssistant.profile.last_name}`,
+          timezone: logisticAssistant?.profile?.timezone,
         });
       }
 
@@ -129,7 +139,7 @@ class CourseSchedulingNotificationsService {
         }
         const params = {
           mailer: customs['mailer'],
-          today: moment.utc().format('YYYY-MM-DD'),
+          today: moment.utc().format(DATE_FORMAT),
           notification_source: `scheduling_notification_${type}_assistant_${courseScheduling._id}`,
           // Información
           assistant_name: `${courseScheduling.material_assistant.profile.first_name} ${courseScheduling.material_assistant.profile.last_name}`,
@@ -139,11 +149,11 @@ class CourseSchedulingNotificationsService {
           modality: courseScheduling.schedulingMode.name,
           modules: modules,
           duration: this.formatSecondsToHours(courseScheduling.duration),
-          startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-          endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+          startDate: moment.utc(courseScheduling.startDate).format(DATE_FORMAT),
+          endDate: moment.utc(courseScheduling.endDate).format(DATE_FORMAT),
           observations: courseScheduling.observations,
           exam: exam?.hasExam ? 'SI' : 'NO',
-          changes,
+          changes: undefined,
           syncupSessionsInMoodle: syncupSessionsInMoodleMessage,
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
@@ -156,6 +166,9 @@ class CourseSchedulingNotificationsService {
 
         let mail: any = undefined;
         for await (let emailNotificate of email_to_notificate) {
+          if (changesFn) {
+            params.changes = await changesFn(emailNotificate.timezone)
+          }
           mail = await mailService.sendMail({
             emails: [emailNotificate.email],
             mailOptions: {
@@ -495,11 +508,11 @@ class CourseSchedulingNotificationsService {
       .populate({ path: 'schedulingType', select: 'id name' })
       .populate({ path: 'schedulingStatus', select: 'id name' })
       .populate({ path: 'regional', select: 'id name moodle_id' })
-      .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email' })
-      .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name profile.timezone email' })
+      .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name profile.timezone email' })
       .populate({ path: 'city', select: 'id name' })
       .populate({ path: 'country', select: 'id name' })
-      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email' })
+      .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name profile.timezone email' })
       .populate({ path: 'client', select: 'id name' })
       .lean();
 
@@ -581,6 +594,7 @@ class CourseSchedulingNotificationsService {
     return response;
   }
 
+  private getTimezoneOffset = (timezone: TimeZone = TimeZone.GMT_5) => TIME_ZONES_WITH_OFFSET[timezone]
 
 }
 

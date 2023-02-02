@@ -1,6 +1,7 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
+import { TimeZone, TIME_ZONES } from "@scnode_app/types/default/admin/user/userTypes";
 const { Schema } = mongoose;
 // @end
 
@@ -100,7 +101,7 @@ const UserSchema = new Schema({
       ranking: { type: Schema.Types.String },
     },
 
-    timezone: { type: Schema.Types.String, default: 'GMT-5' },
+    timezone: { type: Schema.Types.String, default: TimeZone.GMT_5, enum: TIME_ZONES },
     culture: { type: Schema.Types.String, default: 'es_CO' },
     screen_mode: { type: Schema.Types.String, default: 'light-mode' },
   },

@@ -1,10 +1,41 @@
+import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 // @import types
 // @end
 
 // @add your types
+export interface ICourseSchedulingModification {
+  message: string;
+  type?: string;
+}
+
+export type TCourseSchedulingModificationFn = (timezone?: TimeZone) => Promise<ICourseSchedulingModification[]>
+
 export interface ICourseSchedulingSession {
   startDate: string // Fecha de inicio
   duration: number // Duración
+}
+
+export interface ICourseSchedulingEmailDestination {
+  email: string;
+  timezone?: TimeZone;
+}
+
+export enum CourseSchedulingUpdateNotification {
+  TEACHER = 'teacher',
+  STUDENT = 'student',
+}
+
+export interface ICourseSchedulingUpdatedNotificationParams {
+  mailer: string;
+  service_id: string;
+  program_name: string;
+  course_name?: string;
+  notification_source: string;
+  changesFn: TCourseSchedulingModificationFn | TCourseSchedulingDetailsModificationFn;
+  changes?: ICourseSchedulingModification[] | ICourseSchedulingDetailsModification[];
+  type: CourseSchedulingUpdateNotification;
+  amount_notifications?: number;
 }
 
 export interface ICourseScheduling {
