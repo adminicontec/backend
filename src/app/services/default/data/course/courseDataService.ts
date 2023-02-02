@@ -251,6 +251,7 @@ class CourseDataService {
           materials: course?.extra_info?.materials?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.materials?.blocks) : null,
           methodology: course?.extra_info?.methodology?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.methodology?.blocks) : null,
           generalities: course?.extra_info?.generalities?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.generalities?.blocks) : null,
+          ...(course?.extra_info?.is_alternative_title_active && course?.extra_info?.alternative_title ? { alternativeName: course?.extra_info?.alternative_title } : {}),
           scheduling
         }
       },

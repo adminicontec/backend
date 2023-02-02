@@ -62,6 +62,10 @@
         font-weight: 700;
         font-size: 1.3rem;
       }
+      .alternative-name{
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
       .title {
         color: #0085ca;
         font-weight: 700;
@@ -145,6 +149,9 @@
     <img src="./assets/ad942125ca7dbecbfbaafb19a22a1764.png" style="width: 150px" />
   </div>
   <div class='title-principal'>{{title}}</div>
+  {{#if alternativeName}}
+    <div class='alternative-name'>{{alternativeName}}</div>
+  {{/if}}
   {{#if duration}}
     <div class="text-small">Duración: {{duration}}</div>
   {{/if}}
