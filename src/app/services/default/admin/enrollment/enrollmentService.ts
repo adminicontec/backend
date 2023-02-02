@@ -355,7 +355,7 @@ class EnrollmentService {
               currentPosition: params.job,
               educationalLevel: params.educationalLevel,
               origen: params.origin,
-              timezone: params.timezone,
+              ...(params.timezone ? { timezone: params.timezone } : {}),
             },
             sendEmail: true
           }

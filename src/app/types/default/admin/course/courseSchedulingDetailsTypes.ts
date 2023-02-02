@@ -1,7 +1,23 @@
+import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @import types
 // @end
 
-// @add your types
+// @add your types\
+export enum CourseSchedulingDetailsModification {
+  START_DATE = 'startDate',
+  END_DATE = 'endDate',
+  DURATION = 'duration',
+  SESSIONS = 'sessions',
+  TEACHER = 'teacher',
+}
+
+export interface ICourseSchedulingDetailsModification {
+  type: CourseSchedulingDetailsModification;
+  message: string;
+}
+
+export type TCourseSchedulingDetailsModificationFn = (timezone?: TimeZone) => Promise<ICourseSchedulingDetailsModification[]>
+
 export interface ICourseSchedulingDetailSession {
   _id?: string,
   startDate: string // Fecha de inicio
