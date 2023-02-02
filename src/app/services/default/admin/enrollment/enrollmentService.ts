@@ -359,7 +359,7 @@ class EnrollmentService {
           const respCampusDataUser: any = await userService.findBy({
             query: QueryValues.ONE,
             // where: [{ field: 'profile.doc_number', value: params.documentID }]
-            where: [{ field: 'username', value: params.documentID }]
+            where: [{ field: 'username', value: newUserID }]
           });
 
 
