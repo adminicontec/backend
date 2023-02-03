@@ -97,6 +97,7 @@ class EnrollmentService {
     }
 
     let registers = []
+    let data = []
     try {
       registers = await Enrollment.find(where)
         .select(select)
@@ -139,15 +140,7 @@ class EnrollmentService {
             }
           }
           count++
-        }
-        else {
-          console.log('Error with profile:');
-          console.log(register);
-
-          var i = registers.indexOf(register);
-          if (i !== -1) {
-            registers.splice(i, 1);
-          }
+          data.push(register)
         }
       }
     } catch (e) {
@@ -166,7 +159,7 @@ class EnrollmentService {
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         enrollment: [
-          ...registers
+          ...data
         ],
         total_register: (paging) ? await Enrollment.find(where).countDocuments() : 0,
         pageNumber: pageNumber,
