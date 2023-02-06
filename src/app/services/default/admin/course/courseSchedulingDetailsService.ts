@@ -28,7 +28,7 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { CourseSchedulingDetailsModification, ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, ICourseSchedulingDetailsModification, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
-import { TIME_ZONES_WITH_OFFSET, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { TIME_ZONES_WITH_OFFSET, TimeZone, TIME_ZONE_WITH_NAME } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 const SESSION_HOUR_FORMAT = 'hh:mm a'
@@ -303,6 +303,7 @@ class CourseSchedulingDetailsService {
               let item = {
                 course_code: (register.course && register.course.code) ? register.course.code : '',
                 course_name: (register.course && register.course.name) ? register.course.name : '',
+                timezone: this.getTimezoneName(register?.teacher?.profile?.timezone),
                 sessions: []
               }
               register.sessions.map((session) => {
@@ -535,6 +536,7 @@ class CourseSchedulingDetailsService {
       sessionsChange.length > 0
     ) {
       let message = `La programación de sesiones del curso ${register?.course?.name} ha cambiado:<br><br>`
+      message += `<p><b>Zona horaria: </b> ${TIME_ZONE_WITH_NAME[timezone]}</p>`
       message += `<p>Programación anterior</p>`
       message += `<table border="1">`;
       message += `  <thead>`;
@@ -755,6 +757,10 @@ class CourseSchedulingDetailsService {
       schedule: schedule,
     }
     return sessionData
+  }
+
+  public getTimezoneName = (timezone: TimeZone = TimeZone.GMT_5) => {
+    return TIME_ZONE_WITH_NAME[timezone]
   }
 
 }

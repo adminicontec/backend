@@ -985,6 +985,7 @@ class CourseSchedulingService {
         let item = {
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
+          timezone: courseSchedulingDetailsService.getTimezoneName(timezone),
           sessions: []
         }
         course.sessions.map((session) => {

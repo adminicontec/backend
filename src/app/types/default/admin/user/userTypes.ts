@@ -29,6 +29,15 @@ export const TIME_ZONES_WITH_OFFSET = {
   [TimeZone.GMT_8]: "-08:00",
 }
 
+export const TIME_ZONE_WITH_NAME = {
+  [TimeZone.GMT_3]: "GMT-3 - Chile.",
+  [TimeZone.GMT_4]: "GMT-4 - Bolivia, República Dominicana.",
+  [TimeZone.GMT_5]: "GMT-5 - Colombia, Mexico (Cancún), Panamá, Ecuador, Perú.",
+  [TimeZone.GMT_6]: "GMT-6 - Mexico (CDMX), Honduras, El Salvador, Guatemala, Costa Rica, Nicaragua.",
+  [TimeZone.GMT_7]: "GMT-7 - Mexico (Hermosillo).",
+  [TimeZone.GMT_8]: "GMT-8 - Mexico (Tijuana).",
+}
+
 export interface IUser {
   moodle?: 'off' | 'on',
   username?: string, // Nombre de usuario que es utilizado para iniciar sesión
