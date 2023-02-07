@@ -88,6 +88,8 @@ export interface ICourse {
     materials?: IContentEditorJs
     methodology?: IContentEditorJs
     objectives?: IContentEditorJs
+    alternative_title?: string
+    is_alternative_title_active?: boolean
   }
   hasCost?: boolean
   priceCOP?: number

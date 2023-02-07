@@ -71,6 +71,9 @@
                     {{#each params.courses}}
                       <p><b>Código: </b>{{this.course_code}}</p>
                       <p><b>Curso: </b>{{this.course_name}}</p>
+                      {{#if this.timezone}}
+                      <p><b>Zona horaria: </b>{{this.timezone}}</p>
+                      {{/if}}
                       {{#if this.sessions}}
                         <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%" >
                           <thead>

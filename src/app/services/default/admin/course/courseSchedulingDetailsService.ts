@@ -26,9 +26,13 @@ import { CourseSchedulingSection, CourseSchedulingDetails, Course, CourseSchedul
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
+import { CourseSchedulingDetailsModification, ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, ICourseSchedulingDetailsModification, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { TIME_ZONES_WITH_OFFSET, TimeZone, TIME_ZONE_WITH_NAME } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
+
+const SESSION_HOUR_FORMAT = 'hh:mm a'
+const SESSION_DATE_FORMAT = 'DD/MM/YYYY'
 
 class CourseSchedulingDetailsService {
 
@@ -146,11 +150,12 @@ class CourseSchedulingDetailsService {
 
       if (params.id) {
         const register: any = await CourseSchedulingDetails.findOne({ _id: params.id }).lean()
-          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name moodle_id email' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.timezone moodle_id email' })
           .populate({ path: 'course', select: 'id name code' })
         if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.details.not_found' })
 
-        const changes = await this.validateChanges(params, register)
+        const changesFn = await this.validateChanges(params, register)
+        const changes = await changesFn()
 
         const response: any = await CourseSchedulingDetails.findByIdAndUpdate(params.id, params, {
           useFindAndModify: false,
@@ -298,20 +303,12 @@ class CourseSchedulingDetailsService {
               let item = {
                 course_code: (register.course && register.course.code) ? register.course.code : '',
                 course_name: (register.course && register.course.name) ? register.course.name : '',
+                timezone: this.getTimezoneName(register?.teacher?.profile?.timezone),
                 sessions: []
               }
               register.sessions.map((session) => {
-                let schedule = ''
-                if (session.startDate && session.duration) {
-                  let endDate = moment(session.startDate).add(session.duration, 'seconds')
-                  schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
-                }
-                let session_data = {
-                  start_date: (session.startDate) ? moment.utc(session.startDate).format('DD/MM/YYYY') : '',
-                  duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
-                  schedule: schedule,
-                }
-                item.sessions.push({ ...session_data })
+                const sessionData = this.formatSessionNotificationInfo(session, register?.teacher?.profile?.timezone)
+                item.sessions.push({ ...sessionData })
               })
               courses.push(item)
             }
@@ -347,11 +344,9 @@ class CourseSchedulingDetailsService {
           }
 
           if (changes.length > 0) {
-            // @INFO Notificar al auxiliar logisto del servicio
-            // await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(response.course_scheduling._id, 'modify', true, changes);
             await courseSchedulingService.sendServiceSchedulingUpdated(
               response.course_scheduling,
-              changes, {
+              changesFn, {
               course: response.course,
               courseSchedulingDetail: register,
               syncupSessionsInMoodle
@@ -504,13 +499,14 @@ class CourseSchedulingDetailsService {
     }
   }
 
-  private validateChanges = async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => {
-    const changes = []
+  private validateChanges =
+  async (params: ICourseSchedulingDetail, register: typeof CourseSchedulingDetails) => async (timezone: TimeZone = TimeZone.GMT_5) => {
+    const changes: ICourseSchedulingDetailsModification[] = []
 
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
-        type: 'startDate',
-        message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).format('YYYY-MM-DD')} a ${params.startDate}</div>`
+        type: CourseSchedulingDetailsModification.START_DATE,
+        message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
     let endDate = (typeof params.endDate === 'string') ? `${params.endDate}T00:00:00.000Z` : params.endDate.toISOString()
@@ -519,13 +515,13 @@ class CourseSchedulingDetailsService {
       const endDateFormated = endDate.split('T')
       if (endDateFormated[0] !== registerFormated[0])
       changes.push({
-        type: 'endDate',
-        message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
+        type: CourseSchedulingDetailsModification.END_DATE,
+        message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
     if ((register.duration && params.duration) && params.duration !== register.duration) {
       changes.push({
-        type: 'duration',
+        type: CourseSchedulingDetailsModification.DURATION,
         message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
       })
     }
@@ -540,6 +536,7 @@ class CourseSchedulingDetailsService {
       sessionsChange.length > 0
     ) {
       let message = `La programación de sesiones del curso ${register?.course?.name} ha cambiado:<br><br>`
+      message += `<p><b>Zona horaria: </b> ${TIME_ZONE_WITH_NAME[timezone]}</p>`
       message += `<p>Programación anterior</p>`
       message += `<table border="1">`;
       message += `  <thead>`;
@@ -552,10 +549,10 @@ class CourseSchedulingDetailsService {
         let schedule = ''
         if (session.startDate && session.duration) {
           let endDate = moment(session.startDate).add(session.duration, 'seconds')
-          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+          schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
-        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${moment.utc(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('DD/MM/YYYY')}</td>`;
         message += `        <td>${schedule}</td>`;
         message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
         duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
@@ -576,10 +573,10 @@ class CourseSchedulingDetailsService {
         let schedule = ''
         if (session.startDate && session.duration) {
           let endDate = moment(session.startDate).add(session.duration, 'seconds')
-          schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+          schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('hh:mm a')}`
         }
         message += `      <tr>`;
-        message += `        <td>${moment.utc(session.startDate).format('DD/MM/YYYY')}</td>`;
+        message += `        <td>${moment.utc(session.startDate).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('DD/MM/YYYY')}</td>`;
         message += `        <td>${schedule}</td>`;
         message += `        <td>${generalUtility.getDurationFormated(session.duration)}</td>`;
         message += `      </tr>`;
@@ -592,7 +589,7 @@ class CourseSchedulingDetailsService {
       //   }
       // })
       changes.push({
-        type: 'sessions',
+        type: CourseSchedulingDetailsModification.SESSIONS,
         message
       })
     }
@@ -602,7 +599,7 @@ class CourseSchedulingDetailsService {
         const newTeacher: any = await User.findOne({_id: params.teacher}).select('id profile.first_name profile.last_name')
         if (newTeacher) {
           changes.push({
-            type: 'teacher',
+            type: CourseSchedulingDetailsModification.TEACHER,
             message: `<div>El docente ${register.teacher?.profile?.first_name} ${register.teacher?.profile?.last_name} del curso ${register.course.name} fue cambiado por ${newTeacher.profile?.first_name} ${newTeacher.profile?.last_name}</div>`
           })
         }
@@ -745,6 +742,25 @@ class CourseSchedulingDetailsService {
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public formatSessionNotificationInfo = (session, timezone: TimeZone = TimeZone.GMT_5) => {
+    let schedule = ''
+    const timezoneOffset = TIME_ZONES_WITH_OFFSET[timezone]
+    if (session.startDate && session.duration) {
+      let endDate = moment(session.startDate).add(session.duration, 'seconds')
+      schedule += `${moment(session.startDate).zone(timezoneOffset).format(SESSION_HOUR_FORMAT)} a ${moment(endDate).zone(timezoneOffset).format(SESSION_HOUR_FORMAT)}`
+    }
+    let sessionData = {
+      start_date: (session.startDate) ? moment.utc(session.startDate).zone(timezoneOffset).format(SESSION_DATE_FORMAT) : '',
+      duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
+      schedule: schedule,
+    }
+    return sessionData
+  }
+
+  public getTimezoneName = (timezone: TimeZone = TimeZone.GMT_5) => {
+    return TIME_ZONE_WITH_NAME[timezone]
   }
 
 }

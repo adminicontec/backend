@@ -1,3 +1,4 @@
+import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @import types
 // @end
 
@@ -33,6 +34,7 @@ export interface IEnrollment{
   origin?:string,
   enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
+  timezone?: TimeZone
 }
 
 export interface IEnrollmentQuery {
