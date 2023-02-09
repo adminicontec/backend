@@ -129,7 +129,7 @@ class EnrollmentService {
                   phoneNumber: (element['N° Celular (opcional)']) ? element['N° Celular (opcional)'].toString().replace(/ /g, "").trim() : '',
                   city: (element['Ciudad']) ? element['Ciudad'].trim() : null,
                   country: (element['País']) ? element['País'].trim() : null,
-                  timezone: (element['Zona horaria (opcional)']) ? element['Zona horaria (opcional)'].split(' - ')[0].trim() : null,
+                  timezone: (element['Zona horaria (internacional)']) ? element['Zona horaria (internacional)'].split(' - ')[0].trim() : null,
                   emailAlt: element['Correo Alt'], // TODO: revisar si esto hace algo
                   regional: element['Regional'],
                   birthdate: dob.format('YYYY-MM-DD'),
