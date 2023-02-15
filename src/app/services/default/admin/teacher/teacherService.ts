@@ -26,8 +26,8 @@ import { TeacherProfile } from '@scnode_app/models';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
-import { IMassiveLoad, IUploadFile, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
-import { IQualifiedTeacher } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
+import { IMassiveLoad, IUploadFile, ITeacherQuery, ITeacher, IQualifiedProfessional, ITeacherReportStructure } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IQualifiedTeacher, QualifiedTeacherStatus } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -515,7 +515,7 @@ class TeacherService {
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
-            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO',
+            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus as QualifiedTeacherStatus : QualifiedTeacherStatus.INACTIVE,
             sheetName: sheetname
           }
 
@@ -786,6 +786,26 @@ class TeacherService {
       return responseUtility.buildResponseFailed("json");
     }
 
+  }
+
+  public generateReport = async () => {
+    try {
+      // TODO: Get users list
+      // TODO: Build report format
+      const title = "Reporte de docentes calificados"
+      const report: ITeacherReportStructure = {
+        title,
+        pages: []
+      }
+      // TODO: fill data with the user information
+        // TODO: get qualified teachers per user
+      // TODO: Create webhook
+      // TODO: Save file
+      // TODO: Return file
+    } catch(e) {
+      console.log("[TeacherService] [generateReport] ERROR: ", e)
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
 }
