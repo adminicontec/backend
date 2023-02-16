@@ -13,19 +13,19 @@ export interface ITeacherReportPerPage {
   title: string;
   reportDate: string;
   personWhoGeneratesReport: string;
-  data: ITeacherReportPage
+  data: Partial<ITeacherReportPage>[]
 }
 
 export interface ITeacherReportPage {
   _id: string;
   firstNames: string;
   lastNames: string;
-  user: string;
+  username: string;
   email: string;
   contractType: string;
   isTeacher: string;
   isTutor: string;
-  courses: ITeacherReportCourse[];
+  course: ITeacherReportCourse;
 }
 
 interface ITeacherReportCourse {
@@ -33,6 +33,10 @@ interface ITeacherReportCourse {
   name: string
   status: string
   date: string
+}
+
+export interface ITeacherGenerateReportParams {
+  user: string;
 }
 
 export interface ITeacher {

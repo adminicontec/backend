@@ -54,6 +54,12 @@ class TeacherController {
     const response = await teacherService.merge(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public generateReport = async (req: Request, res: Response) => {
+    const params = { user: req.user?.sub }
+    const response = await teacherService.generateReport(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const teacherController = new TeacherController();
