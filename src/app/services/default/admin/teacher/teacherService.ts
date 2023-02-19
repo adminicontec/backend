@@ -878,10 +878,18 @@ class TeacherService {
         sheetData.push(['Consultado por', page.personWhoGeneratesReport])
         sheetData.push([])
 
-        sheetData.push(['Nombres', 'Apellidos', 'Correo', 'Usuario', 'Tipo de contrato', 'Código del curso', 'Nombre del curso', 'Estado del curso', 'Fecha de evaluación'])
+        sheetData.push(['NOMBRES', 'APELLIDOS', 'CORREO', 'CÉDULA', 'TIPO DE CONTRATO', 'CÓDIGO DEL CURSO', 'NOMBRE DEL CURSO', 'STATUS', 'FECHA DE EVALUACIÓN'])
         for (const { firstNames, lastNames, email, username, contractType, course } of page.data) {
+          if (username === 'useradmin') continue;
           sheetData.push([firstNames, lastNames, email, username, contractType, course.code, course.name, course.status, course.date])
         }
+
+        const cols = []
+        for (let index = 0; index < 40; index++) {
+          cols.push({width: 35})
+        }
+        wsSheet["!cols"] = cols
+
         XLSX.utils.sheet_add_aoa(wsSheet, sheetData, {origin: "A1"})
         XLSX.utils.book_append_sheet(wb, wsSheet, page.title)
       }
