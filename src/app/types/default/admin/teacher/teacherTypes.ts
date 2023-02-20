@@ -4,6 +4,41 @@ import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 
 
 // @add your types
+export interface ITeacherReportStructure {
+  title: string,
+  pages: ITeacherReportPerPage[]
+}
+
+export interface ITeacherReportPerPage {
+  title: string;
+  reportDate: string;
+  personWhoGeneratesReport: string;
+  data: Partial<ITeacherReportPage>[]
+}
+
+export interface ITeacherReportPage {
+  _id: string;
+  firstNames: string;
+  lastNames: string;
+  username: string;
+  email: string;
+  contractType: string;
+  isTeacher: string;
+  isTutor: string;
+  course: ITeacherReportCourse;
+}
+
+interface ITeacherReportCourse {
+  code: string
+  name: string
+  status: string
+  date: string
+}
+
+export interface ITeacherGenerateReportParams {
+  user: string;
+}
+
 export interface ITeacher {
   position: number,
   userData?: IUser,

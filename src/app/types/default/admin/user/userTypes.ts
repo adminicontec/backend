@@ -98,6 +98,7 @@ export interface IUser {
   moodle_id?: number,
   sendEmail?: boolean // Booleano que identifica si se va a enviar notificación de creación
   id?: string // Identificador del permiso
+  _id?: string // Identificador del usuario
 }
 
 export interface ILaboralExperience {
