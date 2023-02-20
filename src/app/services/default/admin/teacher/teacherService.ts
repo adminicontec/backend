@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment';
+import * as XLSX from "xlsx";
 // @end
 
 // @import services
@@ -19,20 +20,22 @@ import { xlsxUtility } from '@scnode_core/utilities/xlsx/xlsxUtility';
 // @end
 
 // @import models
-import { Modular, Role, AppModulePermission } from '@scnode_app/models'
+import { Modular, Role, AppModulePermission, User, QualifiedTeachers } from '@scnode_app/models'
 import { TeacherProfile } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IModular, IModularQuery } from '@scnode_app/types/default/admin/modular/modularTypes'
-import { IMassiveLoad, IUploadFile, ITeacherQuery, ITeacher, IQualifiedProfessional } from '@scnode_app/types/default/admin/teacher/teacherTypes'
-import { IQualifiedTeacher } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
+import { IMassiveLoad, IUploadFile, ITeacherQuery, ITeacher, IQualifiedProfessional, ITeacherReportStructure, ITeacherReportPerPage, ITeacherGenerateReportParams, ITeacherReportPage } from '@scnode_app/types/default/admin/teacher/teacherTypes'
+import { IQualifiedTeacher, QualifiedTeacherStatus } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 
 // @end
+
+const FORMAT_DATE = 'YYYY_MM_DD'
 
 class TeacherService {
 
@@ -515,7 +518,7 @@ class TeacherService {
             courseName: contentRowTeacher.courseName,
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
-            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus : 'INACTIVO',
+            status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus as QualifiedTeacherStatus : QualifiedTeacherStatus.INACTIVE,
             sheetName: sheetname
           }
 
@@ -786,6 +789,115 @@ class TeacherService {
       return responseUtility.buildResponseFailed("json");
     }
 
+  }
+
+  public generateReport = async (params: ITeacherGenerateReportParams) => {
+    try {
+      // TODO: Get user data
+      const user: Partial<IUser> = await User.findOne({ _id: params.user }).select('id profile').lean()
+      if (!user) return responseUtility.buildResponseFailed('json')
+      // TODO: Get users list
+      const teachersResponse: any = await this.list({ nPerPage: "10000", pageNumber: "1" })
+      if (teachersResponse.status === 'error') return teachersResponse
+      const teachers: any[] = teachersResponse.qualifiedTeachers
+      // TODO: Build report format
+      const title = `Reporte_docentes_calificados_${moment().format(FORMAT_DATE)}`
+      const report: ITeacherReportStructure = {
+        title,
+        pages: []
+      }
+      let page: ITeacherReportPerPage = {
+        title: 'Docentes',
+        personWhoGeneratesReport: `${user?.profile?.first_name} ${user?.profile?.last_name}`,
+        reportDate: moment().format(FORMAT_DATE),
+        data: [],
+      }
+      // TODO: fill data with the user information
+      for (const itemTeachers of teachers) {
+        // TODO: get qualified teachers per user
+        const teacher = itemTeachers.userData as IUser
+        const qualifiedCourses: IQualifiedTeacher[] = await QualifiedTeachers.find({ teacher: teacher._id })
+        if (qualifiedCourses?.length) {
+          for (const qualified of qualifiedCourses) {
+            const newData: Partial<ITeacherReportPage> = {
+              _id: teacher._id,
+              email: teacher.email,
+              contractType: teacher.profile?.contractType?.type,
+              firstNames: teacher?.profile?.first_name,
+              lastNames: teacher?.profile?.last_name,
+              username: teacher?.username,
+              isTeacher: teacher?.profile?.contractType?.isTeacher ? "Si" : "No",
+              isTutor: teacher?.profile?.contractType?.isTutor ? "Si" : "No",
+              course: {
+                code: qualified.courseCode,
+                date: moment(qualified.evaluationDate).format(FORMAT_DATE),
+                name: qualified.courseName,
+                status: qualified.status,
+              }
+            }
+            page.data.push(newData)
+          }
+        }
+      }
+      report.pages.push(page)
+      // return responseUtility.buildResponseSuccess('json', null, {
+      //   additional_parameters: {
+      //     report
+      //   }
+      // })
+      // TODO: Create webhook
+      const webhook = this.createWebhook(report)
+      if (!webhook) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_build_xlsx' })
+      // TODO: Save file
+      const send = await xlsxUtility.uploadXLSX({ from: 'file', attached: { file: { name: `${title}.xlsx` } } }, {workbook: webhook})
+      if (!send) return responseUtility.buildResponseFailed('json', null, { error_key: 'reports.customReport.fail_upload_xlsx' })
+      // TODO: Return file
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          path: send,
+        }
+      })
+    } catch(e) {
+      console.log("[TeacherService] [generateReport] ERROR: ", e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private createWebhook = (report: ITeacherReportStructure) => {
+    try {
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      for (const page of report.pages) {
+        const wsSheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet([])
+
+        const sheetData = []
+
+        sheetData.push([page.title])
+        sheetData.push([])
+
+        sheetData.push(['Fecha', page.reportDate])
+        sheetData.push(['Consultado por', page.personWhoGeneratesReport])
+        sheetData.push([])
+
+        sheetData.push(['NOMBRES', 'APELLIDOS', 'CORREO', 'CÉDULA', 'TIPO DE CONTRATO', 'CÓDIGO DEL CURSO', 'NOMBRE DEL CURSO', 'STATUS', 'FECHA DE EVALUACIÓN'])
+        for (const { firstNames, lastNames, email, username, contractType, course } of page.data) {
+          if (username === 'useradmin') continue;
+          sheetData.push([firstNames, lastNames, email, username, contractType, course.code, course.name, course.status, course.date])
+        }
+
+        const cols = []
+        for (let index = 0; index < 40; index++) {
+          cols.push({width: 35})
+        }
+        wsSheet["!cols"] = cols
+
+        XLSX.utils.sheet_add_aoa(wsSheet, sheetData, {origin: "A1"})
+        XLSX.utils.book_append_sheet(wb, wsSheet, page.title)
+      }
+      return wb
+    } catch (e) {
+      console.log("[TeacherService] [createWebhook] ERROR: ", e)
+      return null
+    }
   }
 
 }

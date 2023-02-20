@@ -3,6 +3,11 @@
 
 // @add your types
 
+export enum QualifiedTeacherStatus {
+  ACTIVE = 'ACTIVO',
+  INACTIVE = 'INACTIVO'
+}
+
 
 export interface IQualifiedTeacher{
   index?: number,
@@ -10,7 +15,7 @@ export interface IQualifiedTeacher{
   teacher?: string     // Identificador del usuario en Campus Digital
   modular?: string  // Identificador del modular en Campus Digital
   courseCode?: string
-  status?: string
+  status?: QualifiedTeacherStatus
   courseName?: string
   evaluationDate?: Date
   isEnabled?: boolean
