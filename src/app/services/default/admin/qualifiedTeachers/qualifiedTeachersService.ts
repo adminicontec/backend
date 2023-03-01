@@ -17,7 +17,7 @@ import { QualifiedTeachers } from '@scnode_app/models'
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ITeacherProfile, ITeacherProfileDelete } from '@scnode_app/types/default/admin/teacherProfile/teacherProfileTypes'
-import { IQualifiedTeacher, IQualifiedTeacherQuery, IQualifiedTeacherDelete } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
+import { IQualifiedTeacher, IQualifiedTeacherQuery, IQualifiedTeacherDelete, QualifiedTeacherStatus } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
 
 // @end
 
@@ -186,7 +186,7 @@ class QualifiedTeachersService {
         console.log("***********");
         console.log('Qualified Teacher Create:');
         console.table(params);
-        params.status = params.status.toUpperCase();
+        params.status = params.status.toUpperCase() as QualifiedTeacherStatus;
         const response: any = await QualifiedTeachers.create(params)
         console.log(response);
         console.log("***********");

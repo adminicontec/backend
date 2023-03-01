@@ -176,6 +176,10 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.Boolean,
     default: false
   },
+  publish: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
   certificate: {
     type: Schema.Types.String
   },

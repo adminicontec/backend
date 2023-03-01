@@ -33,6 +33,7 @@ class TeacherRoute {
     routerUtility.get(app, _route, '/merge', this.instanceController.merge, [], ['auth'])
     routerUtility.post(app, _route, '/processFile', this.instanceController.processFile, [], ['auth'])
     routerUtility.post(app, _route, '/upload', this.instanceController.upload, [], ['auth'])
+    routerUtility.get(app, _route, '/generate-report', this.instanceController.generateReport, [], ['auth'])
 
     // @end
   }
