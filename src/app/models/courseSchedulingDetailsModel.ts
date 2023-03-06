@@ -38,6 +38,10 @@ const CourseSchedulingDetailsSchema = new Schema({
   },
   duration: {type: Schema.Types.Number},
   sessions: [{
+    reinforcement_class: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
     startDate: {
       type: Schema.Types.Date,
       required: true,

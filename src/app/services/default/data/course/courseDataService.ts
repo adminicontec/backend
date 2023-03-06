@@ -357,15 +357,6 @@ class CourseDataService {
 
       if (params.search) {
         const search = params.search
-        // where = {
-        //   ...where,
-        //   $or: [
-        //     { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //   ]
-        // }
         const programs = await Program.find({
           name: { $regex: '.*' + search + '.*', $options: 'i' }
         }).select('id')
@@ -395,11 +386,6 @@ class CourseDataService {
       // @INFO: Filtro para Mode
       if (params.mode) {
         where['schedulingMode'] = params.mode
-        // if (schedulingModesIds.includes(params.mode.toString())) {
-        //   where['schedulingMode'] = params.mode
-        // } else {
-        //   where['schedulingMode'] = {$in: []}
-        // }
       }
 
       // @Filtro para precio
@@ -462,6 +448,10 @@ class CourseDataService {
 
       if (params.exclude) {
         where['_id'] = { $nin: params.exclude }
+      }
+
+      if (typeof params.publish === 'boolean') {
+        where['publish'] = params.publish
       }
 
       let sort = null

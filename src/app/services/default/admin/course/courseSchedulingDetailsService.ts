@@ -432,7 +432,7 @@ class CourseSchedulingDetailsService {
 
   private syncClassSessions = async (
     courseSchedulingDetailsId: string,
-    sessions: {_id: string, startDate: Date, duration: number, moodle_id?: string}[],
+    sessions: {_id: string, startDate: Date, duration: number, moodle_id?: string, reinforcement_class?: boolean}[],
     sectionMoodleID: string,
     courseMoodleID: string,
     sessionsChanged: string[]
@@ -471,7 +471,10 @@ class CourseSchedulingDetailsService {
 
       for (const session of sessions) {
         let addSession = false;
-        if (!session?.moodle_id) {
+        if (
+          !session?.moodle_id &&
+          !session.reinforcement_class
+        ) {
           addSession = true;
         }
         // console.log('session', session, 'add', addSession)
@@ -509,8 +512,8 @@ class CourseSchedulingDetailsService {
         message: `<div>La fecha de inicio del curso ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
       })
     }
-    let endDate = (typeof params.endDate === 'string') ? `${params.endDate}T00:00:00.000Z` : params.endDate.toISOString()
     if (register.endDate && params.endDate) {
+      let endDate = (typeof params.endDate === 'string') ? `${params.endDate}T00:00:00.000Z` : params.endDate.toISOString()
       const registerFormated = register.endDate.toISOString().split('T')
       const endDateFormated = endDate.split('T')
       if (endDateFormated[0] !== registerFormated[0])
@@ -519,12 +522,12 @@ class CourseSchedulingDetailsService {
         message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
-    if ((register.duration && params.duration) && params.duration !== register.duration) {
-      changes.push({
-        type: CourseSchedulingDetailsModification.DURATION,
-        message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
-      })
-    }
+    // if ((register.duration && params.duration) && params.duration !== register.duration) {
+    //   changes.push({
+    //     type: CourseSchedulingDetailsModification.DURATION,
+    //     message: `<div>La duración del curso ha cambiado de ${generalUtility.getDurationFormated(register.duration)} a ${generalUtility.getDurationFormated(params.duration)}</div>`
+    //   })
+    // }
 
     let sessionsChange = []
     if (params.sessions) {

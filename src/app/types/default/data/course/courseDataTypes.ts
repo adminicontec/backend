@@ -41,6 +41,7 @@ export interface IFetchCourses {
   },
   exclude?: Array<string>,
   new?: boolean
+  publish?: boolean
 }
 
 export type ISlugType = 'course_scheduling' | 'program'
