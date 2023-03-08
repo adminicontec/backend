@@ -20,7 +20,7 @@ import { CourseScheduling } from '@scnode_app/models';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseContent, IMoodleCourseQuery, IMoodleForumDiscussion } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { IMoodleCalendarEventsQuery } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
+import { ICalendarEvent, IMoodleCalendarEventsQuery, IMoodleEvent, IProcessAssignDataParams, IProcessAttendanceDataParams, MoodleEventName } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes';
 // @end
 
 class CalendarEventsService {
@@ -232,7 +232,7 @@ class CalendarEventsService {
 
           let isForum: boolean = false;
 
-          let groupByInstance;
+          let groupByInstance: IMoodleEvent[];
 
           if (module.modname === 'forum' && module.completion === 2) {
             const respForumDiscussions: {discussions: IMoodleForumDiscussion[]} = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: {...moodleParamsForum, forumid: module.instance} });
@@ -248,57 +248,30 @@ class CalendarEventsService {
           }
           if (groupByInstance?.length > 0 || isForum) {
 
-            if (groupByInstance[0]?.modulename === 'attendance') {
-              eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
-              eventTimeStart = null;
-
-              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
-              statusActivity = statusByDate.statusActivity
-              timecompleted = statusByDate.timecompleted;
-
-              customStatus = true
-
-              if (grades?.gradeitems) {
-                const index = grades?.gradeitems.findIndex((i) => i.iteminstance == module.instance)
-                if (index !== -1) {
-                  const item = grades?.gradeitems[index];
-                  if (item?.graderaw >= 75) {
-                    statusActivity = 'delivered';
-                    timecompleted = generalUtility.unixTimeToString(item?.gradedategraded || 0);
-                  }
-                }
-              }
+            if (groupByInstance[0]?.modulename === MoodleEventName.ATTENDANCE) {
+              const result = this.processAttendanceData({
+                courseID,
+                groupByInstance,
+                grades,
+                module,
+              })
+              responseEvents.push(result)
+              continue
             }
 
-            if (groupByInstance[0]?.modulename === 'assign') {
-              let assignment = respMoodleAssignement.courses[0].assignments.find(t => t.id == module.instance);
-              eventTimeStart = assignment.allowsubmissionsfromdate ? generalUtility.unixTimeToString(assignment.allowsubmissionsfromdate) : null;
-              eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
-
-              let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
-              statusActivity = statusByDate.statusActivity
-              timecompleted = statusByDate.timecompleted;
-
-              try {
-                const moodleParamsAssignGetSumission = {
-                  wstoken: moodle_setup.wstoken,
-                  wsfunction: moodle_setup.services.calendarEvents.assignGetSubmissionStatus,
-                  moodlewsrestformat: moodle_setup.restformat,
-                  'userid': userID,
-                  'assignid': module.instance
-                };
-                customStatus = true
-                const responseMoodleParamsAssignGetSumission = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsAssignGetSumission });
-                if (responseMoodleParamsAssignGetSumission?.lastattempt) {
-                  const attempt = responseMoodleParamsAssignGetSumission?.lastattempt;
-                  if (attempt?.submission?.status === 'submitted') {
-                    statusActivity = 'delivered';
-                    timecompleted = generalUtility.unixTimeToString(attempt?.submission?.timecreated || 0);
-                  }
-                }
-              } catch (err) {}
+            if (groupByInstance[0]?.modulename === MoodleEventName.ASSIGN) {
+              const result = await this.processAssignData({
+                groupByInstance,
+                module,
+                respMoodleAssignement,
+                userID,
+                courseID,
+              })
+              responseEvents.push(result)
+              continue
             }
-            if (groupByInstance[0]?.modulename === 'quiz') {
+
+            if (groupByInstance[0]?.modulename === MoodleEventName.QUIZ) {
               timeStart = groupByInstance.filter(g => g.eventtype == 'open');
               timeEnd = groupByInstance.filter(g => g.eventtype == 'close');
 
@@ -323,7 +296,7 @@ class CalendarEventsService {
               }
             }
 
-            if (isForum && module.modname === 'forum') {
+            if (isForum && module.modname === MoodleEventName.FORUM) {
               let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
               statusActivity = statusByDate.statusActivity
               timecompleted = statusByDate.timecompleted;
@@ -377,8 +350,7 @@ class CalendarEventsService {
             responseEvents.push(singleEvent);
           }
         }
-      }
-      else {
+      } else {
         console.log("Moodle: ERROR." + JSON.stringify(respMoodleCourseModules));
         return responseUtility.buildResponseFailed('json', null,
           {
@@ -389,61 +361,14 @@ class CalendarEventsService {
           });
       }
 
-      const findSessions = select.find((field) => field === 'session')
-      if (findSessions && respMoodleEvents?.events) {
-        const startServiceDate = moment(moment(courseScheduling.startDate).format('YYYY-MM-DD'))
-        const urlWebex = respMoodleCourseModules?.courseModules.find(field => field.modname === 'session')
-        for (const event of respMoodleEvents.events) {
-          if (event?.modulename === null) {
-            let eventTimeStart = event?.timestart ? generalUtility.unixTimeToString(event.timestart) : null;
-            let eventTimeEnd = (eventTimeStart && event?.timeduration) ? moment(eventTimeStart).add(event?.timeduration, 'seconds').toISOString() : null;
-            // if (event?.name === 'Sesión Jhonatan :) 2') {
-            //   eventTimeStart = '2022-10-24T14:00:22.000Z'
-            //   eventTimeEnd = '2022-10-24T16:00:22.000Z'
-            // }
-
-            if (!moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00')).isSameOrAfter(startServiceDate)) continue;
-
-            let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd, true)
-            let statusActivity = statusByDate.statusActivity
-            let timecompleted = statusByDate.timecompleted;
-
-
-            let description;
-
-            if (event?.description) {
-              const today = moment.utc();
-              if (eventTimeStart && eventTimeEnd) {
-                const timeStartMoment = moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00'))
-                const timeEndMoment = moment.utc(moment(eventTimeEnd).format('YYYY-MM-DD 23:59:59'))
-                if (today.isSameOrAfter(timeStartMoment) && today.isSameOrBefore(timeEndMoment)) {
-                  description = event?.description
-                }
-              }
-              else if (eventTimeStart) {}
-              else if (eventTimeEnd) {}
-            }
-
-            singleEvent = {
-              id: event.id,
-              name: event?.name,
-              description,
-              courseid: courseID,
-              modulename: undefined,
-              eventtype: 'webex',
-              instance: undefined,
-              timestart: eventTimeStart,
-              timefinish: eventTimeEnd,
-              duration: 0,
-              durationFormated: '',
-              status: statusActivity,
-              timecompleted: timecompleted,
-              url: urlWebex ? urlWebex?.url : undefined
-            };
-
-            responseEvents.push(singleEvent);
-          }
-        }
+      if (select.includes('session') && respMoodleEvents?.events) {
+        const sessionsData = this.getSessionsData({
+          courseID,
+          courseScheduling,
+          respMoodleCourseModules,
+          respMoodleEvents,
+        })
+        responseEvents = [...responseEvents, ...sessionsData]
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -491,6 +416,152 @@ class CalendarEventsService {
     return {
       statusActivity,
       timecompleted
+    }
+  }
+
+  private getSessionsData = ({ courseID, courseScheduling, respMoodleCourseModules, respMoodleEvents }) => {
+    const startServiceDate = moment(moment(courseScheduling.startDate).format('YYYY-MM-DD'))
+    const urlWebex = respMoodleCourseModules?.courseModules.find(field => field.modname === 'session')
+    const responseEvents = []
+    for (const event of respMoodleEvents.events) {
+      if (event?.modulename === null) {
+        let eventTimeStart = event?.timestart ? generalUtility.unixTimeToString(event.timestart) : null;
+        let eventTimeEnd = (eventTimeStart && event?.timeduration) ? moment(eventTimeStart).add(event?.timeduration, 'seconds').toISOString() : null;
+
+        if (!moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00')).isSameOrAfter(startServiceDate)) continue;
+
+        let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd, true)
+        let statusActivity = statusByDate.statusActivity
+        let timecompleted = statusByDate.timecompleted;
+
+
+        let description;
+
+        if (event?.description) {
+          const today = moment.utc();
+          if (eventTimeStart && eventTimeEnd) {
+            const timeStartMoment = moment.utc(moment(eventTimeStart).format('YYYY-MM-DD 00:00:00'))
+            const timeEndMoment = moment.utc(moment(eventTimeEnd).format('YYYY-MM-DD 23:59:59'))
+            if (today.isSameOrAfter(timeStartMoment) && today.isSameOrBefore(timeEndMoment)) {
+              description = event?.description
+            }
+          }
+          else if (eventTimeStart) {}
+          else if (eventTimeEnd) {}
+        }
+
+        let singleEvent: Partial<ICalendarEvent> = {
+          id: event.id,
+          name: event?.name,
+          description,
+          courseid: courseID,
+          eventtype: 'webex',
+          timestart: eventTimeStart,
+          timefinish: eventTimeEnd,
+          duration: 0,
+          durationFormated: '',
+          status: statusActivity,
+          timecompleted: timecompleted,
+          url: urlWebex ? urlWebex?.url : undefined
+        };
+
+        responseEvents.push(singleEvent);
+      }
+    }
+
+    return responseEvents
+  }
+
+  private processAttendanceData = ({
+    courseID,
+    groupByInstance,
+    grades,
+    module,
+  }: IProcessAttendanceDataParams): ICalendarEvent => {
+    let eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
+    let eventTimeStart = null;
+
+    let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+    let statusActivity = statusByDate.statusActivity
+    let timecompleted = statusByDate.timecompleted;
+
+    if (grades?.gradeitems) {
+      const index = grades?.gradeitems.findIndex((i) => i.iteminstance == module.instance)
+      if (index !== -1) {
+        const item = grades?.gradeitems[index];
+        if (item?.graderaw >= 75) {
+          statusActivity = 'delivered';
+          timecompleted = generalUtility.unixTimeToString(item?.gradedategraded || 0);
+        }
+      }
+    }
+
+    return {
+      id: module.id,
+      name: module.name,
+      sectionName: module.sectionname,
+      description: '',
+      courseid: courseID,
+      modulename: groupByInstance[0]?.modulename,
+      eventtype: '',
+      instance: groupByInstance[0]?.instance,
+      timestart: eventTimeStart,
+      timefinish: eventTimeEnd,
+      duration: 0,
+      durationFormated: '',
+      status: statusActivity,
+      timecompleted: timecompleted
+    }
+  }
+
+  private processAssignData = async ({
+    groupByInstance,
+    respMoodleAssignement,
+    userID,
+    module,
+    courseID,
+  }: IProcessAssignDataParams): Promise<ICalendarEvent> => {
+    let assignment = respMoodleAssignement.courses[0].assignments.find(t => t.id == module.instance);
+    let eventTimeStart = assignment.allowsubmissionsfromdate ? generalUtility.unixTimeToString(assignment.allowsubmissionsfromdate) : null;
+    let eventTimeEnd = new Date(groupByInstance[0]?.timestart * 1000).toISOString();
+
+    let statusByDate = this.getStatusActivityByDate(eventTimeStart, eventTimeEnd)
+    let statusActivity = statusByDate.statusActivity
+    let timecompleted = statusByDate.timecompleted;
+
+    try {
+      const moodleParamsAssignGetSumission = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.calendarEvents.assignGetSubmissionStatus,
+        moodlewsrestformat: moodle_setup.restformat,
+        'userid': userID,
+        'assignid': module.instance
+      };
+      const responseMoodleParamsAssignGetSumission = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParamsAssignGetSumission });
+      if (responseMoodleParamsAssignGetSumission?.lastattempt) {
+        const attempt = responseMoodleParamsAssignGetSumission?.lastattempt;
+        if (attempt?.submission?.status === 'submitted') {
+          statusActivity = 'delivered';
+          timecompleted = generalUtility.unixTimeToString(attempt?.submission?.timecreated || 0);
+        }
+      }
+    } catch (err) {}
+
+    return {
+      id: module.id,
+      name: module.name,
+      sectionName: module.sectionname,
+      description: '',
+      courseid: courseID,
+      modulename: groupByInstance[0]?.modulename,
+      eventtype: '',
+      instance: groupByInstance[0]?.instance,
+      timestart: eventTimeStart,
+      timefinish: eventTimeEnd,
+      duration: 0,
+      durationFormated: '',
+      status: statusActivity,
+      timecompleted: timecompleted,
     }
   }
 }
