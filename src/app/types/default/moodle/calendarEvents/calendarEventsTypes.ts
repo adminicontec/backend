@@ -20,11 +20,12 @@ export interface IMoodleCalendarEventsQuery {
 }
 
 export interface ICalendarEvent {
+  activityType: string
   id: number
   name: string
-  sectionName?: string
+  sectionName: string
   description: string
-  courseid: string
+  courseid: number | string
   modulename?: string
   eventtype?: string
   instance?: number
@@ -35,6 +36,7 @@ export interface ICalendarEvent {
   status?: string
   timecompleted?: string
   url?: string
+  qualification?: number
 }
 
 export interface IProcessAttendanceDataParams {
@@ -50,6 +52,22 @@ export interface IProcessAssignDataParams {
   userID: string
   module: IMoodleCourseContent
   courseID: string
+  grades: IMoodleGrade
+}
+
+export interface IProcessQuizDataParams {
+  courseID: string
+  grades: IMoodleGrade
+  groupByInstance: IMoodleEvent[]
+  module: IMoodleCourseContent
+}
+
+export interface IProcessForumDataParams {
+  courseID: string
+  eventTimeStart?: string
+  eventTimeEnd?: string
+  grades: IMoodleGrade
+  module: IMoodleCourseContent
 }
 
 export interface IMoodleGrade {
