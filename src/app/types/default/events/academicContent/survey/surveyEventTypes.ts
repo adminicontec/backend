@@ -10,5 +10,6 @@ export interface ICheckSurveyAvailable {
 export interface IGetAvailableSurveysParams {
   user: string
   moodle_id: string
+  schedulingId?: string
 }
 //@end

@@ -59,6 +59,23 @@ class SurveyEventController {
     const response = await surveyEventService.getAvailableUserSurveys(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+   * Metodo que permite obtener las encuestas activas de un usuario por servicio
+   * @param req
+   * @param res
+   * @returns
+   */
+   public getAvailableUserSurveysByService = async (req: Request, res: Response) => {
+
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+    params.schedulingId = req.params.id
+
+    const response = await surveyEventService.getAvailableUserSurveys(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const surveyEventController = new SurveyEventController();

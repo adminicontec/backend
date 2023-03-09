@@ -244,7 +244,7 @@ class SurveyEventService {
       const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
       if (userResponse.status === 'error') return userResponse
 
-      const enrollments = await this.getUserEnrollments(params.user)
+      const enrollments = await this.getUserEnrollments(params.user, params.schedulingId)
       if (!enrollments.length) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
       const surveysAnswered = await this.getSurveysAnsweredByUser(params.user)
@@ -435,8 +435,12 @@ class SurveyEventService {
     return surveyAnswered?.length ? surveyAnswered : []
   }
 
-  private getUserEnrollments = async (userId: string) => {
-    const enrollments = await Enrollment.find({user: userId})
+  private getUserEnrollments = async (userId: string, schedulingId?: string) => {
+    const where: any = { user: userId }
+    if (schedulingId) {
+      where.course_scheduling = schedulingId
+    }
+    const enrollments = await Enrollment.find(where)
       .select('id course_scheduling')
       .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher', populate: [
         { path: 'schedulingMode', select: 'id name' },
