@@ -381,7 +381,7 @@ class CalendarEventsService {
     }
   }
 
-  private getSessionsData = ({ courseID, courseScheduling, respMoodleCourseModules, respMoodleEvents }): ICalendarEvent[] => {
+  public getSessionsData = ({ courseID, courseScheduling, respMoodleCourseModules, respMoodleEvents }): ICalendarEvent[] => {
     const startServiceDate = moment(moment(courseScheduling.startDate).format('YYYY-MM-DD'))
     const urlWebex = respMoodleCourseModules?.courseModules.find(field => field.modname === 'session')
     const responseEvents: ICalendarEvent[] = []
@@ -419,6 +419,7 @@ class CalendarEventsService {
           courseid: courseID,
           eventtype: 'webex',
           timestart: eventTimeStart,
+          timeStartMs: event.timestart,
           timefinish: eventTimeEnd,
           duration: 0,
           durationFormated: '',

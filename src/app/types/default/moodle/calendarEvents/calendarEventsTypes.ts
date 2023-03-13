@@ -30,6 +30,7 @@ export interface ICalendarEvent {
   eventtype?: string
   instance?: number
   timestart?: string
+  timeStartMs?: number
   timefinish?: string
   duration?: number
   durationFormated?: string
