@@ -46,7 +46,7 @@ class CourseSchedulingDataService {
   public fetchCourseSchedulingByProgram = async (params: IFetchCourseSchedulingByProgram) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants publish'
+      let select = 'id address metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants publish'
 
       let where = {
         moodle_id: params.moodle_id
@@ -161,6 +161,7 @@ class CourseSchedulingDataService {
             end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
             duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
             schedule: '-',
+            address: register.address ? register.address : '',
           }
 
           scheduling.push(item)
@@ -233,6 +234,7 @@ class CourseSchedulingDataService {
               schedule: schedule,
               startDate: session.startDate,
               durationOnSeconds: session.duration,
+              address: register.address ? register.address : '',
             }
             let item = {}
             const webexSession = webexSessions.find(
