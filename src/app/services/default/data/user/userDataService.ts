@@ -62,7 +62,7 @@ class UserDataService {
         userId: user._id,
         status: {$in: ['Complete']}
       })
-      .select('id userId courseId certificate')
+      .select('id userId courseId certificate status')
       .populate({path: 'courseId', select: 'id program certificate_students', populate: [{
         path: 'program', select: 'id name'
       }]})
@@ -76,6 +76,7 @@ class UserDataService {
             date: moment(element?.certificate.date).format('YYYY-MM-DD'), //moment(element.created_at).format('YYYY-MM-DD'),
             hash: element?.certificate?.hash,
             url: element?.certificate?.url,
+            status: element?.status,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
             pdfPath: element?.certificate?.pdfPath ? certificateService.certificateUrl(element?.certificate.pdfPath) : null,
           })
