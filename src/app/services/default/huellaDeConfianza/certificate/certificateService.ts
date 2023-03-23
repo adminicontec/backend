@@ -260,6 +260,37 @@ class CertificateService {
         fecha_aprobacion: respCourse.scheduling.endDate,
         fecha_impresion: currentDate,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
+        warnings: []
+      }
+
+      if (respCourse.scheduling?.signature_1) {
+        if (!respCourse.scheduling?.signature_1_name || !respCourse.scheduling?.signature_1_position || !respCourse.scheduling?.signature_1_company) {
+          previewCertificateParams.warnings.push({
+            key: 'Firma 2', message: 'La información de la firma no esta completa, por favor revise la configuración del servicio'
+          })
+        }
+      }
+
+      if (respCourse.scheduling?.signature_2) {
+        if (!respCourse.scheduling?.signature_2_name || !respCourse.scheduling?.signature_2_position || !respCourse.scheduling?.signature_2_company) {
+          previewCertificateParams.warnings.push({
+            key: 'Firma 3', message: 'La información de las firmas no esta completa, por favor revise la configuración del servicio'
+          })
+        }
+      }
+
+      if (respCourseDetails.schedulings && Array.isArray(respCourseDetails.schedulings)) {
+        const durationModules = respCourseDetails.schedulings.reduce((accum, element) => {
+          if (element.duration) {
+            accum += element.duration
+          }
+          return accum
+        }, 0)
+        if (durationModules !== respCourse.scheduling.duration) {
+          previewCertificateParams.warnings.push({
+            key: 'Intensidad', message: `La duración del servicio (${generalUtility.getDurationFormatedForCertificate(respCourse.scheduling.duration)}) es diferente a la de los modulos (${generalUtility.getDurationFormatedForCertificate(durationModules)})`
+          })
+        }
       }
 
       //#endregion Información del curso
@@ -954,9 +985,9 @@ class CertificateService {
       if (signatureImage64_1) {
         signatureDataArray.push({
           imageBase64: signatureImage64_1,
-          signatoryName: 'Primer firmante',
-          signatoryPosition: 'Cargo 1er',
-          signatoryCompanyName: 'Empresa 1'
+          signatoryName: respCourse.scheduling?.signature_1_name || undefined,
+          signatoryPosition: respCourse.scheduling?.signature_1_position || undefined,
+          signatoryCompanyName: respCourse.scheduling?.signature_1_company || undefined
         });
         console.log(`Signature : ${signatureDataArray[0].signatoryName}`);
       }
@@ -965,9 +996,9 @@ class CertificateService {
       if (signatureImage64_2) {
         signatureDataArray.push({
           imageBase64: signatureImage64_2,
-          signatoryName: 'Segundo firmante',
-          signatoryPosition: 'Cargo 2ndo',
-          signatoryCompanyName: 'Empresa 2'
+          signatoryName: respCourse.scheduling?.signature_2_name || undefined,
+          signatoryPosition: respCourse.scheduling?.signature_2_position || undefined,
+          signatoryCompanyName: respCourse.scheduling?.signature_2_company || undefined
         });
         console.log(`Signature : ${signatureDataArray[1].signatoryName}`);
       }
