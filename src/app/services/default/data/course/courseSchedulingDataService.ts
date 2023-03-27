@@ -160,8 +160,10 @@ class CourseSchedulingDataService {
             start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
             end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
             duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
+            durationOnSeconds: element.duration,
             schedule: '-',
             address: register.address ? register.address : '',
+            startDate: element.startDate,
           }
 
           scheduling.push(item)
