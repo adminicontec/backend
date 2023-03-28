@@ -5,11 +5,15 @@ const ObjectID = require('mongodb').ObjectID
 
 // @import services
 import { courseService } from '@scnode_app/services/default/admin/course/courseService'
+import { calendarEventsService } from '@scnode_app/services/default/moodle/calendarEvents/calendarEventsService'
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService'
 // @end
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
+import { moodle_setup } from '@scnode_core/config/globals';
 // @end
 
 // @import models
@@ -18,7 +22,10 @@ import { CourseScheduling, CourseSchedulingDetails, Course, Enrollment, CourseSc
 
 // @import types
 import {IFetchCourseSchedulingByProgram, IFetchCourseSchedulingExtend, ParamsSchedulingConfirmedByMonth} from '@scnode_app/types/default/data/course/courseSchedulingDataTypes'
+import { ICalendarEvent } from '@scnode_app/types/default/moodle/calendarEvents/calendarEventsTypes'
 // @end
+
+const COMPARE_WEBEX_DATE = 'DD/MM/YYYY HH:mm'
 
 class CourseSchedulingDataService {
 
@@ -39,7 +46,7 @@ class CourseSchedulingDataService {
   public fetchCourseSchedulingByProgram = async (params: IFetchCourseSchedulingByProgram) => {
 
     try {
-      let select = 'id metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants publish'
+      let select = 'id address metadata schedulingMode modular program schedulingType schedulingStatus startDate endDate regional city country amountParticipants observations client duration in_design moodle_id attachments attachments_student contact logistics_supply certificate_address business_report partial_report loadParticipants publish'
 
       let where = {
         moodle_id: params.moodle_id
@@ -64,6 +71,8 @@ class CourseSchedulingDataService {
         // console.log('register', register)
 
       if (!register) return responseUtility.buildResponseFailed('json', null, { error_key: 'course_scheduling.not_found' })
+
+      const webexSessions: ICalendarEvent[] = await this.getSchedulingSessionsUrl(register)
 
       const schedulingExtraInfo: any = await Course.findOne({
         program: register.program._id
@@ -151,7 +160,10 @@ class CourseSchedulingDataService {
             start_date: (element.startDate) ? moment.utc(element.startDate).format('DD/MM/YYYY') : '',
             end_date: (element.endDate) ? moment.utc(element.endDate).format('DD/MM/YYYY') : '',
             duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
+            durationOnSeconds: element.duration,
             schedule: '-',
+            address: register.address ? register.address : '',
+            startDate: element.startDate,
           }
 
           scheduling.push(item)
@@ -224,13 +236,20 @@ class CourseSchedulingDataService {
               schedule: schedule,
               startDate: session.startDate,
               durationOnSeconds: session.duration,
+              address: register.address ? register.address : '',
             }
             let item = {}
-            // if (first_session) {
-              item = { ...item, ...row_content, ...session_data }
-            // } else {
-              // item = { ...item, ...session_data }
-            // }
+            const webexSession = webexSessions.find(
+              (wbSession) => {
+                const isScheduling  = String(wbSession.courseid) === String(register.moodle_id)
+                const wbStartDate = moment(wbSession.timestart).format(COMPARE_WEBEX_DATE)
+                const eventStartDate = moment(session_data.startDate).format(COMPARE_WEBEX_DATE)
+                return isScheduling && wbStartDate === eventStartDate
+              }
+            )
+
+            item = { ...item, ...row_content, ...session_data, webex: webexSession }
+
             session_count++
             first_session = false
             scheduling.push(item)
@@ -250,6 +269,7 @@ class CourseSchedulingDataService {
         scheduling,
       }})
     } catch (error) {
+      console.log('[CourseSchedulingDataService] [fetchCourseSchedulingByProgram] ERROR: ', error)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -433,6 +453,36 @@ class CourseSchedulingDataService {
       console.log('courseSchedulingDataService => schedulingConfirmedByMonth error: ', e);
       return responseUtility.buildResponseFailed('json');
     }
+  }
+
+  private getSchedulingSessionsUrl = async (courseScheduling: any): Promise<ICalendarEvent[]> => {
+    const moodleId = courseScheduling.moodle_id
+    const select = ['session']
+
+    const respMoodleCourseModules: any = await courseContentService.moduleList({ courseID: moodleId, moduleType: select });
+    if (respMoodleCourseModules.status !== 'success') return []
+
+    const moodleParams = {
+      wstoken: moodle_setup.wstoken,
+      wsfunction: moodle_setup.services.calendarEvents.get,
+      moodlewsrestformat: moodle_setup.restformat,
+      'events[courseids][0]': moodleId,
+    };
+    const respMoodleEvents = await queryUtility.query({
+      method: 'get',
+      url: '',
+      api: 'moodle',
+      params: moodleParams,
+    });
+    if (respMoodleEvents.exception) return []
+
+    const events = await calendarEventsService.getSessionsData({
+      courseID: moodleId,
+      courseScheduling: courseScheduling,
+      respMoodleCourseModules,
+      respMoodleEvents,
+    })
+    return events
   }
 }
 

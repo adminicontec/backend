@@ -30,6 +30,8 @@ class SurveyEventRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.get(app, _route, '/check-survey-available/:moodle_id', this.instanceController.checkSurveyAvailable, [], ['auth'])
+    routerUtility.get(app, _route, '/get-available-user-surveys', this.instanceController.getAvailableUserSurveys, [], ['auth'])
+    routerUtility.get(app, _route, '/get-available-user-surveys-by-service/:id', this.instanceController.getAvailableUserSurveysByService, [], ['auth'])
     // @end
   }
 }
