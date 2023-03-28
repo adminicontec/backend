@@ -17,9 +17,11 @@ import { AcademicResourceAttempt, CourseSchedulingDetails, Enrollment, Survey } 
 // @end
 
 // @import types
-import {ICheckSurveyAvailable} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
+import {ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
+
+const SCHEDULING_MODES = ['Presencial - En linea', 'Presencial', 'En linea', 'En Línea']
 
 class SurveyEventService {
 
@@ -234,6 +236,218 @@ class SurveyEventService {
       console.log(error)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public getAvailableUserSurveys = async (params: IGetAvailableSurveysParams) => {
+    try {
+      // @INFO: Validando el usuario
+      const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
+      if (userResponse.status === 'error') return userResponse
+
+      const enrollments = await this.getUserEnrollments(params.user, params.schedulingId)
+      if (!enrollments.length) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
+
+      const surveysAnswered = await this.getSurveysAnsweredByUser(params.user)
+      const surveysRelated = surveysAnswered.reduce((accum, element) => {
+        accum.push(element.results.surveyRelated.toString())
+        return accum
+      }, [])
+
+      const filteredEnrollments = this.getFilteredSchedulingByMode(enrollments, SCHEDULING_MODES)
+      const filteredSurveys = await this.getSurveysFromFilteredEnrollments(filteredEnrollments, surveysRelated)
+
+      const virtualEnrollments = this.getFilteredSchedulingByMode(enrollments, ['Virtual'])
+      const virtualSurveys = await this.getSurveysFromVirtualEnrollments(virtualEnrollments, surveysRelated)
+
+      const userSurveys = [...filteredSurveys, ...virtualSurveys]
+
+      await this.sendSurveyLogs(userSurveys)
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          surveys: userSurveys,
+        }
+      })
+
+    } catch(e) {
+      console.log("[SurveyEventService] [getAvailableSurveys] ERROR: ", e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private sendSurveyLogs = async (surveys: any[]) => {
+    for (const survey of surveys) {
+      await surveyLogService.saveLog({
+        course_scheduling: survey.course_scheduling,
+        course_scheduling_details: survey.course_scheduling_details,
+        endDate: survey.endDateService
+      })
+    }
+  }
+
+  private getSurveysFromVirtualEnrollments = async (enrollments: any[], surveysRelated: string[]) => {
+    const surveys = []
+    const today = moment()
+    const dbSurveys = await this.getSurveysByEnrollments(enrollments)
+    for (const enrollment of enrollments) {
+      const endDate = moment.utc(enrollment.course_scheduling.endDate)
+      if (!surveysRelated.includes(enrollment.course_scheduling._id.toString())) {
+        if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
+          const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
+          const dbSurvey = dbSurveys?.find((s) => s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString())
+          if (!!dbSurvey) {
+            surveys.push({
+              surveyRelated: enrollment.course_scheduling._id,
+              surveyRelatedContent: {
+                name: enrollment.course_scheduling.program.name,
+                endDate: enrollment.course_scheduling.endDate,
+                mode_id: enrollment.course_scheduling.schedulingMode._id,
+                teacher,
+              },
+              course_scheduling: enrollment.course_scheduling._id,
+              course_scheduling_details: undefined,
+              endDateService: enrollment.course_scheduling.endDate,
+              academic_resource_config: dbSurvey.academic_resource_config,
+              survey: dbSurvey.survey,
+            })
+          }
+        }
+      }
+    }
+    return surveys
+  }
+
+  private getSurveysFromFilteredEnrollments = async (enrollments: any[], surveysRelated: string[]) => {
+    const surveys = []
+    const dbSurveys = await this.getSurveysByEnrollments(enrollments)
+
+    for (const enrollment of enrollments) {
+      let whereDetailScheduling = {
+        course_scheduling: enrollment.course_scheduling._id,
+      }
+      if (surveysRelated.length > 0) {
+        whereDetailScheduling['_id'] = {$nin: surveysRelated}
+      }
+      const detailScheduling = await CourseSchedulingDetails.find(whereDetailScheduling)
+        .select('id course startDate endDate sessions teacher')
+        .populate({path: 'course', select: 'id name code'})
+        .populate({path: 'teacher', select: 'id email profile'})
+        .lean()
+        .sort({startDate: 1})
+      const availableSurvey = this.getAvailableSurveyBySchedulingDetails(enrollment, detailScheduling)
+      const dbSurvey = dbSurveys?.find((s) => s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString())
+      if (!!dbSurvey && !!availableSurvey) {
+        surveys.push({
+          ...availableSurvey,
+          academic_resource_config: dbSurvey.academic_resource_config,
+          survey: dbSurvey.survey,
+        })
+      }
+    }
+    return surveys
+  }
+
+  private getSurveysByEnrollments = async (enrollments: any[]) => {
+    const modeIds = enrollments?.map((enrollment) => enrollment?.course_scheduling?.schedulingMode?._id)
+    const aggregateQuery = [
+      {
+        $lookup: {
+          from: 'academic_resource_configs',
+          localField: 'config.content',
+          foreignField: '_id',
+          as: 'config.content'
+        }
+      },
+      { $unwind: '$config.content' },
+      {
+        $match: {
+          'config.content.config.course_modes': { $in: modeIds },
+          'deleted': false,
+          'status': 'enabled'
+        }
+      },
+      {
+        $group: {
+          _id: '$_id',
+          survey: { "$first": '$_id'},
+          academic_resource_config: {$first: '$config.content._id'},
+          modeId: {$first: '$config.content.config.course_modes'}
+        }
+      }
+    ]
+
+    const data = await Survey.aggregate(aggregateQuery)
+    return data?.length ? data : []
+  }
+
+  private getAvailableSurveyBySchedulingDetails = (enrollment: any, detailScheduling: any[]) => {
+    const today = moment()
+    detailScheduling.map((course) => {
+      if (course.sessions && course.sessions.length > 0) {
+        let sessions = course.sessions.reduce((accum, element) => {
+          if (element.startDate && element.duration) {
+            element.endDate = moment(element.startDate).add(element.duration, 'seconds')
+            accum.push(element)
+          }
+          return accum
+        }, [])
+        sessions.sort((a, b) => moment(a.startDate).diff(moment(b.startDate)))
+        if (sessions.length > 0)  {
+          const lastSession = sessions[sessions.length-1]
+            if (today.isAfter(lastSession.endDate.subtract(90, 'minutes'))) {
+              return {
+                surveyRelated: course._id,
+                surveyRelatedContent: {
+                  name: course.course.name,
+                  endDate: lastSession.endDate,
+                  mode_id: enrollment.course_scheduling.schedulingMode._id,
+                  teacher: course.teacher,
+                },
+                course_scheduling: enrollment.course_scheduling._id,
+                course_scheduling_details: course._id,
+                endDateService: lastSession.endDate,
+              }
+            }
+        }
+      }
+    })
+    return null
+  }
+
+  private getFilteredSchedulingByMode = (enrollments: any[], modes: string[]) => {
+    if (enrollments?.length) {
+      const result = enrollments.filter(
+        (enrollment) =>
+          modes.includes(enrollment?.course_scheduling?.schedulingMode?.name)
+      )
+      return result?.length ? result : []
+    }
+    return []
+  }
+
+  private getSurveysAnsweredByUser = async (userId: string) => {
+    const surveyAnswered = await AcademicResourceAttempt.find({
+      user: userId,
+      'results.surveyRelated': {$exists: true},
+      'results.status': 'ended'
+    }).select('id results.surveyRelated')
+    .lean()
+    return surveyAnswered?.length ? surveyAnswered : []
+  }
+
+  private getUserEnrollments = async (userId: string, schedulingId?: string) => {
+    const where: any = { user: userId }
+    if (schedulingId) {
+      where.course_scheduling = schedulingId
+    }
+    const enrollments = await Enrollment.find(where)
+      .select('id course_scheduling')
+      .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher', populate: [
+        { path: 'schedulingMode', select: 'id name' },
+        { path: 'program', select: 'id name code' },
+      ]})
+      .lean()
+    return enrollments?.length ? enrollments : []
   }
 
   private getTeacherInfoFromCourseScheduling = async (courseSchedulingId: string) => {

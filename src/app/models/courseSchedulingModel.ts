@@ -201,10 +201,37 @@ const CourseSchedulingSchema = new Schema({
   signature_1: {
     type: Schema.Types.String
   },
+  signature_1_name: {
+    type: Schema.Types.String
+  },
+  signature_1_position: {
+    type: Schema.Types.String
+  },
+  signature_1_company: {
+    type: Schema.Types.String
+  },
   signature_2: {
     type: Schema.Types.String
   },
+  signature_2_name: {
+    type: Schema.Types.String
+  },
+  signature_2_position: {
+    type: Schema.Types.String
+  },
+  signature_2_company: {
+    type: Schema.Types.String
+  },
   signature_3: {
+    type: Schema.Types.String
+  },
+  signature_3_name: {
+    type: Schema.Types.String
+  },
+  signature_3_position: {
+    type: Schema.Types.String
+  },
+  signature_3_company: {
     type: Schema.Types.String
   },
   auditor_certificate: {

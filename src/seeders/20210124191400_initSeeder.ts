@@ -643,6 +643,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'module:consultation_room', description: 'Modulo que permite la administración de sala de consulta', permissions: [
         {name: 'permission:consultation_room_menu_access', description: 'Menu de sala de consulta'}
       ]},
+      {name: 'module:tutorials', description: 'Modulo que permite la administración tutoriales', permissions: [
+        {name: 'permission:tutorials_menu_access', description: 'Menu tutoriales'}
+      ]},
       {name: 'module:isolution', description: 'Modulo que permite la administración de isolucion', permissions: [
         {name: 'permission:isolution_menu_access', description: 'Menu de isolucion'}
       ]},
