@@ -685,6 +685,11 @@ class EnrollmentService {
 
       let registers: any[] = [];
       if (availableSearch) {
+        where.push({
+          $match: {
+            deleted: false
+          }
+        })
         registers = await Enrollment.aggregate(where);
       }
 
