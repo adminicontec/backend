@@ -2584,6 +2584,7 @@ class CertificateService {
         }
       })
     } catch (e) {
+      console.log("[CertificateService] [generateZipCertifications] ERROR: ", e)
       return responseUtility.buildResponseFailed('json', null)
     }
   }

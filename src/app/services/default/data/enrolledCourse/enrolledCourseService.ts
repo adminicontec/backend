@@ -164,6 +164,10 @@ class EnrolledCourseService {
       whereCourseScheduling['metadata.service_id'] = params.search;
     }
 
+    if (params.serviceId) {
+      whereCourseScheduling['metadata.service_id'] = params.serviceId;
+    }
+
     if (params.searchDoc) {
       _where.push({
         $lookup: {
@@ -258,7 +262,6 @@ class EnrolledCourseService {
               fullname: `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
             }
           }
-          // register.userId['fullname'] = `${register.userId.profile.first_name} ${register.userId.profile.last_name}`
         }
         if (register.auxiliar && register.auxiliar.profile) {
           register = {
@@ -268,12 +271,7 @@ class EnrolledCourseService {
               fullname: `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
             }
           }
-          // register.auxiliar.fullname = `${register.auxiliar.profile.first_name} ${register.auxiliar.profile.last_name}`
         }
-
-        console.log('Fetch Certficiate at Register');
-        console.log(register);
-
 
         if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
 
@@ -289,7 +287,9 @@ class EnrolledCourseService {
 
       registers = newRegisters
 
-    } catch (error) { }
+    } catch (error) {
+      console.log('[EnrolledCourseService] [fetchCertifications] ERROR: ', error)
+    }
 
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
@@ -309,13 +309,15 @@ class EnrolledCourseService {
 
       // Download all certifications of a company
       if (params.downloadAll && params.company) {
-        const certificationsOfCompanyResponse: any = await this.fetchCertifications({
+        const fetchCertificationsParams: IFetchCertifications = {
           company: params.company,
           status: ['Complete'],
           certificate_clients: true,
           nPerPage: '5000',
-          pageNumber: '1'
-        })
+          pageNumber: '1',
+          ...(params.serviceId ? { serviceId: params.serviceId } : {})
+        }
+        const certificationsOfCompanyResponse: any = await this.fetchCertifications(fetchCertificationsParams)
         if (certificationsOfCompanyResponse.status === 'success') {
           const certificationsOfCompany = certificationsOfCompanyResponse.certifications ?? []
           const companyCertificationsId = certificationsOfCompany.map(certificate => certificate._id)
@@ -332,7 +334,6 @@ class EnrolledCourseService {
       })
 
       const certification_urls = []
-
 
       for await (const certification of certifications) {
         if (certification.certificate?.pdfPath) {

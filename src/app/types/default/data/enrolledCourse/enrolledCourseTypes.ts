@@ -16,6 +16,7 @@ export interface IFetchCertifications {
   status?: Array<'New' | 'In-process' | 'Complete' | 'Error' | 'Re-issue'>
   certificate_clients?: boolean
   certificate_students?: boolean
+  serviceId?: string
 }
 
 export interface IDownloadMasiveCertifications {
@@ -23,5 +24,6 @@ export interface IDownloadMasiveCertifications {
   certification_queue: Array<string>
   downloadAll?: boolean
   company?: string
+  serviceId?: string
 }
 //@end
