@@ -152,7 +152,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
                       // @INFO: Para presencial / enlinea se debe validar la asistencia
                       const progress = academicDataByUser[student.user._id].progress || undefined
                       const percentage = progress && progress?.assistanceDetails?.percentage || 0
-                      if (percentage >= 100) {
+                      if (percentage >= 75) {
                         sendNotificationToStudent = true;
                       }
                     }
