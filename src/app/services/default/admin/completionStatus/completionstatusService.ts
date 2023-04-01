@@ -18,7 +18,7 @@ import { CertificateQueue, CourseScheduling, User } from '@scnode_app/models';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion, IActivitiesSummary } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
+import { ICompletionStatus, ICompletionStatusQuery, IActivitiesCompletion, IActivitiesSummary, IActivitiesSummaryResponse } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 // @end
 
 class CompletionstatusService {
@@ -221,11 +221,7 @@ class CompletionstatusService {
 
 
   public activitiesSummary = async (params: IActivitiesSummary) => {
-
-    console.log('activitiesSummary');
-    console.log(params);
-
-    const summary = {
+    const summary: IActivitiesSummaryResponse = {
       schedulingMode: '',
       totalAdvance: undefined,
       finalGrade: '',
@@ -310,6 +306,7 @@ class CompletionstatusService {
                 summary.finalNote = progress?.average_grade ? generalUtility.round(progress.average_grade) : '-'
               } else {
                 // summary.totalAdvance = progress?.assistanceDetails?.percentage || 0;
+                summary.attendanceInformation = progress?.assistanceDetails
                 summary.attendance = progress?.assistanceDetails?.percentage || 0
                 // summary.notes.push(progress?.assistanceDetails?.percentage ? progress?.assistanceDetails?.percentage : 0)
                 summary.notes = [];
@@ -394,8 +391,8 @@ class CompletionstatusService {
         summary: summary
       }
     });
-
   }
+
   private findCertificationsStatus = (certificationStatus) => {
     let label = 'En cola'
     switch (certificationStatus) {

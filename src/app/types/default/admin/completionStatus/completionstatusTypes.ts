@@ -19,6 +19,46 @@ export interface IActivitiesSummary {
   course_scheduling?: string
 }
 
+export interface IActivitiesSummaryResponse {
+  schedulingMode: string,
+  totalAdvance?: string,
+  finalGrade: string,
+  programFinalState: string,
+  certificateIssueState: string,
+  auditor: boolean,
+  auditorGrade: number,
+  notes: Array<unknown>,
+  finalNote?: string | number,
+  emissionCertificate: {
+    label: string,
+  },
+  certification: {
+    type?: string | number,
+    label?: string | number,
+    exam?: string | number,
+    status: {
+      generated: boolean,
+      label: string
+    }
+  },
+  auditorCertification: {
+    type?: string | number,
+    label?: string | number,
+    exam?: string | number,
+    status: {
+      generated: boolean,
+      label: string
+    }
+  },
+  attendance?: number,
+  attendanceInformation?: {
+    total: number
+    attended: number
+    percentage: number
+  }
+  activities?: string | number
+}
+
 export interface IActivitiesSummary {
   courseID?: string,  // ID de curso (listado de cursos en Moodle)
   userMoodleID?: string,     // ID de estudiante en Moodle
