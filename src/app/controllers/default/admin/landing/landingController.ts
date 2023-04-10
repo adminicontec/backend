@@ -376,6 +376,46 @@ class LandingController {
 		const response = await landingService.insertOrUpdateForums(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public insertOrUpdateTutorial = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+    if (files && Object.prototype.hasOwnProperty.call(files, 'imageFile')) {
+      params['imageFile'] = files['imageFile']
+    }
+
+    if (files && Object.prototype.hasOwnProperty.call(files, 'attachFile')) {
+      params['attachFile'] = files['attachFile']
+    }
+
+		const response = await landingService.insertOrUpdateTutorial(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public deleteTutorial = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+		const response = await landingService.deleteTutorial(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const landingController = new LandingController();

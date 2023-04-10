@@ -108,6 +108,11 @@ export interface ILandingReferenceDelete{
   unique: string
 }
 
+export interface ILandingTutorialDelete{
+  slug: string
+  unique: string
+}
+
 export interface ILandingOurClientDelete{
   slug: string
   unique: string
@@ -139,6 +144,7 @@ export interface ILanding {
   descriptive_training?: ILandingDescriptiveTraining
   id?: string // Identificador de la categoria
   forums?: ILandingForum
+  tutorials?: Array<ILandingTutorial>
 }
 
 export interface ILandingDelete {
@@ -150,5 +156,20 @@ export interface ILandingQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
+}
+
+export interface ILandingTutorial {
+  title: string;
+  description: string;
+  unique: string;
+  roles: string[];
+  imageUrl: string;
+  attachUrl: string;
+  fileType: string;
+  active: boolean;
+  slug?: string;
+  imageFile?: any;
+  attachFile?: any;
+  created_at?: Date;
 }
 //@end
