@@ -40,6 +40,11 @@ export const TIME_ZONE_WITH_NAME = {
 
 export interface IUser {
   moodle?: 'off' | 'on',
+  reviewUserInformation?: boolean
+  reviewData?: {
+    status: 'pending' | 'reviewed'
+    lastReview?: Date
+  }
   username?: string, // Nombre de usuario que es utilizado para iniciar sesión
   normalizedUserName?: string,
   email?: string, // Correo electronico del usuario

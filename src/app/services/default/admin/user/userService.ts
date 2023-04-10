@@ -154,6 +154,13 @@ class UserService {
         params.roles = params.roles.split(",");
       }
 
+      if (params.reviewUserInformation) {
+        params.reviewData = {
+          status: 'reviewed',
+          lastReview: new Date()
+        }
+      }
+
       if (params.id) {
         let sendWelcomEmail = false;
 
@@ -312,6 +319,10 @@ class UserService {
             }
             userParams.profile.country = respCountry.country._id;
             countryCode = respCountry.country.iso2;
+          }
+
+          userParams.reviewData = {
+            status: 'pending'
           }
 
           const { _id } = await User.create(userParams)
