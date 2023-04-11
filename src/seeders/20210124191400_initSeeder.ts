@@ -630,6 +630,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_alliances_items_update', description: 'Actualizar alianza'},
         {name: 'permission:landings_alliances_items_delete', description: 'Eliminar alianza'},
 
+        {name: 'permission:landings_tutorials', description: 'Landing de tutoriales'},
+
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},
         {name: 'permission:landings_menu_access', description: 'Menu de configuración de landings'}

@@ -945,6 +945,18 @@ class LandingService {
     }
   }
 
+  public getTutorialImageUrl = (img: string) => {
+    return img
+    ? `${customs['uploads']}/${this.default_cover_tutorial_path}/${img}`
+    : null
+  }
+
+  public getTutorialAttachUrl = (attach: string) => {
+    return attach
+    ? `${customs['uploads']}/${this.default_cover_tutorial_path}/${attach}`
+    : null
+  }
+
   /**
    * Metodo que permite eliminar un tutorial
    * @param params

@@ -170,6 +170,7 @@ export interface ILandingTutorial {
   slug?: string;
   imageFile?: any;
   attachFile?: any;
+  videoUrl?: string;
   created_at?: Date;
 }
 //@end
