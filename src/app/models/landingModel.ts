@@ -112,8 +112,14 @@ const LandingSchema = new Schema({
     attachUrl: { type: Schema.Types.String },
     fileType: { type: Schema.Types.String },
     active: { type: Schema.Types.Boolean, default: true },
+    private: { type: Schema.Types.Boolean, default: false },
     videoUrl: { type: Schema.Types.String },
     created_at: { type: Schema.Types.Date },
+    publicGroups: [
+      {
+        type: Schema.Types.String,
+      }
+    ],
   }],
   title_posts: {type: Schema.Types.String},
   forums: {

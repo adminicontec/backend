@@ -398,6 +398,14 @@ class LandingController {
       params['attachFile'] = files['attachFile']
     }
 
+    if (typeof params?.roles === 'string') {
+      params.roles = JSON.parse(params.roles)
+    }
+
+    if (typeof params?.publicGroups === 'string') {
+      params.publicGroups = JSON.parse(params.publicGroups)
+    }
+
 		const response = await landingService.insertOrUpdateTutorial(params)
 		return responseUtility.sendResponseFromObject(res, response)
   }

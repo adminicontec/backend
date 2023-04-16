@@ -172,5 +172,7 @@ export interface ILandingTutorial {
   attachFile?: any;
   videoUrl?: string;
   created_at?: Date;
+  private?: boolean;
+  publicGroups?: string[];
 }
 //@end
