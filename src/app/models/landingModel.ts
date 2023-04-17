@@ -100,6 +100,27 @@ const LandingSchema = new Schema({
     created_at: {type: Schema.Types.Date},
     active: {type: Schema.Types.Boolean}
   }],
+  tutorials: [{
+    title: { type: Schema.Types.String },
+    description: { type: Schema.Types.String },
+    unique: { type: Schema.Types.String, require: true },
+    roles: [{
+      type: Schema.Types.ObjectId,
+      ref: "Role"
+    }],
+    imageUrl: { type: Schema.Types.String },
+    attachUrl: { type: Schema.Types.String },
+    fileType: { type: Schema.Types.String },
+    active: { type: Schema.Types.Boolean, default: true },
+    private: { type: Schema.Types.Boolean, default: false },
+    videoUrl: { type: Schema.Types.String },
+    created_at: { type: Schema.Types.Date },
+    publicGroups: [
+      {
+        type: Schema.Types.String,
+      }
+    ],
+  }],
   title_posts: {type: Schema.Types.String},
   forums: {
     title: {type: Schema.Types.String},

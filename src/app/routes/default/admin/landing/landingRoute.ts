@@ -56,6 +56,8 @@ class LandingRoute {
     routerUtility.delete(app, _route, '/delete-alliance/:slug/:unique', this.instanceController.deleteAlliance, [], ['auth'])
     routerUtility.post(app, _route, '/save-alliance-brochure', this.instanceController.saveAllianceBrochure, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
 
+    routerUtility.post(app, _route, '/insert-or-update-tutorial', this.instanceController.insertOrUpdateTutorial, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
+    routerUtility.delete(app, _route, '/delete-tutorial/:slug/:unique', this.instanceController.deleteTutorial, [], ['auth'])
     // @end
   }
 }

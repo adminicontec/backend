@@ -39,7 +39,9 @@ import {
   ILandingAlliance,
   ILandingAllianceDelete,
   IAllianceBrochure,
-  IAllianceBrochureCreate
+  IAllianceBrochureCreate,
+  ILandingTutorial,
+  ILandingTutorialDelete
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -53,6 +55,7 @@ class LandingService {
   private default_cover_descriptive_training_path = 'landings/descriptiveTraining'
   private default_cover_our_clients_path = 'landings/ourClients'
   private default_cover_references_path = 'landings/references'
+  private default_cover_tutorial_path = '/landings/tutorials'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -890,6 +893,102 @@ class LandingService {
       ? `${customs['uploads']}/${this.default_cover_references_path}/${img}`
       : null
     }
+
+    /**
+   * Metodo que permite insertar/actualizar un tutorial
+   * @param params
+   * @returns
+   */
+   public insertOrUpdateTutorial = async (params: ILandingTutorial) => {
+
+    try {
+      let tutorials: Array<ILandingTutorial> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id tutorials').lean()
+      if (exists && exists.tutorials) {
+        tutorials = exists.tutorials
+      }else{
+        tutorials = []
+      }
+
+      if (params.imageFile && params.imageFile !== '{}' && typeof params.imageFile !== 'string') {
+        const defaulPath = this.default_cover_tutorial_path
+        const response_upload: any = await uploadService.uploadFile(params.imageFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.imageUrl = response_upload.name
+      }
+
+      if (params.attachFile && params.attachFile !== '{}' && typeof params.attachFile !== 'string') {
+        const defaulPath = this.default_cover_tutorial_path
+        const response_upload: any = await uploadService.uploadFile(params.attachFile, defaulPath)
+        if (response_upload.status === 'error') return response_upload
+        if (response_upload.hasOwnProperty('name')) params.attachUrl = response_upload.name
+      }
+
+      let tutorialExists = tutorials.findIndex((t) => t.unique === params.unique)
+      if (tutorialExists !== -1) {
+        tutorials[tutorialExists] = {...tutorials[tutorialExists], ...params}
+      } else {
+        tutorials.push({
+          ...params,
+          created_at: new Date(),
+          unique: uuidv4(),
+        })
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        tutorials,
+      })
+    } catch (e) {
+      console.log('[LandingService] [insertOrUpdateTutorial] ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public getTutorialImageUrl = (img: string) => {
+    return img
+    ? `${customs['uploads']}/${this.default_cover_tutorial_path}/${img}`
+    : null
+  }
+
+  public getTutorialAttachUrl = (attach: string) => {
+    return attach
+    ? `${customs['uploads']}/${this.default_cover_tutorial_path}/${attach}`
+    : null
+  }
+
+  /**
+   * Metodo que permite eliminar un tutorial
+   * @param params
+   * @returns
+   */
+   public deleteTutorial = async (params: ILandingTutorialDelete) => {
+
+    try {
+      let tutorials: Array<ILandingTutorial> = []
+      const exists = await Landing.findOne({ slug: params.slug }).select('id tutorials').lean()
+      if (exists && exists.tutorials) {
+        tutorials = exists.tutorials
+      }else{
+        tutorials = []
+      }
+
+      let tutorialsExists = tutorials.findIndex((t) => t.unique === params.unique)
+      if (tutorialsExists === -1) {
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'landing.scheduling.delete.not_found'})
+      } else {
+        tutorials.splice(tutorialsExists, 1)
+      }
+
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        tutorials,
+      })
+    } catch (e) {
+      console.log('[LandingService] [deleteTutorial] ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
 }
 
