@@ -43,7 +43,8 @@ class LandingDataService {
       .populate({path: 'trainings.course', select: 'id program', populate: {
         path: 'program', select: 'id name'
       }})
-      .select('id title_page title_training title_references title_posts article trainings scheduling descriptive_training our_clients references forums alliances')
+      .populate({ path: 'tutorials.roles', select: 'id name description' })
+      .select('id title_page title_training title_references title_posts article tutorials trainings scheduling descriptive_training our_clients references forums alliances')
       .lean()
 
       if (landing) {
@@ -94,6 +95,23 @@ class LandingDataService {
           }
           if (params.onlyActiveReference) {
             landing.references = landing.references.filter((r) => r.active || r.active === undefined)
+          }
+        }
+
+        if (landing.tutorials) {
+          for (const tutorial of landing.tutorials) {
+            if (tutorial.imageUrl) {
+              tutorial.imageUrl = landingService.getTutorialImageUrl(tutorial.imageUrl)
+            }
+            if (tutorial.attachUrl) {
+              tutorial.attachUrl = landingService.getTutorialAttachUrl(tutorial.attachUrl)
+            }
+          }
+          if (params.onlyActiveTutorials) {
+            landing.tutorials = landing.tutorials.filter((r) => r.active)
+          }
+          if (params.onlyPublicTutorials) {
+            landing.tutorials = landing.tutorials.filter((r) => !r.private)
           }
         }
 
