@@ -7,5 +7,6 @@ export interface IFetchLandingData {
   onlyActiveReference?: boolean // Traer solo las referencias activas
   onlyActiveTutorials?: boolean
   onlyPublicTutorials?: boolean
+  onlyActiveAlliances?: boolean
 }
 //@end
