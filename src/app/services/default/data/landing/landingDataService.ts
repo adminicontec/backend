@@ -77,6 +77,9 @@ class LandingDataService {
               alliance.brochures[idx].fileUrl = landingService.allianceBrochureUrl(alliance.brochures[idx])
             }
           }
+          if (params.onlyActiveAlliances) {
+            landing.alliances = landing.alliances.filter((r) => r.status)
+          }
         }
 
         if (landing.our_clients) {

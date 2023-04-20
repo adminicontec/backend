@@ -166,6 +166,16 @@ const UserSchema = new Schema({
   show_profile_interaction: {
     type: Schema.Types.Boolean,
     default: true
+  },
+  reviewData: {
+    status: {
+      type: Schema.Types.String,
+      enum: ['pending', 'reviewed'],
+    },
+    lastReview: {
+      type: Schema.Types.Date,
+      require: false
+    }
   }
   // @end
 }, {

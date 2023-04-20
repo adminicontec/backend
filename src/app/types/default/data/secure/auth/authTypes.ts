@@ -16,6 +16,10 @@ export interface UserFields {
   show_profile_interaction?: boolean
   company?: Record<any, string> | null | undefined
   admin_company?: boolean
+  reviewData?: {
+    status: 'pending' | 'reviewed',
+    lastReview?: Date
+  }
 }
 
 export interface IGenerateTokenFromDestination {

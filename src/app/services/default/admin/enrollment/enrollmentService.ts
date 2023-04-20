@@ -350,7 +350,7 @@ class EnrollmentService {
               origen: params.origin,
               ...(params.timezone ? { timezone: params.timezone } : {}),
             },
-            sendEmail: true
+            sendEmail: true,
           }
           paramToEnrollment.user.moodleFirstName = params.firstname;
           paramToEnrollment.user.moodleLastName = params.lastname;
@@ -393,6 +393,9 @@ class EnrollmentService {
               }
             })
             cvUserParams.id = respCampusDataUser.user._id.toString();
+            cvUserParams['reviewData'] = {
+              status: 'pending'
+            }
 
             try {
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
