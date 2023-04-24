@@ -59,6 +59,7 @@ export interface IReportPage {
     date: string;
     downloadDate: string;
     auxiliar: string;
+    createdAt: string;
   }
 }
 
@@ -87,7 +88,7 @@ class ReportByGeneralStudentCertificatesService {
       }
 
       const certifications = await CertificateQueue.find(where)
-      .select('_id courseId userId auxiliar certificateType message downloadDate certificate.hash certificate.date certificate.title')
+      .select('_id courseId userId auxiliar created_at certificateType message downloadDate certificate.hash certificate.date certificate.title')
       .populate({
         path: 'courseId',
         select: 'id metadata schedulingMode regional city account_executive client program startDate endDate',
@@ -155,6 +156,7 @@ class ReportByGeneralStudentCertificatesService {
             date: (certification?.certificate?.date) ? moment(certification?.certificate?.date).format('DD/MM/YYYY') : '-',
             downloadDate: certification?.downloadDate ? moment(certification?.downloadDate).format('DD/MM/YYYY') : '-',
             auxiliar: (certification?.auxiliar?.profile) ? `${certification?.auxiliar?.profile.first_name} ${certification?.auxiliar?.profile.last_name}` : '-',
+            createdAt: (certification?.created_at) ? moment(certification?.created_at).format('DD/MM/YYYY') : '-',
           }
         }
 
@@ -282,7 +284,7 @@ class ReportByGeneralStudentCertificatesService {
             certification.certification.hash,
             certification.startDate,
             certification.endDate,
-            certification.certification.date,
+            certification.certification.createdAt,
             certification.certification.downloadDate,
             certification.certification.auxiliar
           ]

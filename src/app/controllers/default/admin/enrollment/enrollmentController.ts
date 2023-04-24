@@ -66,6 +66,17 @@ class EnrollmentController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public update = async (req: Request, res: Response) => {
+		const response = await enrollmentService.insertOrUpdate(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
   public findStudents = async (req: Request, res: Response) => {
     const response = await enrollmentService.findStudents(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)

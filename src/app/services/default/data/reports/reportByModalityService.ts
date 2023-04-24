@@ -299,7 +299,7 @@ class ReportByModalityService {
           },
           status: 'Complete'
         })
-        .select('id courseId userId auxiliar status certificateType certificate.date')
+        .select('id courseId userId created_at auxiliar status certificateType certificate.date')
         .populate({path: 'auxiliar', select: 'id profile.first_name profile.last_name profile.doc_number'})
 
         if (certificationsByProgramQuery.length > 0) {
@@ -660,7 +660,7 @@ class ReportByModalityService {
             ) {
               if (certificationsByProgram[courseScheduling._id.toString()][participant?.user?._id.toString()]['academic']) {
                 const certification = certificationsByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]['academic'];
-                participantItemBase.certification.certificateReleaseDate = moment(certification?.certificate?.date).format('YYYY-MM-DD')
+                participantItemBase.certification.certificateReleaseDate = moment(certification?.created_at).format('YYYY-MM-DD')
                 participantItemBase.certification.personWhoReleasesCertificate = (certification?.auxiliar?.profile) ? `${certification?.auxiliar.profile?.first_name} ${certification?.auxiliar.profile?.last_name}` : '-'
               }
             }
@@ -1043,7 +1043,8 @@ class ReportByModalityService {
         XLSX.utils.sheet_add_aoa(wsSheet, sheetData, {origin: "A1"});
 
           // @INFO Se agrega al workbook
-        XLSX.utils.book_append_sheet(wb, wsSheet, reportData.title)
+        const newTitle = reportData.title.length > 31 ? reportData.title.substring(0, 31) : reportData.title
+        XLSX.utils.book_append_sheet(wb, wsSheet, newTitle)
       }
 
       return wb

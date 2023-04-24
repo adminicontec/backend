@@ -39,13 +39,16 @@
   </style>
 </head>
 <body>
+  <div style="text-align: left; margin-left: -15px;">
+    <img src="./assets/ad942125ca7dbecbfbaafb19a22a1764.png" style="width: 150px" />
+  </div>
   <div>
     <h4 class="title">CUADRO RESUMEN DE PROGRAMACION</h4>
   </div>
-    <table style="font-size: 7px;">
+    <table style="width: 100%;font-size: 7px;">
       <tr style="font-size: 7px;">
         <td style="width: 15%; font-size: 7px;"><b>NOMBRE DEL PROGRAMA:</b></td>
-        <td style="width: 25%; font-size: 7px;">{{program_name}}</td>
+        <td colspan="3" style="width: 25%; font-size: 7px;">{{program_name}}</td>
         <td style="width: 15%; font-size: 7px;"><b>ID DEL SERVICIO</b></td>
         <td style="width: 15%; font-size: 7px;">{{service_id}}</td>
         <td style="width: 15%; font-size: 7px;"><b>REGIONAL</b></td>
@@ -53,11 +56,13 @@
       </tr>
       <tr style="font-size: 7px;">
         <td style="width: 10%; font-size: 7px;"><b>EMPRESA</b></td>
-        <td style="width: 10%; font-size: 7px;">{{cliente_name}}</td>
+        <td style="width: 30%; font-size: 7px;">{{cliente_name}}</td>
         <td style="width: 10%; font-size: 7px;"><b>MODALIDAD</b></td>
         <td style="width: 10%; font-size: 7px;">{{schedule_mode}}</td>
         <td style="width: 10%; font-size: 7px;"><b>CIUDAD DEL SERVICIO</b></td>
         <td style="width: 10%; font-size: 7px;">{{service_city}}</td>
+        <td style="width: 10%; font-size: 7px;"><b>ESTADO</b></td>
+        <td style="width: 10%; font-size: 7px;">{{schedule_status}}</td>
       </tr>
     </table>
     <table style="width: 100%;font-size: 7px;">
@@ -67,6 +72,7 @@
         <td style="width: 10%; font-size: 7px;">Nro de horas del curso para el servicio</td>
         <td style="width: 10%; font-size: 7px;">Sesión (consecutivo)</td>
         <td style="width: 10%; font-size: 7px;">Docente/Tutor</td>
+        <td style="width: 10%; font-size: 7px;">Docente/Ciudad</td>
         <td style="width: 10%; font-size: 7px;">Fecha</td>
         <td style="width: 10%; font-size: 7px;">Horas por sesión</td>
         <td style="width: 10%; font-size: 7px;">Horario</td>
@@ -84,17 +90,18 @@
           {{/if}}
           <td class="table-cell" style="font-size: 7px;">{{this.consecutive}}</td>
           <td class="table-cell" style="font-size: 7px;">{{this.teacher_name}}</td>
+          <td class="table-cell" style="font-size: 7px;">{{this.teacher_city}}</td>
           <td class="table-cell" style="font-size: 7px;">{{this.start_date}}</td>
           <td class="table-cell" style="font-size: 7px;">{{this.duration}}</td>
           <td class="table-cell" style="font-size: 7px;">{{this.schedule}}</td>
         </tr>
       {{/each}}
       <tr style="font-size: 7px;">
-        <td style="color: #0085ca; font-size: 7px;" colspan="7">Nro de Horas Programadas a la fecha</td>
+        <td style="color: #0085ca; font-size: 7px;" colspan="8">Nro de Horas Programadas a la fecha</td>
         <td>{{total_scheduling}}</td>
       </tr>
       <tr>
-        <td style="color: #0085ca; font-size: 7px;" colspan="7">Nro de Horas pendientes por programar</td>
+        <td style="color: #0085ca; font-size: 7px;" colspan="8">Nro de Horas pendientes por programar</td>
         <td>{{scheduling_free}}</td>
       </tr>
     </table>
