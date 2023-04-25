@@ -179,6 +179,7 @@ class AuthService {
           avatar: userService.avatarUrl(user),
 					screen_mode: user.profile.screen_mode,
           show_profile_interaction: user.show_profile_interaction,
+          roles: user.roles,
           home,
           moodle: {
             ...tokenCustom,
