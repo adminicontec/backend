@@ -212,7 +212,6 @@ class EnrollmentService {
  * @returns
  */
   public insertOrUpdate = async (params: IEnrollment) => {
-
     let roles = {}
     const rolesResponse: any = await roleService.list()
     if (rolesResponse.status === 'success') {
@@ -267,11 +266,7 @@ class EnrollmentService {
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
-            enrollment: {
-              _id: response._id,
-              email: response.email,
-              courseID: response.courseID
-            }
+            enrollment: response
           }
         })
 

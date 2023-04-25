@@ -830,7 +830,7 @@ class TeacherService {
               isTutor: teacher?.profile?.contractType?.isTutor ? "Si" : "No",
               course: {
                 code: qualified.courseCode,
-                date: moment(qualified.evaluationDate).format(FORMAT_DATE),
+                date: moment(qualified.evaluationDate.toISOString().replace('T00:00:00.000Z', '')).format(FORMAT_DATE),
                 name: qualified.courseName,
                 status: qualified.status,
               }

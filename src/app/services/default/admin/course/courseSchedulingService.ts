@@ -1761,7 +1761,7 @@ class CourseSchedulingService {
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
           .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
+          .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.city' })
           .select(select)
           .lean()
 
@@ -1781,6 +1781,7 @@ class CourseSchedulingService {
               course_row_span: 0,
               consecutive: index + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+              teacher_city: element?.teacher?.profile?.city || '-',
               start_date: (element.startDate) ? moment(element.startDate).format('DD/MM/YYYY') : '',
               end_date: (element.endDate) ? moment(element.endDate).format('DD/MM/YYYY') : '',
               duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
@@ -1807,6 +1808,7 @@ class CourseSchedulingService {
               let session_data = {
                 consecutive: session_count + 1,
                 teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
+                teacher_city: element?.teacher?.profile?.city || '-',
                 start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
                 duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
                 schedule: schedule,
@@ -2017,6 +2019,7 @@ class CourseSchedulingService {
           regional_name: (courseScheduling.regional && courseScheduling.regional.name) ? courseScheduling.regional.name : '',
           cliente_name: (courseScheduling.client?.name) ? courseScheduling.client?.name : '',
           schedule_mode: (courseScheduling.schedulingMode && courseScheduling.schedulingMode.name) ? courseScheduling.schedulingMode.name : '',
+          schedule_status: (courseScheduling.schedulingStatus && courseScheduling.schedulingStatus.name) ? courseScheduling.schedulingStatus.name : '',
           service_city: (courseScheduling.city && courseScheduling.city.name) ? courseScheduling.city.name : '',
           courses: reportData.courses,
           total_scheduling: (reportData.total_scheduling) ? generalUtility.getDurationFormated(reportData.total_scheduling) : '0h',
@@ -2033,6 +2036,7 @@ class CourseSchedulingService {
       options: {
         // orientation: "landscape",
         format: "Tabloid",
+        base: `${customs['pdf_base']}/`,
         border: {
           top: "15mm",            // default is 0, units: mm, cm, in, px
           right: "15mm",
