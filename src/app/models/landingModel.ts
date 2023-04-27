@@ -117,7 +117,8 @@ const LandingSchema = new Schema({
     created_at: { type: Schema.Types.Date },
     publicGroups: [
       {
-        type: Schema.Types.String,
+        type: Schema.Types.ObjectId,
+        ref: 'Term'
       }
     ],
   }],
