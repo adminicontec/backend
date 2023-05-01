@@ -169,6 +169,7 @@ class TermService {
     try {
       registers =  await Term.find(where)
       .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
+      .sort({ position: 1 })
       .limit(paging ? nPerPage : null)
     } catch (e) {}
 

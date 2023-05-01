@@ -115,6 +115,7 @@ const LandingSchema = new Schema({
     private: { type: Schema.Types.Boolean, default: false },
     videoUrl: { type: Schema.Types.String },
     created_at: { type: Schema.Types.Date },
+    position: { type: Schema.Types.Number, default: 0 },
     publicGroups: [
       {
         type: Schema.Types.ObjectId,
