@@ -1253,6 +1253,18 @@ class ErrorResponse {
             "code": 400
           }
         },
+        "term": {
+          "already_exists": {
+            "message": i18nUtility.__("app_error_messages.term.already_exists"),
+            "status_code": "term_already_exist",
+            "code": 400
+          },
+          "not_found": {
+            "message": i18nUtility.__("app_error_messages.term.not_found"),
+            "status_code": "term_not_found",
+            "code": 400
+          }
+        },
         "attached": {
           "already_exists": {
             "message": i18nUtility.__("app_error_messages.attached.already_exists"),

@@ -1,4 +1,5 @@
 // @import types
+import { ITerm } from '@scnode_app/types/default/admin/term/termTypes';
 // @end
 
 // @add your types
@@ -173,6 +174,6 @@ export interface ILandingTutorial {
   videoUrl?: string;
   created_at?: Date;
   private?: boolean;
-  publicGroups?: string[];
+  publicGroups?: ITerm[];
 }
 //@end
