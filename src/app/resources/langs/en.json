@@ -483,6 +483,10 @@
       "already_exists": "Ya existe una categoría con ese nombre",
       "not_found": "La categoría no ha sido encontrada"
     },
+    "term": {
+      "already_exists": "Ya existe una termino con ese nombre",
+      "not_found": "El termino no ha sido encontrado"
+    },
     "attached": {
       "already_exists": "El adjunto ya existe",
       "not_found": "El adjunto no ha sido encontrado",
