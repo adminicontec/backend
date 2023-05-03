@@ -44,7 +44,7 @@ class LandingDataService {
         path: 'program', select: 'id name'
       }})
       .populate({ path: 'tutorials.privateGroups.role', select: 'id name description' })
-      .populate({ path: 'tutorials.privateGroups.groups', select: 'id name description' })
+      .populate({ path: 'tutorials.privateGroups.groups', select: 'id name position' })
       .populate({ path: 'tutorials.publicGroups', select: 'id name position' })
       .select('id title_page title_training title_references title_posts article tutorials trainings scheduling descriptive_training our_clients references forums alliances')
       .lean()
