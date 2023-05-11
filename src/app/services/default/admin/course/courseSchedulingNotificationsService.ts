@@ -59,7 +59,7 @@ class CourseSchedulingNotificationsService {
       }
 
       // Notificar al correo especificado en el env.json
-      if ((type === 'started' || type === 'modify') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service) {
+      if ((type === 'started' || type === 'modify' || type === 'cancel') && customs && (customs as any).mailer && (customs as any).mailer.email_confirm_service) {
         if (typeof (customs as any).mailer.email_confirm_service === 'string') {
           email_to_notificate.push({
             email: (customs as any).mailer.email_confirm_service,
