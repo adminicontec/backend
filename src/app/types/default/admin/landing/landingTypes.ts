@@ -159,11 +159,15 @@ export interface ILandingQuery {
   search?:string, // Busca sobre los campos de la coleccion
 }
 
+export interface ILandingTutorialPrivateGroup {
+  role: string;
+  groups: ITerm[];
+}
+
 export interface ILandingTutorial {
   title: string;
   description: string;
   unique: string;
-  roles: string[];
   imageUrl: string;
   attachUrl: string;
   fileType: string;
@@ -175,5 +179,6 @@ export interface ILandingTutorial {
   created_at?: Date;
   private?: boolean;
   publicGroups?: ITerm[];
+  privateGroups: ILandingTutorialPrivateGroup[];
 }
 //@end
