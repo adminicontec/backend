@@ -108,6 +108,13 @@ const LandingSchema = new Schema({
       type: Schema.Types.ObjectId,
       ref: "Role"
     }],
+    privateGroups: [{
+      role: { type: Schema.Types.ObjectId, ref: "Role" },
+      groups: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Term'
+      }]
+    }],
     imageUrl: { type: Schema.Types.String },
     attachUrl: { type: Schema.Types.String },
     fileType: { type: Schema.Types.String },

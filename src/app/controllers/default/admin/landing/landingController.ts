@@ -398,8 +398,8 @@ class LandingController {
       params['attachFile'] = files['attachFile']
     }
 
-    if (typeof params?.roles === 'string') {
-      params.roles = JSON.parse(params.roles)
+    if (typeof params?.privateGroups === 'string') {
+      params.privateGroups = JSON.parse(params.privateGroups)
     }
 
     if (typeof params?.publicGroups === 'string') {
