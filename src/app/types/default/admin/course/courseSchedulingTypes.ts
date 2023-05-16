@@ -199,6 +199,10 @@ export interface IChangeSchedulingElement {
   courseSchedulings: string[]
 }
 
+export interface IDownloadCalendar {
+  service_id: string
+}
+
 export enum CourseSchedulingDetailsSync {
   SYNCHRONIZED = 'synchronized',
   PENDING = 'pending',

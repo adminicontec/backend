@@ -209,6 +209,22 @@ class CourseSchedulingController {
     const response = await courseSchedulingService.changeSchedulingElement(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public downloadCalendar = async (req: Request, res: Response) => {
+    const response = await courseSchedulingService.downloadCalendar(req.getParameters.all())
+    res.set('Content-Type', 'text/calendar');
+    res.set('Content-Disposition', 'attachment; filename="evento.ics"');
+
+    res.set('Content-Type', 'application/octet-stream');
+    res.set('Content-Disposition', 'attachment; filename="evento.ics"');
+    res.send(response);
+  }
 }
 
 export const courseSchedulingController = new CourseSchedulingController();

@@ -1,0 +1,31 @@
+# Node.js with React
+# Build a Node.js project that uses React.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+trigger: none
+
+pool:
+  name: icontecpreagent
+
+steps:
+
+- script: |
+    cp -p -r /myagent/_work/config_app/backend/env.json /myagent/_work/2/s/src/config/
+    cp -p -r /myagent/_work/config_app/backend/env.prod.json /myagent/_work/2/s/src/config/
+  displayName: 'Copy env.js Files to Backend config'
+
+- script: |    
+    cd /myagent/_work/2/s
+    scnode_cli --deploy prod --dist /myagent/_work/2/b/backend_dist --package_name campus_virtual_icontec
+  displayName: 'running scnode_cli'
+
+- script: |        
+    campus_virtual_icontec --program seeder --class initSeeder
+  displayName: 'running seeder'
+
+- script: |    
+    cd /myagent/_work/2/b/backend_dist
+    npm install
+  displayName: 'running npm install'
+

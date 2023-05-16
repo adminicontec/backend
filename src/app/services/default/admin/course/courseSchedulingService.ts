@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as XLSX from "xlsx";
 const ObjectID = require('mongodb').ObjectID
 import moment from 'moment'
+const ical = require('ical-generator').default;
 // @end
 
 // @import services
@@ -45,6 +46,7 @@ import {
   ICourseSchedulingReport,
   ICourseSchedulingReportData,
   ICourseSchedulingUpdatedNotificationParams,
+  IDownloadCalendar,
   IDuplicateCourseScheduling,
   IDuplicateService,
   IForceStatusService,
@@ -58,6 +60,7 @@ import { attachedService } from "../attached/attachedService";
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
+import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 // @end
 
 class CourseSchedulingService {
@@ -2451,6 +2454,56 @@ class CourseSchedulingService {
         err
       }})
     }
+  }
+
+  public downloadCalendar = async (params: IDownloadCalendar) => {
+    try {
+      const courseScheduling = await CourseScheduling.findOne({
+        'metadata.service_id': params.service_id
+      })
+      const {scheduling}: any = await courseSchedulingDataService.fetchCourseSchedulingByProgram({
+        moodle_id: courseScheduling?.moodle_id,
+      })
+
+      let schedulingsAvailable = []
+      if (scheduling?.length) {
+        schedulingsAvailable = scheduling.filter((scheduling: any) => !this.isSessionFinished(scheduling.startDate, scheduling.durationOnSeconds))
+          ?.map((scheduling: any) => ({
+            ...scheduling,
+          }))
+      }
+      if (schedulingsAvailable.length === 0) return null;
+
+      const calendar = ical({
+        name: `Eventos programados servicio:${courseScheduling?.metadata?.service_id}`
+      })
+
+      const events = []
+
+      schedulingsAvailable.forEach((schedule) => {
+        const event = {
+          start: new Date(schedule.startDate),
+          end: new Date(schedule.endDate),
+          summary: schedule.course_name,
+          description: `Sesión de clase del curso ${schedule.course_name} dictada por ${schedule.teacher_name}. \n\n ID del servicio: ${params.service_id} \n Fecha de generación del calendario: ${moment().format('YYYY-MM-DD')}`,
+          location: schedule?.address || undefined,
+          url: `${customs?.campus_virtual}/app`
+        }
+        events.push(event)
+        calendar.createEvent(event);
+      })
+      // console.log('events', events)
+      return calendar.toString()
+    } catch (error) {
+      console.log('DownloadCalendar', error)
+      return null
+    }
+  }
+
+  private isSessionFinished = (startDate: string, duration: number): boolean => {
+    if (!startDate) return true
+    const end = moment(startDate).add(duration, 'seconds')
+    return moment().isAfter(end)
   }
 }
 

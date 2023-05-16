@@ -164,6 +164,7 @@ class CourseSchedulingDataService {
             schedule: '-',
             address: register.address ? register.address : '',
             startDate: element.startDate,
+            endDate: element.endDate
           }
 
           scheduling.push(item)
@@ -224,8 +225,8 @@ class CourseSchedulingDataService {
             }
 
             let schedule = ''
+            let endDate = moment(session.startDate).add(session.duration, 'seconds')
             if (session.startDate && session.duration) {
-              let endDate = moment(session.startDate).add(session.duration, 'seconds')
               schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
             }
             let session_data = {
@@ -235,6 +236,7 @@ class CourseSchedulingDataService {
               duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
               schedule: schedule,
               startDate: session.startDate,
+              endDate: endDate,
               durationOnSeconds: session.duration,
               address: register.address ? register.address : '',
             }
