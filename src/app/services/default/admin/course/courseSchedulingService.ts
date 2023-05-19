@@ -263,6 +263,7 @@ class CourseSchedulingService {
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
         params.program = await this.saveLocalProgram(params.program)
       }
+
       steps.push('4')
 
       if (params.city) {
@@ -352,6 +353,22 @@ class CourseSchedulingService {
             params.reactivateTracking = {
               date: null,
               personWhoReactivates: null
+            }
+          }
+        }
+
+        if (params.hasMultipleCertificate) {
+          params.multipleCertificate = {
+            status: true,
+            editingStatus: false,
+          }
+          if (register?.multipleCertificate?.editingStatus) {
+            params.multipleCertificate.editingStatus = register?.multipleCertificate?.editingStatus
+          }
+        } else {
+          if (register?.multipleCertificate) {
+            params.multipleCertificate = {
+              ...register.multipleCertificate
             }
           }
         }
@@ -502,6 +519,13 @@ class CourseSchedulingService {
 
       } else {
         steps.push('7')
+        if (params.hasMultipleCertificate) {
+          params.multipleCertificate = {
+            status: true,
+            editingStatus: true,
+          }
+        }
+
         if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
           let hasParamsCost = false
           if (params.priceCOP) hasParamsCost = true

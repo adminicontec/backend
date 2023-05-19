@@ -98,6 +98,11 @@ export interface ICourseScheduling {
   reactivateTracking?: {
     date: string;
     personWhoReactivates: string;
+  },
+  hasMultipleCertificate?: boolean;
+  multipleCertificate?: {
+    status: boolean,
+    editingStatus?: boolean
   }
 }
 
