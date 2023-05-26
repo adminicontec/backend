@@ -12,6 +12,18 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "certificate_settings": {
+        "not_found": {
+          "message": i18nUtility.__("app_error_messages.certificate_settings.not_found"),
+          "status_code": "certificate_settings_not_found",
+          "code": 400
+        },
+        "modules_invalid": {
+          "message": i18nUtility.__("app_error_messages.certificate_settings.modules_invalid"),
+          "status_code": "certificate_settings_modules_invalid",
+          "code": 400
+        },
+      },
       "reports": {
         "customReport": {
           "fail_build_xlsx": {

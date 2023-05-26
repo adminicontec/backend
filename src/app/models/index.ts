@@ -1,4 +1,5 @@
 // @import_models
+import { CertificateSettingsModel } from "@scnode_app/models/certificateSettingsModel";
 import { TermModel } from "@scnode_app/models/termModel";
 import { ConsolidatedSurveyInformationModel } from "@scnode_app/models/consolidatedSurveyInformationModel";
 import { CourseSchedulingInformationModel } from "@scnode_app/models/courseSchedulingInformationModel";
@@ -61,6 +62,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CertificateSettings = CertificateSettingsModel
 export const Term = TermModel
 export const ConsolidatedSurveyInformation = ConsolidatedSurveyInformationModel
 export const CourseSchedulingInformation = CourseSchedulingInformationModel
