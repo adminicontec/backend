@@ -21,10 +21,6 @@ const CertificateSettingsModules = new Schema({
     ref: 'CourseSchedulingDetails',
     required: true
   },
-  moodleMaster: {
-    type: Schema.Types.String,
-    required: true
-  },
   exam: {
     type: CertificateSettingsModuleItem,
     required: false,

@@ -9,7 +9,6 @@ interface CertificateSettingsModuleItem {
 
 export interface CertificateSettingsModules {
   courseSchedulingDetail: string,
-  moodleMaster: string,
   exam?: CertificateSettingsModuleItem,
   attendance?: CertificateSettingsModuleItem,
   progress?: CertificateSettingsModuleItem,

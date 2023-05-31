@@ -366,9 +366,16 @@ class CourseSchedulingService {
             params.multipleCertificate.editingStatus = register?.multipleCertificate?.editingStatus
           }
         } else {
-          if (register?.multipleCertificate) {
+          if (params.hasMultipleCertificate === false) {
             params.multipleCertificate = {
-              ...register.multipleCertificate
+              status: false,
+              editingStatus: false
+            }
+          } else {
+            if (register?.multipleCertificate) {
+              params.multipleCertificate = {
+                ...register.multipleCertificate
+              }
             }
           }
         }
@@ -519,11 +526,13 @@ class CourseSchedulingService {
 
       } else {
         steps.push('7')
+        params.multipleCertificate = {
+          status: false,
+          editingStatus: false,
+        }
         if (params.hasMultipleCertificate) {
-          params.multipleCertificate = {
-            status: true,
-            editingStatus: true,
-          }
+          params.multipleCertificate.status = true
+          params.multipleCertificate.editingStatus = true
         }
 
         if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {

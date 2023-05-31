@@ -155,7 +155,6 @@ class CertificateSettingsService {
       for (const module of modules) {
         const fields_config: ValidatorRequest[] = [
           {key: 'courseSchedulingDetail', label: 'Identificador del modulo'},
-          {key: 'moodleMaster', label: 'Identificador de moodle'}
         ];
         const validated = await requestUtility.validator(module, {}, fields_config)
         if (validated.hasError) {
