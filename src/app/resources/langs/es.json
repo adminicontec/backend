@@ -1,5 +1,9 @@
 {
   "app_error_messages": {
+    "certificate_settings": {
+      "not_found": "No se ha encontrado la configuración de certificados",
+      "modules_invalid": "Los modulos asignados a la configuración no son validos"
+    },
     "reports": {
       "customReport": {
         "fail_build_xlsx": "Se ha presentado un error al generar el excel",

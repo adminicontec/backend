@@ -357,6 +357,16 @@ const CourseSchedulingSchema = new Schema({
   satisfactionSurvey: {
     type: Schema.Types.Number,
     default: 0,
+  },
+  multipleCertificate: {
+    status: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    editingStatus: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
   }
   // @end
 }, {
