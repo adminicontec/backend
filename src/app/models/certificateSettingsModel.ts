@@ -21,6 +21,10 @@ const CertificateSettingsModules = new Schema({
     ref: 'CourseSchedulingDetails',
     required: true
   },
+  duration: { type: Schema.Types.Number },
+  durationValidation: {
+    type: Schema.Types.Number,
+  },
   exam: {
     type: CertificateSettingsModuleItem,
     required: false,
@@ -65,6 +69,14 @@ const CertificateSettingsMetadata = new Schema({
 const CertificateSettingsSchema = new Schema({
   // @add_schema Add schema here
   certificateName: {
+    type: Schema.Types.String,
+    required: true
+  },
+  duration: {
+    type: Schema.Types.Number,
+    required: true
+  },
+  certificationType: {
     type: Schema.Types.String,
     required: true
   },
