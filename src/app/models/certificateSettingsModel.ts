@@ -37,6 +37,10 @@ const CertificateSettingsModules = new Schema({
     type: CertificateSettingsModuleItem,
     required: false,
   },
+  averageScore: {
+    type: CertificateSettingsModuleItem,
+    required: false,
+  }
 }, {
   _id: false
 })

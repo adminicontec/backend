@@ -5,7 +5,8 @@
 export enum CertificateSettingCriteria {
   EXAM = 'exam',
   ATTENDANCE = 'attendance',
-  PROGRESS = 'progress'
+  PROGRESS = 'progress',
+  AVERAGE_SCORE = 'averageScore'
 }
 
 export enum CertificateSettingType {
