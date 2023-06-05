@@ -31,6 +31,7 @@ class MasterCourseRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.post(app, _route, '/create', this.instanceController.duplicate, [], ['auth'])
+    routerUtility.post(app, _route, '/course-has-auditor-exam', this.instanceController.checkCourseHasAuditorExam, [{middleware: 'master-course', method: 'check-course-has-auditor-exam', dir: 'admin/course'}], ['auth'])
     // @end
   }
 }
