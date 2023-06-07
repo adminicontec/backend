@@ -1,4 +1,5 @@
 // @import_routes
+import { certificateMultipleRoute } from "@scnode_app/routes/default/admin/certificate/certificateMultipleRoute";
 import { certificateSettingsRoute } from "@scnode_app/routes/default/admin/course/certificateSettingsRoute";
 import { termRoute } from "@scnode_app/routes/default/admin/term/termRoute";
 import { courseSchedulingInformationRoute } from "@scnode_app/routes/default/admin/course/courseSchedulingInformationRoute";
@@ -83,6 +84,7 @@ import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCat
 // @export_routes
 export const routes = {
   // @add_routes_object
+    certificateMultipleRoute,
     certificateSettingsRoute,
     termRoute,
     courseSchedulingInformationRoute,

@@ -7,7 +7,7 @@ import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility, ValidatorRequest } from "@scnode_core/utilities/requestUtility";
 // @end
 
-class CertificateSettingsMiddleware {
+class MasterCourseMiddleware {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -23,13 +23,10 @@ class CertificateSettingsMiddleware {
 
   constructor () {}
 
-  public create = async (req: Request, res: Response, next: NextFunction) => {
+  public checkCourseHasAuditorExam = async (req: Request, res: Response, next: NextFunction) => {
 
 		const fields_config: ValidatorRequest[] = [
-      {key: 'certificateName', label: 'Nombre del certificado'},
-      {key: 'duration', label: 'Duración del certificado'},
-      {key: 'courseScheduling', label: 'Servicio asociado'},
-      {key: 'certificationType', label: 'Tipo de certificado'}
+      { key: 'programMoodleId', label: 'Identificador del curso'}
 		];
 
 		await requestUtility.middlewareValidator(fields_config, req, res, next)
@@ -37,5 +34,5 @@ class CertificateSettingsMiddleware {
 
 }
 
-export const certificateSettingsMiddleware = new CertificateSettingsMiddleware();
-export { CertificateSettingsMiddleware as AdminCourseCertificateSettingsMiddleware }
+export const masterCourseMiddleware = new MasterCourseMiddleware();
+export { MasterCourseMiddleware as AdminCourseMasterCourseMiddleware }

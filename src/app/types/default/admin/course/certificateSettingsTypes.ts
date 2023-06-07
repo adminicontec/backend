@@ -2,6 +2,18 @@
 // @end
 
 // @add your types
+export enum CertificateSettingCriteria {
+  EXAM = 'exam',
+  ATTENDANCE = 'attendance',
+  PROGRESS = 'progress',
+  AVERAGE_SCORE = 'averageScore'
+}
+
+export enum CertificateSettingType {
+  ATTENDANCE = 'attendance',
+  ATTENDANCE_APPROVAL = 'attendance_approval'
+}
+
 interface CertificateSettingsModuleItem {
   status?: boolean,
   percentage?: number
@@ -9,6 +21,7 @@ interface CertificateSettingsModuleItem {
 
 export interface CertificateSettingsModules {
   courseSchedulingDetail: string,
+  duration: number,
   exam?: CertificateSettingsModuleItem,
   attendance?: CertificateSettingsModuleItem,
   progress?: CertificateSettingsModuleItem,
@@ -30,6 +43,8 @@ export interface ICertificateSettings {
   id?: string,
   certificateName: string,
   courseScheduling: string,
+  duration: number,
+  certificationType: CertificateSettingType
   modules: CertificateSettingsModules[],
   metadata?: CertificateSettingsMetadata,
   user?: string

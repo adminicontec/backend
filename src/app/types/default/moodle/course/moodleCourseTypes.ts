@@ -59,4 +59,16 @@ export interface IMoodleForumDiscussion{
   timestart: number
   timeend: number
 }
+
+export interface IMoodleCheckCourseHasAuditorExam {
+  programMoodleId: string;
+  sectionMoodleId?: string;
+}
+
+export interface IMoodleCheckCourseHasAuditorExamResponse {
+  hasExam: boolean,
+  exam?: {
+    sectionId: number;
+  }
+}
 //@end

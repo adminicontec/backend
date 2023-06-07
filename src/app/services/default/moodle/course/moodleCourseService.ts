@@ -16,8 +16,9 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
+import { IMoodleCheckCourseHasAuditorExam, IMoodleCheckCourseHasAuditorExamResponse, IMoodleCourse, IMoodleCourseQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { courseContentService } from './courseContentService';
 // @end
 
 class MoodleCourseService {
@@ -275,6 +276,41 @@ class MoodleCourseService {
     }
     else {
       return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+    }
+  }
+
+  public checkCourseHasAuditorExam = async (params: IMoodleCheckCourseHasAuditorExam) => {
+    try {
+      const { sectionMoodleId, programMoodleId } = params
+      const moduleType: string[] = ['quiz'];
+      const exams: any = await courseContentService.moduleList({ courseID: programMoodleId, moduleType  });
+      const response: IMoodleCheckCourseHasAuditorExamResponse = {
+        hasExam: false
+      }
+      if (exams && exams.courseModules && exams.courseModules.length) {
+
+        const auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
+        if (auditorQuizModule) {
+          if (sectionMoodleId) {
+            if (auditorQuizModule?.sectionid === sectionMoodleId) {
+              response.hasExam = true;
+              response.exam = {
+                sectionId: auditorQuizModule?.sectionid
+              }
+            }
+          } else {
+            response.hasExam = true;
+            response.exam = {
+              sectionId: auditorQuizModule?.sectionid
+            }
+          }
+        }
+      }
+      return responseUtility.buildResponseSuccess('json', null, { additional_parameters: {
+        ...response
+      }})
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json')
     }
   }
 
