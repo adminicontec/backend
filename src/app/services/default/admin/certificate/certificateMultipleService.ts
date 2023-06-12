@@ -14,9 +14,9 @@ import { CertificateQueue, CertificateSettings, CourseScheduling, Enrollment } f
 
 // @import types
 import { ICertificateMultipleData, ICertificateMultipleDataCertification, ICertificateMultipleDataCertificationModule, ICertificateMultipleDataCertificationModuleCriteriaResume, ICertificateMultipleDataResponse, ICertificateMultipleDataStudent } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
-import { CertificateSettingCriteria } from 'app/types/default/admin/course/certificateSettingsTypes';
-import { certificateService } from '../../huellaDeConfianza/certificate/certificateService';
 import { CertificateMultipleCriteriaFactory } from './certificateCriteria/certificateMultipleCriteriaFactory';
+import { CertificateSettingCriteria } from '@scnode_app/types/default/admin/course/certificateSettingsTypes';
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 // @end
 
 class CertificateMultipleService {
