@@ -16,6 +16,7 @@ import { CertificateQueue, CertificateSettings, CourseScheduling, Enrollment } f
 import { ICertificateMultipleData, ICertificateMultipleDataCertification, ICertificateMultipleDataCertificationModule, ICertificateMultipleDataCertificationModuleCriteriaResume, ICertificateMultipleDataResponse, ICertificateMultipleDataStudent } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
 import { CertificateSettingCriteria } from 'app/types/default/admin/course/certificateSettingsTypes';
 import { certificateService } from '../../huellaDeConfianza/certificate/certificateService';
+import { CertificateMultipleCriteriaFactory } from './certificateCriteria/certificateMultipleCriteriaFactory';
 // @end
 
 class CertificateMultipleService {
@@ -158,6 +159,9 @@ class CertificateMultipleService {
                 }
 
                 // TODO: Pendiente función que obtenga los datos de moodle y valide si se cumple o no el criterio
+                const factory = new CertificateMultipleCriteriaFactory(CertificateSettingCriteria[criteria])
+                factory.instance.evaluateCriteria()
+
                 module.moduleCriteriaResume.push(moduleCriteria)
               }
             })
