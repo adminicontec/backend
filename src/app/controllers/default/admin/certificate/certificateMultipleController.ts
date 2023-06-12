@@ -43,6 +43,21 @@ class CertificateMultipleController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public generateCertificate = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await certificateMultipleService.generateCertificate(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const certificateMultipleController = new CertificateMultipleController();

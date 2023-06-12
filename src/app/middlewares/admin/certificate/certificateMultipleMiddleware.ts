@@ -23,6 +23,14 @@ class CertificateMultipleMiddleware {
 
   constructor () {}
 
+  public generate = async (req: Request, res: Response, next: NextFunction) => {
+
+		const fields_config: ValidatorRequest[] = [
+      { key: 'courseSchedulingId', label: 'Identificador del servicio'}
+		];
+
+		await requestUtility.middlewareValidator(fields_config, req, res, next)
+  }
 }
 
 export const certificateMultipleMiddleware = new CertificateMultipleMiddleware();

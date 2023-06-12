@@ -12,6 +12,25 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "certificate_multiple": {
+        "generate": {
+          "users_required": {
+            "message": i18nUtility.__("app_error_messages.certificate_multiple.generate.users_required"),
+            "status_code": "certificate_multiple_generate_users_required",
+            "code": 400
+          },
+          "certificate_setting_required": {
+            "message": i18nUtility.__("app_error_messages.certificate_multiple.generate.certificate_setting_required"),
+            "status_code": "certificate_multiple_generate_certificate_setting_required",
+            "code": 400
+          },
+          "nothing": {
+            "message": i18nUtility.__("app_error_messages.certificate_multiple.generate.nothing"),
+            "status_code": "certificate_multiple_generate_nothing",
+            "code": 400
+          }
+        }
+      },
       "certificate_settings": {
         "not_found": {
           "message": i18nUtility.__("app_error_messages.certificate_settings.not_found"),

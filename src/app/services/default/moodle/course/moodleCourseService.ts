@@ -292,7 +292,7 @@ class MoodleCourseService {
         const auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
         if (auditorQuizModule) {
           if (sectionMoodleId) {
-            if (auditorQuizModule?.sectionid === sectionMoodleId) {
+            if (auditorQuizModule?.sectionid.toString() === sectionMoodleId.toString()) {
               response.hasExam = true;
               response.exam = {
                 sectionId: auditorQuizModule?.sectionid

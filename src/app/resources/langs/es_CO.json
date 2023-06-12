@@ -1,5 +1,12 @@
 {
   "app_error_messages": {
+    "certificate_multiple": {
+      "generate": {
+        "users_required": "Debe proporcionar al menos un estudiante para generar certificados",
+        "certificate_setting_required": "Debe proporcionar al menos una configuración de certificados",
+        "nothing": "No hay certificados para generar"
+      }
+    },
     "certificate_settings": {
       "not_found": "No se ha encontrado la configuración de certificados",
       "modules_invalid": "Los modulos asignados a la configuración no son validos"
