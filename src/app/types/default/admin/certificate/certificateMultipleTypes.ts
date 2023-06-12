@@ -72,4 +72,16 @@ export interface ICertificateQueueMultiple {
   certificateConsecutive: string;
   status: string;
 }
+
+export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}
+
+export interface ICertificateMultipleBuildData {
+  certificateQueueId: string,
+  userId: string;
+  courseId: string;
+  auxiliarId: string, // ID de Auxiliar qué liberó el certificado
+  certificateConsecutive: string,
+  certificateHash?: string
+  certificateSettingId: string;
+}
 //@end

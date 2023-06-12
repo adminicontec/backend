@@ -28,7 +28,12 @@ class ErrorResponse {
             "message": i18nUtility.__("app_error_messages.certificate_multiple.generate.nothing"),
             "status_code": "certificate_multiple_generate_nothing",
             "code": 400
-          }
+          },
+          "program_invalid": {
+            "message": i18nUtility.__("app_error_messages.certificate_multiple.generate.program_invalid"),
+            "status_code": "certificate_multiple_generate_program_invalid",
+            "code": 400
+          },
         }
       },
       "certificate_settings": {

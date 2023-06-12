@@ -43,6 +43,7 @@ import {
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
+import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
 // @end
 
 class CertificateService {
@@ -840,13 +841,26 @@ class CertificateService {
    *  SetCertificate: método para enviar request a Huella de Confianza para la creación de Certificado.-
    */
   public createCertificate = async (params: IQueryUserToCertificate) => {
+    return this.createCertificateStrategy(params)
+  }
 
+  private createCertificateStrategy = (params: IQueryUserToCertificate) => {
+    if (params.certificateSettingId) {
+      return certificateMultipleService.createCertificate({
+        userId: params.userId,
+        courseId: params.courseId,
+        auxiliarId: params.auxiliarId,
+        certificateSettingId: params.certificateSettingId,
+        certificateQueueId: params.certificateQueueId,
+        certificateConsecutive: params.certificateConsecutive,
+      })
+    } else  {
+      return this.createCertificateV1(params)
+    }
+  }
+
+  private createCertificateV1 = async (params: IQueryUserToCertificate) => {
     let certificateParamsArrayForRequest: ISetCertificateParams[] = [];  // return this Array
-
-    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
-    console.log("→→→ Execution of createCertificate()");
-    console.log("→→→ →→→ →→→ →→→ →→→ →→→ →→→ →→→");
-
     try {
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
 
@@ -2117,7 +2131,7 @@ class CertificateService {
   /**
    *  request to create a new Certificate to "Huella de Confianza"
    */
-  private requestSetCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
+  public requestSetCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
 
     let responseCertQueueArray = [];
     let counter = 1;
@@ -2684,7 +2698,7 @@ class CertificateService {
     }
   }
 
-  private encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
+  public encodeAdditionaImageForCertificate = (base_path: string, imagePath: string) => {
 
     const height = '70px';
     const prefixMimeType = `<img style="height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
@@ -2695,11 +2709,8 @@ class CertificateService {
       console.log(`Image path: ${imagePath}`);
 
       let filePath = `${base_path}/${this.default_logo_path}/${imagePath}`;
-      console.log(filePath);
 
       if (fileUtility.fileExists(filePath) === true) {
-        console.log(`fileExists!!`);
-
         const contentFile = fileUtility.readFileSyncBuffer(filePath);
         if (contentFile && contentFile.length > 0) {
           const dataArray = Buffer.from(contentFile);
@@ -2711,7 +2722,7 @@ class CertificateService {
     return null;
   }
 
-  private getProgramTypeFromCode = (code: string) => {
+  public getProgramTypeFromCode = (code: string) => {
     let programTypeName;
     let codeProgram = code.split('-');
     programTypeName = program_type_collection.find(element => element.abbr == codeProgram[0]);
@@ -2747,7 +2758,7 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 1
    */
-  private formatAcademicModulesList = (academicModules: any, programTypeName: string) => {
+  public formatAcademicModulesList = (academicModules: any, programTypeName: string) => {
     let mappingAcademicModulesList = '';
     let totalDuration = 0;
     try {

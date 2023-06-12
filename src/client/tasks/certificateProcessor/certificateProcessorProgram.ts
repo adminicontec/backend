@@ -24,13 +24,22 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     console.log("Init Task: Certificate Processor ");
+    await this.processNew()
+    await this.processReIssue()
 
-    //#region Set certificate, only new requests
+    return true;
+  }
+
+  private processNew = async () => {
     console.log("1. Get all items on Certificate Queue [New] status")
     const select = ["New"];
-    let respQueueToProcess: any = await certificateQueueService.
+    const respQueueToProcess: any = await certificateQueueService.
       findBy({
-        query: QueryValues.ALL, where: [{ field: 'status', value: { $in: select } }]
+        query: QueryValues.ALL, where: [
+          { field: 'status', value: { $in: select } },
+          // { field: 'courseId', value: '647908575eb784617f045948'},
+          // { field: '_id', value: '64875a62b97e122466a2e61b'}
+        ]
       });
 
     if (respQueueToProcess.status === "error") return respQueueToProcess;
@@ -39,17 +48,13 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
       console.log("Request for " + respQueueToProcess.certificateQueue.length + " certificates.");
 
       for await (const element of respQueueToProcess.certificateQueue) {
-        // console.log('.............................');
-        // console.log(element._id);
-        // console.log(`Liberado por: ${element.auxiliar.profile.first_name} ${element.auxiliar.profile.last_name}.`)
-
-        // 1. Send request to process Certificate on HdC service.
-        let respSetCertificate: any = await certificateService.createCertificate({
+        const respSetCertificate: any = await certificateService.createCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,
           userId: element.userId._id,
           auxiliarId: element.auxiliar._id,
-          certificateConsecutive: element.certificateConsecutive
+          certificateConsecutive: element.certificateConsecutive,
+          certificateSettingId: element?.certificateSetting || undefined
         });
 
         if (respSetCertificate.status === "error") {
@@ -65,20 +70,19 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
     else {
       console.log("There're no certificates to request.");
     }
-    //#endregion
+  }
 
-    //#region Put certificate, only Re-issue requests
-
+  private processReIssue = async () => {
     console.log("2. Get all items on Certificate Queue [Re-issue] status")
+
     const selectIssue = ["Re-issue"];
-    let respReissueQueueToProcess: any = await certificateQueueService.
+    const respReissueQueueToProcess: any = await certificateQueueService.
       findBy({
         query: QueryValues.ALL, where: [{ field: 'status', value: { $in: selectIssue } }]
       });
 
     if (respReissueQueueToProcess.status === "error") return respReissueQueueToProcess;
 
-    //console.log(respReissueQueueToProcess.certificateQueue );
     if (respReissueQueueToProcess.certificateQueue.length != 0) {
 
       console.log("Re-issue for " + respReissueQueueToProcess.certificateQueue.length + " certificates.");
@@ -110,17 +114,10 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
           console.log("----------- END Process re-issue Certificate --------------------");
           console.log("Certificate re-issue successful!");
         }
-
       }
-
-    }
-    else {
+    } else {
       console.log("There're no certificates to re-issue.");
     }
-    //#endregion
-
-    // @end
-    return true; // Always return true | false
   }
 
   // @add_more_methods

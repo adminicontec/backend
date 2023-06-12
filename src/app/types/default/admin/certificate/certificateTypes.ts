@@ -16,6 +16,7 @@ export interface IQueryUserToCertificate {
   certificateConsecutive: string,
   certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
   certificateType?: string
+  certificateSettingId?: string;
 }
 
 

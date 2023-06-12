@@ -14,6 +14,11 @@ export enum CertificateSettingType {
   ATTENDANCE_APPROVAL = 'attendance_approval'
 }
 
+export enum CertificateSettingTypeTranslate {
+  ATTENDANCE = 'Asistencia',
+  ATTENDANCE_APPROVAL = 'Asistencia y aprobación'
+}
+
 interface CertificateSettingsModuleItem {
   status?: boolean,
   percentage?: number
