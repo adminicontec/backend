@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    // await this.addAttachedCategories();
+    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -1474,7 +1474,16 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           formats: ['xlsx', 'pdf', 'ppt', 'docx'],
           limit_size_KB: 1000
         }
-      }
+      },
+      {
+        name: "course_scheduling_approval_criteria",
+        description: "Adjuntos para criterios de aprobación",
+        config: {
+          limit_files: 1,
+          formats: ['pdf'],
+          limit_size_KB: 1000
+        }
+      },
     ];
 
     for await (let category of attachedCategories){
