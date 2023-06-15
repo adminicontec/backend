@@ -1,4 +1,5 @@
 // @import types
+import {CertificateSettingType} from '@scnode_app/types/default/admin/course/certificateSettingsTypes'
 // @end
 
 // @add your types
@@ -32,6 +33,8 @@ export interface ICertificateMultipleDataCertificationModule {
 export interface ICertificateMultipleDataCertification {
   certificateSettingId: string;
   certificateName: string;
+  certificateType: CertificateSettingType;
+  approved: boolean,
   certificate?: ICertificateMultipleDataCertificationCertificate
   modules: ICertificateMultipleDataCertificationModule[]
 }
@@ -47,5 +50,38 @@ export interface ICertificateMultipleDataResponse {
   courseSchedulingId: string
   student?: ICertificateMultipleDataStudent
   students?: ICertificateMultipleDataStudent[]
+}
+
+export interface ICertificateMultipleGenerateStudent {
+  userId: string;
+  certificateSettings: string[]
+}
+
+export interface ICertificateMultipleGenerate {
+  courseSchedulingId: string;
+  students: ICertificateMultipleGenerateStudent[];
+  user: string;
+}
+
+export interface ICertificateQueueMultiple {
+  userId: string;
+  courseId: string;
+  certificateSetting: string;
+  auxiliar: string;
+  certificateType: string;
+  certificateConsecutive: string;
+  status: string;
+}
+
+export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}
+
+export interface ICertificateMultipleBuildData {
+  certificateQueueId: string,
+  userId: string;
+  courseId: string;
+  auxiliarId: string, // ID de Auxiliar qué liberó el certificado
+  certificateConsecutive: string,
+  certificateHash?: string
+  certificateSettingId: string;
 }
 //@end

@@ -30,6 +30,7 @@ class CertificateMultipleRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app, _route, '/certificate-data', this.instanceController.certificateData, [], ['auth'])
+    routerUtility.post(app, _route, '/generate-certificate', this.instanceController.generateCertificate, [{middleware: 'certificate-multiple', method: 'generate', dir: 'admin/certificate'}], ['auth'])
     // @end
   }
 }
