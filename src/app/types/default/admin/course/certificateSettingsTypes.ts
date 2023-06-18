@@ -24,12 +24,22 @@ interface CertificateSettingsModuleItem {
   percentage?: number
 }
 
+export interface CertificateSettingsModuleCourseSchedulingDetail {
+  _id: string,
+  course: {
+    _id: string;
+    name: string;
+    moodle_id: string;
+  }
+}
+
 export interface CertificateSettingsModules {
-  courseSchedulingDetail: string,
+  courseSchedulingDetail: string | CertificateSettingsModuleCourseSchedulingDetail,
   duration: number,
   exam?: CertificateSettingsModuleItem,
   attendance?: CertificateSettingsModuleItem,
   progress?: CertificateSettingsModuleItem,
+  averageScore?: CertificateSettingsModuleItem,
 }
 
 interface CertificateSettingsMetadata {

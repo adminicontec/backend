@@ -1,5 +1,5 @@
 // @import types
-import {CertificateSettingType} from '@scnode_app/types/default/admin/course/certificateSettingsTypes'
+import {CertificateSettingCriteria, CertificateSettingType} from '@scnode_app/types/default/admin/course/certificateSettingsTypes'
 // @end
 
 // @add your types
@@ -17,10 +17,11 @@ export interface ICertificateMultipleDataCertificationCertificate {
 }
 
 export interface ICertificateMultipleDataCertificationModuleCriteriaResume {
-  type: ICertificateMultipleDataCertificationModule;
+  type: CertificateSettingCriteria;
   percentageRequired: number;
   percentageObtainer: number;
   approved: boolean
+  complement?: any
 }
 
 export interface ICertificateMultipleDataCertificationModule {
@@ -83,5 +84,45 @@ export interface ICertificateMultipleBuildData {
   certificateConsecutive: string,
   certificateHash?: string
   certificateSettingId: string;
+}
+
+
+export interface IBuildStudentsMoodleData {
+  moodleId: string;
+  studentMoodleId?: string,
+  students: string[]
+}
+
+interface IStudentStatsBase {
+  graderaw: number;
+}
+
+export enum StudentStats {
+  ATTENDANCE = 'attendance',
+  EXAM = 'exam',
+  COURSE = 'course',
+  PROGRESS = 'progress',
+  ASSIGN = 'assign',
+  FORUM = 'forum',
+}
+
+export interface IStudentStatsAttendance extends IStudentStatsBase {}
+export interface IStudentStatsAssign extends IStudentStatsBase {}
+export interface IStudentStatsCourse extends IStudentStatsBase {}
+export interface IStudentStatsForum extends IStudentStatsBase {}
+export interface IStudentStatsExam extends IStudentStatsBase {
+  isAuditor: boolean
+}
+export interface IStudentStatsProgress {
+  state: number;
+}
+
+export interface IStudentStats {
+  attendance: IStudentStatsAttendance[],
+  exam: IStudentStatsExam[],
+  course: IStudentStatsCourse[]
+  progress: IStudentStatsProgress[]
+  assign: IStudentStatsAssign[]
+  forum: IStudentStatsForum[]
 }
 //@end
