@@ -15,8 +15,8 @@ export enum CertificateSettingType {
 }
 
 export enum CertificateSettingTypeTranslate {
-  ATTENDANCE = 'Asistencia',
-  ATTENDANCE_APPROVAL = 'Asistencia y aprobación'
+  ATTENDANCE = 'Asistió',
+  ATTENDANCE_APPROVAL = 'Asistió y aprobó'
 }
 
 interface CertificateSettingsModuleItem {

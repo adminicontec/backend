@@ -565,6 +565,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:course_scheduling_upload_partial_report', description: 'Carga de informe empresarial parcial'},
 
         {name: 'permission:course_scheduling_force_change_confirmed_to_programmed', description: 'Forzar cambio desde confirmado a programado'},
+
+        {name: 'permission:course_scheduling_certificate_multiple_configuration', description: 'Permite configurar certificados multiples'},
       ]},
       {name: 'module:course_scheduling_enrollment', description: 'Módulo que permite administrar los programas', permissions: [
         {name: 'permission:course_scheduling_enrollment_create', description: 'Crear programas'},

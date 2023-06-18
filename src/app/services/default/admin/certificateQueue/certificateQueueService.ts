@@ -409,7 +409,8 @@ class CertificateQueueService {
               courseId: certificate.courseId,
               userId: certificate.userId,
               auxiliarId: certificate.auxiliar,
-              certificateConsecutive: certificate.certificateConsecutive
+              certificateConsecutive: certificate.certificateConsecutive,
+              certificateSettingId: certificate?.certificateSetting || undefined
             });
             if (respSetCertificate.status === "error") {
               logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)

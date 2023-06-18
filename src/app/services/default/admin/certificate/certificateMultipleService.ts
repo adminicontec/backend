@@ -67,7 +67,7 @@ class CertificateMultipleService {
       // @INFO: Consultar certificados generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -442,7 +442,7 @@ class CertificateMultipleService {
       // @INFO: Consultando certificados ya generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -558,13 +558,24 @@ class CertificateMultipleService {
       if (!student) return responseUtility.buildResponseFailed('json')
 
       // @INFO: Buscando configuración del certificado
-      const certificateSetting = await CertificateSettings.findOne({
-        _id: certificateSettingId,
+      const allCertificateSettings = await CertificateSettings.find({
+        courseScheduling: courseId
       })
       .populate({path: 'modules.courseSchedulingDetail', select: 'course', populate: [
         {path: 'course', select: 'name'}
       ]})
+
+      let position = 0;
+      let certificateSetting;
+      allCertificateSettings.forEach((certificate, index) => {
+        if (!certificateSetting && certificate?._id.toString() === certificateSettingId.toString()) {
+          certificateSetting = certificate;
+          position = index+1;
+        }
+      });
+
       if (!certificateSetting) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate_multiple.certificate_setting_required'})
+
 
       // @INFO: Consultando servicio
       const courseScheduling = await CourseScheduling.findOne({
@@ -639,7 +650,7 @@ class CertificateMultipleService {
       const mapping_ciudad = courseScheduling?.city?.name || '';
       const mapping_numero_certificado = (certificateHash) ?
         certificateConsecutive :
-        `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${certificateSetting._id}` // TODO: Revisar como diferenciar entre certificateSetting
+        `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${position}` // TODO: Revisar como diferenciar entre certificateSetting
 
       if (programType?.abbr) {
         if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
@@ -682,7 +693,7 @@ class CertificateMultipleService {
       const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
       const certificateParams: ICertificate = {
         modulo: mapping_template,
-        numero_certificado: mapping_numero_certificado, // TODO: Revisar
+        numero_certificado: mapping_numero_certificado,
         correo: student?.email,
         documento: `${student?.profile.doc_type} ${student?.profile?.doc_number}`,
         nombre: studentFullName.toUpperCase(),
