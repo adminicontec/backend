@@ -44,6 +44,8 @@ export interface ICertificateMultipleDataStudent {
   studentCode: string;
   userId: string;
   studentName: string
+  studentDocnumber: string;
+  studentUsername: string;
   certifications: ICertificateMultipleDataCertification[]
 }
 

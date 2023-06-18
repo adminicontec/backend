@@ -88,7 +88,7 @@ class CertificateMultipleService {
       }
       const enrollments = await Enrollment.find(whereEnrollents)
       .select('id user courseID course_scheduling enrollmentCode')
-      .populate({ path: 'user', select: 'id email moodle_id phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+      .populate({ path: 'user', select: 'id email username moodle_id phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
       .lean();
 
       // @INFO: Consultar estadisticas de Moodle
@@ -108,6 +108,8 @@ class CertificateMultipleService {
         const student: ICertificateMultipleDataStudent = {
           studentCode: enrollment?.enrollmentCode || '-', // OK
           studentName, // OK
+          studentDocnumber: enrollment?.user?.profile?.doc_number || '-',
+          studentUsername: enrollment?.user?.username || '-',
           userId: enrollment?.user?._id || '-', // OK
           certifications: [] // OK
         }
