@@ -239,6 +239,13 @@ class CourseSchedulingService {
       }
       steps.push('1')
 
+      if (params?.hasMultipleCertificate) {
+        if (params.hasMultipleCertificate === 'true') {
+          params.hasMultipleCertificate = true;
+        } else if (params.hasMultipleCertificate === 'false') {
+          params.hasMultipleCertificate = false
+        }
+      }
       if (params.auditor_modules && typeof params.auditor_modules === 'string' && params.auditor_modules.length) {
         params.auditor_modules = params.auditor_modules.split(',');
       } else if (Array.isArray(params.auditor_modules)) {
@@ -360,16 +367,16 @@ class CourseSchedulingService {
         if (params.hasMultipleCertificate) {
           params.multipleCertificate = {
             status: true,
-            editingStatus: false,
+            editingStatus: true,
           }
-          if (register?.multipleCertificate?.editingStatus) {
-            params.multipleCertificate.editingStatus = register?.multipleCertificate?.editingStatus
+          if (register?.multipleCertificate) {
+            params.multipleCertificate.editingStatus = register?.multipleCertificate?.editingStatus || false
           }
         } else {
           if (params.hasMultipleCertificate === false) {
             params.multipleCertificate = {
               status: false,
-              editingStatus: false
+              editingStatus: true
             }
           } else {
             if (register?.multipleCertificate) {
