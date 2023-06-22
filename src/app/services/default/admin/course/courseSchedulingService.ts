@@ -909,6 +909,7 @@ class CourseSchedulingService {
       .lean()
 
     for await (const enrolled of userEnrolled) {
+      if (!enrolled?.user?.email) continue
       await this.sendEnrollmentUserEmail([enrolled.user.email], {
         mailer: customs['mailer'],
         first_name: enrolled.user.profile.first_name,

@@ -80,7 +80,8 @@ class UserDataService {
             status: element?.status,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
             pdfPath: element?.certificate?.pdfPath ? certificateService.certificateUrl(element?.certificate.pdfPath) : null,
-            certificateSetting: element?.certificateSetting
+            certificateSetting: element?.certificateSetting,
+            certificate: element?.certificate,
           })
         }
         return accum
