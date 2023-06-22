@@ -99,7 +99,7 @@ export interface ICourseScheduling {
     date: string;
     personWhoReactivates: string;
   },
-  hasMultipleCertificate?: boolean;
+  hasMultipleCertificate?: boolean | string;
   multipleCertificate?: {
     status: boolean,
     editingStatus?: boolean

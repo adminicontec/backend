@@ -5,7 +5,6 @@
 // @end
 
 // @import utilities
-import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
@@ -17,6 +16,7 @@ import { ICertificateMultipleCriteria } from './certificateMultipleCriteria.abst
 import { CertificateMultipleAttendanceService } from './certificateMultipleAttendanceService';
 import { CertificateMultipleExamService } from './certificateMultipleExamService';
 import { CertificateMultipleProgressService } from './certificateMultipleProgresService';
+import { CertificateMultipleAverageScoreService } from './certificateMultipleAverageScoreService';
 // @end
 
 export class CertificateMultipleCriteriaFactory {
@@ -44,6 +44,9 @@ export class CertificateMultipleCriteriaFactory {
         break;
       case CertificateSettingCriteria.PROGRESS:
         this.instance = new CertificateMultipleProgressService()
+        break;
+      case CertificateSettingCriteria.AVERAGE_SCORE:
+        this.instance = new CertificateMultipleAverageScoreService()
         break;
       default:
         this.instance = new CertificateMultipleAttendanceService()

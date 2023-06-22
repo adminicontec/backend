@@ -249,7 +249,8 @@ class EnrolledCourseService {
           path: 'courseId', select: 'id metadata program', populate: [{
             path: 'program', select: 'id name moodle_id code'
           }]
-        }
+        },
+        { path: 'certificateSetting', select: '_id certificateName certificationType' }
       ])
 
       const newRegisters = [];

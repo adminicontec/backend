@@ -5,8 +5,11 @@ import { program_type_abbr, certificate_template, public_dir, attached } from '@
 // @end
 
 // @import services
+import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { CertificateMultipleCriteriaFactory } from './certificateCriteria/certificateMultipleCriteriaFactory';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService';
+import { completionstatusService } from '@scnode_app/services/default/admin/completionStatus/completionstatusService';
 // @end
 
 // @import utilities
@@ -19,9 +22,10 @@ import { CertificateQueue, CertificateSettings, CourseScheduling, Enrollment, Us
 // @end
 
 // @import types
-import { ICertificateMultipleBuildData, ICertificateMultipleCreate, ICertificateMultipleData, ICertificateMultipleDataCertification, ICertificateMultipleDataCertificationModule, ICertificateMultipleDataCertificationModuleCriteriaResume, ICertificateMultipleDataResponse, ICertificateMultipleDataStudent, ICertificateMultipleGenerate, ICertificateQueueMultiple } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
+import { IBuildStudentsMoodleData, ICertificateMultipleBuildData, ICertificateMultipleCreate, ICertificateMultipleData, ICertificateMultipleDataCertification, ICertificateMultipleDataCertificationModule, ICertificateMultipleDataCertificationModuleCriteriaResume, ICertificateMultipleDataResponse, ICertificateMultipleDataStudent, ICertificateMultipleGenerate, ICertificateQueueMultiple, IStudentStats, IStudentStatsAssign, IStudentStatsAttendance, IStudentStatsCourse, IStudentStatsExam, IStudentStatsForum, IStudentStatsProgress } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
 import { CertificateSettingCriteria, CertificateSettingType, CertificateSettingTypeTranslate } from '@scnode_app/types/default/admin/course/certificateSettingsTypes';
 import { ICertificate, ILogoInformation, ISetCertificateParams, ISignatureInformation } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { BuildStudentsMoodleDataException } from './buildStudentsError';
 // @end
 
 class CertificateMultipleService {
@@ -58,13 +62,12 @@ class CertificateMultipleService {
         courseScheduling: courseScheduling._id
       })
       .populate({path: 'modules.courseSchedulingDetail', select: 'id course', populate: [
-        {path: 'course', select: 'id name'}
+        {path: 'course', select: 'id name moodle_id'}
       ]})
-
       // @INFO: Consultar certificados generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -85,8 +88,19 @@ class CertificateMultipleService {
       }
       const enrollments = await Enrollment.find(whereEnrollents)
       .select('id user courseID course_scheduling enrollmentCode')
-      .populate({ path: 'user', select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
+      .populate({ path: 'user', select: 'id email username moodle_id phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional profile.origen moodle_id' })
       .lean();
+
+      // @INFO: Consultar estadisticas de Moodle
+      const userStats = await this.buildStudentsMoodleData({
+        moodleId: courseScheduling?.moodle_id,
+        students: enrollments?.reduce((accum, element) => {
+          if (element?.user?.moodle_id) {
+            accum.push(element?.user?.moodle_id.toString())
+          }
+          return accum
+        }, [])
+      })
 
       const students: ICertificateMultipleDataStudent[] = []
       for (const enrollment of enrollments) {
@@ -94,8 +108,10 @@ class CertificateMultipleService {
         const student: ICertificateMultipleDataStudent = {
           studentCode: enrollment?.enrollmentCode || '-', // OK
           studentName, // OK
+          studentDocnumber: enrollment?.user?.profile?.doc_number || '-',
+          studentUsername: enrollment?.user?.username || '-',
           userId: enrollment?.user?._id || '-', // OK
-          certifications: [] // TODO: Pending
+          certifications: [] // OK
         }
 
         const studentCertificates = certificatesByStudent[enrollment?.user?._id.toString()] || {}
@@ -110,7 +126,7 @@ class CertificateMultipleService {
             certificate: { // OK
               isGenerated: false
             },
-            modules: [] // TODO: Pending
+            modules: [] // OK
           }
 
           if (hasCertificate) {
@@ -125,28 +141,35 @@ class CertificateMultipleService {
             }
             certification.certificate.certificateDate = certificate?.certificate.date
           }
-
           for (const certificateSettingModule of certificateSetting?.modules) {
             const module: ICertificateMultipleDataCertificationModule = {
               courseSchedulingDetailId: certificateSettingModule?.courseSchedulingDetail?._id, // OK
               courseSchedulingDetailName: certificateSettingModule?.courseSchedulingDetail?.course?.name || '-', // OK
-              moduleCriteriaResume: [], // TODO: Pending
+              moduleCriteriaResume: [], // OK
               approved: false // OK
             }
 
-            Object.keys(CertificateSettingCriteria).map((criteria) => {
-              const item = certificateSettingModule[criteria.toLowerCase()];
+            Object.values(CertificateSettingCriteria).map((criteria) => {
+              const item = certificateSettingModule[criteria];
               if (item && item?.status === true) {
                 const moduleCriteria: ICertificateMultipleDataCertificationModuleCriteriaResume = {
-                  type: CertificateSettingCriteria[criteria], // OK
+                  type: criteria, // OK
                   percentageRequired: item?.percentage, // OK
-                  percentageObtainer: 0, // TODO: Pending
-                  approved: (Math.round(Math.random()) === 0) ? false : true, // TODO: Pending
+                  percentageObtainer: 0, // OK
+                  approved: false, // OK
+                  complement: null
                 }
 
-                // TODO: Pendiente función que obtenga los datos de moodle y valide si se cumple o no el criterio
-                const factory = new CertificateMultipleCriteriaFactory(CertificateSettingCriteria[criteria])
-                factory.instance.evaluateCriteria()
+                if (userStats[enrollment?.user?.moodle_id.toString()]) {
+                  const factory = new CertificateMultipleCriteriaFactory(criteria)
+                  const {approved, percentage, complement} = factory.instance.evaluateCriteria(
+                    userStats[enrollment?.user?.moodle_id.toString()],
+                    certificateSettingModule
+                  )
+                  moduleCriteria.approved = approved;
+                  moduleCriteria.percentageObtainer = percentage
+                  moduleCriteria.complement = complement || undefined
+                }
 
                 module.moduleCriteriaResume.push(moduleCriteria)
               }
@@ -183,7 +206,196 @@ class CertificateMultipleService {
       }})
     } catch (err) {
       console.log('CertificateMultipleService::certificateData', err)
-      return responseUtility.buildResponseFailed('json', null)
+      if (err?.errorKey) {
+        return responseUtility.buildResponseFailed('json', null, {error_key: {
+          key: err.errorKey,
+          params: err.customParams || undefined
+        }})
+      }
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private buildStudentsMoodleData = async (params: IBuildStudentsMoodleData) => {
+    try {
+      const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
+      const { moodleId, studentMoodleId, students } = params
+
+      let modulesListByInstance = {}
+      const modulesForProgress: any = await courseContentService.moduleList({
+        courseID: moodleId,
+        moduleType: [...moodleItemsToSearch, 'scorm']
+      });
+
+      if (modulesForProgress?.courseModules) {
+        modulesListByInstance = modulesForProgress.courseModules.reduce((accum, element) => {
+          if (element?.instance) {
+            if (!accum[element?.instance]) {
+              accum[element?.instance] = element;
+            }
+          }
+          return accum;
+        }, {});
+      }
+
+      const moodleUserStats: any = await gradesService.fetchGradesByFilter({
+        courseID: moodleId,
+        userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
+        filter: moodleItemsToSearch
+      });
+      if (moodleUserStats?.status === 'error') {
+        throw new BuildStudentsMoodleDataException({
+          errorKey: 'grades.moodle_exception'
+        })
+      }
+
+      const { grades: userStats } = moodleUserStats
+
+      const statsGroupedByUser: Record<string, Record<string, Record<string, IStudentStats>>> = {}
+      for (const student of students) {
+        if (!statsGroupedByUser[student]) {
+          statsGroupedByUser[student] = {}
+        }
+        for (const module of modulesForProgress?.courseModules) {
+          if (module?.instance && module?.sectionid) {
+            if (!statsGroupedByUser[student][module?.sectionid.toString()]) statsGroupedByUser[student][module?.sectionid] = {}
+            if (!statsGroupedByUser[student][module?.sectionid.toString()][module?.instance.toString()]) {
+              statsGroupedByUser[student][module?.sectionid.toString()][module?.instance.toString()] = {
+                attendance: [],
+                exam: [],
+                course: [],
+                progress: [],
+                assign: [],
+                forum: [],
+              }
+            }
+          }
+        }
+      }
+
+
+      for (const stats of userStats) {
+        if (stats?.userData?.userid) {
+          if (statsGroupedByUser[stats?.userData?.userid.toString()]) {
+            const userModuleStats = statsGroupedByUser[stats?.userData?.userid.toString()];
+            if (stats?.itemType?.attendance && Array.isArray(stats?.itemType?.attendance)) {
+              for (const attedance of stats?.itemType?.attendance) {
+                if (attedance?.iteminstance && modulesListByInstance[attedance?.iteminstance]) {
+                  const instance = modulesListByInstance[attedance?.iteminstance] || undefined
+                  if (
+                    instance &&
+                    userModuleStats[instance?.sectionid.toString()] &&
+                    userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()]
+                  ) {
+                    const attedanceItem: IStudentStatsAttendance = {
+                      graderaw: attedance?.graderaw || 0
+                    }
+                    userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()].attendance.push(attedanceItem)
+                  }
+                }
+              }
+            }
+
+            if (stats?.itemType?.quiz && Array.isArray(stats?.itemType?.quiz)) {
+              for (const quiz of stats?.itemType?.quiz) {
+                if (quiz?.iteminstance && modulesListByInstance[quiz?.iteminstance]) {
+                  const instance = modulesListByInstance[quiz?.iteminstance] || undefined
+                  if (
+                    instance &&
+                    userModuleStats[instance?.sectionid.toString()] &&
+                    userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()]
+                  ) {
+                    const examItem: IStudentStatsExam = {
+                      graderaw: quiz?.graderaw || 0,
+                      isAuditor: quiz?.idnumber === 'auditor' ? true : false
+                    }
+                    userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
+                  }
+                }
+              }
+            }
+
+            // if (stats?.itemType?.course && Array.isArray(stats?.itemType?.course)) {
+            //   for (const course of stats?.itemType?.course) {
+            //     if (course?.iteminstance && modulesListByInstance[course?.iteminstance.toString()]) {
+            //       const instance = modulesListByInstance[course?.iteminstance.toString()] || undefined
+            //       if (
+            //         instance &&
+            //         userModuleStats[instance?.sectionid.toString()] &&
+            //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()]
+            //       ) {
+            //         const courseItem: IStudentStatsCourse = {
+            //           graderaw: course?.graderaw || 0,
+            //         }
+            //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()].course.push(courseItem)
+            //       }
+            //     }
+            //   }
+            // }
+
+            if (stats?.itemType?.assign && Array.isArray(stats?.itemType?.assign)) {
+              for (const assign of stats?.itemType?.assign) {
+                if (assign?.iteminstance && modulesListByInstance[assign?.iteminstance.toString()]) {
+                  const instance = modulesListByInstance[assign?.iteminstance.toString()] || undefined
+                  if (
+                    instance &&
+                    userModuleStats[instance?.sectionid.toString()] &&
+                    userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()]
+                  ) {
+                    const assignItem: IStudentStatsAssign = {
+                      graderaw: assign?.graderaw || 0,
+                    }
+                    userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()].assign.push(assignItem)
+                  }
+                }
+              }
+            }
+
+            if (stats?.itemType?.forum && Array.isArray(stats?.itemType?.forum)) {
+              for (const forum of stats?.itemType?.forum) {
+                if (forum?.iteminstance && modulesListByInstance[forum?.iteminstance.toString()]) {
+                  const instance = modulesListByInstance[forum?.iteminstance.toString()] || undefined
+                  if (
+                    instance &&
+                    userModuleStats[instance?.sectionid.toString()] &&
+                    userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()]
+                  ) {
+                    const forumItem: IStudentStatsForum = {
+                      graderaw: forum?.graderaw || 0,
+                    }
+                    userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()].forum.push(forumItem)
+                  }
+                }
+              }
+            }
+            const respCompletionStatus: any = await completionstatusService.activitiesCompletion({
+              courseID: moodleId,
+              userID: stats?.userData?.userid
+            });
+
+            if (respCompletionStatus?.completion && Array.isArray(respCompletionStatus?.completion)) {
+              for (const completion of respCompletionStatus?.completion) {
+                if (completion?.instance && modulesListByInstance[completion?.instance.toString()]) {
+                  const instance = modulesListByInstance[completion?.instance.toString()] || undefined
+                  if (
+                    instance &&
+                    userModuleStats[instance?.sectionid.toString()] &&
+                    userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()]
+                  ) {
+                    const progressItem: IStudentStatsProgress = {
+                      state: completion?.state || 0,
+                    }
+                    userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()].progress.push(progressItem)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return statsGroupedByUser;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -232,7 +444,7 @@ class CertificateMultipleService {
       // @INFO: Consultando certificados ya generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -272,6 +484,10 @@ class CertificateMultipleService {
 
       await CertificateQueue.insertMany(itemsToCreate)
 
+      await CourseScheduling.findByIdAndUpdate(courseScheduling._id, {
+        'multipleCertificate.editingStatus': false,
+      }, { useFindAndModify: false, new: true })
+
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
       console.log('CertificateMultipleService::generateCertificate', err)
@@ -286,7 +502,7 @@ class CertificateMultipleService {
       })
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
-      .select('id')
+      .select('id moodle_id')
 
       if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {
         error_key: 'course_scheduling.not_found'
@@ -344,13 +560,24 @@ class CertificateMultipleService {
       if (!student) return responseUtility.buildResponseFailed('json')
 
       // @INFO: Buscando configuración del certificado
-      const certificateSetting = await CertificateSettings.findOne({
-        _id: certificateSettingId,
+      const allCertificateSettings = await CertificateSettings.find({
+        courseScheduling: courseId
       })
       .populate({path: 'modules.courseSchedulingDetail', select: 'course', populate: [
         {path: 'course', select: 'name'}
       ]})
+
+      let position = 0;
+      let certificateSetting;
+      allCertificateSettings.forEach((certificate, index) => {
+        if (!certificateSetting && certificate?._id.toString() === certificateSettingId.toString()) {
+          certificateSetting = certificate;
+          position = index+1;
+        }
+      });
+
       if (!certificateSetting) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate_multiple.certificate_setting_required'})
+
 
       // @INFO: Consultando servicio
       const courseScheduling = await CourseScheduling.findOne({
@@ -425,7 +652,7 @@ class CertificateMultipleService {
       const mapping_ciudad = courseScheduling?.city?.name || '';
       const mapping_numero_certificado = (certificateHash) ?
         certificateConsecutive :
-        `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${certificateSetting._id}` // TODO: Revisar como diferenciar entre certificateSetting
+        `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${position}` // TODO: Revisar como diferenciar entre certificateSetting
 
       if (programType?.abbr) {
         if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
@@ -468,7 +695,7 @@ class CertificateMultipleService {
       const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
       const certificateParams: ICertificate = {
         modulo: mapping_template,
-        numero_certificado: mapping_numero_certificado, // TODO: Revisar
+        numero_certificado: mapping_numero_certificado,
         correo: student?.email,
         documento: `${student?.profile.doc_type} ${student?.profile?.doc_number}`,
         nombre: studentFullName.toUpperCase(),

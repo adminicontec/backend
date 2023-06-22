@@ -11,13 +11,19 @@
 // @end
 
 // @import types
-import { IStudentStats } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
-import { ICertificateMultipleCriteria, IEvaluateCriteria } from './certificateMultipleCriteria.abstract';
+import { IStudentStats, StudentStats } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
+import { IEvaluateCriteria } from './certificateMultipleCriteria.abstract';
 import { CertificateSettingCriteria, CertificateSettingsModuleCourseSchedulingDetail, CertificateSettingsModules } from '@scnode_app/types/default/admin/course/certificateSettingsTypes';
 import { CertificateMultipleBaseService } from './certificateMultipleCriteriaBaseService';
 // @end
 
-export class CertificateMultipleExamService extends CertificateMultipleBaseService {
+interface ComplementData {
+  average: number;
+  totalItems: number;
+  list: number[]
+}
+
+export class CertificateMultipleAverageScoreService extends CertificateMultipleBaseService {
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -30,39 +36,28 @@ export class CertificateMultipleExamService extends CertificateMultipleBaseServi
     stats: Record<string, Record<string, IStudentStats>>,
     module: CertificateSettingsModules
   ): IEvaluateCriteria {
-    if (this.criteriaAccess(CertificateSettingCriteria.EXAM, module)) {
+    if (this.criteriaAccess(CertificateSettingCriteria.AVERAGE_SCORE, module)) {
       const courseScheduling = module?.courseSchedulingDetail as CertificateSettingsModuleCourseSchedulingDetail
       const statsByModule = this.getStatsByModule(stats, courseScheduling);
-
-      const complement = {
+      const complement: ComplementData = {
         average: 0,
         totalItems: 0,
-        itemsApproved: 0,
         list: []
       }
 
       for (const key in statsByModule) {
         if (Object.prototype.hasOwnProperty.call(statsByModule, key)) {
           const instance = statsByModule[key];
-          if (instance?.exam) {
-            instance.exam.forEach((exam) => {
-              if (exam?.isAuditor) {
-                if (exam?.graderaw >= module?.exam.percentage) {
-                  complement.itemsApproved += 1;
-                }
-                complement.average += exam?.graderaw || 0;
-                complement.totalItems += 1;
-                complement.list.push(exam?.graderaw || 0)
-              }
-            })
-          }
+          this.groupStatsByInstance(instance, StudentStats.EXAM, complement)
+          this.groupStatsByInstance(instance, StudentStats.ASSIGN, complement)
         }
       }
       if (complement.totalItems > 0) {
-        complement.average = Math.round(complement.average / complement.totalItems)
+        complement.average /= complement.totalItems
+        complement.average = Math.trunc(complement.average)
       }
 
-      const approved = complement.itemsApproved === complement.totalItems
+      const approved = complement.average >= module?.averageScore.percentage
       return {
         approved,
         percentage: complement.average,
@@ -70,5 +65,15 @@ export class CertificateMultipleExamService extends CertificateMultipleBaseServi
       };
     }
     return {approved: false, percentage: 0}
+  }
+
+  private groupStatsByInstance = (instance: IStudentStats, key: StudentStats, complement: ComplementData) => {
+    if (instance && instance[key]) {
+      instance[key].forEach((item) => {
+        complement.totalItems += 1;
+        complement.average += item?.graderaw || 0
+        complement.list.push(item?.graderaw || 0);
+      })
+    }
   }
 }

@@ -369,7 +369,7 @@ const CourseSchedulingSchema = new Schema({
     },
     editingStatus: {
       type: Schema.Types.Boolean,
-      default: false
+      default: true
     },
   }
   // @end
