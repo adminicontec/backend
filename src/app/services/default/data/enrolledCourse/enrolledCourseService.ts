@@ -49,7 +49,7 @@ class EnrolledCourseService {
         user: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria', populate: [
             { path: 'program', select: 'id name code moodle_id' },
             { path: 'schedulingStatus', select: 'id name'},
             { path: 'schedulingMode', select: 'id name' }
@@ -69,7 +69,8 @@ class EnrolledCourseService {
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
-              schedulingMode: e.course_scheduling.schedulingMode
+              schedulingMode: e.course_scheduling.schedulingMode,
+              approval_criteria: e.course_scheduling?.approval_criteria,
             }
             if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
               history.push(item)
@@ -248,7 +249,8 @@ class EnrolledCourseService {
           path: 'courseId', select: 'id metadata program', populate: [{
             path: 'program', select: 'id name moodle_id code'
           }]
-        }
+        },
+        { path: 'certificateSetting', select: '_id certificateName certificationType' }
       ])
 
       const newRegisters = [];

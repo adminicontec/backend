@@ -59,4 +59,16 @@ export interface IMoodleForumDiscussion{
   timestart: number
   timeend: number
 }
+
+export interface IMoodleCheckCourseHasAuditorExam {
+  programMoodleId: string; // MoodleID de el CourseScheduling
+  sectionMoodleId?: string; // MoodleId de el CourseSchedulingDetails::course -> CourseSchedulingSection
+}
+
+export interface IMoodleCheckCourseHasAuditorExamResponse {
+  hasExam: boolean,
+  exam?: {
+    sectionId: number;
+  }
+}
 //@end

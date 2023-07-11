@@ -42,16 +42,13 @@ class CertificateQueueService {
  */
   public findBy = async (params: IQueryFind) => {
 
-    console.log('findBy params');
-    console.dir(params.where);
-
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate certificateType message notificationSent';
+      let select = 'id courseId userId auxiliar status certificateType certificateModule certificateConsecutive certificate certificateType message notificationSent certificateSetting';
       if (params.query === QueryValues.ALL) {
         const registers = await CertificateQueue.find(where)
           .select(select)
@@ -210,7 +207,7 @@ class CertificateQueueService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id courseId userId auxiliar status certificateConsecutive certificateType certificateModule certificate message notificationSent created_at'
+    let select = 'id courseId userId auxiliar status certificateConsecutive certificateType certificateModule certificate message notificationSent created_at certificateSetting'
     if (filters.select) {
       select = filters.select
     }
@@ -412,7 +409,8 @@ class CertificateQueueService {
               courseId: certificate.courseId,
               userId: certificate.userId,
               auxiliarId: certificate.auxiliar,
-              certificateConsecutive: certificate.certificateConsecutive
+              certificateConsecutive: certificate.certificateConsecutive,
+              certificateSettingId: certificate?.certificateSetting || undefined
             });
             if (respSetCertificate.status === "error") {
               logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)

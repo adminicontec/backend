@@ -54,7 +54,7 @@ class NotificationEventService {
       }
 
       // avoid sending seconc certificate Notification
-      if (params.consecutive.endsWith('-A')) {
+      if (params?.forceNotificationSended === true || params.consecutive.endsWith('-A')) {
         flagNotificationSent = true;
       }
       else {

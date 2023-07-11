@@ -710,8 +710,11 @@ class EnrollmentService {
       if (registers && registers.length) {
         let idx: number = 0;
         for await (let register of registers) {
-          const certificates = await CertificateQueue.find({ userId: register.user, courseId: register.course_scheduling });
+          const certificates = await CertificateQueue
+            .find({ userId: register.user, courseId: register.course_scheduling })
+            .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
           if (certificates && certificates.length) {
+            registers[idx].certificates = [...certificates]
             certificates.forEach((certificate) => {
               if (certificate.certificateType === 'academic') {
                 registers[idx].academicCertificate = {

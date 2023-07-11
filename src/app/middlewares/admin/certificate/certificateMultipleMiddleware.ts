@@ -1,0 +1,37 @@
+// @import_dependencies_node Import libraries
+import { Request, Response, NextFunction } from 'express';
+// @end
+
+// @import_utilities Import utilities
+import { responseUtility } from "@scnode_core/utilities/responseUtility";
+import { requestUtility, ValidatorRequest } from "@scnode_core/utilities/requestUtility";
+// @end
+
+class CertificateMultipleMiddleware {
+
+  /*===============================================
+  =            Estructura de un metodo            =
+  ================================================
+    // La estructura de un metodo debe ser la siguiente:
+    public methodName = (req: Request, res: Response, next: NextFunction) => {
+      const fields_config: ValidatorRequest[] = [
+        { key: 'one_field', label: 'This is a short description'},
+      ]
+      await requestUtility.middlewareValidator(fields_config, req, res, next)
+    }
+  /*======  End of Estructura de un metodo  =====*/
+
+  constructor () {}
+
+  public generate = async (req: Request, res: Response, next: NextFunction) => {
+
+		const fields_config: ValidatorRequest[] = [
+      { key: 'courseSchedulingId', label: 'Identificador del servicio'}
+		];
+
+		await requestUtility.middlewareValidator(fields_config, req, res, next)
+  }
+}
+
+export const certificateMultipleMiddleware = new CertificateMultipleMiddleware();
+export { CertificateMultipleMiddleware as AdminCertificateCertificateMultipleMiddleware }

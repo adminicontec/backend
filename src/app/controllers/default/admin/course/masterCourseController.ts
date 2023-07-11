@@ -41,7 +41,10 @@ class MasterCourseController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
-
+  public checkCourseHasAuditorExam = async (req: Request, res: Response) => {
+    const response = await moodleCourseService.checkCourseHasAuditorExam(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const masterCourseController = new MasterCourseController();

@@ -286,6 +286,10 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Attached'
   },
+  approval_criteria: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached'
+  },
   schedulingAssociation: {
     generatingAssociation: {
       type: Schema.Types.Boolean,
@@ -357,6 +361,16 @@ const CourseSchedulingSchema = new Schema({
   satisfactionSurvey: {
     type: Schema.Types.Number,
     default: 0,
+  },
+  multipleCertificate: {
+    status: {
+      type: Schema.Types.Boolean,
+      default: false
+    },
+    editingStatus: {
+      type: Schema.Types.Boolean,
+      default: true
+    },
   }
   // @end
 }, {

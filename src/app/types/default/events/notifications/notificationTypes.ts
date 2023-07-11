@@ -2,7 +2,8 @@ export interface ISendNotificationParticipantCertificated {
   certificateQueueId: string,
   courseSchedulingId: string,
   participantId: string,
-  consecutive: string
+  consecutive: string,
+  forceNotificationSended?: boolean
 }
 
 

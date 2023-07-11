@@ -16,6 +16,10 @@ const CertificateQueueSchema = new Schema({
     ref: "CourseScheduling",
     required: true
   },
+  certificateSetting: {
+    type: Schema.Types.ObjectId,
+    ref: "CertificateSettings",
+  },
   auxiliar: {
     type: Schema.Types.ObjectId,
     ref: "User",

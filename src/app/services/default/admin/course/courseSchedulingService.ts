@@ -88,7 +88,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -239,6 +239,13 @@ class CourseSchedulingService {
       }
       steps.push('1')
 
+      if (params?.hasMultipleCertificate) {
+        if (params.hasMultipleCertificate === 'true') {
+          params.hasMultipleCertificate = true;
+        } else if (params.hasMultipleCertificate === 'false') {
+          params.hasMultipleCertificate = false
+        }
+      }
       if (params.auditor_modules && typeof params.auditor_modules === 'string' && params.auditor_modules.length) {
         params.auditor_modules = params.auditor_modules.split(',');
       } else if (Array.isArray(params.auditor_modules)) {
@@ -263,6 +270,7 @@ class CourseSchedulingService {
       if (params.program && typeof params.program !== "string" && params.program.hasOwnProperty('value')) {
         params.program = await this.saveLocalProgram(params.program)
       }
+
       steps.push('4')
 
       if (params.city) {
@@ -352,6 +360,29 @@ class CourseSchedulingService {
             params.reactivateTracking = {
               date: null,
               personWhoReactivates: null
+            }
+          }
+        }
+
+        if (params.hasMultipleCertificate) {
+          params.multipleCertificate = {
+            status: true,
+            editingStatus: true,
+          }
+          if (register?.multipleCertificate) {
+            params.multipleCertificate.editingStatus = register?.multipleCertificate?.editingStatus || false
+          }
+        } else {
+          if (params.hasMultipleCertificate === false) {
+            params.multipleCertificate = {
+              status: false,
+              editingStatus: true
+            }
+          } else {
+            if (register?.multipleCertificate) {
+              params.multipleCertificate = {
+                ...register.multipleCertificate
+              }
             }
           }
         }
@@ -502,6 +533,15 @@ class CourseSchedulingService {
 
       } else {
         steps.push('7')
+        params.multipleCertificate = {
+          status: false,
+          editingStatus: false,
+        }
+        if (params.hasMultipleCertificate) {
+          params.multipleCertificate.status = true
+          params.multipleCertificate.editingStatus = true
+        }
+
         if (params.hasCost && (params.hasCost === true) || (params.hasCost === 'true')) {
           let hasParamsCost = false
           if (params.priceCOP) hasParamsCost = true
@@ -869,6 +909,7 @@ class CourseSchedulingService {
       .lean()
 
     for await (const enrolled of userEnrolled) {
+      if (!enrolled?.user?.email) continue
       await this.sendEnrollmentUserEmail([enrolled.user.email], {
         mailer: customs['mailer'],
         first_name: enrolled.user.profile.first_name,
@@ -1464,7 +1505,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report schedulingAssociation loadParticipants publish'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate'
     if (filters.select) {
       select = filters.select
     }
@@ -1726,7 +1767,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report loadParticipants publish'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish'
 
       let where = {}
 

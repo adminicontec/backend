@@ -66,19 +66,22 @@ class UserDataService {
       .populate({path: 'courseId', select: 'id program certificate_students', populate: [{
         path: 'program', select: 'id name'
       }]})
+      .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
 
       const certifications = _certifications.reduce((accum, element) => {
         if (element?.courseId?.certificate_students) {
           accum.push({
             key: element?._id,
             _id: element?._id,
-            title: element?.certificate.title ||  '',
+            title: !!element?.certificateSetting ? element?.certificateSetting?.certificateName : element?.certificate.title ||  '',
             date: moment(element?.certificate.date).format('YYYY-MM-DD'), //moment(element.created_at).format('YYYY-MM-DD'),
             hash: element?.certificate?.hash,
             url: element?.certificate?.url,
             status: element?.status,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
             pdfPath: element?.certificate?.pdfPath ? certificateService.certificateUrl(element?.certificate.pdfPath) : null,
+            certificateSetting: element?.certificateSetting,
+            certificate: element?.certificate,
           })
         }
         return accum
