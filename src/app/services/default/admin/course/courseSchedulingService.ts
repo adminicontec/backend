@@ -34,6 +34,8 @@ import { Attached, City, Company, Country, Course, CourseScheduling, CourseSched
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
   CourseSchedulingDetailsSync,
+  CourseSchedulingEventType,
+  CourseSchedulingProvisioningMoodleStatus,
   CourseSchedulingUpdateNotification,
   ForceStatus,
   IChangeSchedulingElement,
@@ -41,6 +43,7 @@ import {
   ICourseScheduling,
   ICourseSchedulingDelete,
   ICourseSchedulingEmailDestination,
+  ICourseSchedulingInsertOrUpdateOptions,
   ICourseSchedulingModification,
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
@@ -50,6 +53,7 @@ import {
   IDuplicateCourseScheduling,
   IDuplicateService,
   IForceStatusService,
+  IProvisioningMoodleCoursesParams,
   IReactivateService,
   ItemsToDuplicate,
   ReprogramingLabels,
@@ -61,6 +65,7 @@ import { courseContentService } from '@scnode_app/services/default/moodle/course
 import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
+import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 // @end
 
 class CourseSchedulingService {
@@ -229,7 +234,7 @@ class CourseSchedulingService {
    * @param params Elementos a registrar
    * @returns
    */
-  public insertOrUpdate = async (params: ICourseScheduling, files?: any) => {
+  public insertOrUpdate = async (params: ICourseScheduling, files?: any, options?: ICourseSchedulingInsertOrUpdateOptions) => {
 
     let steps = [];
     try {
@@ -663,42 +668,27 @@ class CourseSchedulingService {
         steps.push(paramsMoodle)
 
         if (!params.disabledCreateMasterMoodle) {
-          steps.push('22')
-          const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
-          steps.push(moodleResponse)
-          if (moodleResponse.status === 'success') {
-            steps.push('23')
-            if (moodleResponse.course && moodleResponse.course.id) {
-              steps.push('24')
-              await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
-                useFindAndModify: false,
-                new: true,
-                lean: true,
-              })
-              steps.push('25')
-              if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-                steps.push('26')
-                await this.checkEnrollmentUsers(response)
-                await this.checkEnrollmentTeachers(response)
-                await this.serviceSchedulingNotification(response, prevSchedulingStatus)
-              }
-            } else {
-              steps.push('24-b')
-              await this.delete({ id: _id })
-              return responseUtility.buildResponseFailed('json', null, {
-                error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-                  steps
-                }
-              })
+          await CourseScheduling.findByIdAndUpdate(_id, {
+            provisioningMoodle: {
+              status: CourseSchedulingProvisioningMoodleStatus.IN_PROCESS,
+              logs: [],
             }
-          } else {
-            await this.delete({ id: _id })
-            return responseUtility.buildResponseFailed('json', null, {
-              error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-                steps
-              }
-            })
+          }, {
+            useFindAndModify: false,
+            new: true,
+            lean: true,
+          })
+          const eventParams: IProvisioningMoodleCoursesParams = {
+            steps,
+            paramsMoodle,
+            params,
+            response,
+            _id,
+            prevSchedulingStatus,
+            originalScheduling: options?.originalScheduling,
+            shouldDuplicateSessions: options?.shouldDuplicateSessions,
           }
+          eventEmitterUtility.emit(CourseSchedulingEventType.PROVISIONING_MOODLE_COURSES, eventParams)
         } else {
           steps.push('22-b')
           if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
@@ -900,7 +890,7 @@ class CourseSchedulingService {
    * Metodo que permite buscar los usuarios matriculados y enviar un mensaje de bienvenida
    * @param courseScheduling Programa
    */
-  private checkEnrollmentUsers = async (courseScheduling) => {
+  checkEnrollmentUsers = async (courseScheduling) => {
 
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
@@ -1063,7 +1053,7 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
+  serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
     // Solo se envía cuando pasa de programado a confirmado
     const currentStatus = (courseScheduling && courseScheduling.schedulingStatus && courseScheduling.schedulingStatus.name) ? courseScheduling.schedulingStatus.name : null
     if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
@@ -2198,54 +2188,57 @@ class CourseSchedulingService {
         schedulingAssociation: undefined
       }
 
-      const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj)
+      const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj, undefined, {
+        shouldDuplicateSessions: true,
+        originalScheduling: courseScheduling,
+      })
 
       if (newCourseSchedulingResponse.status === 'error') return newCourseSchedulingResponse;
 
-      const newCourseScheduling = await CourseScheduling.findOne(newCourseSchedulingResponse.scheduling._id).select('id moodle_id');
-      const newCourseMoodleId = newCourseScheduling.moodle_id;
-      logs.push(
-        {key: newCourseScheduling._id, type: 'CourseScheduling'}
-      )
+      // const newCourseScheduling = await CourseScheduling.findOne(newCourseSchedulingResponse.scheduling._id).select('id moodle_id');
+      // const newCourseMoodleId = newCourseScheduling.moodle_id;
+      // logs.push(
+      //   {key: newCourseScheduling._id, type: 'CourseScheduling'}
+      // )
 
-      if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
-        const {courseContents}: any = await courseContentService.list({courseID: newCourseMoodleId})
-        if (courseContents && Array.isArray(courseContents)) {
-          const courseContentGrouped = courseContents.reduce((accum, element) => {
-            if (element?.description) {
-              accum[element.description.toString()] = element
-            }
-            return accum
-          }, {})
+      // if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
+      //   const {courseContents}: any = await courseContentService.list({courseID: newCourseMoodleId})
+      //   if (courseContents && Array.isArray(courseContents)) {
+      //     const courseContentGrouped = courseContents.reduce((accum, element) => {
+      //       if (element?.description) {
+      //         accum[element.description.toString()] = element
+      //       }
+      //       return accum
+      //     }, {})
 
-          const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
-          .select('id course')
-          .populate({path: 'course', select: 'id name moodle_id code'})
-          .lean()
-          for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
-            if (courseSchedulingDetail?.course?.code && courseContentGrouped[courseSchedulingDetail?.course?.code.toString()]) {
-              const courseSection = courseContentGrouped[courseSchedulingDetail?.course?.code.toString()];
-              const newCourseData: {value: number, label: string, code: string} = {
-                code: courseSection.description,
-                label: `${courseSection.description} | ${courseSection.name}`,
-                value: courseSection.id
-              }
-              const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
-                courseSchedulingDetailId: courseSchedulingDetail._id,
-                courseSchedulingId: newCourseScheduling._id,
-                course: newCourseData
-              })
-              if (newCourseSchedulingDetailResponse.status === 'success') {
-                const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
-                logs.push(
-                  {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
-                )
-              }
+      //     const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
+      //     .select('id course')
+      //     .populate({path: 'course', select: 'id name moodle_id code'})
+      //     .lean()
+      //     for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
+      //       if (courseSchedulingDetail?.course?.code && courseContentGrouped[courseSchedulingDetail?.course?.code.toString()]) {
+      //         const courseSection = courseContentGrouped[courseSchedulingDetail?.course?.code.toString()];
+      //         const newCourseData: {value: number, label: string, code: string} = {
+      //           code: courseSection.description,
+      //           label: `${courseSection.description} | ${courseSection.name}`,
+      //           value: courseSection.id
+      //         }
+      //         const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
+      //           courseSchedulingDetailId: courseSchedulingDetail._id,
+      //           courseSchedulingId: newCourseScheduling._id,
+      //           course: newCourseData
+      //         })
+      //         if (newCourseSchedulingDetailResponse.status === 'success') {
+      //           const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
+      //           logs.push(
+      //             {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
+      //           )
+      //         }
 
-            }
-          }
-        }
-      }
+      //       }
+      //     }
+      //   }
+      // }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         newCourseScheduling: newCourseSchedulingResponse.scheduling,

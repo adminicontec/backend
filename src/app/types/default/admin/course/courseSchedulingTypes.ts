@@ -26,6 +26,16 @@ export enum CourseSchedulingUpdateNotification {
   STUDENT = 'student',
 }
 
+export enum CourseSchedulingEventType {
+  PROVISIONING_MOODLE_COURSES = 'courseScheduling:provisioning-moodle-courses'
+}
+
+export enum CourseSchedulingProvisioningMoodleStatus {
+  IN_PROCESS = 'in-process',
+  COMPLETED = 'completed',
+  ERROR = 'error',
+}
+
 export interface ICourseSchedulingUpdatedNotificationParams {
   mailer: string;
   service_id: string;
@@ -36,6 +46,22 @@ export interface ICourseSchedulingUpdatedNotificationParams {
   changes?: ICourseSchedulingModification[] | ICourseSchedulingDetailsModification[];
   type: CourseSchedulingUpdateNotification;
   amount_notifications?: number;
+}
+
+export interface IProvisioningMoodleCoursesParams {
+  steps: any[]
+  paramsMoodle: any
+  params: any
+  response: any   // CourseScheduling that has been created/updated
+  _id: string   // CourseScheduling ID created/updated
+  prevSchedulingStatus: any
+  shouldDuplicateSessions?: boolean
+  originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
+}
+
+export interface ICourseSchedulingInsertOrUpdateOptions {
+  shouldDuplicateSessions?: boolean
+  originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
 }
 
 export interface ICourseScheduling {
