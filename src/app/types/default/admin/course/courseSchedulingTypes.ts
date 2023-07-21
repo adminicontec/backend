@@ -4,6 +4,11 @@ import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificat
 // @end
 
 // @add your types
+
+export enum CourseSchedulingModification {
+
+}
+
 export interface ICourseSchedulingModification {
   message: string;
   type?: string;
@@ -81,6 +86,7 @@ export interface ICourseScheduling {
     service_id: string // Campo unico que identifica el servicio
     year: string // Año en que se genera el servicio
   }
+  address?: string
   user?: string // Identificador del usuario logueado
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   schedulingModeDetails?: 'in_situ' | 'online',

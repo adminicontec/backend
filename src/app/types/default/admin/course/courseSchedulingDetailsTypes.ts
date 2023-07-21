@@ -9,6 +9,7 @@ export enum CourseSchedulingDetailsModification {
   DURATION = 'duration',
   SESSIONS = 'sessions',
   TEACHER = 'teacher',
+  OBSERVATIONS = 'observations',
 }
 
 export interface ICourseSchedulingDetailsModification {
@@ -50,6 +51,7 @@ export interface ICourseSchedulingDetail {
   sendEmail?: boolean | 'true' | 'false' // Booleano que indica si se debe enviar email de notificación
   id?: string // Identificador de la categoria
   _id?: string
+  observations?: string
 }
 
 export interface ICourseSchedulingDetailDelete {

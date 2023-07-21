@@ -1061,31 +1061,6 @@ class CourseSchedulingService {
       // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
       await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
     }
-    return
-    let email_to_notificate = []
-    const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
-    if (serviceScheduler) {
-      email_to_notificate.push(serviceScheduler.email)
-    }
-
-    const role = await Role.findOne({ name: 'logistics_assistant' }).select('id')
-    if (role) {
-      const users = await User.find({ roles: { $in: [role._id] } }).select('id email')
-      if (users.length > 0) {
-        users.map((user: any) => email_to_notificate.push(user.email))
-      }
-    }
-    if (email_to_notificate.length > 0) {
-      await this.sendSchedulingNotificationEmail(email_to_notificate, {
-        mailer: customs['mailer'],
-        today: moment().format('YYYY-MM-DD'),
-        notification_source: `scheduling_notification_${courseScheduling._id}`,
-        amount_notifications: 1,
-        // Información
-        program_name: courseScheduling.program.name,
-        service_id: courseScheduling.metadata.service_id
-      });
-    }
   }
 
   private serviceSchedulingCancelled = async (courseScheduling) => {
@@ -1131,6 +1106,12 @@ class CourseSchedulingService {
 
   private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling): TCourseSchedulingModificationFn => async (timezone: TimeZone = TimeZone.GMT_5) => {
     const changes: ICourseSchedulingModification[] = []
+    const lastStatus = register?.schedulingStatus?.name
+    const isConfirmed = lastStatus === 'Confirmado' && register?.schedulingStatus?._id?.toString() === params.schedulingStatus
+
+    const lastMode = await CourseSchedulingMode.findOne(register.schedulingMode)
+    const newMode = await CourseSchedulingMode.findOne(params.schedulingMode)
+
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
         message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
@@ -1139,6 +1120,21 @@ class CourseSchedulingService {
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
         message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.endDate}</div>`
+      })
+    }
+    if (isConfirmed && lastMode?.name !== newMode?.name) {
+      changes.push({
+        message: `<div>La modalidad ha cambiado de ${lastMode.name} a ${newMode.name}</div>`
+      })
+    }
+    if (isConfirmed && params?.observations && params?.observations !== register?.observations) {
+      changes.push({
+        message: `<div>Las observaciones del programa han cambiado de "${register?.observations ? register?.observations : ""}" a "${params?.observations ? params?.observations : ""}"</div>`
+      })
+    }
+    if (isConfirmed && params?.address?.length && params?.address !== register?.address) {
+      changes.push({
+        message: `<div>La dirección del programa han cambiado de "${register?.address ? register?.address : ""}" a "${params?.address ? params?.address : ""}"</div>`
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
