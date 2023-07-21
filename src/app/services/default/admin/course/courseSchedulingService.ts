@@ -93,7 +93,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -687,6 +687,7 @@ class CourseSchedulingService {
             prevSchedulingStatus,
             originalScheduling: options?.originalScheduling,
             shouldDuplicateSessions: options?.shouldDuplicateSessions,
+            itemsToDuplicate: options?.itemsToDuplicate,
           }
           eventEmitterUtility.emit(CourseSchedulingEventType.PROVISIONING_MOODLE_COURSES, eventParams)
         } else {
@@ -1495,7 +1496,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle'
     if (filters.select) {
       select = filters.select
     }
@@ -1757,7 +1758,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle'
 
       let where = {}
 
@@ -2191,54 +2192,10 @@ class CourseSchedulingService {
       const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj, undefined, {
         shouldDuplicateSessions: true,
         originalScheduling: courseScheduling,
+        itemsToDuplicate: params.itemsToDuplicate,
       })
 
       if (newCourseSchedulingResponse.status === 'error') return newCourseSchedulingResponse;
-
-      // const newCourseScheduling = await CourseScheduling.findOne(newCourseSchedulingResponse.scheduling._id).select('id moodle_id');
-      // const newCourseMoodleId = newCourseScheduling.moodle_id;
-      // logs.push(
-      //   {key: newCourseScheduling._id, type: 'CourseScheduling'}
-      // )
-
-      // if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
-      //   const {courseContents}: any = await courseContentService.list({courseID: newCourseMoodleId})
-      //   if (courseContents && Array.isArray(courseContents)) {
-      //     const courseContentGrouped = courseContents.reduce((accum, element) => {
-      //       if (element?.description) {
-      //         accum[element.description.toString()] = element
-      //       }
-      //       return accum
-      //     }, {})
-
-      //     const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
-      //     .select('id course')
-      //     .populate({path: 'course', select: 'id name moodle_id code'})
-      //     .lean()
-      //     for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
-      //       if (courseSchedulingDetail?.course?.code && courseContentGrouped[courseSchedulingDetail?.course?.code.toString()]) {
-      //         const courseSection = courseContentGrouped[courseSchedulingDetail?.course?.code.toString()];
-      //         const newCourseData: {value: number, label: string, code: string} = {
-      //           code: courseSection.description,
-      //           label: `${courseSection.description} | ${courseSection.name}`,
-      //           value: courseSection.id
-      //         }
-      //         const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
-      //           courseSchedulingDetailId: courseSchedulingDetail._id,
-      //           courseSchedulingId: newCourseScheduling._id,
-      //           course: newCourseData
-      //         })
-      //         if (newCourseSchedulingDetailResponse.status === 'success') {
-      //           const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
-      //           logs.push(
-      //             {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
-      //           )
-      //         }
-
-      //       }
-      //     }
-      //   }
-      // }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         newCourseScheduling: newCourseSchedulingResponse.scheduling,

@@ -57,11 +57,13 @@ export interface IProvisioningMoodleCoursesParams {
   prevSchedulingStatus: any
   shouldDuplicateSessions?: boolean
   originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
+  itemsToDuplicate?: ItemsToDuplicate[]
 }
 
 export interface ICourseSchedulingInsertOrUpdateOptions {
   shouldDuplicateSessions?: boolean
   originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
+  itemsToDuplicate?: ItemsToDuplicate[]
 }
 
 export interface ICourseScheduling {
