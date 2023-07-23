@@ -35,6 +35,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import {
   CourseSchedulingDetailsSync,
   CourseSchedulingEventType,
+  CourseSchedulingModification,
   CourseSchedulingProvisioningMoodleStatus,
   CourseSchedulingUpdateNotification,
   ForceStatus,
@@ -1124,17 +1125,20 @@ class CourseSchedulingService {
     }
     if (isConfirmed && lastMode?.name !== newMode?.name) {
       changes.push({
-        message: `<div>La modalidad ha cambiado de ${lastMode.name} a ${newMode.name}</div>`
+        message: `<div>La modalidad del programa ha cambiado de ${lastMode.name} a ${newMode.name}</div>`,
+        type: CourseSchedulingModification.MODALITY
       })
     }
     if (isConfirmed && params?.observations && params?.observations !== register?.observations) {
       changes.push({
-        message: `<div>Las observaciones del programa han cambiado de "${register?.observations ? register?.observations : ""}" a "${params?.observations ? params?.observations : ""}"</div>`
+        message: `<div>Las observaciones del programa han cambiado de "${register?.observations ? register?.observations : ""}" a "${params?.observations ? params?.observations : ""}"</div>`,
+        type: CourseSchedulingModification.SCHEDULING_OBSERVATIONS
       })
     }
     if (isConfirmed && params?.address?.length && params?.address !== register?.address) {
       changes.push({
-        message: `<div>La dirección del programa han cambiado de "${register?.address ? register?.address : ""}" a "${params?.address ? params?.address : ""}"</div>`
+        message: `<div>La dirección del programa han cambiado de "${register?.address ? register?.address : ""}" a "${params?.address ? params?.address : ""}"</div>`,
+        type: CourseSchedulingModification.ADDRESS
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -1196,12 +1200,18 @@ class CourseSchedulingService {
       course?.syncupSessionsInMoodle
     );
 
-    const changes = await changesFn()
+    const changes: any[] = await changesFn()
 
-    const _changes = changes.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
+    const _changes = changes?.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
     if (_changes.length > 0) {
       let students_to_notificate: ICourseSchedulingEmailDestination[] = []
       let teachers_to_notificate: ICourseSchedulingEmailDestination[] = []
+      const typesForTeacher = [
+        CourseSchedulingModification.ADDRESS,
+        CourseSchedulingModification.SCHEDULING_OBSERVATIONS,
+        CourseSchedulingDetailsModification.OBSERVATIONS,
+      ]
+      const isOnlyForTeachers = !changes.some((change) => !typesForTeacher.includes(change.type))
       const userEnrolled = await Enrollment.find({
         courseID: courseScheduling.moodle_id
       }).select('id user')
@@ -1238,7 +1248,7 @@ class CourseSchedulingService {
         }
       }
 
-      if (students_to_notificate.length > 0) {
+      if (students_to_notificate.length > 0 && !isOnlyForTeachers) {
         await this.serviceSchedulingUpdated(students_to_notificate, {
           mailer: customs['mailer'],
           service_id: courseScheduling.metadata.service_id,

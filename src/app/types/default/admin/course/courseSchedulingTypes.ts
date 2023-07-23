@@ -6,12 +6,14 @@ import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificat
 // @add your types
 
 export enum CourseSchedulingModification {
-
+  SCHEDULING_OBSERVATIONS = 'observations',
+  MODALITY = 'modality',
+  ADDRESS = 'address',
 }
 
 export interface ICourseSchedulingModification {
   message: string;
-  type?: string;
+  type?: CourseSchedulingModification;
 }
 
 export type TCourseSchedulingModificationFn = (timezone?: TimeZone) => Promise<ICourseSchedulingModification[]>
