@@ -89,6 +89,7 @@ export interface ICourseScheduling {
     year: string // Año en que se genera el servicio
   }
   address?: string
+  classroom?: string
   user?: string // Identificador del usuario logueado
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   schedulingModeDetails?: 'in_situ' | 'online',

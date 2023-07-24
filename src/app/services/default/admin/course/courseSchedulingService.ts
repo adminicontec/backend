@@ -1135,9 +1135,13 @@ class CourseSchedulingService {
         type: CourseSchedulingModification.SCHEDULING_OBSERVATIONS
       })
     }
-    if (isConfirmed && params?.address?.length && params?.address !== register?.address) {
+    const isAddressChanged = params?.address?.length && params?.address !== register?.address
+    const isClassroomChanged = params?.classroom?.length && params?.classroom !== register?.classroom
+    if (isConfirmed && (isAddressChanged || isClassroomChanged)) {
+      const lastText = `${register?.address ? register?.address : ""} ${register?.classroom ? `salón ${register?.classroom}` : ""}`
+      const newText = `${params?.address ? params?.address : ""} ${params?.classroom ? `salón ${params?.classroom}` : ""}`
       changes.push({
-        message: `<div>La dirección del programa han cambiado de "${register?.address ? register?.address : ""}" a "${params?.address ? params?.address : ""}"</div>`,
+        message: `<div>El lugar del curso ha cambiado de "${lastText}" a "${newText}"</div>`,
         type: CourseSchedulingModification.ADDRESS
       })
     }
@@ -1207,7 +1211,6 @@ class CourseSchedulingService {
       let students_to_notificate: ICourseSchedulingEmailDestination[] = []
       let teachers_to_notificate: ICourseSchedulingEmailDestination[] = []
       const typesForTeacher = [
-        CourseSchedulingModification.ADDRESS,
         CourseSchedulingModification.SCHEDULING_OBSERVATIONS,
         CourseSchedulingDetailsModification.OBSERVATIONS,
       ]
