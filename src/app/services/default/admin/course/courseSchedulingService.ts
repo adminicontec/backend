@@ -34,6 +34,9 @@ import { Attached, City, Company, Country, Course, CourseScheduling, CourseSched
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
   CourseSchedulingDetailsSync,
+  CourseSchedulingEventType,
+  CourseSchedulingModification,
+  CourseSchedulingProvisioningMoodleStatus,
   CourseSchedulingUpdateNotification,
   ForceStatus,
   IChangeSchedulingElement,
@@ -41,6 +44,7 @@ import {
   ICourseScheduling,
   ICourseSchedulingDelete,
   ICourseSchedulingEmailDestination,
+  ICourseSchedulingInsertOrUpdateOptions,
   ICourseSchedulingModification,
   ICourseSchedulingQuery,
   ICourseSchedulingReport,
@@ -50,6 +54,7 @@ import {
   IDuplicateCourseScheduling,
   IDuplicateService,
   IForceStatusService,
+  IProvisioningMoodleCoursesParams,
   IReactivateService,
   ItemsToDuplicate,
   ReprogramingLabels,
@@ -61,6 +66,7 @@ import { courseContentService } from '@scnode_app/services/default/moodle/course
 import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
+import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 // @end
 
 class CourseSchedulingService {
@@ -88,7 +94,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -229,7 +235,7 @@ class CourseSchedulingService {
    * @param params Elementos a registrar
    * @returns
    */
-  public insertOrUpdate = async (params: ICourseScheduling, files?: any) => {
+  public insertOrUpdate = async (params: ICourseScheduling, files?: any, options?: ICourseSchedulingInsertOrUpdateOptions) => {
 
     let steps = [];
     try {
@@ -663,42 +669,28 @@ class CourseSchedulingService {
         steps.push(paramsMoodle)
 
         if (!params.disabledCreateMasterMoodle) {
-          steps.push('22')
-          const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
-          steps.push(moodleResponse)
-          if (moodleResponse.status === 'success') {
-            steps.push('23')
-            if (moodleResponse.course && moodleResponse.course.id) {
-              steps.push('24')
-              await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
-                useFindAndModify: false,
-                new: true,
-                lean: true,
-              })
-              steps.push('25')
-              if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
-                steps.push('26')
-                await this.checkEnrollmentUsers(response)
-                await this.checkEnrollmentTeachers(response)
-                await this.serviceSchedulingNotification(response, prevSchedulingStatus)
-              }
-            } else {
-              steps.push('24-b')
-              await this.delete({ id: _id })
-              return responseUtility.buildResponseFailed('json', null, {
-                error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-                  steps
-                }
-              })
+          await CourseScheduling.findByIdAndUpdate(_id, {
+            provisioningMoodle: {
+              status: CourseSchedulingProvisioningMoodleStatus.IN_PROCESS,
+              logs: [],
             }
-          } else {
-            await this.delete({ id: _id })
-            return responseUtility.buildResponseFailed('json', null, {
-              error_key: 'course_scheduling.insertOrUpdate.failed', additional_parameters: {
-                steps
-              }
-            })
+          }, {
+            useFindAndModify: false,
+            new: true,
+            lean: true,
+          })
+          const eventParams: IProvisioningMoodleCoursesParams = {
+            steps,
+            paramsMoodle,
+            params,
+            response,
+            _id,
+            prevSchedulingStatus,
+            originalScheduling: options?.originalScheduling,
+            shouldDuplicateSessions: options?.shouldDuplicateSessions,
+            itemsToDuplicate: options?.itemsToDuplicate,
           }
+          eventEmitterUtility.emit(CourseSchedulingEventType.PROVISIONING_MOODLE_COURSES, eventParams)
         } else {
           steps.push('22-b')
           if ((params.sendEmail === true || params.sendEmail === 'true') && (response && response.schedulingStatus && response.schedulingStatus.name === 'Confirmado')) {
@@ -900,7 +892,7 @@ class CourseSchedulingService {
    * Metodo que permite buscar los usuarios matriculados y enviar un mensaje de bienvenida
    * @param courseScheduling Programa
    */
-  private checkEnrollmentUsers = async (courseScheduling) => {
+  checkEnrollmentUsers = async (courseScheduling) => {
 
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
@@ -1063,37 +1055,12 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
+  serviceSchedulingNotification = async (courseScheduling, prevSchedulingStatus: string) => {
     // Solo se envía cuando pasa de programado a confirmado
     const currentStatus = (courseScheduling && courseScheduling.schedulingStatus && courseScheduling.schedulingStatus.name) ? courseScheduling.schedulingStatus.name : null
     if (currentStatus === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
       // @INFO Segun lo hablado con Brian el 24/02/2022, la notificación cambia
       await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling);
-    }
-    return
-    let email_to_notificate = []
-    const serviceScheduler = (courseScheduling.metadata && courseScheduling.metadata.user) ? courseScheduling.metadata.user : null
-    if (serviceScheduler) {
-      email_to_notificate.push(serviceScheduler.email)
-    }
-
-    const role = await Role.findOne({ name: 'logistics_assistant' }).select('id')
-    if (role) {
-      const users = await User.find({ roles: { $in: [role._id] } }).select('id email')
-      if (users.length > 0) {
-        users.map((user: any) => email_to_notificate.push(user.email))
-      }
-    }
-    if (email_to_notificate.length > 0) {
-      await this.sendSchedulingNotificationEmail(email_to_notificate, {
-        mailer: customs['mailer'],
-        today: moment().format('YYYY-MM-DD'),
-        notification_source: `scheduling_notification_${courseScheduling._id}`,
-        amount_notifications: 1,
-        // Información
-        program_name: courseScheduling.program.name,
-        service_id: courseScheduling.metadata.service_id
-      });
     }
   }
 
@@ -1140,6 +1107,12 @@ class CourseSchedulingService {
 
   private validateChanges = (params: ICourseScheduling, register: typeof CourseScheduling): TCourseSchedulingModificationFn => async (timezone: TimeZone = TimeZone.GMT_5) => {
     const changes: ICourseSchedulingModification[] = []
+    const lastStatus = register?.schedulingStatus?.name
+    const isConfirmed = lastStatus === 'Confirmado' && register?.schedulingStatus?._id?.toString() === params.schedulingStatus
+
+    const lastMode = await CourseSchedulingMode.findOne(register.schedulingMode)
+    const newMode = await CourseSchedulingMode.findOne(params.schedulingMode)
+
     if ((register.startDate && params.startDate) && `${params.startDate}T00:00:00.000Z` !== register.startDate.toISOString()) {
       changes.push({
         message: `<div>La fecha de inicio del programa ha cambiado de ${moment(register.startDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.startDate}</div>`
@@ -1148,6 +1121,28 @@ class CourseSchedulingService {
     if ((register.endDate && params.endDate) && `${params.endDate}T00:00:00.000Z` !== register.endDate.toISOString()) {
       changes.push({
         message: `<div>La fecha de fin del programa ha cambiado de ${moment(register.endDate.toISOString().replace('T00:00:00.000Z', '')).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${params.endDate}</div>`
+      })
+    }
+    if (isConfirmed && lastMode?.name !== newMode?.name) {
+      changes.push({
+        message: `<div>La modalidad del programa ha cambiado de ${lastMode.name} a ${newMode.name}</div>`,
+        type: CourseSchedulingModification.MODALITY
+      })
+    }
+    if (isConfirmed && params?.observations && params?.observations !== register?.observations) {
+      changes.push({
+        message: `<div>Las observaciones del programa han cambiado de "${register?.observations ? register?.observations : ""}" a "${params?.observations ? params?.observations : ""}"</div>`,
+        type: CourseSchedulingModification.SCHEDULING_OBSERVATIONS
+      })
+    }
+    const isAddressChanged = params?.address?.length && params?.address !== register?.address
+    const isClassroomChanged = params?.classroom?.length && params?.classroom !== register?.classroom
+    if (isConfirmed && (isAddressChanged || isClassroomChanged)) {
+      const lastText = `${register?.address ? register?.address : ""} ${register?.classroom ? `salón ${register?.classroom}` : ""}`
+      const newText = `${params?.address ? params?.address : ""} ${params?.classroom ? `salón ${params?.classroom}` : ""}`
+      changes.push({
+        message: `<div>El lugar del curso ha cambiado de "${lastText}" a "${newText}"</div>`,
+        type: CourseSchedulingModification.ADDRESS
       })
     }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
@@ -1209,12 +1204,17 @@ class CourseSchedulingService {
       course?.syncupSessionsInMoodle
     );
 
-    const changes = await changesFn()
+    const changes: any[] = await changesFn()
 
-    const _changes = changes.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
+    const _changes = changes?.filter(val => !val.type || val.type !== CourseSchedulingDetailsModification.TEACHER)
     if (_changes.length > 0) {
       let students_to_notificate: ICourseSchedulingEmailDestination[] = []
       let teachers_to_notificate: ICourseSchedulingEmailDestination[] = []
+      const typesForTeacher = [
+        CourseSchedulingModification.SCHEDULING_OBSERVATIONS,
+        CourseSchedulingDetailsModification.OBSERVATIONS,
+      ]
+      const isOnlyForTeachers = !changes.some((change) => !typesForTeacher.includes(change.type))
       const userEnrolled = await Enrollment.find({
         courseID: courseScheduling.moodle_id
       }).select('id user')
@@ -1251,7 +1251,7 @@ class CourseSchedulingService {
         }
       }
 
-      if (students_to_notificate.length > 0) {
+      if (students_to_notificate.length > 0 && !isOnlyForTeachers) {
         await this.serviceSchedulingUpdated(students_to_notificate, {
           mailer: customs['mailer'],
           service_id: courseScheduling.metadata.service_id,
@@ -1505,7 +1505,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate'
+    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle'
     if (filters.select) {
       select = filters.select
     }
@@ -1767,7 +1767,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle'
 
       let where = {}
 
@@ -2198,54 +2198,13 @@ class CourseSchedulingService {
         schedulingAssociation: undefined
       }
 
-      const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj)
+      const newCourseSchedulingResponse = await this.insertOrUpdate(newCourseSchedulingObj, undefined, {
+        shouldDuplicateSessions: true,
+        originalScheduling: courseScheduling,
+        itemsToDuplicate: params.itemsToDuplicate,
+      })
 
       if (newCourseSchedulingResponse.status === 'error') return newCourseSchedulingResponse;
-
-      const newCourseScheduling = await CourseScheduling.findOne(newCourseSchedulingResponse.scheduling._id).select('id moodle_id');
-      const newCourseMoodleId = newCourseScheduling.moodle_id;
-      logs.push(
-        {key: newCourseScheduling._id, type: 'CourseScheduling'}
-      )
-
-      if (params.itemsToDuplicate && params.itemsToDuplicate.includes(ItemsToDuplicate.COURSE_SCHEDULING_DETAILS)) {
-        const {courseContents}: any = await courseContentService.list({courseID: newCourseMoodleId})
-        if (courseContents && Array.isArray(courseContents)) {
-          const courseContentGrouped = courseContents.reduce((accum, element) => {
-            if (element?.description) {
-              accum[element.description.toString()] = element
-            }
-            return accum
-          }, {})
-
-          const courseSchedulingDetailsOrigin = await CourseSchedulingDetails.find({course_scheduling: courseScheduling._id})
-          .select('id course')
-          .populate({path: 'course', select: 'id name moodle_id code'})
-          .lean()
-          for (const courseSchedulingDetail of courseSchedulingDetailsOrigin) {
-            if (courseSchedulingDetail?.course?.code && courseContentGrouped[courseSchedulingDetail?.course?.code.toString()]) {
-              const courseSection = courseContentGrouped[courseSchedulingDetail?.course?.code.toString()];
-              const newCourseData: {value: number, label: string, code: string} = {
-                code: courseSection.description,
-                label: `${courseSection.description} | ${courseSection.name}`,
-                value: courseSection.id
-              }
-              const newCourseSchedulingDetailResponse = await courseSchedulingDetailsService.duplicateCourseSchedulingDetail({
-                courseSchedulingDetailId: courseSchedulingDetail._id,
-                courseSchedulingId: newCourseScheduling._id,
-                course: newCourseData
-              })
-              if (newCourseSchedulingDetailResponse.status === 'success') {
-                const newCourseSchedulingDetail = newCourseSchedulingDetailResponse.newCourseSchedulingDetail;
-                logs.push(
-                  {key: newCourseSchedulingDetail._id, type: 'CourseSchedulingDetail'}
-                )
-              }
-
-            }
-          }
-        }
-      }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
         newCourseScheduling: newCourseSchedulingResponse.scheduling,

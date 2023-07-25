@@ -1,6 +1,7 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
+import { CourseSchedulingProvisioningMoodleStatus } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
 const { Schema } = mongoose;
 // @end
 
@@ -371,7 +372,21 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.Boolean,
       default: true
     },
-  }
+  },
+  provisioningMoodle: {
+    status: {
+      type: Schema.Types.String,
+      default: CourseSchedulingProvisioningMoodleStatus.COMPLETED,
+      enum: [
+        CourseSchedulingProvisioningMoodleStatus.IN_PROCESS,
+        CourseSchedulingProvisioningMoodleStatus.COMPLETED,
+        CourseSchedulingProvisioningMoodleStatus.ERROR,
+      ]
+    },
+    logs: [{
+      type: Schema.Types.Mixed,
+    }]
+  },
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
