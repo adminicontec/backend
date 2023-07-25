@@ -522,6 +522,12 @@ class CourseSchedulingDetailsService {
         message: `<div>La fecha de fin del curso ha cambiado de ${moment(registerFormated[0]).zone(TIME_ZONES_WITH_OFFSET[timezone]).format('YYYY-MM-DD')} a ${endDateFormated[0]}</div>`
       })
     }
+    if (params?.observations && params?.observations !== register?.observations) {
+      changes.push({
+        type: CourseSchedulingDetailsModification.OBSERVATIONS,
+        message: `<div>Las observaciones del curso ${register.course.name} han cambiado de "${register?.observations ? register?.observations : ""}" a "${params?.observations ? params?.observations : ""}"</div>`
+      })
+    }
     // if ((register.duration && params.duration) && params.duration !== register.duration) {
     //   changes.push({
     //     type: CourseSchedulingDetailsModification.DURATION,

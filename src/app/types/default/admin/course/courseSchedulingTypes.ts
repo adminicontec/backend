@@ -4,9 +4,16 @@ import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificat
 // @end
 
 // @add your types
+
+export enum CourseSchedulingModification {
+  SCHEDULING_OBSERVATIONS = 'observations',
+  MODALITY = 'modality',
+  ADDRESS = 'address',
+}
+
 export interface ICourseSchedulingModification {
   message: string;
-  type?: string;
+  type?: CourseSchedulingModification;
 }
 
 export type TCourseSchedulingModificationFn = (timezone?: TimeZone) => Promise<ICourseSchedulingModification[]>
@@ -26,6 +33,16 @@ export enum CourseSchedulingUpdateNotification {
   STUDENT = 'student',
 }
 
+export enum CourseSchedulingEventType {
+  PROVISIONING_MOODLE_COURSES = 'courseScheduling:provisioning-moodle-courses'
+}
+
+export enum CourseSchedulingProvisioningMoodleStatus {
+  IN_PROCESS = 'in-process',
+  COMPLETED = 'completed',
+  ERROR = 'error',
+}
+
 export interface ICourseSchedulingUpdatedNotificationParams {
   mailer: string;
   service_id: string;
@@ -36,6 +53,24 @@ export interface ICourseSchedulingUpdatedNotificationParams {
   changes?: ICourseSchedulingModification[] | ICourseSchedulingDetailsModification[];
   type: CourseSchedulingUpdateNotification;
   amount_notifications?: number;
+}
+
+export interface IProvisioningMoodleCoursesParams {
+  steps: any[]
+  paramsMoodle: any
+  params: any
+  response: any   // CourseScheduling that has been created/updated
+  _id: string   // CourseScheduling ID created/updated
+  prevSchedulingStatus: any
+  shouldDuplicateSessions?: boolean
+  originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
+  itemsToDuplicate?: ItemsToDuplicate[]
+}
+
+export interface ICourseSchedulingInsertOrUpdateOptions {
+  shouldDuplicateSessions?: boolean
+  originalScheduling?: any   // Only when use shouldDuplicateSessions, it will take the sessions to duplicate
+  itemsToDuplicate?: ItemsToDuplicate[]
 }
 
 export interface ICourseScheduling {
@@ -53,6 +88,8 @@ export interface ICourseScheduling {
     service_id: string // Campo unico que identifica el servicio
     year: string // Año en que se genera el servicio
   }
+  address?: string
+  classroom?: string
   user?: string // Identificador del usuario logueado
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   schedulingModeDetails?: 'in_situ' | 'online',
