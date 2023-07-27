@@ -543,56 +543,43 @@ class EnrollmentService {
         .populate({ path: 'schedulingStatus', select: 'id name' })
 
       // Search UserId on Moodle
-      var username = find.documentID.toLowerCase().replace(/ /g, "_");
-      const paramUserMoodle = {
-        username: username
-      }
-      const respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
-      if (respMoodle2.status == "success") {
-        const enrollment = {
-          courseid: find.courseID,
-          userid: respMoodle2.user.id,
+      try {
+        const username = find.documentID.toLowerCase().replace(/ /g, "_");
+        const paramUserMoodle = {
+          username: username
         }
-        let respMoodle3: any = await moodleEnrollmentService.delete(enrollment);
-
-        await find.delete()
-
-        if (user && course_scheduling) {
-          if (course_scheduling.schedulingStatus.name === 'Confirmado') {
-            // @INFO: Eliminando notificación de inicio del curso en caso que se vuelva a matricular en el mismo programa
-            const amountNotification = await MailMessageLog.findOne({ notification_source: `course_start_${user._id}_${course_scheduling._id}` })
-            if (amountNotification) await amountNotification.delete()
-
-            // @INFO: Enviando mensaje de desmatriculación
-            await courseSchedulingService.sendUnenrollmentUserEmail(user.email, {
-              mailer: customs['mailer'],
-              first_name: user.profile.first_name,
-              course_name: course_scheduling.program.name,
-              service_id: (course_scheduling?.metadata?.service_id) ? course_scheduling?.metadata?.service_id : '-',
-              notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
-            })
+        const respMoodle2: any = await moodleUserService.findBy(paramUserMoodle);
+        if (respMoodle2?.status === 'success' && respMoodle2?.user?.id) {
+          const enrollment = {
+            courseid: find.courseID,
+            userid: respMoodle2.user.id,
           }
+          await moodleEnrollmentService.delete(enrollment);
         }
 
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            enrollment: {
-              ...respMoodle3
-            }
-          }
-        });
-      }
-      else {
-        // Error al consultar el usuario
-        return responseUtility.buildResponseSuccess('json', null, {
-          additional_parameters: {
-            enrollment: {
-              ...respMoodle2
-            }
-          }
-        });
+      } catch (err) {
+        console.log('EnrollmentService::Delete::Moodle', err)
       }
 
+      await find.delete()
+
+      if (user && course_scheduling) {
+        if (course_scheduling.schedulingStatus.name === 'Confirmado') {
+          // @INFO: Eliminando notificación de inicio del curso en caso que se vuelva a matricular en el mismo programa
+          const amountNotification = await MailMessageLog.findOne({ notification_source: `course_start_${user._id}_${course_scheduling._id}` })
+          if (amountNotification) await amountNotification.delete()
+
+          // @INFO: Enviando mensaje de desmatriculación
+          await courseSchedulingService.sendUnenrollmentUserEmail(user.email, {
+            mailer: customs['mailer'],
+            first_name: user.profile.first_name,
+            course_name: course_scheduling.program.name,
+            service_id: (course_scheduling?.metadata?.service_id) ? course_scheduling?.metadata?.service_id : '-',
+            notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
+          })
+        }
+      }
+      return responseUtility.buildResponseSuccess('json')
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
     }

@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { jwtUtility } from '@scnode_core/utilities/jwtUtility';
 import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
+import { customs } from '@scnode_core/config/globals';
 // @end
 
 class AuthenticatedMiddleware {
@@ -29,39 +30,64 @@ class AuthenticatedMiddleware {
    * @returns
    */
   public ensureAuth = async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.headers.authorization) {
+    const authorization = req?.headers?.authorization || undefined
+    const accessKey = req?.headers['accesskey'] || undefined
+    if (!authorization && !accessKey) {
       return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.unauthorized_header'})
     }
 
-    const token = req.headers.authorization.replace(/['"]+/g,'');
 
-    try {
-      const refresh_token = (req.headers["refresh-token"]) ? true : false;
+    if (authorization) {
+      const token = authorization.replace(/['"]+/g,'');
 
-      const payload = jwtUtility.jwtDecode(token,jwtUtility.getJwtSecret(req));
-      req.user = payload;
+      try {
+        const refresh_token = (req.headers["refresh-token"]) ? true : false;
 
-      if (payload.locale) {
-        i18nUtility.setLocale(payload.locale);
+        const payload = jwtUtility.jwtDecode(token,jwtUtility.getJwtSecret(req));
+        req.user = payload;
+
+        if (payload.locale) {
+          i18nUtility.setLocale(payload.locale);
+        }
+
+        await this.processCustomToken(payload)
+
+        res.token = token;
+
+        if (refresh_token === true) {
+          res.token = jwtUtility.refreshToken(token,jwtUtility.getJwtSecret(req));
+        }
+
+        next();
+
+      } catch (e) {
+        if (e.message == 'Token expired') {
+            return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.token_expired'})
+        } else {
+            return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.token_invalid'})
+        }
       }
-
-      await this.processCustomToken(payload)
-
-      res.token = token;
-
-      if (refresh_token === true) {
-        res.token = jwtUtility.refreshToken(token,jwtUtility.getJwtSecret(req));
+    } else if (accessKey) {
+      const userServices = customs['userServices'] || {}
+      let payload;
+      for (const key in userServices) {
+        if (Object.prototype.hasOwnProperty.call(userServices, key)) {
+          const element = userServices[key];
+          if (element?.accessKey === accessKey) {
+            payload = {
+              username: accessKey,
+              password: accessKey
+            }
+          }
+        }
       }
-
+      if (!payload) {
+        return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.unauthorized_header'})
+      }
+      req.user = payload
       next();
-
-    } catch (e) {
-      if (e.message == 'Token expired') {
-          return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.token_expired'})
-      } else {
-          return responseUtility.buildResponseFailed('http',res,{error_key: 'jwt.token_invalid'})
-      }
     }
+
   }
 
   /**
