@@ -927,10 +927,13 @@ class CourseSchedulingService {
       .lean()
 
     let notificationsByTeacher = {}
+    const isReactivated = !!courseScheduling?.reactivateTracking?.date
+    amount_notifications = isReactivated ? null : amount_notifications
 
     for await (const course of courses) {
       const timezone: TimeZone = course?.teacher?.profile?.timezone ? course?.teacher?.profile?.timezone : TimeZone.GMT_5
-      if (!notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
+      const shouldAddTeacher = !isReactivated || moment().isBefore(moment(course?.endDate))
+      if (shouldAddTeacher && !notificationsByTeacher[course.teacher._id] && (!teacher || (teacher && teacher.toString() === course.teacher._id.toString()))) {
         let isBusiness = false
         let modality = undefined;
 
