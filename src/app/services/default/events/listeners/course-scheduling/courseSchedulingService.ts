@@ -77,12 +77,12 @@ class CourseSchedulingService {
         }
       } else {
         steps.push('24-b')
-        await courseSchedulingServiceAdmin.delete({ id: _id })
+        // await courseSchedulingServiceAdmin.delete({ id: _id })
         this.updateCourseSchedulingStatus(_id, CourseSchedulingProvisioningMoodleStatus.ERROR, steps)
         return
       }
     } else {
-      await courseSchedulingServiceAdmin.delete({ id: _id })
+      // await courseSchedulingServiceAdmin.delete({ id: _id })
       this.updateCourseSchedulingStatus(_id, CourseSchedulingProvisioningMoodleStatus.ERROR, steps)
       return
     }
