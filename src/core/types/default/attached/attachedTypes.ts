@@ -18,7 +18,10 @@ export interface UploadConfig {
   rename?        : boolean;                  // Renombrar el archivo con el algoritmo propio del sistema. Default true
   file_size?     : number | null;            // Valida el tamaño del archivo a cargar. Su valor se representa en byte(B) Default NULL
   file_mime_type?: Array<string> | null;     // Valida el formato (MIME) del archivo a cargar. Default NULL
-
+  file_dimensions?: {
+    width: number,
+    height: number
+  },
   path_upload?: string,   // Ruta del directorio donde se almacenara el archivo
   credentials?: string;   // Llave de configuración
   base_path?  : string    // Ruta base de servidor

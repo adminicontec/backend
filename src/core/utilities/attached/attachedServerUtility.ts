@@ -94,6 +94,7 @@ class AttachedServerUtility {
     return responseUtility.buildResponseSuccess('json',null,{additional_parameters: {
       path     : encodeURI(public_path_file),
       file_name: file_name,
+      full_path_file,
     }});
   }
 }
