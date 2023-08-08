@@ -12,6 +12,13 @@ class ErrorResponse {
   buildJson() {
     const json = {
       // Add errors
+      "uploads": {
+        "failed": {
+          "message": i18nUtility.__("app_error_messages.uploads.failed"),
+          "status_code": "uploads_failed",
+          "code": 400
+        }
+      },
       "certificate_multiple": {
         "generate": {
           "users_required": {

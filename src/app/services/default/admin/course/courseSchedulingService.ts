@@ -237,6 +237,11 @@ class CourseSchedulingService {
    */
   public insertOrUpdate = async (params: ICourseScheduling, files?: any, options?: ICourseSchedulingInsertOrUpdateOptions) => {
 
+    const file_dimensions = {
+      width: 235,
+      height: 105
+    }
+    const errorFileMessage = `Se ha presentado un error al cargar el adjunto. Recuerde que el archivo debe cumplir peso máximo 250 KB, extensión PNG y  tamaño máximo en ancho ${file_dimensions.width}px y alto ${file_dimensions.height}px`
     let steps = [];
     try {
       let user = undefined;
@@ -305,33 +310,43 @@ class CourseSchedulingService {
 
       // @INFO Logotipos
       if (files && files.icon_1_file && typeof files.icon_1_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.icon_1_file, this.default_icon_path);
-        if (response_upload.status === 'error') return response_upload;
+        const response_upload: any = await uploadService.uploadFile(files.icon_1_file, this.default_icon_path, {
+          file_dimensions
+        });
+        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
         if (response_upload.hasOwnProperty('name')) params.certificate_icon_1 = response_upload.name
       }
 
       if (files && files.icon_2_file && typeof files.icon_2_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.icon_2_file, this.default_icon_path);
-        if (response_upload.status === 'error') return response_upload;
+        const response_upload: any = await uploadService.uploadFile(files.icon_2_file, this.default_icon_path, {
+          file_dimensions
+        });
+        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
         if (response_upload.hasOwnProperty('name')) params.certificate_icon_2 = response_upload.name
       }
 
       // @INFO firmas
       if (files && files.signature_1_file && typeof files.signature_1_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.signature_1_file, this.default_icon_path);
-        if (response_upload.status === 'error') return response_upload;
+        const response_upload: any = await uploadService.uploadFile(files.signature_1_file, this.default_icon_path, {
+          file_dimensions
+        });
+        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
         if (response_upload.hasOwnProperty('name')) params.signature_1 = response_upload.name
       }
 
       if (files && files.signature_2_file && typeof files.signature_2_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.signature_2_file, this.default_icon_path);
-        if (response_upload.status === 'error') return response_upload;
+        const response_upload: any = await uploadService.uploadFile(files.signature_2_file, this.default_icon_path, {
+          file_dimensions
+        });
+        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
         if (response_upload.hasOwnProperty('name')) params.signature_2 = response_upload.name
       }
 
       if (files && files.signature_3_file && typeof files.signature_3_file === 'object') {
-        const response_upload: any = await uploadService.uploadFile(files.signature_3_file, this.default_icon_path);
-        if (response_upload.status === 'error') return response_upload;
+        const response_upload: any = await uploadService.uploadFile(files.signature_3_file, this.default_icon_path, {
+          file_dimensions
+        });
+        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
         if (response_upload.hasOwnProperty('name')) params.signature_3 = response_upload.name
       }
 

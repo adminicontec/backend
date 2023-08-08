@@ -1,5 +1,8 @@
 {
   "app_error_messages": {
+    "uploads": {
+      "failed": "Se ha presentado un error al cargar el adjunto.:reason"
+    },
     "certificate_multiple": {
       "generate": {
         "users_required": "Debe proporcionar al menos un estudiante para generar certificados",

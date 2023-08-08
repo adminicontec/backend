@@ -44,24 +44,32 @@ class UploadService {
     const files_status_upload = await attachedUtility.uploadFiles(file, {
       path_upload: path_upload,
       rename: defaultConfig.rename,
+      file_dimensions: defaultConfig?.file_dimensions || undefined
       // file_mime_type: defaultConfig.mimes,
     })
 
     let uploaded = true
+    let reason = '';
     if (files_status_upload.status === 'error') {
       uploaded = false
+      reason = files_status_upload.reason
     } else if (files_status_upload.length === 0) {
       uploaded = false
+      reason = files_status_upload.reason
     } else {
       if (files_status_upload[0].status === 'error') {
         uploaded = false
+        reason = files_status_upload[0].reason
       }
     }
 
     const upload = files_status_upload[0]
     if (uploaded === false) {
       return responseUtility.buildResponseFailed('json', null, {
-        error_key: 'uploads.failed',
+        error_key: {
+          key: 'uploads.failed',
+          params: {reason}
+        },
       })
     }
 
