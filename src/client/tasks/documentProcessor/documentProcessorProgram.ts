@@ -27,6 +27,7 @@ import { fileUtility } from "@scnode_core/utilities/fileUtility";
 import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { FileType } from 'basic-ftp';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @end
 
@@ -55,7 +56,7 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
         console.log("Type of Document: " + documentQueue.type);
         if (documentQueue.type === 'CourseScheduling Association') {
           let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
-          const response = await courseSchedulingAssociationService.processAssociateSchedulesByDocumentQueue(params)
+          const response = await queryUtility.query({ method: 'post', url: 'api/admin/course-scheduling-association/process-document', api: 'campus', params: {data: JSON.stringify(params)} });
           console.log(`CourseScheduling Association - response`, response);
         } else if (documentQueue.type === 'Generate Report') {
           let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};

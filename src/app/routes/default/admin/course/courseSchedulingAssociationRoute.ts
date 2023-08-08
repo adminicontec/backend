@@ -31,6 +31,7 @@ class CourseSchedulingAssociationRoute {
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app,_route,'/:course_scheduling/list',this.instanceController.associationsByCourseScheduling,[],['auth']);
     routerUtility.post(app,_route,'/:course_scheduling/associate-schedules',this.instanceController.associateSchedules,[],['auth']);
+    routerUtility.post(app,_route,'/process-document',this.instanceController.processDocument,[],[]);
     // @end
   }
 }
