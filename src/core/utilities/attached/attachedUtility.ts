@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import * as path from "path";
+const sizeOf = require('image-size')
 // @end
 
 // @import_utilities Import utilities
@@ -134,8 +135,18 @@ class AttachedUtility {
         continue;
       }
 
+      if (this.config?.file_dimensions?.width && this.config?.file_dimensions?.height) {
+        const dimensions = sizeOf(upload['full_path_file'])
+        const { width, height } = dimensions;
+        if (!(width <= this.config.file_dimensions.width && height <= this.config.file_dimensions.height)) {
+          files_status_upload[i].reason = `Las dimensiones del archivo no pueden ser superior a ancho: ${this.config.file_dimensions.width}px alto: ${this.config.file_dimensions.height}px`;
+          continue;
+        }
+      }
+
       files_status_upload[i].status   = 'success';
       files_status_upload[i].path     = upload['path'];
+      files_status_upload[i].full_path_file = upload['full_path_file'];
       files_status_upload[i].new_name = upload['file_name'];
       files_status_upload[i].reason   = null;
     }
