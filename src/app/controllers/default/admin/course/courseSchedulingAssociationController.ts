@@ -46,6 +46,23 @@ class CourseSchedulingAssociationController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  public processDocument = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    if (typeof params?.data === 'string') {
+      params = JSON.parse(params?.data)
+      params = {
+        ...params,
+        recordToProcess: {
+          ...params.recordToProcess,
+          id: params?.recordToProcess?._id,
+        }
+      }
+    }
+
+    const response = await courseSchedulingAssociationService.processAssociateSchedulesByDocumentQueue(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const courseSchedulingAssociationController = new CourseSchedulingAssociationController();
