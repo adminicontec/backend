@@ -71,6 +71,7 @@ class EnrolledCourseService {
               courseScheduling: e.course_scheduling._id,
               schedulingMode: e.course_scheduling.schedulingMode,
               approval_criteria: e.course_scheduling?.approval_criteria,
+              schedulingStatus: e.course_scheduling?.schedulingStatus,
             }
             if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
               history.push(item)
@@ -106,7 +107,8 @@ class EnrolledCourseService {
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
               courseScheduling: e.course_scheduling._id,
-              schedulingMode: e.course_scheduling.schedulingMode
+              schedulingMode: e.course_scheduling.schedulingMode,
+              schedulingStatus: e.course_scheduling?.schedulingStatus,
             }
 
             if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
