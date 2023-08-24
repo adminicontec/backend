@@ -250,4 +250,20 @@ export enum CourseSchedulingDetailsSync {
   PENDING = 'pending',
   DISABLED = 'disabled',
 }
+
+export enum ChangeTeacherStatusAction {
+  REMOVE = 'remove',
+  INSERT = 'insert',
+}
+
+export interface IChangeTeachersStatusFromCourseScheduling {
+  courseSchedulingId: string
+  action: ChangeTeacherStatusAction
+}
+
+export interface IProcessedTeacher {
+  email: string
+  _id: string
+  moodle_id: string
+}
 //@end

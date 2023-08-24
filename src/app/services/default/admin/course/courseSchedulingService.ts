@@ -56,9 +56,12 @@ import {
   IForceStatusService,
   IProvisioningMoodleCoursesParams,
   IReactivateService,
+  IChangeTeachersStatusFromCourseScheduling,
   ItemsToDuplicate,
   ReprogramingLabels,
-  TCourseSchedulingModificationFn
+  TCourseSchedulingModificationFn,
+  ChangeTeacherStatusAction,
+  IProcessedTeacher
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
@@ -67,11 +70,13 @@ import { CourseSchedulingDetailsModification, TCourseSchedulingDetailsModificati
 import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
+import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 // @end
 
 class CourseSchedulingService {
 
   private default_icon_path = 'certificate/icons';
+  private moodleTeacherRoleId = 4;
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -383,6 +388,10 @@ class CourseSchedulingService {
               personWhoReactivates: null
             }
           }
+          await this.changeTeachersStatusFromCourseScheduling({
+            action: ChangeTeacherStatusAction.REMOVE,
+            courseSchedulingId: params.id,
+          })
         }
 
         if (params.hasMultipleCertificate) {
@@ -2244,13 +2253,13 @@ class CourseSchedulingService {
         case ForceStatus.PROGRAMMED:
           status = 'Programado'
           break;
-        case ForceStatus.PROGRAMMED:
+        case ForceStatus.CONFIRMED:
           status = 'Confirmado'
           break;
-        case ForceStatus.PROGRAMMED:
+        case ForceStatus.EXECUTED:
           status = 'Ejecutado'
           break;
-        case ForceStatus.PROGRAMMED:
+        case ForceStatus.CANCELLED:
           status = 'Cancelado'
           break;
         default:
@@ -2328,6 +2337,10 @@ class CourseSchedulingService {
           lean: true,
         }
       )
+      await this.changeTeachersStatusFromCourseScheduling({
+        action: ChangeTeacherStatusAction.INSERT,
+        courseSchedulingId: params.id,
+      })
       return responseUtility.buildResponseSuccess('json')
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
@@ -2522,6 +2535,54 @@ class CourseSchedulingService {
     if (!startDate) return true
     const end = moment(startDate).add(duration, 'seconds')
     return moment().isAfter(end)
+  }
+
+  private changeTeachersStatusFromCourseScheduling = async ({ action, courseSchedulingId }: IChangeTeachersStatusFromCourseScheduling) => {
+    try {
+      if (!courseSchedulingId) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
+      const courseId = courseScheduling?.moodle_id
+      if (!courseScheduling || !courseId) return responseUtility.buildResponseFailed('json')
+
+      const processedUsers: IProcessedTeacher[] = []
+      const errorUsers: IProcessedTeacher[] = []
+      const courseSchedulingDeatails = await CourseSchedulingDetails
+        .find({ course_scheduling: courseSchedulingId })
+        .populate([{ path: 'teacher', select: 'moodle_id email _id' }])
+        .lean()
+      if (courseSchedulingDeatails?.length) {
+        for (const course of courseSchedulingDeatails) {
+          const teacherMoodleId = course.teacher?.moodle_id
+          if (!teacherMoodleId) continue
+          if (processedUsers?.some(user => user.moodle_id === teacherMoodleId)) continue
+          let response;
+          const params = {
+            courseid: courseId,
+            userid: teacherMoodleId,
+            roleid: this.moodleTeacherRoleId,
+          }
+          if (action === ChangeTeacherStatusAction.REMOVE) {
+            response = await moodleEnrollmentService.delete(params)
+          } else {
+            response = await moodleEnrollmentService.insert(params)
+          }
+          if (response?.status === 'success') {
+            processedUsers.push(course?.teacher)
+          } else {
+            errorUsers.push(course?.teacher)
+          }
+        }
+      }
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          processedUsers,
+          errorUsers,
+          action,
+        }
+      })
+    } catch (e) {
+      console.log(`courseSchedulingService -> changeTeachersStatusFromCourseScheduling -> ERROR: ${e}`)
+    }
   }
 }
 
