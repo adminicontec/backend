@@ -190,7 +190,9 @@ class HttpClientUtility {
         if (error.hasOwnProperty('status') && error.hasOwnProperty('status_code') && error.hasOwnProperty('code')) { // KET Response
           return error;
         } else { // RequestPromise response
-          return responseUtility.buildResponseFailed('json', null);
+          return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
+            queryErrors: JSON.stringify(error)
+          }});
         }
       }
     }

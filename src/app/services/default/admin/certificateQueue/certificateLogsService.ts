@@ -36,7 +36,7 @@ class CertificateLogsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id idCertificateQueue serviceResponse message requestData created_at updated_at';
+    let select = 'id idCertificateQueue serviceResponse process message requestData responseService created_at updated_at';
     if (filters.select) {
       select = filters.select
     }
@@ -160,6 +160,7 @@ class CertificateLogsService {
       }
 
     } catch (e) {
+      console.log('errorLog', e)
       return responseUtility.buildResponseFailed('json')
     }
   }
