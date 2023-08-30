@@ -57,6 +57,8 @@
       }
       body {
         font-family: 'Catamaran', sans-serif;
+        margin: 0px;
+        padding: 0px;
       }
       .title-principal {
         font-weight: 700;
@@ -67,23 +69,26 @@
         font-size: 1.2rem;
       }
       .title {
-        color: #0085ca;
+        color: #0085CA;
         font-weight: 700;
-        font-size: 1.2rem;
-        text-align: center;
+        font-size: 12px;
+        line-height: 19.68px;
+        text-align: left;
       }
       .subtitle {
-        color: #002e5d;
+        color: #7C878E;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 10px;
+        line-height: 16.4px;
       }
       .text-small {
         font-size: .7rem;
       }
       .text-content {
         font-weight: 400;
-        font-size: .8rem;
-        line-height: 1.5;
+        font-size: 10px;
+        line-height: 16.4px;
+        color: #7C878E;
       }
       .blue {
         color: #0085ca;
@@ -142,173 +147,210 @@
       .justify {
         text-align: justify;
       }
+      .container-content {
+        padding: 0px;
+      }
+      .header-container {
+        text-align: center;
+        position: relative;
+        width: 100%;
+        padding: 30px;
+        box-sizing: border-box;
+      }
+      .header-container--image {
+        width: 141px;
+        height: 42px;
+        margin-bottom: 20px;
+      }
+      .header-container--title {
+        color: white;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 24px;
+        margin-bottom: 10px;
+      }
+      .header-container--subtitle {
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 22px;
+      }
+      .header-container--duration {
+        color: white;
+        font-weight: 400;
+        font-size: 10px;
+        line-height: 16.4px;
+      }
+      .header-container--background {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: -1;
+        top: 0px;
+        left: 0px;
+      }
+      .development--container {
+        width: 100%;
+        overflow: hidden;
+        padding: 16px;
+        box-sizing: border-box;
+        margin-top: 20px;
+        border: 1px solid #C4C4C4;
+        border-radius: 8px;
+      }
+      .development--title {
+        color: #0085CA;
+        font-weight: 40;
+        font-size: 16px;
+        line-height: 26.24px;
+        text-align: center;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+      .development--container-items {
+        width: 100%;
+        overflow: hidden;
+      }
+      .development--col-left {
+        width: 48%;
+        padding: 1%;
+        box-sizing: border-box;
+        float: left;
+      }
+      .development--col-right {
+        width: 48%;
+        padding: 1%;
+        float: right;
+        box-sizing: border-box;
+      }
+      .development--item {
+        display: inline-block;
+        margin-bottom: 12px;
+      }
+      .development--item-text {
+        color: #7C878E;
+        font-size: 10px;
+        font-weight: 400;
+        display: inline-block;
+        margin-left: 8px;
+        width: calc(100% - 60px);
+        vertical-align: top;
+      }
+      .development--item-icon {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        vertical-align: top;
+      }
     </style>
 </head>
 <body>
-  <div style="text-align: left; margin-left: -15px;">
-    <img src="./assets/ad942125ca7dbecbfbaafb19a22a1764.png" style="width: 150px" />
-  </div>
-  <div class='title-principal'>{{title}}</div>
-  {{#if alternativeName}}
-    <div class='alternative-name'>{{alternativeName}}</div>
-  {{/if}}
-  {{#if duration}}
-    <div class="text-small">Duración: {{duration}}</div>
-  {{/if}}
-  {{#if scheduling}}
-    <table style="border: 1; border-collapse: separate;">
-      <tr>
-        <td style="width: 60%">
-          {{#if long_description}}
-            <div class="text-content justify">
-              {{{long_description}}}
-            </div>
-            <br>
-          {{/if}}
-        </td>
-        <td style="width: 40%; padding: 0px 0px 0px 40px;">
-          <div>
-            {{#if cover_url}}
-              <div class="cover-url-container">
-                <img src={{cover_url}} alt="" />
-              </div>
-            {{/if}}
-            {{#if scheduling.price}}
-              {{#if scheduling.discount}}
-                <table class="mb-1">
-                  <tr>
-                    <td class="discount-value-card">{{scheduling.discount}}% Dcto *</td>
-                    <td class="discount-price">{{scheduling.price_without_discount}}</td>
-                  </tr>
-                </table>
-              {{/if}}
-              <div class="field-price mb-1"><b>Inversión: {{scheduling.price}}</b></div>
-            {{/if}}
-            {{#if scheduling.startDate}}
-              <div class="field mb-1">Fecha de inicio: {{scheduling.startDate}}</div>
-            {{/if}}
-            {{#if scheduling.schedulingMode}}
-              <div class="field mb-1">Modalidad: {{scheduling.schedulingMode}}</div>
-            {{/if}}
-            {{#if scheduling.city}}
-              <div class="field mb-1">Ciudad: {{scheduling.city}}</div>
-            {{/if}}
-            {{#if scheduling.discountLimit}}
-              <div class="text-small mb-1">{{{scheduling.discountLimit}}}</div>
-            {{/if}}
-            <br>
-          </div>
-        </td>
-      </tr>
-    </table>
-  {{else}}
-    {{#if long_description}}
-      <div class="text-content justify">
-        {{{long_description}}}
-      </div>
-      <br>
+  <div class="header-container">
+    <img class="header-container--background" src={{customs.course_pdf.header_background}} alt="" />
+    <img src={{customs.course_pdf.icontec_logo}} class="header-container--image" />
+    <div class='header-container--title'>{{title}}</div>
+    {{#if alternativeName}}
+      <div class='header-container--subtitle'>{{alternativeName}}</div>
     {{/if}}
-  {{/if}}
-
-  <div class="title">¿PORQUÉ IMPULSAR TU DESARROLLO CON ICONTEC?</div><br>
-  <table>
-    <tr>
-      <td style="width: 25%;vertical-align: top;" class="text-content blue">
-        <div>
-          <div style="text-align: center;margin-bottom: .5rem">
-            <img style="width: 48px; height: 48px;" src="./assets/e793675d337dafd01b2c0d0fc601ee3b.svg" alt="">
-          </div>
-          <div>
+    {{#if duration}}
+      <div class="header-container--duration">Duración: {{duration}}</div>
+    {{/if}}
+  </div>
+  <div class="development--container">
+    <div class="development--title">¿PORQUÉ IMPULSAR TU DESARROLLO CON ICONTEC?</div>
+    <div class="development--container-items">
+      <div class="development--col-left">
+        <div class="development--item">
+          <img class="development--item-icon" src={{customs.course_pdf.development_icon_1}} alt="">
+          <div class="development--item-text">
             Somos el Organismo Nacional de Normalización en Colombia, responsable por la estructuración de las Normas Técnicas Colombianas que se requieren para impulsar la competitividad de las empresas a nivel nacional e internacional.
           </div>
         </div>
-      </td>
-      <td style="width: 25%;vertical-align: top;" class="text-content blue">
-        <div>
-          <div style="text-align: center;margin-bottom: .5rem">
-            <img style="width: 48px; height: 48px;" src="./assets/2cd805af00c2237594dc212d7f6592ca.svg" alt="">
-          </div>
-          <div>
+        <div class="development--item">
+          <img class="development--item-icon" src={{customs.course_pdf.development_icon_2}} alt="">
+          <div class="development--item-text">
             ICONTEC en representación por Colombia, participa activamente en comités internacionales y reuniones técnicas en temas de normas internacionales y  gestión en organizaciones como la ISO, IEC y COPANT.
           </div>
         </div>
-      </td>
-      <td style="width: 25%;vertical-align: top;" class="text-content blue">
-        <div>
-          <div style="text-align: center;margin-bottom: .5rem">
-            <img style="width: 48px; height: 48px;" src="./assets/c2d14706bf5eb9dbf4e660426e8c786e.svg" alt="">
-          </div>
-          <div>
+      </div>
+      <div class="development--col-right">
+        <div class="development--item">
+          <img class="development--item-icon" src={{customs.course_pdf.development_icon_3}} alt="">
+          <div class="development--item-text">
             Contamos con expertos profesionales en sistemas de gestión que también desarrollan actividades de evaluación de la conformidad y otras actividades como consultoría condición que permite orientar adecuadamente los enfoques técnicos de los referentes en contextos empresariales.
           </div>
         </div>
-      </td>
-      <td style="width: 25%;vertical-align: top;" class="text-content blue">
-        <div>
-          <div style="text-align: center;margin-bottom: .5rem">
-            <img style="width: 48px; height: 48px;" src="./assets/5619409ecf02ec141531367d58ba6223.svg" alt="">
-          </div>
-          <div>
+        <div class="development--item">
+          <img class="development--item-icon" src={{customs.course_pdf.development_icon_4}} alt="">
+          <div class="development--item-text">
             Tenemos presencia a nivel internacional en Suramérica y Centroamérica, lo que nos permite contar con una cobertura amplia y con profesionales competentes en la región.
           </div>
         </div>
-      </td>
-    </tr>
-  </table>
-  <br>
-  {{#if competencies}}
-    <div class="title">COMPETENCIAS A DESARROLLAR</div>
-    <div class="text-content">
-      {{{competencies}}}
+      </div>
     </div>
+  </div>
+  <div class="container-content">
+
+    {{#if long_description}}
+      <div class="text-content justify" style="margin-top: 20px;">
+        {{{long_description}}}
+      </div>
+    {{/if}}
     <br>
-  {{/if}}
-  {{#if objectives}}
-    <div class="title">OBJETIVOS</div>
-    <div class="text-content">
-      {{{objectives}}}
-    </div>
-    <br>
-  {{/if}}
-  {{#if content}}
-    <div class="title">CONTENIDO</div><br>
-    {{#each content}}
-      <div>
-        <div class="subtitle">{{this.name}}</div>
-        <div class="divider"></div>
-        <div class="text-content gray">{{{this.content}}}</div>
+    {{#if competencies}}
+      <div class="title">COMPETENCIAS A DESARROLLAR</div>
+      <div class="text-content">
+        {{{competencies}}}
       </div>
       <br>
-    {{/each}}
-    <br>
-  {{/if}}
-  {{#if focus}}
-    <div class="title">¿QUIÉN PUEDE PARTICIPAR?</div>
-    <div class="text-content">
-      {{{focus}}}
-    </div>
-    <br>
-  {{/if}}
-  {{#if materials}}
-    <div class="title">MATERIALES ORIGINALES DE ICONTEC</div>
-    <div class="text-content">
-      {{{materials}}}
-    </div>
-    <br>
-  {{/if}}
-  {{#if methodology}}
-    <div class="title">METODOLOGÍA</div><br>
-    <div class="text-content">
-      {{{methodology}}}
-    </div>
-    <br>
-  {{/if}}
-  {{#if generalities}}
-    <div class="title">CERTIFICACIÓN Y DATOS GENERALES</div>
-    <div class="text-content">
-      {{{generalities}}}
-    </div>
-    <br>
-  {{/if}}
+    {{/if}}
+    {{#if objectives}}
+      <div class="title">OBJETIVOS</div>
+      <div class="text-content">
+        {{{objectives}}}
+      </div>
+      <br>
+    {{/if}}
+    {{#if content}}
+      <div class="title">CONTENIDO</div><br>
+      {{#each content}}
+        <div>
+          <div class="subtitle">{{this.name}}</div>
+          <div class="text-content gray">{{{this.content}}}</div>
+        </div>
+        <br>
+      {{/each}}
+      <br>
+    {{/if}}
+    {{#if focus}}
+      <div class="title">¿QUIÉN PUEDE PARTICIPAR?</div>
+      <div class="text-content">
+        {{{focus}}}
+      </div>
+      <br>
+    {{/if}}
+    {{#if materials}}
+      <div class="title">MATERIALES ORIGINALES DE ICONTEC</div>
+      <div class="text-content">
+        {{{materials}}}
+      </div>
+      <br>
+    {{/if}}
+    {{#if methodology}}
+      <div class="title">METODOLOGÍA</div><br>
+      <div class="text-content">
+        {{{methodology}}}
+      </div>
+      <br>
+    {{/if}}
+    {{#if generalities}}
+      <div class="title">CERTIFICACIÓN Y DATOS GENERALES</div>
+      <div class="text-content">
+        {{{generalities}}}
+      </div>
+      <br>
+    {{/if}}
+  </div>
 </body>
 </html>
