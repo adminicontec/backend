@@ -2196,11 +2196,17 @@ class CertificateService {
           url: respHuella.resultado.url,
         }
       } else {
+        const username = 'LegadoCampus'
+        const password = 'quAngEraMuSTerGerEDE'
+        const basicAuthHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+
         const respIssuer: any = await queryUtility.query({
           method: 'post',
           url: certificate_setup.endpoint.create_certificate,
           api: 'acredita',
-          // headers: { Authorization: tokenHC },
+          headers: {
+            Authorization: basicAuthHeader
+          },
           params: JSON.stringify(certificateReq.paramsHuella),
           sendBy: 'body'
         });
