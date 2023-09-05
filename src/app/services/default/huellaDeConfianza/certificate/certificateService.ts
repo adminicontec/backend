@@ -2,7 +2,7 @@
 import path from "path";
 import moment from 'moment'
 import { Base64 } from 'js-base64';
-import { host, public_dir, attached } from "@scnode_core/config/globals";
+import { host, public_dir, attached, AUDITOR_EXAM_REGEXP } from "@scnode_core/config/globals";
 const AdmZip = require("adm-zip");
 const ObjectID = require('mongodb').ObjectID
 // @end
@@ -1709,7 +1709,7 @@ class CertificateService {
           // console.log("[ *** QUIZ Grades PR-ON*** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
-            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            let auditorQuiz = student.itemType.quiz.find(x => AUDITOR_EXAM_REGEXP.test(x.idnumber));
             // console.log('auditorQuiz found?');
             // console.log(auditorQuiz);
 
@@ -1890,7 +1890,7 @@ class CertificateService {
           // console.log("[ *** QUIZ Grades VIRTUAL *** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
-            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            let auditorQuiz = student.itemType.quiz.find(x => AUDITOR_EXAM_REGEXP.test(x.idnumber));
             // console.log('auditorQuiz found?');
             // console.log(auditorQuiz);
 

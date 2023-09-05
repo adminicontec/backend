@@ -1,7 +1,7 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment'
 import path from "path";
-import { program_type_abbr, certificate_template, public_dir, attached } from '@scnode_core/config/globals';
+import { program_type_abbr, certificate_template, public_dir, attached, AUDITOR_EXAM_REGEXP } from '@scnode_core/config/globals';
 // @end
 
 // @import services
@@ -307,7 +307,7 @@ class CertificateMultipleService {
                   ) {
                     const examItem: IStudentStatsExam = {
                       graderaw: quiz?.graderaw || 0,
-                      isAuditor: quiz?.idnumber === 'auditor' ? true : false
+                      isAuditor: AUDITOR_EXAM_REGEXP.test(quiz?.idnumber) ? true : false
                     }
                     userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
                   }
