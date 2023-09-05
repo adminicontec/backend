@@ -252,7 +252,8 @@ class CourseDataService {
           methodology: course?.extra_info?.methodology?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.methodology?.blocks) : null,
           generalities: course?.extra_info?.generalities?.blocks ? editorjsService.jsonToHtml(course?.extra_info?.generalities?.blocks) : null,
           ...(course?.extra_info?.is_alternative_title_active && course?.extra_info?.alternative_title ? { alternativeName: course?.extra_info?.alternative_title } : {}),
-          scheduling
+          scheduling,
+          customs,
         }
       },
       to_file: {
@@ -268,14 +269,16 @@ class CourseDataService {
         border: {
           top: "15mm",            // default is 0, units: mm, cm, in, px
           right: "15mm",
-          bottom: "15mm",
+          bottom: "16mm",
           left: "15mm"
         },
-        "footer": {
-          "height": "15mm",
-          "contents": {
-            default: '<div style="font-size:0.8rem; text-align: right"><span >{{page}}</span>/<span>{{pages}}</span></div>', // fallback value
-          }
+        footer: {
+          height: "30px",
+          contents: `
+            <div style="color:#0085CA; font-weight:700; text-align:center; font-family: 'Catamaran', sans-serif; font-size:16px; padding-top:8px;">
+              ICONTEC
+            </div>
+          `,
         }
       },
     })
