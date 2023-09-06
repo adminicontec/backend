@@ -1250,16 +1250,20 @@ class CertificateService {
 
         //#region certificate type 1 Parameters (Academic type)
         let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
+        let modulo = mapping_template;
+        let asistio = null
         if (certificationMigration) {
           intensidad = parseInt(intensidad)
+          modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+          asistio = '1'
         }
         let certificateParams: ICertificate = {
-          modulo: mapping_template,
+          modulo,
           numero_certificado: mapping_numero_certificado,
           correo: respDataUser.user.email,
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
-          asistio: null,
+          asistio,
           certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
           certificado_ingles: '',
           alcance: '',
@@ -2823,11 +2827,11 @@ class CertificateService {
         };
       } else {
         if (programTypeName || programTypeName != null)
-          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\n';
+          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
-          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\n`
+          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`
           if (element.duration)
             totalDuration += element.duration;
         });
