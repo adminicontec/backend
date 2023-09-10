@@ -306,7 +306,7 @@ class CertificateMultipleService {
                     userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()]
                   ) {
                     const examItem: IStudentStatsExam = {
-                      graderaw: quiz?.graderaw || 0,
+                      graderaw: quiz?.graderaw || 0,
                       isAuditor: AUDITOR_EXAM_REGEXP.test(quiz?.idnumber) ? true : false
                     }
                     userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
