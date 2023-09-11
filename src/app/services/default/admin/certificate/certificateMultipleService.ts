@@ -563,7 +563,7 @@ class CertificateMultipleService {
       const allCertificateSettings = await CertificateSettings.find({
         courseScheduling: courseId
       })
-      .populate({path: 'modules.courseSchedulingDetail', select: 'course', populate: [
+      .populate({path: 'modules.courseSchedulingDetail', select: 'course endDate', populate: [
         {path: 'course', select: 'name'}
       ]})
 
@@ -676,9 +676,19 @@ class CertificateMultipleService {
         mapping_dato_13 = "Certifica que"
       }
 
+      const endDates = []
+
       const approvedModules = certificateSetting?.modules?.map((module) => {
+        endDates.push(module?.courseSchedulingDetail?.endDate.toISOString().replace('T00:00:00.000Z', ''))
         return {name: module?.courseSchedulingDetail?.course?.name || '-', duration: module.duration || 0}
       })
+
+      const maxDate = endDates.reduce((oldDate, newDate) => {
+        const oldDateObj = this.parseDate(oldDate);
+        const newDateObj = this.parseDate(newDate);
+
+        return oldDateObj > newDateObj ? oldDate : newDate;
+      });
 
       const mappingAcademicList = certificateService.formatAcademicModulesList(approvedModules, programTypeName);
       const mapping_listado_cursos = mappingAcademicList.mappingModules;
@@ -710,7 +720,7 @@ class CertificateMultipleService {
         ciudad: mapping_ciudad,
         pais: mapping_pais,
         fecha_certificado: currentDate,
-        fecha_aprobacion: courseScheduling.endDate,
+        fecha_aprobacion: maxDate ? new Date(maxDate) : courseScheduling.endDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
@@ -762,6 +772,11 @@ class CertificateMultipleService {
       default:
         return ''
     }
+  }
+
+  private parseDate = (dateString: string) => {
+    const parts = dateString.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
 }
 
