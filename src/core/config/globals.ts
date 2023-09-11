@@ -120,5 +120,5 @@ export const certificate_type = {
   auditor: 'auditor',
 }
 
-export const AUDITOR_EXAM_REGEXP = /auditor/gi
+export const AUDITOR_EXAM_REGEXP = /auditor/i
 //#endregion
