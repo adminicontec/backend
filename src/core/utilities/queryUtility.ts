@@ -61,7 +61,8 @@ class QueryUtility {
         querystringParams: (config.querystringParams) ? config.querystringParams  : {},
         headers: (config.headers) ? config.headers: {},
         req    : (config.req) ? config.req        : {},
-        sendBy : (config.sendBy) ? config.sendBy  : null
+        sendBy : (config.sendBy) ? config.sendBy  : null,
+        responseBuffer: (config.responseBuffer) ? config.responseBuffer : null
       }
 
       return await httpClientUtility[config.method](options);

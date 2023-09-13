@@ -473,6 +473,17 @@ class CertificateQueueService {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
             logs.push(err?.message)
           }
+        } else if (certificate?.status === 'In-process') {
+          try {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
+            await CertificateQueue.findByIdAndUpdate(certificate._id, {
+              status: 'New'
+            })
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+          } catch (err) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+            logs.push(err?.message)
+          }
         }
       }
 

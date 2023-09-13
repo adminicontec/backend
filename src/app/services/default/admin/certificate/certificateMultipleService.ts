@@ -136,9 +136,12 @@ class CertificateMultipleService {
             const certificate = studentCertificates[certificateSetting._id.toString()];
             certification.certificate.isGenerated = true;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
-            if (certificate?.certificate.pdfPath) {
-              certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)
+            if (certificate?.certificate?.hash) {
+              certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate)
             }
+            // if (certificate?.certificate.pdfPath) {
+            //   certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)
+            // }
             certification.certificate.certificateDate = certificate?.certificate.date
           }
           for (const certificateSettingModule of certificateSetting?.modules) {

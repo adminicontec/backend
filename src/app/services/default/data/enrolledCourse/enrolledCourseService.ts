@@ -279,8 +279,8 @@ class EnrolledCourseService {
 
         if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
 
-        if (register?.certificate?.pdfPath) {
-          register.certificate.pdfPath = certificateService.certificateUrl(register.certificate.pdfPath)
+        if (register?.certificate?.hash) {
+          register.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate)
         }
         if (register?.certificate?.imagePath) {
           register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
@@ -335,23 +335,15 @@ class EnrolledCourseService {
 
       const certifications = await CertificateQueue.find({
         _id: { $in: params.certification_queue }
-      })
+      }).populate({path: 'userId', select: 'profile.first_name profile.last_name'})
 
-      const certification_urls = []
-
-      for await (const certification of certifications) {
-        if (certification.certificate?.pdfPath) {
-          const url = certificateService.getCertificatePath(certification.certificate?.pdfPath)
-          certification_urls.push(url)
-        }
-      }
-
-      if (certification_urls.length === 0) return responseUtility.buildResponseFailed('json', null, { error_key: 'certificate.download_masive.no_certificate_to_download' }) // TODO: Validar error
+      const responsePromise: {fileName: string, buffer: Buffer}[] = await Promise.all(certifications.map((c) => certificateService.fetchCertification(c)))
 
       const time = new Date().getTime()
 
       const result = await certificateService.generateZipCertifications({
-        files: certification_urls,
+        // files: certification_urls,
+        filesFromBuffer: responsePromise,
         to_file: {
           file: {
             name: `${time}.zip`,
