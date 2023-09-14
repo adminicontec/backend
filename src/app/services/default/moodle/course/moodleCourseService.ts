@@ -178,7 +178,8 @@ class MoodleCourseService {
 
       return responseUtility.buildResponseFailed('json', null,
         {
-          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } }
+          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } },
+          additional_parameters: { moodleParams }
         })
     }
     else {
@@ -254,7 +255,7 @@ class MoodleCourseService {
     console.log("============");
 
     if (respMoodle.status == 'error') {
-      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed', additional_parameters: { respMoodle, moodleParams } })
     }
 
     // Take dates and update course data:
@@ -275,7 +276,7 @@ class MoodleCourseService {
       })
     }
     else {
-      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed', additional_parameters: { respMoodle, moodleParams } })
     }
   }
 
