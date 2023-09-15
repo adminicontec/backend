@@ -28,6 +28,7 @@ import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCou
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { utils } from 'xlsx/types';
+import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 // @end
 
 class CourseService {
@@ -109,7 +110,6 @@ class CourseService {
   public list = async (params: IFetchCourses = {}) => {
 
     try {
-      console.log("List of available courses:")
       let listOfCourses = []
       const paging = (params.pageNumber && params.nPerPage) ? true : false
 
@@ -139,20 +139,11 @@ class CourseService {
       }
 
       let where: any = {
-        schedulingType: { $in: schedulingTypesIds }
+        schedulingType: { $in: schedulingTypesIds },
       }
 
       if (params.search) {
         const search = params.search
-        // where = {
-        //   ...where,
-        //   $or: [
-        //     { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //   ]
-        // }
         const programs = await Program.find({
           name: { $regex: '.*' + search + '.*', $options: 'i' }
         }).select('id')
@@ -163,17 +154,10 @@ class CourseService {
         where['program'] = { $in: program_ids }
       }
 
-      // @INFO: Filtro para Mode
       if (params.mode) {
         where['schedulingMode'] = params.mode
-        // if (schedulingModesIds.includes(params.mode.toString())) {
-        //   where['schedulingMode'] = params.mode
-        // } else {
-        //   where['schedulingMode'] = {$in: []}
-        // }
       }
 
-      // @Filtro para precio
       if (params.price) {
         if (params.price === 'free') {
           where['hasCost'] = false
@@ -181,27 +165,6 @@ class CourseService {
           where['hasCost'] = true
         }
       }
-      /*
-            // Filtro para FEcha de inicio de curso
-            if (params.startPublicationDate) {
-              let direction = 'gte'
-              let date = moment()
-              if (params.startPublicationDate.date !== 'today') {
-                date = moment(params.startPublicationDate.date)
-              }
-              if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
-              where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-            }
-
-            if (params.endPublicationDate) {
-              let direction = 'lte'
-              let date = moment()
-              if (params.endPublicationDate.date !== 'today') {
-                date = moment(params.endPublicationDate.date)
-              }
-              if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
-              where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-            }*/
 
       let sort = null
       if (params.sort) {
@@ -215,16 +178,20 @@ class CourseService {
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          //.populate({ path: 'course', select: 'objectives' })
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
           .sort(sort)
           .lean()
 
-        // console.log('===============================');
-        // console.log('Cursos Programados');
-        // console.dir(registers, { depth: 1 });
-        // console.log('===============================');
+        const publishedSchedules = await CourseScheduling.find({
+            ...where,
+            endPublicationDate: { [`$gte`]: moment().format('YYYY-MM-DD') },
+            startPublicationDate: { [`$lte`]: moment().format('YYYY-MM-DD') },
+            publish: true,
+          })
+          .select('_id')
+          .lean()
+        const publishedSchedulingIds = publishedSchedules?.map((scheduling) => scheduling._id.toString())
 
         for await (const register of registers) {
           let isActive = false;
@@ -232,9 +199,6 @@ class CourseService {
           let courseObjectives = [];
           let courseContent = [];
           let generalities = [];
-
-          console.log("»»»»»»»»»»»»");
-          console.log("Data for: " + register.program.name);
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -271,14 +235,9 @@ class CourseService {
             });
           }
 
-          // course Is Active given end date
-          let current = new Date();
-          let startDate = new Date(register.startPublicationDate);
-          let endDate = new Date(register.endPublicationDate);
-
           if (register.hasCost) {
-            if (current.valueOf() >= startDate.valueOf() && current.valueOf() <= endDate.valueOf()) {
-              if (register.schedulingMode.name.toLowerCase() == 'virtual')
+            if (publishedSchedulingIds?.includes(register?._id?.toString())) {
+              if ([CourseSchedulingModes.VIRTUAL, CourseSchedulingModes.ON_LINE].includes(register.schedulingMode.name))
                 isActive = true;
               else
                 isActive = false;
@@ -289,7 +248,6 @@ class CourseService {
           else {
             isActive = false;
           }
-          console.log("Course is active: " + isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -313,7 +271,7 @@ class CourseService {
             quota: register.amountParticipants,
             lang: 'ES',
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
-            isActive: isActive,
+            isActive,
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
