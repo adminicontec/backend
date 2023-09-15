@@ -705,6 +705,8 @@ class CertificateMultipleService {
         }
       }
 
+      const approvedDate = maxDate ? new Date(maxDate) : courseScheduling.endDate
+
       const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
       const certificateParams: ICertificate = {
         modulo: mapping_template,
@@ -723,13 +725,13 @@ class CertificateMultipleService {
         ciudad: mapping_ciudad,
         pais: mapping_pais,
         fecha_certificado: currentDate,
-        fecha_aprobacion: maxDate ? new Date(maxDate) : courseScheduling.endDate,
+        fecha_aprobacion: approvedDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
         fecha_impresion: currentDate,
         dato_1: mapping_dato_1, // TODO: Revisar
-        dato_2: moment(courseScheduling.endDate).locale('es').format('LL'),
+        dato_2: moment(approvedDate.toISOString().replace('T00:00:00.000Z', '')).locale('es').format('LL'),
         // primer logo
         dato_3: location3,
         // primera firma
