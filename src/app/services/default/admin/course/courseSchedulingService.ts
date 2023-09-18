@@ -565,7 +565,7 @@ class CourseSchedulingService {
         steps.push('7')
         params.multipleCertificate = {
           status: false,
-          editingStatus: false,
+          editingStatus: true,
         }
         if (params.hasMultipleCertificate) {
           params.multipleCertificate.status = true

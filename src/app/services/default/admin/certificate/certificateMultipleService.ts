@@ -1,7 +1,7 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment'
 import path from "path";
-import { program_type_abbr, certificate_template, public_dir, attached } from '@scnode_core/config/globals';
+import { program_type_abbr, certificate_template, public_dir, attached, AUDITOR_EXAM_REGEXP } from '@scnode_core/config/globals';
 // @end
 
 // @import services
@@ -136,9 +136,12 @@ class CertificateMultipleService {
             const certificate = studentCertificates[certificateSetting._id.toString()];
             certification.certificate.isGenerated = true;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
-            if (certificate?.certificate.pdfPath) {
-              certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)
+            if (certificate?.certificate?.hash) {
+              certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate)
             }
+            // if (certificate?.certificate.pdfPath) {
+            //   certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)
+            // }
             certification.certificate.certificateDate = certificate?.certificate.date
           }
           for (const certificateSettingModule of certificateSetting?.modules) {
@@ -306,8 +309,8 @@ class CertificateMultipleService {
                     userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()]
                   ) {
                     const examItem: IStudentStatsExam = {
-                      graderaw: quiz?.graderaw || 0,
-                      isAuditor: quiz?.idnumber === 'auditor' ? true : false
+                      graderaw: quiz?.graderaw || 0,
+                      isAuditor: AUDITOR_EXAM_REGEXP.test(quiz?.idnumber) ? true : false
                     }
                     userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
                   }
@@ -563,7 +566,7 @@ class CertificateMultipleService {
       const allCertificateSettings = await CertificateSettings.find({
         courseScheduling: courseId
       })
-      .populate({path: 'modules.courseSchedulingDetail', select: 'course', populate: [
+      .populate({path: 'modules.courseSchedulingDetail', select: 'course endDate', populate: [
         {path: 'course', select: 'name'}
       ]})
 
@@ -676,9 +679,19 @@ class CertificateMultipleService {
         mapping_dato_13 = "Certifica que"
       }
 
+      const endDates = []
+
       const approvedModules = certificateSetting?.modules?.map((module) => {
+        endDates.push(module?.courseSchedulingDetail?.endDate.toISOString().replace('T00:00:00.000Z', ''))
         return {name: module?.courseSchedulingDetail?.course?.name || '-', duration: module.duration || 0}
       })
+
+      const maxDate = endDates.reduce((oldDate, newDate) => {
+        const oldDateObj = this.parseDate(oldDate);
+        const newDateObj = this.parseDate(newDate);
+
+        return oldDateObj > newDateObj ? oldDate : newDate;
+      });
 
       const mappingAcademicList = certificateService.formatAcademicModulesList(approvedModules, programTypeName);
       const mapping_listado_cursos = mappingAcademicList.mappingModules;
@@ -691,6 +704,8 @@ class CertificateMultipleService {
           location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
         }
       }
+
+      const approvedDate = maxDate ? new Date(maxDate) : courseScheduling.endDate
 
       const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
       const certificateParams: ICertificate = {
@@ -710,13 +725,13 @@ class CertificateMultipleService {
         ciudad: mapping_ciudad,
         pais: mapping_pais,
         fecha_certificado: currentDate,
-        fecha_aprobacion: courseScheduling.endDate,
+        fecha_aprobacion: approvedDate,
         fecha_ultima_modificacion: null,
         fecha_renovacion: null,
         fecha_vencimiento: null,
         fecha_impresion: currentDate,
         dato_1: mapping_dato_1, // TODO: Revisar
-        dato_2: moment(courseScheduling.endDate).locale('es').format('LL'),
+        dato_2: moment(approvedDate.toISOString().replace('T00:00:00.000Z', '')).locale('es').format('LL'),
         // primer logo
         dato_3: location3,
         // primera firma
@@ -762,6 +777,11 @@ class CertificateMultipleService {
       default:
         return ''
     }
+  }
+
+  private parseDate = (dateString: string) => {
+    const parts = dateString.split("-");
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   }
 }
 

@@ -2,6 +2,13 @@
 // @end
 
 // @add your types
+export enum CourseSchedulingModes {
+  VIRTUAL = 'Virtual',
+  ON_LINE = 'En linea',
+  ON_SITE_ON_LINE = 'Presencial - En linea',
+  ON_SITE = 'Presencial'
+}
+
 export interface ICourseSchedulingMode {
   name: string, // Nombre del modo
   description: string // Descripción del modo

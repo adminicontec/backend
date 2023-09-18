@@ -47,7 +47,7 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
         query: QueryValues.ALL, where: [
           { field: 'status', value: { $in: select } },
           // { field: 'courseId', value: '61aa88da325be3c95039b159'},
-          // { field: '_id', value: '648f5b303fbcac23841e5085'}
+          // { field: '_id', value: '64ff499113902c48e72264b1'}
         ]
       });
 

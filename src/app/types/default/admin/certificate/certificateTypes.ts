@@ -158,7 +158,8 @@ export interface IGenerateCertificatePdf {
 }
 
 export interface IGenerateZipCertifications {
-  files: Array<string>
+  files?: Array<string>
+  filesFromBuffer?: Array<{fileName: string, buffer: Buffer}>,
   to_file: {
     file: {
       name: string,   // Nombre original del archivo adjunto (Ex: car.jpg)

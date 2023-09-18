@@ -130,9 +130,12 @@ class EnrollmentService {
             register.certificate = [];
 
             for (let itemCertificate of certificates) {
-              if (itemCertificate.certificate.pdfPath) {
-                itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
+              if (itemCertificate.certificate.hash) {
+                itemCertificate.certificate.pdfPath = certificateService.certificateUrlV2(itemCertificate.certificate)
               }
+              // if (itemCertificate.certificate.pdfPath) {
+              //   itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
+              // }
               if (itemCertificate.certificate.imagePath) {
                 itemCertificate.certificate.imagePath = certificateService.certificateUrl(itemCertificate.certificate.imagePath)
               }

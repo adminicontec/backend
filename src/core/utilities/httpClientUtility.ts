@@ -127,7 +127,7 @@ class HttpClientUtility {
 
     const uri = `${http_structure_default.api}${http_structure_default.url}`;
 
-    let options = {
+    let options: any = {
       uri: uri,
       json: true,
       headers: {},
@@ -149,6 +149,11 @@ class HttpClientUtility {
       if (typeof http_structure['req']['getLocale'] === "function") {
         options.headers["Accept-Language"] = http_structure['req']['getLocale']();
       }
+    }
+
+    if (http_structure.responseBuffer) {
+      options.json = false
+      options.encoding = null
     }
 
     return rp(options)

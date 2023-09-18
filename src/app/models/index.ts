@@ -1,4 +1,5 @@
 // @import_models
+import { CustomLogModel } from "@scnode_app/models/customLogModel";
 import { CertificateSettingsModel } from "@scnode_app/models/certificateSettingsModel";
 import { TermModel } from "@scnode_app/models/termModel";
 import { ConsolidatedSurveyInformationModel } from "@scnode_app/models/consolidatedSurveyInformationModel";
@@ -62,6 +63,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CustomLog = CustomLogModel
 export const CertificateSettings = CertificateSettingsModel
 export const Term = TermModel
 export const ConsolidatedSurveyInformation = ConsolidatedSurveyInformationModel

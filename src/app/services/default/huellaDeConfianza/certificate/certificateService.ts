@@ -2,7 +2,7 @@
 import path from "path";
 import moment from 'moment'
 import { Base64 } from 'js-base64';
-import { host, public_dir, attached } from "@scnode_core/config/globals";
+import { host, public_dir, attached, AUDITOR_EXAM_REGEXP } from "@scnode_core/config/globals";
 const AdmZip = require("adm-zip");
 const ObjectID = require('mongodb').ObjectID
 // @end
@@ -377,9 +377,12 @@ class CertificateService {
             }).select('');
 
             register.certificate = certificate;
-            if (register?.certificate?.certificate?.pdfPath) {
-              register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+            if (register?.certificate?.certificate?.hash) {
+              register.certificate.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate.certificate);
             }
+            // if (register?.certificate?.certificate?.pdfPath) {
+            //   register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
+            // }
             if (register?.certificate?.certificate?.imagePath) {
               register.certificate.certificate.imagePath = certificateService.certificateUrl(register.certificate.certificate.imagePath);
             }
@@ -1054,17 +1057,17 @@ class CertificateService {
       let mapping_pais = respCourse.scheduling.country.name;
       let mapping_ciudad = (respCourse.scheduling.city != null) ? respCourse.scheduling.city.name : '';
       let mapping_listado_cursos = '';
-      let mapping_consecutive = parseInt(params.certificateConsecutive);
+      const consecutive = parseInt(params.certificateConsecutive.replace(`${respCourse.scheduling.metadata.service_id}-`, ''));
 
       // Only generates new consecutive number for new Certificate
       let mapping_numero_certificado = (params.certificateHash) ?
         params.certificateConsecutive :
-        respCourse.scheduling.metadata.service_id + '-' + params.certificateConsecutive.padStart(4, '0');
+        respCourse.scheduling.metadata.service_id + '-' + consecutive.toString().padStart(4, '0');
 
       let schedulingType = respCourse.scheduling.schedulingType;
 
       console.log('........................................................................................................');
-      console.log('Certificado para ' + respDataUser.user.profile.full_name);
+      console.log('Certificado para ' + respDataUser.user.profile.full_name + ' ---- ' +consecutive);
       console.log('........................................................................................................');
 
       // 3.3. Estatus de estudiante en Moodle
@@ -1250,16 +1253,20 @@ class CertificateService {
 
         //#region certificate type 1 Parameters (Academic type)
         let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
+        let modulo = mapping_template;
+        let asistio = null
         if (certificationMigration) {
           intensidad = parseInt(intensidad)
+          modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+          asistio = '1'
         }
         let certificateParams: ICertificate = {
-          modulo: mapping_template,
+          modulo,
           numero_certificado: mapping_numero_certificado,
           correo: respDataUser.user.email,
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
-          asistio: null,
+          asistio,
           certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
           certificado_ingles: '',
           alcance: '',
@@ -1709,7 +1716,7 @@ class CertificateService {
           // console.log("[ *** QUIZ Grades PR-ON*** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
-            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            let auditorQuiz = student.itemType.quiz.find(x => AUDITOR_EXAM_REGEXP.test(x.idnumber));
             // console.log('auditorQuiz found?');
             // console.log(auditorQuiz);
 
@@ -1890,7 +1897,7 @@ class CertificateService {
           // console.log("[ *** QUIZ Grades VIRTUAL *** ]");
           if (student.itemType.quiz.length > 0) {
             // look up for idnumber: 'auditor' ONLY
-            let auditorQuiz = student.itemType.quiz.find(x => x.idnumber == 'auditor');
+            let auditorQuiz = student.itemType.quiz.find(x => AUDITOR_EXAM_REGEXP.test(x.idnumber));
             // console.log('auditorQuiz found?');
             // console.log(auditorQuiz);
 
@@ -2344,126 +2351,114 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
-      // console.log("Params for Preview Certificate: ");
-      // console.log(params);
+      // const detailParams = {
+      //   id: params.hash,
+      //   fr: params.format,
+      //   pl: params.template
+      // }
+      // const respToken: any = await this.login();
 
-      // params.format:
-      // Imagen PNG: 1
-      // PDF: 2
-      const detailParams = {
-        id: params.hash,
-        fr: params.format,
-        pl: params.template
-      }
-      const respToken: any = await this.login();
+      // if (respToken.status == 'error') {
+      //   return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
+      // }
 
-      if (respToken.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
-      }
+      // const tokenHC = respToken.token;
 
-      const tokenHC = respToken.token;
+      // const respHuella: any = await queryUtility.query({
+      //   method: 'get',
+      //   url: certificate_setup.endpoint.certificate_detail,
+      //   api: 'huellaDeConfianza',
+      //   headers: { Authorization: tokenHC },
+      //   params: detailParams
+      // });
 
-      // get Log
-      // let responseLog: any = await certificateLogsService.findBy({ query: QueryValues.ONE, where: [{ field: 'idCertificateQueue', value: params.certificate_queue }] });
-      // console.log('certificateLogsService');
-      // console.log(responseLog.certificateLogs._id);
+      // await certificateLogsService.insertOrUpdate({
+      //   serviceResponse: respHuella.estado,
+      //   idCertificateQueue: params.certificate_queue,
+      //   message: '',
+      //   process: 'Preview certificate',
+      //   previewRequestData: detailParams,
+      //   responseService: respHuella
+      // });
 
-      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
-      // console.log('params:');
-      // console.log(detailParams);
-      // console.log('ŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦŦ');
-      const respHuella: any = await queryUtility.query({
-        method: 'get',
-        url: certificate_setup.endpoint.certificate_detail,
-        api: 'huellaDeConfianza',
-        headers: { Authorization: tokenHC },
-        params: detailParams
-      });
+      // if (respHuella.estado === 'error') {
+      //   return responseUtility.buildResponseFailed('json', null, {
+      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
+      //   });
+      // }
 
-      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-      // console.log(respHuella);
-      // console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-
-      // record the error on Log
-      await certificateLogsService.insertOrUpdate({
-        serviceResponse: respHuella.estado,
-        idCertificateQueue: params.certificate_queue,
-        message: '',
-        process: 'Preview certificate',
-        previewRequestData: detailParams,
-        responseService: respHuella
-      });
-
-      if (respHuella.estado === 'error') {
-        return responseUtility.buildResponseFailed('json', null, {
-          error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-        });
-      }
-
-      if (respHuella.resultado === "") {
-        return responseUtility.buildResponseFailed('json', null, {
-          error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-        });
-      }
+      // if (respHuella.resultado === "") {
+      //   return responseUtility.buildResponseFailed('json', null, {
+      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
+      //   });
+      // }
 
       if (params.updateCertificate && params.format) {
-        let updateData = null
+        // let updateData = null
 
-        const userCertificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
+        // const userCertificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
 
-        let respDataUser: any = await userService.findBy({
-          query: QueryValues.ONE,
-          where: [{ field: '_id', value: userCertificate.userId }]
-        })
+        // let respDataUser: any = await userService.findBy({
+        //   query: QueryValues.ONE,
+        //   where: [{ field: '_id', value: userCertificate.userId }]
+        // })
 
-        var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
+        // var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
 
-        if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
-          const time = new Date().getTime()
-          const resultPng: any = await this.generateCertificateFromBase64({
-            certificate: respHuella.resultado,
-            to_file: {
-              file: {
-                name: `${filename}_${time}.png`,
-              },
-              path: this.default_certificate_path,
-            }
-          })
-          if (resultPng.status === 'success') {
-            updateData = {
-              $set: {
-                "certificate.imagePath": resultPng.filename,
-                "status": 'Complete'
-              }
-            }
-          }
-        } else if (params.format.toString() === "2") { // Si el formato es 2 (PDF) guardo el documento en el server y actualizo base de datos
-          const time = new Date().getTime()
-          const resultPdf: any = await this.generateCertificateFromBase64({
-            certificate: respHuella.resultado,
-            to_file: {
-              file: {
-                name: `${filename}_${time}.pdf`,
-              },
-              path: this.default_certificate_path,
-            }
-          })
-          if (resultPdf.status === 'success') {
-            updateData = {
-              $set: {
-                "certificate.pdfPath": resultPdf.filename,
-                "status": 'Complete'
-              }
-            }
+        // if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
+        //   const time = new Date().getTime()
+        //   const resultPng: any = await this.generateCertificateFromBase64({
+        //     certificate: respHuella.resultado,
+        //     to_file: {
+        //       file: {
+        //         name: `${filename}_${time}.png`,
+        //       },
+        //       path: this.default_certificate_path,
+        //     }
+        //   })
+        //   if (resultPng.status === 'success') {
+        //     updateData = {
+        //       $set: {
+        //         "certificate.imagePath": resultPng.filename,
+        //         "status": 'Complete'
+        //       }
+        //     }
+        //   }
+        // } else if (params.format.toString() === "2") { // Si el formato es 2 (PDF) guardo el documento en el server y actualizo base de datos
+        //   const time = new Date().getTime()
+        //   const resultPdf: any = await this.generateCertificateFromBase64({
+        //     certificate: respHuella.resultado,
+        //     to_file: {
+        //       file: {
+        //         name: `${filename}_${time}.pdf`,
+        //       },
+        //       path: this.default_certificate_path,
+        //     }
+        //   })
+        //   if (resultPdf.status === 'success') {
+        //     updateData = {
+        //       $set: {
+        //         "certificate.pdfPath": resultPdf.filename,
+        //         "status": 'Complete'
+        //       }
+        //     }
+        //   }
+        // }
+
+        const updateData = {
+          $set: {
+            // "certificate.pdfPath": resultPdf.filename,
+            "status": 'Complete'
           }
         }
+
         if (updateData) {
           await CertificateQueue.findByIdAndUpdate(params.certificate_queue, updateData, { useFindAndModify: false, new: true })
         }
       }
 
       await certificateLogsService.insertOrUpdate({
-        serviceResponse: respHuella.estado,
+        serviceResponse: 'OK', // respHuella.estado,
         idCertificateQueue: params.certificate_queue,
         message: 'Certificate complete',
         process: 'Complete',
@@ -2474,13 +2469,13 @@ class CertificateService {
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          tokenHC: tokenHC,
-          preview: (params.showPreviewBase64 === true) ? respHuella.resultado : undefined,
+          // tokenHC: tokenHC,
+          preview: undefined, // (params.showPreviewBase64 === true) ? respHuella.resultado : undefined,
           certificate: {
-            filename: filename,
+            filename: `${certificate?.certificate?.hash}.pdf`, // filename,
             url: certificate?.certificate?.url,
             imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
-            pdfPath: certificate?.certificate?.pdfPath ? this.certificateUrl(certificate?.certificate.pdfPath) : null,
+            pdfPath: certificate?.certificate?.hash ? this.certificateUrlV2(certificate?.certificate) : null,
             date: certificate?.certificate.date
           }
         }
@@ -2581,9 +2576,12 @@ class CertificateService {
       });
 
       for (let itemCertificate of certificatesQuery) {
-        if (itemCertificate.certificate.pdfPath) {
-          itemCertificate.certificate.pdfPath = this.certificateUrl(itemCertificate.certificate.pdfPath)
+        if (itemCertificate.certificate.hash) {
+          itemCertificate.certificate.pdfPath = this.certificateUrlV2(itemCertificate.certificate)
         }
+        // if (itemCertificate.certificate.pdfPath) {
+        //   itemCertificate.certificate.pdfPath = this.certificateUrl(itemCertificate.certificate.pdfPath)
+        // }
         if (itemCertificate.certificate.imagePath) {
           itemCertificate.certificate.imagePath = this.certificateUrl(itemCertificate.certificate.imagePath)
         }
@@ -2625,9 +2623,17 @@ class CertificateService {
 
     try {
       const zip = new AdmZip();
-      params.files.map((item) => {
-        zip.addLocalFile(item);
-      })
+      if (params.files) {
+        params.files.map((item) => {
+          zip.addLocalFile(item);
+        })
+      } else if (params.filesFromBuffer) {
+        params.filesFromBuffer.map((item) => {
+          if (item?.fileName && item.buffer) {
+            zip.addFile(item.fileName, item.buffer);
+          }
+        })
+      }
       zip.writeZip(full_path_file);
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -2639,6 +2645,26 @@ class CertificateService {
     } catch (e) {
       console.log("[CertificateService] [generateZipCertifications] ERROR: ", e)
       return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
+  public fetchCertification = async (certificateQueue: any) => {
+    try {
+      const buffer = await queryUtility.query({
+        api_link: customs['certificateBaseUrl'],
+        method: 'get',
+        url: `/${certificateQueue?.certificate?.hash}.pdf`,
+        responseBuffer: true
+      })
+
+      if (!Buffer.isBuffer(buffer)) return null
+
+      const time = new Date().getTime()
+      const fullName = generalUtility.normalizeFullName(certificateQueue.userId.profile.first_name, certificateQueue.userId.profile.last_name);
+      const fileName = `${fullName}_${time}.pdf`
+      return {fileName, buffer}
+    } catch (err) {
+      return null
     }
   }
 
@@ -2666,6 +2692,12 @@ class CertificateService {
   public certificateUrl = (item) => {
     return item && item !== ''
       ? `${customs['uploads']}/pdfs/${this.default_certificate_path}/${item}`
+      : null
+  }
+
+  public certificateUrlV2 = (item) => {
+    return item?.hash && item?.hash !== ''
+      ? `${customs['certificateBaseUrl']}/${item.hash}.pdf`
       : null
   }
 
@@ -2823,11 +2855,11 @@ class CertificateService {
         };
       } else {
         if (programTypeName || programTypeName != null)
-          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\n';
+          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
-          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\n`
+          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`
           if (element.duration)
             totalDuration += element.duration;
         });

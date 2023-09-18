@@ -178,7 +178,8 @@ class MoodleCourseService {
 
       return responseUtility.buildResponseFailed('json', null,
         {
-          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } }
+          error_key: { key: 'course.insertOrUpdate.already_exists', params: { name: respMoodle.message } },
+          additional_parameters: { moodleParams }
         })
     }
     else {
@@ -254,7 +255,7 @@ class MoodleCourseService {
     console.log("============");
 
     if (respMoodle.status == 'error') {
-      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed', additional_parameters: { respMoodle, moodleParams } })
     }
 
     // Take dates and update course data:
@@ -275,7 +276,7 @@ class MoodleCourseService {
       })
     }
     else {
-      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed' })
+      return responseUtility.buildResponseFailed('json', null, { error_key: 'course.insertOrUpdate.failed', additional_parameters: { respMoodle, moodleParams } })
     }
   }
 
@@ -288,20 +289,20 @@ class MoodleCourseService {
         hasExam: false
       }
       if (exams && exams.courseModules && exams.courseModules.length) {
-
-        const auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
-        if (auditorQuizModule) {
+        const auditorQuizModules = exams.courseModules.filter(field => field.isauditorquiz)
+        if (auditorQuizModules?.length) {
           if (sectionMoodleId) {
-            if (auditorQuizModule?.sectionid.toString() === sectionMoodleId.toString()) {
+            const matchModule = auditorQuizModules.find(module => module?.sectionid?.toString() === sectionMoodleId.toString())
+            if (!!matchModule) {
               response.hasExam = true;
               response.exam = {
-                sectionId: auditorQuizModule?.sectionid
+                sectionId: matchModule?.sectionid
               }
             }
           } else {
             response.hasExam = true;
             response.exam = {
-              sectionId: auditorQuizModule?.sectionid
+              sectionId: auditorQuizModules[0]?.sectionid
             }
           }
         }

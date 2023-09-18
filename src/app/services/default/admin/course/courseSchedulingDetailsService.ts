@@ -29,6 +29,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { CourseSchedulingDetailsModification, ICourseSchedulingDetail, ICourseSchedulingDetailDelete, ICourseSchedulingDetailQuery, ICourseSchedulingDetailSession, ICourseSchedulingDetailsModification, IDuplicateCourseSchedulingDetail } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes'
 import { CourseSchedulingDetailsSync } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { TIME_ZONES_WITH_OFFSET, TimeZone, TIME_ZONE_WITH_NAME } from '@scnode_app/types/default/admin/user/userTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 const SESSION_HOUR_FORMAT = 'hh:mm a'
@@ -461,32 +462,79 @@ class CourseSchedulingDetailsService {
 
       for (const moodle_id of sessionsChanged) {
         try {
-          await attendanceService.removeSession({
+          const removedResponse = await attendanceService.removeSession({
             sessionId: moodle_id
           })
+          customLogService.create({
+            label: this.getCustomLogLabel('1'),
+            description: 'Remove session',
+            schedulingMoodleId: courseMoodleID,
+            content: {
+              removedResponse,
+              sessionId: moodle_id,
+            }
+          })
         } catch (err) {
+          customLogService.create({
+            label: this.getCustomLogLabel('2'),
+            description: 'Remove Session ERROR',
+            schedulingMoodleId: courseMoodleID,
+            content: {
+              sessionId: moodle_id,
+              err,
+            }
+          })
           console.log('RemoveSession-error', err)
         }
       }
 
       for (const session of sessions) {
-        let addSession = false;
-        if (
-          !session?.moodle_id &&
-          !session.reinforcement_class
-        ) {
-          addSession = true;
-        }
-        // console.log('session', session, 'add', addSession)
-        if (addSession) {
-          const attendanceResponse: any = await attendanceService.addSession({
-            attendanceId: attendanceByModule?.instance,
-            sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
-            duration: session.duration,
-          })
-          if (attendanceResponse?.sessionId) {
-            session.moodle_id = attendanceResponse?.sessionId;
+        try {
+          let addSession = false;
+          if (
+            !session?.moodle_id &&
+            !session.reinforcement_class
+          ) {
+            addSession = true;
           }
+          // console.log('session', session, 'add', addSession)
+          if (addSession) {
+            const attendanceResponse: any = await attendanceService.addSession({
+              attendanceId: attendanceByModule?.instance,
+              sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+              duration: session.duration,
+            })
+            customLogService.create({
+              label: this.getCustomLogLabel('3'),
+              description: 'Add session',
+              schedulingMoodleId: courseMoodleID,
+              content: {
+                attendanceResponse,
+                params: {
+                  attendanceId: attendanceByModule?.instance,
+                  sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+                  duration: session.duration,
+                }
+              }
+            })
+            if (attendanceResponse?.sessionId) {
+              session.moodle_id = attendanceResponse?.sessionId;
+            }
+          }
+        } catch (err) {
+          customLogService.create({
+            label: this.getCustomLogLabel('4'),
+            description: 'Add session ERROR',
+            schedulingMoodleId: courseMoodleID,
+            content: {
+              params: {
+                attendanceId: attendanceByModule?.instance,
+                sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+                duration: session.duration,
+              },
+              err,
+            }
+          })
         }
       }
 
@@ -770,6 +818,10 @@ class CourseSchedulingDetailsService {
 
   public getTimezoneName = (timezone: TimeZone = TimeZone.GMT_5) => {
     return TIME_ZONE_WITH_NAME[timezone]
+  }
+
+  private getCustomLogLabel = (numberId: string) => {
+    return `csars ${numberId} courseSchedulingDetailsService`
   }
 
 }
