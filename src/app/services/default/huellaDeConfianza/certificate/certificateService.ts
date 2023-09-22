@@ -1255,11 +1255,21 @@ class CertificateService {
         let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
         let modulo = mapping_template;
         let asistio = null
+        let fecha_certificado: any = currentDate;
+        let fecha_aprobacion = respCourse.scheduling.endDate;
+        let fecha_ultima_modificacion = null;
+        let fecha_renovacion = null;
+        let fecha_vencimiento = null;
+        let fecha_impresion: any = currentDate;
         if (certificationMigration) {
           intensidad = parseInt(intensidad)
           modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
           asistio = '1'
+          fecha_certificado = fecha_certificado.toISOString().split('T')[0];
+          fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
+          fecha_impresion = fecha_impresion.toISOString().split('T')[0]
         }
+
         let certificateParams: ICertificate = {
           modulo,
           numero_certificado: mapping_numero_certificado,
@@ -1276,12 +1286,12 @@ class CertificateService {
           regional: '',
           ciudad: mapping_ciudad,
           pais: mapping_pais,
-          fecha_certificado: currentDate,
-          fecha_aprobacion: respCourse.scheduling.endDate,
-          fecha_ultima_modificacion: null,
-          fecha_renovacion: null,
-          fecha_vencimiento: null,
-          fecha_impresion: currentDate,
+          fecha_certificado,
+          fecha_aprobacion,
+          fecha_ultima_modificacion,
+          fecha_renovacion,
+          fecha_vencimiento,
+          fecha_impresion,
           dato_1: mapping_dato_1,
           dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
           // primer logo
@@ -2196,11 +2206,14 @@ class CertificateService {
           params: JSON.stringify(certificateReq.paramsHuella)
         });
         responseIssuer.status = 'success'
-        responseIssuer.serviceResponse = respHuella.estado
+        responseIssuer.serviceResponse = respHuella?.estado || 'No response data'
         responseIssuer.responseService = respHuella
         responseIssuer.certificate = {
-          hash: respHuella.resultado.certificado,
-          url: respHuella.resultado.url,
+          hash: respHuella?.resultado?.certificado,
+          url: respHuella?.resultado?.url,
+        }
+        if (respHuella?.status === 'error' || respHuella?.estado === 'Error') {
+          responseIssuer.status = 'error'
         }
       } else {
         const username = 'LegadoCampus'
@@ -2214,17 +2227,19 @@ class CertificateService {
           headers: {
             Authorization: basicAuthHeader
           },
-          params: JSON.stringify(certificateReq.paramsHuella),
+          params: certificateReq.paramsHuella,
           sendBy: 'body'
         });
         responseIssuer.status = respIssuer.status || 'error'
         responseIssuer.serviceResponse = 'N/A'
         responseIssuer.responseService = respIssuer
-        // TODO: Cuando se tengan los valores finales cambiar esta parte
-        // responseIssuer.certificate = {
-        //   hash: respHuella.resultado.certificado,
-        //   url: respHuella.resultado.url,
-        // }
+        if (respIssuer?.resultado && respIssuer?.codigo === '200') {
+          responseIssuer.status = 'success';
+          responseIssuer.certificate = {
+            hash: respIssuer?.resultado,
+            url: respIssuer?.url,
+          }
+        }
       }
       await certificateLogsService.insertOrUpdate({
         serviceResponse: responseIssuer.serviceResponse,
@@ -2834,7 +2849,7 @@ class CertificateService {
    * Format the modules list for Certificate 1
    */
   public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html') => {
-    let mappingAcademicModulesList = '';
+    let mappingAcademicModulesList = 'El contenido comprendió: <br/>';
     let totalDuration = 0;
     try {
       if (format === 'html') {
