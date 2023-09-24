@@ -388,19 +388,42 @@ class CourseDataService {
 
       // @INFO: Filtro para Mode
       if (params.mode) {
-        where['schedulingMode'] = params.mode
+        if (Array.isArray(params.mode)) {
+          if (params.mode.length) {
+            where['schedulingMode'] = { $in: params.mode }
+          }
+        } else {
+          where['schedulingMode'] = params.mode
+        }
       }
 
       // @Filtro para precio
       if (params.price) {
-        if (params.price === 'free') {
-          where['hasCost'] = false
-        } else if (params.price === 'pay') {
-          where['hasCost'] = true
-        } else if (params.price === 'discount') {
-          let date = moment()
-          where['discount'] = { $gt: 0 }
-          where['endDiscountDate'] = { $gte: date.format('YYYY-MM-DD') }
+        if (Array.isArray(params.price)) {
+          if (params.price?.length) {
+            const priceOrParam = []
+            params.price?.forEach((priceItem) => {
+              if (priceItem === 'free') {
+                priceOrParam.push({ hasCost: false })
+              } else if (priceItem === 'pay') {
+                priceOrParam.push({ hasCost: true })
+              } else if (priceItem === 'discount') {
+                let date = moment()
+                priceOrParam.push({ discount: { $gt: 0 }, endDiscountDate: { $gte: date.format('YYYY-MM-DD') } })
+              }
+            })
+            where['$or'] = priceOrParam
+          }
+        } else {
+          if (params.price === 'free') {
+            where['hasCost'] = false
+          } else if (params.price === 'pay') {
+            where['hasCost'] = true
+          } else if (params.price === 'discount') {
+            let date = moment()
+            where['discount'] = { $gt: 0 }
+            where['endDiscountDate'] = { $gte: date.format('YYYY-MM-DD') }
+          }
         }
       }
 
