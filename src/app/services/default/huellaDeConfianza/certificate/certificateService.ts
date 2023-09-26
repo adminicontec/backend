@@ -2806,7 +2806,7 @@ class CertificateService {
       }
     } else if (format === 'public_url') {
       if (imagePath) {
-        return `${customs['uploads']}/${imagePath}`
+        return `${customs['uploads']}/${this.default_logo_path}/${imagePath}`
       }
     }
     return null;
