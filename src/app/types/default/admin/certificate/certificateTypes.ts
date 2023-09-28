@@ -36,7 +36,7 @@ export interface ICertificate {
   regional: string,
   ciudad: string,
   pais: string,
-  fecha_certificado: Date,
+  fecha_certificado: Date | string,
   fecha_aprobacion?: Date,
   fecha_ultima_modificacion?: Date,
   fecha_renovacion?: Date,

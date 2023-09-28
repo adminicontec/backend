@@ -85,6 +85,10 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.Boolean,
     required: false
   },
+  isPartial: {
+    type: Schema.Types.Boolean,
+    required: false
+  }
   // @end
 }, {
   collection: 'certificate_queues', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

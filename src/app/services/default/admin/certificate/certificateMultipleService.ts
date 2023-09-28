@@ -50,17 +50,21 @@ class CertificateMultipleService {
   public certificateData = async (params: ICertificateMultipleData) => {
 
     try {
-      const { course_scheduling, studentId, without_certification } = params
+      const { course_scheduling, studentId, without_certification, certificateSettingId, only_certificates } = params
 
       const responseValidate: any = await this.validateAccessToCertificateMultiple(course_scheduling)
       if (responseValidate.status === 'error') return responseValidate;
 
       const courseScheduling = responseValidate.courseScheduling
 
-      // @INFO: Configuración de los certificados para el servicio
-      const certificateSettings = await CertificateSettings.find({
+      const whereCertificateSetting = {
         courseScheduling: courseScheduling._id
-      })
+      }
+      if (certificateSettingId) {
+        whereCertificateSetting['_id'] = certificateSettingId
+      }
+      // @INFO: Configuración de los certificados para el servicio
+      const certificateSettings = await CertificateSettings.find(whereCertificateSetting)
       .populate({path: 'modules.courseSchedulingDetail', select: 'id course', populate: [
         {path: 'course', select: 'id name moodle_id'}
       ]})
@@ -92,15 +96,18 @@ class CertificateMultipleService {
       .lean();
 
       // @INFO: Consultar estadisticas de Moodle
-      const userStats = await this.buildStudentsMoodleData({
-        moodleId: courseScheduling?.moodle_id,
-        students: enrollments?.reduce((accum, element) => {
-          if (element?.user?.moodle_id) {
-            accum.push(element?.user?.moodle_id.toString())
-          }
-          return accum
-        }, [])
-      })
+      let userStats
+      if (!only_certificates) {
+        userStats = await this.buildStudentsMoodleData({
+          moodleId: courseScheduling?.moodle_id,
+          students: enrollments?.reduce((accum, element) => {
+            if (element?.user?.moodle_id) {
+              accum.push(element?.user?.moodle_id.toString())
+            }
+            return accum
+          }, [])
+        })
+      }
 
       const students: ICertificateMultipleDataStudent[] = []
       for (const enrollment of enrollments) {
@@ -126,7 +133,8 @@ class CertificateMultipleService {
             certificate: { // OK
               isGenerated: false
             },
-            modules: [] // OK
+            modules: [], // OK
+            isPartial: false
           }
 
           if (hasCertificate) {
@@ -143,48 +151,76 @@ class CertificateMultipleService {
             //   certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)
             // }
             certification.certificate.certificateDate = certificate?.certificate.date
+            certification.approved = true
+            certification.isPartial = certificate?.isPartial || false
+            if (certificate?.isPartial && certificateSetting?.certificationType === CertificateSettingType.ATTENDANCE_APPROVAL) {
+              certification.certificateType = CertificateSettingType.ATTENDANCE
+            }
           }
-          for (const certificateSettingModule of certificateSetting?.modules) {
-            const module: ICertificateMultipleDataCertificationModule = {
-              courseSchedulingDetailId: certificateSettingModule?.courseSchedulingDetail?._id, // OK
-              courseSchedulingDetailName: certificateSettingModule?.courseSchedulingDetail?.course?.name || '-', // OK
-              moduleCriteriaResume: [], // OK
-              approved: false // OK
+
+          if (!only_certificates) {
+            for (const certificateSettingModule of certificateSetting?.modules) {
+              const module: ICertificateMultipleDataCertificationModule = {
+                courseSchedulingDetailId: certificateSettingModule?.courseSchedulingDetail?._id, // OK
+                courseSchedulingDetailName: certificateSettingModule?.courseSchedulingDetail?.course?.name || '-', // OK
+                moduleCriteriaResume: [], // OK
+                approved: false, // OK
+                isPartial: false
+              }
+
+              Object.values(CertificateSettingCriteria).map((criteria) => {
+                const item = certificateSettingModule[criteria];
+                if (item && item?.status === true) {
+                  const moduleCriteria: ICertificateMultipleDataCertificationModuleCriteriaResume = {
+                    type: criteria, // OK
+                    percentageRequired: item?.percentage, // OK
+                    percentageObtainer: 0, // OK
+                    approved: false, // OK
+                    complement: null,
+                    isPartial: false
+                  }
+
+                  if (userStats[enrollment?.user?.moodle_id.toString()]) {
+                    const factory = new CertificateMultipleCriteriaFactory(criteria)
+                    const {approved, percentage, complement} = factory.instance.evaluateCriteria(
+                      userStats[enrollment?.user?.moodle_id.toString()],
+                      certificateSettingModule
+                    )
+                    moduleCriteria.approved = approved;
+                    moduleCriteria.percentageObtainer = percentage
+                    moduleCriteria.complement = complement || undefined
+
+                    if (
+                      criteria === CertificateSettingCriteria.EXAM &&
+                      certificateSetting.certificationType === CertificateSettingType.ATTENDANCE_APPROVAL
+                    ) {
+                      if (!approved) {
+                        moduleCriteria.isPartial = true
+                      }
+                    }
+                  }
+
+                  module.moduleCriteriaResume.push(moduleCriteria)
+                }
+              })
+              certification.modules.push(module)
             }
 
-            Object.values(CertificateSettingCriteria).map((criteria) => {
-              const item = certificateSettingModule[criteria];
-              if (item && item?.status === true) {
-                const moduleCriteria: ICertificateMultipleDataCertificationModuleCriteriaResume = {
-                  type: criteria, // OK
-                  percentageRequired: item?.percentage, // OK
-                  percentageObtainer: 0, // OK
-                  approved: false, // OK
-                  complement: null
-                }
-
-                if (userStats[enrollment?.user?.moodle_id.toString()]) {
-                  const factory = new CertificateMultipleCriteriaFactory(criteria)
-                  const {approved, percentage, complement} = factory.instance.evaluateCriteria(
-                    userStats[enrollment?.user?.moodle_id.toString()],
-                    certificateSettingModule
-                  )
-                  moduleCriteria.approved = approved;
-                  moduleCriteria.percentageObtainer = percentage
-                  moduleCriteria.complement = complement || undefined
-                }
-
-                module.moduleCriteriaResume.push(moduleCriteria)
-              }
+            certification.modules.forEach((module) => {
+              module.approved = module?.moduleCriteriaResume.every((c) => {
+                if (c.approved === true) return true
+                if (c.isPartial === true) return true
+                return false
+              })
+              module.isPartial = module?.moduleCriteriaResume.some((c) => c.isPartial === true)
             })
-            certification.modules.push(module)
+            certification.approved = certification?.modules.every((c) => c.approved === true)
+            certification.isPartial = certification?.modules.some((c) => c.isPartial === true)
+            if (certification.isPartial && certificateSetting?.certificationType === CertificateSettingType.ATTENDANCE_APPROVAL) {
+              certification.certificateType = CertificateSettingType.ATTENDANCE
+            }
           }
 
-          certification.modules.forEach((module) => {
-            module.approved = module?.moduleCriteriaResume.every((c) => c.approved === true)
-          })
-
-          certification.approved = certification?.modules.every((c) => c.approved === true)
 
           student.certifications.push(certification)
         }
@@ -225,10 +261,17 @@ class CertificateMultipleService {
       const { moodleId, studentMoodleId, students } = params
 
       let modulesListByInstance = {}
-      const modulesForProgress: any = await courseContentService.moduleList({
-        courseID: moodleId,
-        moduleType: [...moodleItemsToSearch, 'scorm']
-      });
+      const [modulesForProgress, moodleUserStats] = await Promise.all([
+        courseContentService.moduleList({
+          courseID: moodleId,
+          moduleType: [...moodleItemsToSearch, 'scorm']
+        }) as any,
+        gradesService.fetchGradesByFilter({
+          courseID: moodleId,
+          userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
+          filter: moodleItemsToSearch
+        }) as any
+      ])
 
       if (modulesForProgress?.courseModules) {
         modulesListByInstance = modulesForProgress.courseModules.reduce((accum, element) => {
@@ -241,11 +284,6 @@ class CertificateMultipleService {
         }, {});
       }
 
-      const moodleUserStats: any = await gradesService.fetchGradesByFilter({
-        courseID: moodleId,
-        userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
-        filter: moodleItemsToSearch
-      });
       if (moodleUserStats?.status === 'error') {
         throw new BuildStudentsMoodleDataException({
           errorKey: 'grades.moodle_exception'
@@ -429,7 +467,8 @@ class CertificateMultipleService {
       }, {})
 
       // @INFO: Consultando configuración de certificados a generar
-      const certificateSettingsIds = [].concat(...students?.map((item) => item.certificateSettings || [])) || []
+      // const certificateSettingsIds = [].concat(...students?.map((item) => item.certificateSettings || [])) || []
+      const certificateSettingsIds = [].concat(...students?.map((item) => item?.certificateSettings?.map((c) => c.certificateSettingId) || [])) || []
       if (certificateSettingsIds.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate_multiple.generate.certificate_setting_required'})
 
       const certificateSettings = await CertificateSettings.find({
@@ -442,6 +481,18 @@ class CertificateMultipleService {
           accum[element?._id] = element
         }
         return accum;
+      }, {})
+
+      const studentCertificateRelation = students?.reduce((accum, element) => {
+        if (element?.certificateSettings) {
+          element?.certificateSettings.map((certificate) => {
+
+            if (!accum[`${element.userId}_${certificate.certificateSettingId}`]) {
+              accum[`${element.userId}_${certificate.certificateSettingId}`] = certificate.isPartial
+            }
+          })
+        }
+        return accum
       }, {})
 
       // @INFO: Consultando certificados ya generados
@@ -464,19 +515,21 @@ class CertificateMultipleService {
         element?.certificateSettings?.forEach((certificate) => {
           if (
             enrollmentsGroupByUserId[element?.userId] &&
-            certificateSettingsGroupById[certificate]
+            certificateSettingsGroupById[certificate.certificateSettingId]
           ) {
             const studentCertificates = certificatesByStudent[element?.userId.toString()] || {}
-            const hasCertificate = studentCertificates[certificate.toString()] ? true : false
+            const hasCertificate = studentCertificates[certificate.certificateSettingId.toString()] ? true : false
+            const isPartial = studentCertificateRelation[`${element?.userId.toString()}_${certificate.certificateSettingId.toString()}`] || false
             if (!hasCertificate) {
               const item: ICertificateQueueMultiple = {
                 userId: element?.userId,
                 courseId: courseScheduling?._id,
-                certificateSetting: certificate,
+                certificateSetting: certificate.certificateSettingId,
                 auxiliar: user,
-                certificateType: certificateSettingsGroupById[certificate]?.certificationType,
+                certificateType: certificateSettingsGroupById[certificate.certificateSettingId]?.certificationType,
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
-                status
+                status,
+                isPartial,
               }
               itemsToCreate.push(item)
             }
@@ -546,7 +599,7 @@ class CertificateMultipleService {
 
   private buildCertificateData = async (params: ICertificateMultipleBuildData) => {
     try {
-      const {courseId, userId, certificateSettingId, certificateHash, certificateConsecutive}  = params;
+      const {courseId, userId, certificateSettingId, certificateHash, certificateConsecutive, certificateQueueId}  = params;
       const certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
       const currentDate = new Date(Date.now());
@@ -555,6 +608,8 @@ class CertificateMultipleService {
 
       let location3 = null;
       let location8 = null;
+
+      const certificateQueue = await CertificateQueue.findOne({_id: certificateQueueId}).lean()
 
       // @INFO: Buscando estudiante a generar certificado
       const student: any = await User.findOne({
@@ -646,6 +701,13 @@ class CertificateMultipleService {
         params: {code: courseScheduling?.program?.code || '-'}
       }})
 
+      if (
+        certificateSetting?.certificationType === CertificateSettingType.ATTENDANCE_APPROVAL &&
+        certificateQueue.isPartial
+      ) {
+        certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
+      }
+
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
       let mapping_template = '';
       const mapping_dato_1 = this.getCertificateTypeTranslate(certificateSetting?.certificationType);
@@ -659,15 +721,15 @@ class CertificateMultipleService {
 
       if (programType?.abbr) {
         if (programType.abbr === program_type_abbr.curso || programType.abbr === program_type_abbr.curso_auditor) {
-          programTypeName = 'curso';
+          // programTypeName = 'curso';
           mapping_template = certificate_template.curso;
         }
         if (programType.abbr === program_type_abbr.programa || programType.abbr === program_type_abbr.programa_auditor) {
-          programTypeName = 'programa';
+          // programTypeName = 'programa';
           mapping_template = certificate_template.programa_diplomado;
         }
         if (programType.abbr === program_type_abbr.diplomado || programType.abbr === program_type_abbr.diplomado_auditor) {
-          programTypeName = 'diplomado';
+          // programTypeName = 'diplomado';
           mapping_template = certificate_template.programa_diplomado;
         }
       }
