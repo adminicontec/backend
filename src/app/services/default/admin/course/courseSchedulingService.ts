@@ -483,8 +483,8 @@ class CourseSchedulingService {
             }
             visibleAtMoodle = 1;
           }
-          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
-            await this.serviceSchedulingCancelled(response)
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && (prevSchedulingStatus === 'Confirmado' || prevSchedulingStatus === 'Programado')) {
+            await this.serviceSchedulingCancelled(response, prevSchedulingStatus !== 'Programado')
             visibleAtMoodle = 1;
           }
         }
@@ -1091,19 +1091,21 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingCancelled = async (courseScheduling) => {
+  private serviceSchedulingCancelled = async (courseScheduling, shouldSendToStudents = true) => {
     // @INFO Enviar notificación de cancelado al auxiliar del servicio
     await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel');
 
     let email_to_notificate = []
-    const userEnrolled = await Enrollment.find({
-      courseID: courseScheduling.moodle_id
-    }).select('id user')
-      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
-      .lean()
+    if (shouldSendToStudents) {
+      const userEnrolled = await Enrollment.find({
+        courseID: courseScheduling.moodle_id
+      }).select('id user')
+        .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+        .lean()
 
-    for await (const enrolled of userEnrolled) {
-      email_to_notificate.push(enrolled.user.email.toString())
+      for await (const enrolled of userEnrolled) {
+        email_to_notificate.push(enrolled.user.email.toString())
+      }
     }
 
     const courses = await CourseSchedulingDetails.find({

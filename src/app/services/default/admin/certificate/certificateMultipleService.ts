@@ -26,6 +26,8 @@ import { IBuildStudentsMoodleData, ICertificateMultipleBuildData, ICertificateMu
 import { CertificateSettingCriteria, CertificateSettingType, CertificateSettingTypeTranslate } from '@scnode_app/types/default/admin/course/certificateSettingsTypes';
 import { ICertificate, ILogoInformation, ISetCertificateParams, ISignatureInformation } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { BuildStudentsMoodleDataException } from './buildStudentsError';
+import { courseSchedulingService } from '../course/courseSchedulingService';
+import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 class CertificateMultipleService {
@@ -638,13 +640,13 @@ class CertificateMultipleService {
 
 
       // @INFO: Consultando servicio
-      const courseScheduling = await CourseScheduling.findOne({
-        _id: courseId
-      })
-      .populate({path: 'program', select: 'code'})
-      .populate({path: 'country', select: 'name'})
-      .populate({path: 'city', select: 'name'})
-      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+      const courseSchedulingQuery: any = await courseSchedulingService.findBy({
+        query: QueryValues.ONE,
+        where: [{ field: '_id', value: courseId }]
+      });
+
+      if (courseSchedulingQuery.status === 'error') return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
+      const courseScheduling = courseSchedulingQuery.scheduling
 
       const driver = attached['driver'];
       const attached_config = attached[driver];
@@ -833,9 +835,9 @@ class CertificateMultipleService {
   private getCertificateTypeTranslate = (certificateType: CertificateSettingType) => {
     switch (certificateType) {
       case CertificateSettingType.ATTENDANCE:
-        return CertificateSettingTypeTranslate.ATTENDANCE
+        return `${CertificateSettingTypeTranslate.ATTENDANCE} al`
       case CertificateSettingType.ATTENDANCE_APPROVAL:
-        return CertificateSettingTypeTranslate.ATTENDANCE_APPROVAL
+        return `${CertificateSettingTypeTranslate.ATTENDANCE_APPROVAL} el`
       default:
         return ''
     }
