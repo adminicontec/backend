@@ -28,13 +28,13 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
 
-    await this.sendSchedulingCertificateNotification();
+    //await this.sendSchedulingCertificateNotification();
 
     await this.sendSchedulingExamNotification();
 
-    await this.sendAssistanceNotification();
+    //await this.sendAssistanceNotification();
 
-    await this.sendSurveyNotifications();
+    //await this.sendSurveyNotifications();
 
     // @end
 
@@ -69,9 +69,9 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
 
     const schedulings = await CourseScheduling.find({
       schedulingStatus: { $in: status.map(s => s._id) },
-      // _id: {
-      //   $in: ids
-      // }
+      _id: {
+        $in: ['652418de403a1a0313569b01']
+      }
     })
     .populate({path: 'schedulingMode', select: 'id name'})
     .select('id moodle_id schedulingMode endDate metadata').lean();
@@ -152,7 +152,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
                       // @INFO: Para presencial / enlinea se debe validar la asistencia
                       const progress = academicDataByUser[student.user._id].progress || undefined
                       const percentage = progress && progress?.assistanceDetails?.percentage || 0
-                      if (percentage >= 75) {
+                      if (percentage >= 100) {
                         sendNotificationToStudent = true;
                       }
                     }
@@ -234,7 +234,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
             compareDate2.setMonth(compareDate2.getMonth() + 2);
             if (moment().format('YYYY - MM - DD') === moment(compareDate2).format('YYYY - MM - DD')) {
               // Revisar si hay certificados pendientes por descargar en el servicio
-              const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exist: false } });
+              const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exists: false } });
               if (certificates && certificates.length) {
                 await courseSchedulingNotificationsService.sendNotificationReminderCertificate(scheduling._id);
               }
