@@ -28,13 +28,13 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
 
-    //await this.sendSchedulingCertificateNotification();
+    await this.sendSchedulingCertificateNotification();
 
     await this.sendSchedulingExamNotification();
 
-    //await this.sendAssistanceNotification();
+    await this.sendAssistanceNotification();
 
-    //await this.sendSurveyNotifications();
+    await this.sendSurveyNotifications();
 
     // @end
 
@@ -69,9 +69,9 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
 
     const schedulings = await CourseScheduling.find({
       schedulingStatus: { $in: status.map(s => s._id) },
-      _id: {
-        $in: ['652418de403a1a0313569b01']
-      }
+      // _id: {
+      //   $in: ids
+      // }
     })
     .populate({path: 'schedulingMode', select: 'id name'})
     .select('id moodle_id schedulingMode endDate metadata').lean();
