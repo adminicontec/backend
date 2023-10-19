@@ -1091,21 +1091,21 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingCancelled = async (courseScheduling, shouldSendToStudents = true) => {
+  private serviceSchedulingCancelled = async (courseScheduling, shouldSendToStudentsAndTeachers = true) => {
     // @INFO Enviar notificación de cancelado al auxiliar del servicio
     await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel');
 
-    let email_to_notificate = []
-    if (shouldSendToStudents) {
-      const userEnrolled = await Enrollment.find({
-        courseID: courseScheduling.moodle_id
-      }).select('id user')
-        .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
-        .lean()
+    if (!shouldSendToStudentsAndTeachers) return
 
-      for await (const enrolled of userEnrolled) {
-        email_to_notificate.push(enrolled.user.email.toString())
-      }
+    let email_to_notificate = []
+    const userEnrolled = await Enrollment.find({
+      courseID: courseScheduling.moodle_id
+    }).select('id user')
+      .populate({ path: 'user', select: 'id email profile.first_name profile.last_name' })
+      .lean()
+
+    for await (const enrolled of userEnrolled) {
+      email_to_notificate.push(enrolled.user.email.toString())
     }
 
     const courses = await CourseSchedulingDetails.find({
