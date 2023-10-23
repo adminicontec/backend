@@ -49,7 +49,8 @@ class CourseSchedulingNotificationsService {
     type: 'started' | 'cancel' | 'modify' = 'started',
     populate?: boolean,
     changesFn?: TCourseSchedulingDetailsModificationFn | TCourseSchedulingModificationFn,
-    syncupSessionsInMoodle?: CourseSchedulingDetailsSync
+    syncupSessionsInMoodle?: CourseSchedulingDetailsSync,
+    subject?: string
   ) => {
     try {
       let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
@@ -173,7 +174,7 @@ class CourseSchedulingNotificationsService {
             emails: [emailNotificate.email],
             mailOptions: {
               // @ts-ignore
-              subject: i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject'),
+              subject: subject ? subject : (i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject')),
               html_template: {
                 path_layout: 'icontec',
                 path_template: path_template,

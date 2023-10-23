@@ -67,8 +67,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // // @INFO: Agregando usuarios
     // let user_ids = await this.addUsers(role_ids)
 
-    // // @INFO: Agregando tipos de publicaciones
-    // let post_type_ids = await this.addPostTypes()
+    // @INFO: Agregando tipos de publicaciones
+    let post_type_ids = await this.addPostTypes()
 
     // @INFO: Agregando tipos de ubicaciones
     // let post_location_ids = await this.addPostLocations()
@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    await this.addAttachedCategories();
+    // await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -1122,7 +1122,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {name: 'blog', description: 'Blogs'},
       {name: 'capsules', description: 'Capsulas'},
       {name: 'webinar', description: 'Webinars'},
-      {name: 'podcast', description: 'Podcast'}
+      {name: 'podcast', description: 'Podcast'},
+      {name: 'journal', description: 'Boletín'},
     ]
     for await (const postType of post_types) {
       const exists: any = await postTypeService.findBy({
