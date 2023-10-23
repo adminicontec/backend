@@ -1,7 +1,7 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment'
 import path from "path";
-import { program_type_abbr, certificate_template, public_dir, attached, AUDITOR_EXAM_REGEXP } from '@scnode_core/config/globals';
+import { customs, program_type_abbr, certificate_template, public_dir, attached, AUDITOR_EXAM_REGEXP } from '@scnode_core/config/globals';
 // @end
 
 // @import services
@@ -601,6 +601,12 @@ class CertificateMultipleService {
 
   private buildCertificateData = async (params: ICertificateMultipleBuildData) => {
     try {
+      const certificationMigration = customs?.certificateMigration || false
+      const formatImage = certificationMigration ? 'public_url' : 'base64'
+      const formatListModules = certificationMigration ? 'plain' : 'html'
+      const dimensionsLogos = {width: '233px', height: '70px'}
+      const dimensionsSignatures = {width: '180px', height: '70px'}
+
       const {courseId, userId, certificateSettingId, certificateHash, certificateConsecutive, certificateQueueId}  = params;
       const certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
@@ -657,21 +663,21 @@ class CertificateMultipleService {
         base_path = upload_config_base_path
       }
 
-      const logoImage64_1 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling?.path_certificate_icon_1);
+      const logoImage64_1 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling?.path_certificate_icon_1, formatImage, dimensionsLogos);
       if (logoImage64_1) {
         logoDataArray.push({
           imageBase64: logoImage64_1
         });
       }
 
-      const logoImage64_2 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_certificate_icon_2);
+      const logoImage64_2 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_certificate_icon_2, formatImage, dimensionsLogos);
       if (logoImage64_2) {
         logoDataArray.push({
           imageBase64: logoImage64_2
         });
       }
 
-      const signatureImage64_1 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_signature_1);
+      const signatureImage64_1 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_signature_1, formatImage, dimensionsSignatures);
       if (signatureImage64_1) {
         signatureDataArray.push({
           imageBase64: signatureImage64_1,
@@ -681,7 +687,7 @@ class CertificateMultipleService {
         });
       }
 
-      const signatureImage64_2 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_signature_2);
+      const signatureImage64_2 = certificateService.encodeAdditionaImageForCertificate(base_path, courseScheduling.path_signature_2, formatImage, dimensionsSignatures);
       if (signatureImage64_2) {
         signatureDataArray.push({
           imageBase64: signatureImage64_2,
@@ -757,7 +763,7 @@ class CertificateMultipleService {
         return oldDateObj > newDateObj ? oldDate : newDate;
       });
 
-      const mappingAcademicList = certificateService.formatAcademicModulesList(approvedModules, programTypeName);
+      const mappingAcademicList = certificateService.formatAcademicModulesList(approvedModules, programTypeName, formatListModules);
       const mapping_listado_cursos = mappingAcademicList.mappingModules;
 
       if (logoDataArray.length !== 0) {
@@ -772,28 +778,47 @@ class CertificateMultipleService {
       const approvedDate = maxDate ? new Date(maxDate) : courseScheduling.endDate
 
       const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
+
+      let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
+      let modulo = mapping_template;
+      let asistio = null
+      let fecha_certificado: any = currentDate;
+      let fecha_aprobacion = approvedDate;
+      let fecha_ultima_modificacion = null;
+      let fecha_renovacion;
+      let fecha_vencimiento;
+      let fecha_impresion: any = currentDate;
+
+      if (certificationMigration) {
+        intensidad = parseInt(intensidad)
+        modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+        asistio = '1'
+        fecha_certificado = fecha_certificado.toISOString().split('T')[0];
+        fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
+        fecha_impresion = fecha_impresion.toISOString().split('T')[0]
+      }
       const certificateParams: ICertificate = {
-        modulo: mapping_template,
+        modulo,
         numero_certificado: mapping_numero_certificado,
         correo: student?.email,
         documento: `${student?.profile.doc_type} ${student?.profile?.doc_number}`,
         nombre: studentFullName.toUpperCase(),
-        asistio: null,
+        asistio,
         certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
         certificado_ingles: '',
         alcance: '',
         alcance_ingles: '',
-        intensidad: generalUtility.getDurationFormatedForCertificate(mapping_intensidad),
+        intensidad,
         listado_cursos: mapping_listado_cursos,
         regional: '',
         ciudad: mapping_ciudad,
         pais: mapping_pais,
-        fecha_certificado: currentDate,
-        fecha_aprobacion: approvedDate,
-        fecha_ultima_modificacion: null,
-        fecha_renovacion: null,
-        fecha_vencimiento: null,
-        fecha_impresion: currentDate,
+        fecha_certificado,
+        fecha_aprobacion,
+        fecha_ultima_modificacion,
+        fecha_renovacion,
+        fecha_vencimiento,
+        fecha_impresion,
         dato_1: mapping_dato_1, // TODO: Revisar
         dato_2: moment(approvedDate.toISOString().replace('T00:00:00.000Z', '')).locale('es').format('LL'),
         // primer logo
