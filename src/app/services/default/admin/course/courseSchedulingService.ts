@@ -1093,7 +1093,7 @@ class CourseSchedulingService {
 
   private serviceSchedulingCancelled = async (courseScheduling, shouldSendToStudentsAndTeachers = true) => {
     // @INFO Enviar notificación de cancelado al auxiliar del servicio
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel');
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel', undefined, undefined, undefined, !shouldSendToStudentsAndTeachers ? 'Programación de servicio cancelada' : undefined);
 
     if (!shouldSendToStudentsAndTeachers) return
 
