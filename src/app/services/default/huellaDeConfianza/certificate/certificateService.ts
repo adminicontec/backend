@@ -866,17 +866,16 @@ class CertificateService {
     let certificateParamsArrayForRequest: ISetCertificateParams[] = [];  // return this Array
     try {
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
-      console.log('certificateParamsArrayForRequest', certificateParamsArrayForRequest)
-      return responseUtility.buildResponseFailed('json')
-      // Request to Create Certificate(s)
-      // let respProcessCertificate: any;
-      // respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
 
-      // return responseUtility.buildResponseSuccess('json', null, {
-      //   additional_parameters: {
-      //     respProcessCertificate
-      //   }
-      // });
+      // Request to Create Certificate(s)
+      let respProcessCertificate: any;
+      respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          respProcessCertificate
+        }
+      });
     }
 
     catch (e) {
