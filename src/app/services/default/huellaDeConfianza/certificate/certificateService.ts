@@ -866,16 +866,17 @@ class CertificateService {
     let certificateParamsArrayForRequest: ISetCertificateParams[] = [];  // return this Array
     try {
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
-
+      console.log('certificateParamsArrayForRequest', certificateParamsArrayForRequest)
+      return responseUtility.buildResponseFailed('json')
       // Request to Create Certificate(s)
-      let respProcessCertificate: any;
-      respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
+      // let respProcessCertificate: any;
+      // respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          respProcessCertificate
-        }
-      });
+      // return responseUtility.buildResponseSuccess('json', null, {
+      //   additional_parameters: {
+      //     respProcessCertificate
+      //   }
+      // });
     }
 
     catch (e) {
@@ -926,6 +927,8 @@ class CertificateService {
       const certificationMigration = customs?.certificateMigration || false
       const formatImage = certificationMigration ? 'public_url' : 'base64'
       const formatListModules = certificationMigration ? 'plain' : 'html'
+      const dimensionsLogos = {width: '233px', height: '70px'}
+      const dimensionsSignatures = {width: '180px', height: '70px'}
 
       let certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
@@ -988,23 +991,21 @@ class CertificateService {
       //#region   >>>> 2.2. Check for Logos and Signature
       console.log(`Check for Logos and Signature:`);
 
-
-
-      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage);
+      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage, dimensionsLogos);
       if (logoImage64_1) {
         logoDataArray.push({
           imageBase64: logoImage64_1
         });
       }
 
-      let logoImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_2, formatImage);
+      let logoImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_2, formatImage, dimensionsLogos);
       if (logoImage64_2) {
         logoDataArray.push({
           imageBase64: logoImage64_2
         });
       }
 
-      let signatureImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_1, formatImage);
+      let signatureImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_1, formatImage, dimensionsSignatures);
       if (signatureImage64_1) {
         signatureDataArray.push({
           imageBase64: signatureImage64_1,
@@ -1015,7 +1016,7 @@ class CertificateService {
         console.log(`Signature : ${signatureDataArray[0].signatoryName}`);
       }
 
-      let signatureImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_2, formatImage);
+      let signatureImage64_2 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_signature_2, formatImage, dimensionsSignatures);
       if (signatureImage64_2) {
         signatureDataArray.push({
           imageBase64: signatureImage64_2,
@@ -1247,28 +1248,29 @@ class CertificateService {
       }
 
       // check if is New Certificate or a re-issue
+      let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
+      let modulo = mapping_template;
+      let asistio = null
+      let fecha_certificado: any = currentDate;
+      let fecha_aprobacion = respCourse.scheduling.endDate;
+      let fecha_ultima_modificacion = null;
+      let fecha_renovacion = null;
+      let fecha_vencimiento = null;
+      let fecha_impresion: any = currentDate;
+
+      if (certificationMigration) {
+        intensidad = parseInt(intensidad)
+        modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+        asistio = '1'
+        fecha_certificado = fecha_certificado.toISOString().split('T')[0];
+        fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
+        fecha_impresion = fecha_impresion.toISOString().split('T')[0]
+      }
+
       if (isReissue == false) {
 
         // ***** New Certificate ***********
-
         //#region certificate type 1 Parameters (Academic type)
-        let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
-        let modulo = mapping_template;
-        let asistio = null
-        let fecha_certificado: any = currentDate;
-        let fecha_aprobacion = respCourse.scheduling.endDate;
-        let fecha_ultima_modificacion = null;
-        let fecha_renovacion = null;
-        let fecha_vencimiento = null;
-        let fecha_impresion: any = currentDate;
-        if (certificationMigration) {
-          intensidad = parseInt(intensidad)
-          modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
-          asistio = '1'
-          fecha_certificado = fecha_certificado.toISOString().split('T')[0];
-          fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
-          fecha_impresion = fecha_impresion.toISOString().split('T')[0]
-        }
 
         let certificateParams: ICertificate = {
           modulo,
@@ -1338,7 +1340,7 @@ class CertificateService {
           let location3 = null;
           let location8 = null;
 
-          let mappingAuditorList: any = this.formatAuditorModules(respCourse.scheduling.auditor_modules);
+          let mappingAuditorList: any = this.formatAuditorModules(respCourse.scheduling.auditor_modules, formatListModules);
           console.log(mappingAuditorList.mappingModules);
 
           if (logoDataArray.length != 0) {
@@ -1351,28 +1353,34 @@ class CertificateService {
             }
           }
 
+          let intensidadAuditor: any = generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration)
+
+          if (certificationMigration) {
+            intensidadAuditor = parseInt(intensidadAuditor)
+          }
+
           let auditorCertificateParams: ICertificate = {
-            modulo: mapping_template,
+            modulo,
             numero_certificado: mapping_numero_certificado + '-A',
             correo: respDataUser.user.email,
             documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
             nombre: respDataUser.user.profile.full_name.toUpperCase(),
-            asistio: null,
+            asistio,
             certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
             certificado_ingles: '',
             alcance: '',
             alcance_ingles: '',
-            intensidad: generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration),
+            intensidad: intensidadAuditor,
             listado_cursos: mappingAuditorList.mappingModules,
             regional: '',
             ciudad: mapping_ciudad,
             pais: mapping_pais,
-            fecha_certificado: currentDate,
-            fecha_aprobacion: respCourse.scheduling.endDate,  //currentDate,
+            fecha_certificado,
+            fecha_aprobacion,
             fecha_ultima_modificacion: null,
             fecha_renovacion: null,
             fecha_vencimiento: null,
-            fecha_impresion: currentDate,
+            fecha_impresion,
             dato_1: "Asistió y aprobó el",
             dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
 
@@ -2784,10 +2792,12 @@ class CertificateService {
     }
   }
 
-  public encodeAdditionaImageForCertificate = (base_path: string, imagePath: string, format: 'base64' | 'public_url' = 'base64') => {
+  public encodeAdditionaImageForCertificate = (base_path: string, imagePath: string, format: 'base64' | 'public_url' = 'base64', dimensions?: {width: string, height: string}) => {
     if (format === 'base64') {
-      const height = '70px';
-      const prefixMimeType = `<img style="height:${height}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
+      const height = dimensions?.height || '70px';
+      const width = dimensions?.width || undefined;
+
+      const prefixMimeType = `<img style="height:${height}; width:${width}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
       const sufixMimeType = `"/>`;
       let fullContentBase64 = '';
 
@@ -2894,17 +2904,23 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 2
    */
-  private formatAuditorModules = (auditorModules: any) => {
-
-    let mappingAuditorModulesList = '';
+  private formatAuditorModules = (auditorModules: any, format: 'html' | 'plain' = 'html') => {
+    let mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
     let totalDuration = 0;
-    mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
-    mappingAuditorModulesList += '<ul>'
-    auditorModules.forEach(element => {
-      totalDuration += element.duration;
-      mappingAuditorModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
-    });
-    mappingAuditorModulesList += '</ul>'
+
+    if (format === 'html') {
+      mappingAuditorModulesList += '<ul>'
+      auditorModules.forEach(element => {
+        totalDuration += element.duration;
+        mappingAuditorModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
+      });
+      mappingAuditorModulesList += '</ul>'
+    } else {
+      auditorModules.forEach(element => {
+        totalDuration += element.duration;
+        mappingAuditorModulesList += `${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`;
+      });
+    }
 
     return {
       mappingModules: mappingAuditorModulesList,
