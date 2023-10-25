@@ -716,6 +716,7 @@ class CertificateMultipleService {
         certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
       }
 
+      let dato_16 = undefined;
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
       let mapping_template = '';
       const mapping_dato_1 = this.getCertificateTypeTranslate(certificateSetting?.certificationType);
@@ -796,6 +797,7 @@ class CertificateMultipleService {
         fecha_certificado = fecha_certificado.toISOString().split('T')[0];
         fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
         fecha_impresion = fecha_impresion.toISOString().split('T')[0]
+        dato_16 = 'H'
       }
       const certificateParams: ICertificate = {
         modulo,
@@ -837,7 +839,8 @@ class CertificateMultipleService {
         dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
         dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-        dato_13: mapping_dato_13
+        dato_13: mapping_dato_13,
+        dato_16
       }
       certificateParamsArray.push({
         queueData: params,

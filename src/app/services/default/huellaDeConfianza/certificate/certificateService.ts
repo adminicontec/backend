@@ -1256,6 +1256,7 @@ class CertificateService {
       let fecha_renovacion = null;
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
+      let dato_16 = undefined;
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -1311,7 +1312,8 @@ class CertificateService {
           dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
           dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-          dato_13: mapping_dato_13
+          dato_13: mapping_dato_13,
+          dato_16,
         }
         console.log("[1]------------------------------------------");
         console.log("Set first Certificate: ");
@@ -1352,10 +1354,12 @@ class CertificateService {
             }
           }
 
+          let dato_16Auditor = undefined;
           let intensidadAuditor: any = generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration)
 
           if (certificationMigration) {
             intensidadAuditor = parseInt(intensidadAuditor)
+            dato_16Auditor = 'H'
           }
 
           let auditorCertificateParams: ICertificate = {
@@ -1399,7 +1403,8 @@ class CertificateService {
             dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
             dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-            dato_13: mapping_dato_13
+            dato_13: mapping_dato_13,
+            dato_16: dato_16Auditor
           }
           //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
           //certificateParams.certificado = 'Auditor en ' + respCourse.scheduling.program.name;
