@@ -28,6 +28,7 @@ import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { FileType } from 'basic-ftp';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
+import { qualifiedTeachersService } from '@scnode_app/services/default/admin/qualifiedTeachers/qualifiedTeachersService';
 
 // @end
 
@@ -89,6 +90,7 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
               switch(documentQueue.type) {
                 case 'Qualified Teacher':
                   response = await teacherService.processFile(params);
+                  await qualifiedTeachersService.sendNewQualifiedTeachersEmail();
                   break;
                 case 'Portfolio':
                   response = await portfolioProgramService.processFile(params);
