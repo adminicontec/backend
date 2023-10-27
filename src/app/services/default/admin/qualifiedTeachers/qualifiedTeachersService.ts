@@ -239,7 +239,6 @@ class QualifiedTeachersService {
 
   public sendNewQualifiedTeachersEmail = async () => {
     const qualifiedTeachers: IQualifiedTeacher[] = await QualifiedTeachers.find({ isEmailSent: false }).populate([{ path: 'teacher', select: 'email' }])
-    console.log({ qualifiedTeachers: qualifiedTeachers?.length })
     if (!qualifiedTeachers?.length) return
     const coursesByTeachers = qualifiedTeachers.reduce((accum: IQualifiedTeacherByTeacherPDF[], course: IQualifiedTeacher) => {
       if (course.teacher) {
@@ -247,7 +246,7 @@ class QualifiedTeachersService {
         const idx = accum.findIndex((item) => item.teacher === course.teacher?._id?.toString())
         if (idx>=0) {
           accum[idx].courses.push({
-            modular: course.modular,
+            modular: course?.fileMappedData?.modular,
             code: course.courseCode,
             courseName: course.courseName,
           })
@@ -258,7 +257,7 @@ class QualifiedTeachersService {
             // @ts-ignore
             email: course.teacher?.email,
             courses: [{
-              modular: course.modular,
+              modular: course?.fileMappedData?.modular,
               code: course.courseCode,
               courseName: course.courseName,
             }]
@@ -267,7 +266,6 @@ class QualifiedTeachersService {
       }
       return accum
     }, [])
-    console.log({ coursesByTeachers: JSON.stringify(coursesByTeachers) })
     if (!coursesByTeachers?.length) return
     for (const teacherInfo of coursesByTeachers) {
       const path_template = 'user/qualifiedTeacher';
@@ -275,7 +273,7 @@ class QualifiedTeachersService {
       await mailService.sendMail({
         emails: [teacherInfo.email],
         mailOptions: {
-          subject: 'Cursos calificados',
+          subject: 'Nueva calificación docente registrada en Campus Digital',
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,

@@ -43,6 +43,11 @@ const QualifiedTeachersSchema = new Schema({
   isEmailSent: {
     type: Schema.Types.Boolean,
     default: true
+  },
+  fileMappedData: {
+    modular: {
+      type: Schema.Types.String
+    }
   }
   // @end
 }, {

@@ -23,6 +23,9 @@ export interface IQualifiedTeacher{
   action?:string,
   sheetName?:string
   isEmailSent?: boolean
+  fileMappedData?: {
+    modular?: string
+  }
 }
 
 export interface IQualifiedTeacherPDFInfo {

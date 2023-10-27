@@ -147,6 +147,7 @@ class TeacherService {
       console.log('Extract Tutores calificados')
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
+      console.log('Extract excel data finished!!!')
       let errorLog = []
       let processLog = []
       let respProcessQualifiedTeacherData: any = {}
@@ -382,7 +383,8 @@ class TeacherService {
             courseCode: element['Código / Versión del Curso'] ? element['Código / Versión del Curso'].trim() : null,
             versionStatus: element['Estado de la Versión'] ? element['Estado de la Versión'].trim() : null,
             courseName: element['Nombre Curso'] ? element['Nombre Curso'].trim() : null,
-            qualifiedDate: qualifiedDate
+            qualifiedDate: qualifiedDate,
+            modular: element['Modular'] ? element['Modular'].trim() : null
           }
 
           console.log("--------------");
@@ -426,7 +428,10 @@ class TeacherService {
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
             status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus as QualifiedTeacherStatus : QualifiedTeacherStatus.INACTIVE,
-            sheetName: sheetname
+            sheetName: sheetname,
+            fileMappedData: {
+              modular: contentRowTeacher.modular
+            }
           }
 
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");
