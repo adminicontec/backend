@@ -83,6 +83,7 @@ export interface IQualifiedProfessional {
   versionStatus: string,
   courseName: string,
   qualifiedDate: string,
+  modular: string
 }
 
 export interface IMassiveLoad {

@@ -40,7 +40,15 @@ const QualifiedTeachersSchema = new Schema({
     type: Schema.Types.Boolean,
     required: true,
   },
-
+  isEmailSent: {
+    type: Schema.Types.Boolean,
+    default: true
+  },
+  fileMappedData: {
+    modular: {
+      type: Schema.Types.String
+    }
+  }
   // @end
 }, {
   collection: 'qualified_teachers', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

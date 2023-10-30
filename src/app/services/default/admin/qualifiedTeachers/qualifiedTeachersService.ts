@@ -17,7 +17,8 @@ import { QualifiedTeachers } from '@scnode_app/models'
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ITeacherProfile, ITeacherProfileDelete } from '@scnode_app/types/default/admin/teacherProfile/teacherProfileTypes'
-import { IQualifiedTeacher, IQualifiedTeacherQuery, IQualifiedTeacherDelete, QualifiedTeacherStatus } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
+import { IQualifiedTeacher, IQualifiedTeacherQuery, IQualifiedTeacherDelete, QualifiedTeacherStatus, IQualifiedTeacherByTeacherPDF } from '@scnode_app/types/default/admin/qualifiedTeachers/qualifiedTeachersTypes'
+import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 
 // @end
 
@@ -187,6 +188,7 @@ class QualifiedTeachersService {
         console.log('Qualified Teacher Create:');
         console.table(params);
         params.status = params.status.toUpperCase() as QualifiedTeacherStatus;
+        params.isEmailSent = false
         const response: any = await QualifiedTeachers.create(params)
         console.log(response);
         console.log("***********");
@@ -235,6 +237,57 @@ class QualifiedTeachersService {
     }
   }
 
+  public sendNewQualifiedTeachersEmail = async () => {
+    const qualifiedTeachers: IQualifiedTeacher[] = await QualifiedTeachers.find({ isEmailSent: false }).populate([{ path: 'teacher', select: 'email' }])
+    if (!qualifiedTeachers?.length) return
+    const coursesByTeachers = qualifiedTeachers.reduce((accum: IQualifiedTeacherByTeacherPDF[], course: IQualifiedTeacher) => {
+      if (course.teacher) {
+        // @ts-ignore
+        const idx = accum.findIndex((item) => item.teacher === course.teacher?._id?.toString())
+        if (idx>=0) {
+          accum[idx].courses.push({
+            modular: course?.fileMappedData?.modular,
+            code: course.courseCode,
+            courseName: course.courseName,
+          })
+        } else {
+          accum.push({
+            // @ts-ignore
+            teacher: course.teacher?._id?.toString(),
+            // @ts-ignore
+            email: course.teacher?.email,
+            courses: [{
+              modular: course?.fileMappedData?.modular,
+              code: course.courseCode,
+              courseName: course.courseName,
+            }]
+          })
+        }
+      }
+      return accum
+    }, [])
+    if (!coursesByTeachers?.length) return
+    for (const teacherInfo of coursesByTeachers) {
+      const path_template = 'user/qualifiedTeacher';
+      const notificationSource = `qualified_teachers_notification_${teacherInfo.teacher}`;
+      await mailService.sendMail({
+        emails: [teacherInfo.email],
+        mailOptions: {
+          subject: 'Nueva calificación docente registrada en Campus Digital',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { courses: teacherInfo.courses }
+          }
+        },
+        notification_source: notificationSource,
+      })
+    }
+    await QualifiedTeachers.updateMany(
+      { isEmailSent: false },
+      { $set: { isEmailSent: true } }
+   );
+  }
 
 }
 
