@@ -327,7 +327,7 @@ class CourseDataService {
   public fetchCourses = async (params: IFetchCourses) => {
 
     try {
-      const paging = (params.pageNumber && params.nPerPage) ? true : false
+      let paging = (params.pageNumber && params.nPerPage) ? true : false
 
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
@@ -489,6 +489,8 @@ class CourseDataService {
       let registers = []
 
       try {
+        if (params.new) paging = false
+
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -535,6 +537,7 @@ class CourseDataService {
 
       // @INFO Filtrar solo los cursos nuevos
       if (params.new && registers && registers.length) {
+        const newPaging = (params.pageNumber && params.nPerPage) ? true : false
         const programs = registers.map((r) => r.program._id)
         const courses = await Course.find({ program: { $in: programs } }).lean()
         registers = registers.reduce((accumCourses, schedule) => {
@@ -547,7 +550,9 @@ class CourseDataService {
               const endPublic = moment(schedule.endPublicationDate)
               const today = moment(new Date())
               if (today.isBetween(startNew, endNew) && today.isBetween(startPublic, endPublic)) {
-                accumCourses.push(schedule);
+                if (!newPaging || newPaging && accumCourses.length < params.nPerPage) {
+                  accumCourses.push(schedule);
+                }
               }
             }
           }

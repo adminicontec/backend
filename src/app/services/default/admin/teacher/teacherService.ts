@@ -137,13 +137,17 @@ class TeacherService {
       // }
 
       // 1. Extracción de información de Docentes
+      console.log('Extract base de docentes y tutores')
       let dataWSTeachersBase = await xlsxUtility.extractXLSX(content.data, 'base docentes y tutores', 0);
       // 2. Extracción de Cursos y Docentes calificados
+      console.log('Extract Profesionales calificados')
       let dataWSProfessionals = await xlsxUtility.extractXLSX(content.data, 'Profesionales calificados', 3);
 
       // 3. Extracción de Tutores calificados
+      console.log('Extract Tutores calificados')
       let dataWSTutores = await xlsxUtility.extractXLSX(content.data, 'Tutores calificados', 2);
 
+      console.log('Extract excel data finished!!!')
       let errorLog = []
       let processLog = []
       let respProcessQualifiedTeacherData: any = {}
@@ -351,44 +355,15 @@ class TeacherService {
   }
 
   private processQualifiedTeacherData = async (dataWSQualifiedTeachersBase: any,
-    // dataModularMigration: any,
     sheetname: string) => {
-
-    // let modularList: any = await modularService.list();
 
     let contentRowTeacher: IQualifiedProfessional;
     let registerQualifiedTeacher: IQualifiedTeacher;
     let processResult: IQualifiedTeacher[] = [];
     let processError = [];
-    // let newModulars = [];
     let test = []
 
     try {
-
-    //   //#region - Update modulars from Migration
-    //   // Insert the new Modulars from Migration file and then update the general Modular list
-    //   console.log('################################################');
-    //   for await (const row of dataModularMigration) {
-    //     //console.log("Search for: " + row.modular_nuevo);
-    //     let searchModular: any = modularList.modulars.find(field => field['name'].toLowerCase() == row.modular_nuevo.toLowerCase());
-    //     //console.log('-----------------');
-    //     //console.log(searchModular);
-    //     if (!searchModular) {
-    //       newModulars.push({
-    //         anterior: row.modular_anterior,
-    //         nuevo: row.modular_nuevo,
-    //       });
-    //       // Insert new Modular:
-    //       const respModular: any = await modularService.insertOrUpdate({
-    //         name: row.modular_nuevo,
-    //         description: row.modular_nuevo
-    //       });
-    //       if (respModular.status == 'success') {
-    //         console.log("Modular Insertion: " + respModular.modular._id + " - " + respModular.modular.name);
-    //         modularList = await modularService.list();
-    //       }
-    //     }
-    //   }
 
       if (dataWSQualifiedTeachersBase != null) {
 
@@ -396,7 +371,6 @@ class TeacherService {
         for await (const element of dataWSQualifiedTeachersBase) {
 
           let flagAddRegister = false;
-          // console.log(`Index: ${indexP}, Fecha: ${element['Fecha Calificación']}, ${element['Fecha Calificación'].toString()}`)
           let stringDate = (element['Fecha Calificación'] && element['Fecha Calificación'].trim() !== "") ? element['Fecha Calificación'].toString() : null;
           let qualifiedDate = (stringDate) ? moment(stringDate).format('YYYY-MM-DD') : null;
 
@@ -406,80 +380,15 @@ class TeacherService {
           contentRowTeacher = {
             documentID: element['Documento de Identidad'] ? element['Documento de Identidad'].trim() : null,
             email: element['Correo Electrónico'] ? element['Correo Electrónico'].trim() : null,
-            // modular: element['Modular'],
             courseCode: element['Código / Versión del Curso'] ? element['Código / Versión del Curso'].trim() : null,
             versionStatus: element['Estado de la Versión'] ? element['Estado de la Versión'].trim() : null,
             courseName: element['Nombre Curso'] ? element['Nombre Curso'].trim() : null,
-            qualifiedDate: qualifiedDate
+            qualifiedDate: qualifiedDate,
+            modular: element['Modular'] ? element['Modular'].trim() : null
           }
 
           console.log("--------------");
           console.log(`Record for ${contentRowTeacher.documentID} ${element['Nombre Profesional']}- code: ${contentRowTeacher.courseCode}`);
-
-          //#region   ------------- MODULAR -------------
-          // 2. Insert Modular: singleProfessionalLoadContent.modular
-
-          // if (contentRowTeacher.modular == null || contentRowTeacher.modular === '#N/D') {
-          //   // error en modular
-          //   // console.log(" ERROR AT  ROW: [" + indexP + "]");
-
-          //   processError.push({
-          //     sheetName: sheetname,
-          //     errorType: 'ModularEmpty',
-          //     row: indexP,
-          //     col: 'Modular',
-          //     message: 'el valor del Modular está vacío',
-          //     data: contentRowTeacher
-          //   });
-          //   test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
-
-          //   indexP++
-          //   continue;
-          // }
-
-          // let modularID;
-
-          // let searchOldModular: any = dataModularMigration.find(field =>
-          //   field.modular_anterior.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-
-          // if (searchOldModular) {
-          //   // take pair value for 'Modular nuevo' and get ModularId
-          //   let localModular: any = modularList.modulars.find(x =>
-          //     x.name.toLowerCase() == searchOldModular.modular_nuevo.toLowerCase().trim());
-          //   if (localModular) {
-          //     modularID = localModular._id;
-          //     flagAddRegister = true;
-          //   }
-          // }
-          // else {
-          //   let searchNewModular: any = dataModularMigration.find(field =>
-          //     field.modular_nuevo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") == generalUtility.normalizeString(contentRowTeacher.modular).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-          //   //field.modular_nuevo.toLowerCase() == contentRowTeacher.modular.toLowerCase());
-          //   if (searchNewModular) {
-          //     let localModular: any = modularList.modulars.find(x =>
-          //       x.name.toLowerCase() == searchNewModular.modular_nuevo.toLowerCase().trim());
-          //     if (localModular) {
-          //       // take ID
-          //       // console.log('NEW:\t' + localModular.name + '\t[' + localModular._id) + ']';
-          //       modularID = localModular._id;
-          //       flagAddRegister = true;
-          //     }
-          //   }
-          //   else {
-          //     processError.push({
-          //       sheetName: sheetname,
-          //       errorType: 'ModularMissmatch',
-          //       message: `Modular [${contentRowTeacher.modular}] no encontrado en hoja de Migración para el docente con numero de documento ${contentRowTeacher.documentID}`,
-          //       row: indexP,
-          //       col: 'Modular',
-          //       data: contentRowTeacher.modular
-          //     });
-          //     test.push(`Index: ${indexP} contentRowTeacher: ${contentRowTeacher.documentID} | ${contentRowTeacher.modular}`)
-          //     indexP++
-          //     continue;
-          //   }
-          // }
-          //#endregion
 
           //#region --------------- Get User Id from numDoc ---------------
 
@@ -519,7 +428,10 @@ class TeacherService {
             evaluationDate: new Date(contentRowTeacher.qualifiedDate),
             isEnabled: true,
             status: (contentRowTeacher.versionStatus != null || (contentRowTeacher.versionStatus != '#N/D')) ? contentRowTeacher.versionStatus as QualifiedTeacherStatus : QualifiedTeacherStatus.INACTIVE,
-            sheetName: sheetname
+            sheetName: sheetname,
+            fileMappedData: {
+              modular: contentRowTeacher.modular
+            }
           }
 
           // console.log("::::::::::::::::::::::::::::::::::::::::::::::::");

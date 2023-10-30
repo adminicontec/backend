@@ -22,6 +22,22 @@ export interface IQualifiedTeacher{
   observations?: string,
   action?:string,
   sheetName?:string
+  isEmailSent?: boolean
+  fileMappedData?: {
+    modular?: string
+  }
+}
+
+export interface IQualifiedTeacherPDFInfo {
+  modular: string
+  code: string
+  courseName: string
+}
+
+export interface IQualifiedTeacherByTeacherPDF {
+  teacher: string
+  email: string
+  courses: IQualifiedTeacherPDFInfo[]
 }
 
 export interface IQualifiedTeacherDelete{
