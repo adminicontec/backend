@@ -75,7 +75,7 @@ class AttendanceService {
           {
             error_key: {
               key: 'moodle_attendance.exception',
-              params: { respMoodle }
+              params: { error: typeof respMoodle === 'string' ? respMoodle : JSON.stringify(respMoodle) }
             }
           });
       }
