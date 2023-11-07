@@ -15,7 +15,7 @@ import { attached } from "@scnode_core/config/globals";
 // @end
 
 // @import types Import types
-import {FileFormat, UploadConfig, AttachedDriver} from "@scnode_core/types/default/attached/attachedTypes"
+import {FileFormat, UploadConfig, AttachedDriver, IFileDimensions} from "@scnode_core/types/default/attached/attachedTypes"
 // @end
 
 // Dirección URL del plugin utilizado - https://github.com/richardgirges/express-fileupload
@@ -135,12 +135,32 @@ class AttachedUtility {
         continue;
       }
 
-      if (this.config?.file_dimensions?.width && this.config?.file_dimensions?.height) {
+      if (this.config?.file_dimensions) {
         const dimensions = sizeOf(upload['full_path_file'])
         const { width, height } = dimensions;
-        if (!(width <= this.config.file_dimensions.width && height <= this.config.file_dimensions.height)) {
-          files_status_upload[i].reason = `Las dimensiones del archivo no pueden ser superior a ancho: ${this.config.file_dimensions.width}px alto: ${this.config.file_dimensions.height}px`;
-          continue;
+        const file_dimensions: IFileDimensions = this.config.file_dimensions;
+        if (file_dimensions?.min && file_dimensions.max) {
+          if (
+            !(
+              width >= file_dimensions.min.width &&
+              width <= file_dimensions.max.width &&
+              height >= file_dimensions.min.height &&
+              height <= file_dimensions.max.height
+            )
+          ) {
+            files_status_upload[i].reason = `Las dimensiones del archivo ${file.name} no pueden ser inferior a ancho: ${file_dimensions.min.width}px alto: ${file_dimensions.min.height}px y superior a ancho: ${file_dimensions.max.width}px alto: ${file_dimensions.max.height}px`;
+            continue;
+          }
+        } else if (file_dimensions.min) {
+          if (width < file_dimensions.min.width || height < file_dimensions.min.height) {
+            files_status_upload[i].reason = `Las dimensiones del archivo ${file.name} no pueden ser inferior a ancho: ${file_dimensions.min.width}px alto: ${file_dimensions.min.height}px`;
+            continue;
+          }
+        } else if (file_dimensions.max) {
+          if (width > file_dimensions.max.width || height > file_dimensions.max.height) {
+            files_status_upload[i].reason = `Las dimensiones del archivo ${file.name} no pueden ser superior a ancho: ${file_dimensions.max.width}px alto: ${file_dimensions.max.height}px`;
+            continue;
+          }
         }
       }
 
