@@ -1261,7 +1261,7 @@ class CertificateService {
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
-        modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+        modulo = respCourse.scheduling.program.code // 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
         asistio = '1'
         fecha_certificado = fecha_certificado.toISOString().split('T')[0];
         fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
