@@ -1407,6 +1407,7 @@ class CertificateService {
             dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
             dato_13: mapping_dato_13,
+            dato_15,
             dato_16: dato_16Auditor
           }
           //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
