@@ -1258,6 +1258,7 @@ class CertificateService {
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_16 = undefined;
+      let dato_15 = ''
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -1314,6 +1315,7 @@ class CertificateService {
           dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
           dato_13: mapping_dato_13,
+          dato_15,
           dato_16,
         }
         console.log("[1]------------------------------------------");
