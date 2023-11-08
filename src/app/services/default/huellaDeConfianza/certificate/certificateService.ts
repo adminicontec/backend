@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import path from "path";
+const sizeOf = require('image-size')
 import moment from 'moment'
 import { Base64 } from 'js-base64';
 import { host, public_dir, attached, AUDITOR_EXAM_REGEXP } from "@scnode_core/config/globals";
@@ -926,8 +927,8 @@ class CertificateService {
       const certificationMigration = customs?.certificateMigration || false
       const formatImage = certificationMigration ? 'public_url' : 'base64'
       const formatListModules = certificationMigration ? 'plain' : 'html'
-      const dimensionsLogos = {width: '233px', height: '70px'}
-      const dimensionsSignatures = {width: '180px', height: '70px'}
+      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
+      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
 
       let certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
@@ -990,7 +991,7 @@ class CertificateService {
       //#region   >>>> 2.2. Check for Logos and Signature
       console.log(`Check for Logos and Signature:`);
 
-      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage, dimensionsLogos);
+      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage, {...dimensionsLogos, position: 'right'});
       if (logoImage64_1) {
         logoDataArray.push({
           imageBase64: logoImage64_1
@@ -1241,8 +1242,8 @@ class CertificateService {
           location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
         }
         else {
-          location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-          location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
+          location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+          location3 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
         }
       }
 
@@ -1257,10 +1258,11 @@ class CertificateService {
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_16 = undefined;
+      let dato_15 = ''
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
-        modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+        modulo = respCourse.scheduling.program.code // 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
         asistio = '1'
         fecha_certificado = fecha_certificado.toISOString().split('T')[0];
         fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
@@ -1313,6 +1315,7 @@ class CertificateService {
           dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
           dato_13: mapping_dato_13,
+          dato_15,
           dato_16,
         }
         console.log("[1]------------------------------------------");
@@ -1404,6 +1407,7 @@ class CertificateService {
             dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
             dato_13: mapping_dato_13,
+            dato_15,
             dato_16: dato_16Auditor
           }
           //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
@@ -2796,13 +2800,12 @@ class CertificateService {
     }
   }
 
-  public encodeAdditionaImageForCertificate = (base_path: string, imagePath: string, format: 'base64' | 'public_url' = 'base64', dimensions?: {width: string, height: string}) => {
+  public encodeAdditionaImageForCertificate = (base_path: string, imagePath: string, format: 'base64' | 'public_url' = 'base64', dimensions?: {width: number, height: number, position: string}) => {
     if (format === 'base64') {
-      const height = dimensions?.height || '70px';
-      const width = dimensions?.width || undefined;
+      const height = dimensions?.height || 70;
+      const width = dimensions?.width || 233;
+      const position = dimensions?.position || 'center'
 
-      const prefixMimeType = `<img style="height:${height}; width:${width}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
-      const sufixMimeType = `"/>`;
       let fullContentBase64 = '';
 
       if (imagePath) {
@@ -2810,6 +2813,11 @@ class CertificateService {
         let filePath = `${base_path}/${this.default_logo_path}/${imagePath}`;
 
         if (fileUtility.fileExists(filePath) === true) {
+          const dimensionsFile = sizeOf(filePath)
+          const {width: withImage, height: heightImage} = this.getImageDimensions({width, height}, dimensionsFile)
+          const prefixMimeType = `<img style="float: ${position}; height:${heightImage}; width:${withImage}; margin-bottom:0px; margin-left:0px; margin-right:0px; margin-top:0px" src="data:image/png;base64,`;
+          const sufixMimeType = `"/>`;
+
           const contentFile = fileUtility.readFileSyncBuffer(filePath);
           if (contentFile && contentFile.length > 0) {
             const dataArray = Buffer.from(contentFile);
@@ -2824,6 +2832,21 @@ class CertificateService {
       }
     }
     return null;
+  }
+
+  private getImageDimensions = (valuesDefault: {width: number, height: number}, imageDimensions: {width: number, height: number}) => {
+    const relationDefault = valuesDefault.height / valuesDefault.width
+    const relationImage = imageDimensions.height / imageDimensions.width
+    let withImage = '';
+    let heightImage = '';
+    if (relationImage > relationDefault) {
+      heightImage = `${valuesDefault.height}px`;
+      withImage = `${Math.ceil(valuesDefault.height / relationImage)}px`
+    } else {
+      withImage = `${valuesDefault.width}px`
+      heightImage = `${Math.ceil(valuesDefault.width * relationImage)}px`;
+    }
+    return {width: withImage, height: heightImage}
   }
 
   public getProgramTypeFromCode = (code: string) => {

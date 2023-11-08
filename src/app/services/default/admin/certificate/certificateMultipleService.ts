@@ -604,8 +604,8 @@ class CertificateMultipleService {
       const certificationMigration = customs?.certificateMigration || false
       const formatImage = certificationMigration ? 'public_url' : 'base64'
       const formatListModules = certificationMigration ? 'plain' : 'html'
-      const dimensionsLogos = {width: '233px', height: '70px'}
-      const dimensionsSignatures = {width: '180px', height: '70px'}
+      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
+      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
 
       const {courseId, userId, certificateSettingId, certificateHash, certificateConsecutive, certificateQueueId}  = params;
       const certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
@@ -771,8 +771,8 @@ class CertificateMultipleService {
         if (logoDataArray.length == 1) {
           location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
         } else {
-          location3 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
-          location8 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
+          location8 = (logoDataArray[0]) ? logoDataArray[0].imageBase64 : null;
+          location3 = (logoDataArray[1]) ? logoDataArray[1].imageBase64 : null;
         }
       }
 
@@ -789,6 +789,7 @@ class CertificateMultipleService {
       let fecha_renovacion;
       let fecha_vencimiento;
       let fecha_impresion: any = currentDate;
+      let dato_15 = ''
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -840,6 +841,7 @@ class CertificateMultipleService {
         dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
         dato_13: mapping_dato_13,
+        dato_15,
         dato_16
       }
       certificateParamsArray.push({
