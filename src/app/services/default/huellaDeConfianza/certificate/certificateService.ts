@@ -2727,8 +2727,10 @@ class CertificateService {
   }
 
   public certificateUrlV2 = (item) => {
+    const certificationMigration = customs?.certificateMigration || false
+    const ext = certificationMigration ? '' : '.pdf'
     return item?.hash && item?.hash !== ''
-      ? `${customs['certificateBaseUrl']}/${item.hash}.pdf`
+      ? `${customs['certificateBaseUrl']}/${item.hash}${ext}`
       : null
   }
 
@@ -2911,7 +2913,7 @@ class CertificateService {
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
-          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`
+          mappingAcademicModulesList += `- ${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}).\\n`
           if (element.duration)
             totalDuration += element.duration;
         });
