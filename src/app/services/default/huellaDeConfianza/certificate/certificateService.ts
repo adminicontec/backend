@@ -2250,9 +2250,11 @@ class CertificateService {
         responseIssuer.serviceResponse = 'N/A'
         responseIssuer.responseService = respIssuer
         if (respIssuer?.resultado && respIssuer?.codigo === '200') {
+          // const urlSplited = respIssuer?.url.split('/')
           responseIssuer.status = 'success';
           responseIssuer.certificate = {
-            hash: respIssuer?.resultado,
+            hash: respIssuer?.hash,
+            // hash:urlSplited[urlSplited.length - 1],
             url: respIssuer?.url,
           }
         }
