@@ -1212,7 +1212,7 @@ class CertificateService {
 
             //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
             if (progressData.approved_modules) {
-              mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, null, formatListModules);
+              mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, null, formatListModules, false);
               mapping_listado_cursos = mappingAcademicList.mappingModules;
               mapping_intensidad = mappingAcademicList.totalDuration;
             }
@@ -2889,8 +2889,10 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 1
    */
-  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html') => {
-    let mappingAcademicModulesList = 'El contenido comprendió: <br/>';
+  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html', showHeader: boolean = true) => {
+    let mappingAcademicModulesList = '';
+    if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
+
     let totalDuration = 0;
     try {
       if (format === 'html') {
