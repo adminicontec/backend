@@ -2595,37 +2595,16 @@ class CertificateService {
         query['_id'] = params.certificateQueueId
       }
 
-      await CertificateQueue.updateMany(query, {
-        $set: {
-          status: params.status || "Re-issue"
-        }
-      })
-      const certificates = []
+      await CertificateQueue.delete(query)
 
-      const certificatesQuery = await CertificateQueue.find({
-        userId: params.userId,
+      await certificateQueueService.insertOrUpdate({
+        users: [params.userId],
         courseId: params.courseId,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue'] }
-      });
-
-      for (let itemCertificate of certificatesQuery) {
-        if (itemCertificate.certificate.hash) {
-          itemCertificate.certificate.pdfPath = this.certificateUrlV2(itemCertificate.certificate)
-        }
-        // if (itemCertificate.certificate.pdfPath) {
-        //   itemCertificate.certificate.pdfPath = this.certificateUrl(itemCertificate.certificate.pdfPath)
-        // }
-        if (itemCertificate.certificate.imagePath) {
-          itemCertificate.certificate.imagePath = this.certificateUrl(itemCertificate.certificate.imagePath)
-        }
-        certificates.push(itemCertificate);
-      }
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          certificates
-        }
+        auxiliar: params.auxiliar,
+        status: "New"
       })
+
+      return responseUtility.buildResponseSuccess('json', null)
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }

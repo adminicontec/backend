@@ -147,6 +147,7 @@ export interface ICertificateReGenerate {
   courseId: string
   certificateQueueId?: string
   status?: string
+  auxiliar?: string;
 }
 
 export interface IGenerateCertificatePdf {
