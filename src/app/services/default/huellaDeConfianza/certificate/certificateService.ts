@@ -1212,7 +1212,7 @@ class CertificateService {
 
             //#region Listado de Módulos Aprobados (cursos) que comprende el programa <li>
             if (progressData.approved_modules) {
-              mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, null, formatListModules);
+              mappingAcademicList = this.formatAcademicModulesList(progressData.approved_modules, null, formatListModules, false);
               mapping_listado_cursos = mappingAcademicList.mappingModules;
               mapping_intensidad = mappingAcademicList.totalDuration;
             }
@@ -2250,9 +2250,11 @@ class CertificateService {
         responseIssuer.serviceResponse = 'N/A'
         responseIssuer.responseService = respIssuer
         if (respIssuer?.resultado && respIssuer?.codigo === '200') {
+          // const urlSplited = respIssuer?.url.split('/')
           responseIssuer.status = 'success';
           responseIssuer.certificate = {
-            hash: respIssuer?.resultado,
+            hash: respIssuer?.hash,
+            // hash:urlSplited[urlSplited.length - 1],
             url: respIssuer?.url,
           }
         }
@@ -2593,37 +2595,16 @@ class CertificateService {
         query['_id'] = params.certificateQueueId
       }
 
-      await CertificateQueue.updateMany(query, {
-        $set: {
-          status: params.status || "Re-issue"
-        }
-      })
-      const certificates = []
+      await CertificateQueue.delete(query)
 
-      const certificatesQuery = await CertificateQueue.find({
-        userId: params.userId,
+      await certificateQueueService.insertOrUpdate({
+        users: [params.userId],
         courseId: params.courseId,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue'] }
-      });
-
-      for (let itemCertificate of certificatesQuery) {
-        if (itemCertificate.certificate.hash) {
-          itemCertificate.certificate.pdfPath = this.certificateUrlV2(itemCertificate.certificate)
-        }
-        // if (itemCertificate.certificate.pdfPath) {
-        //   itemCertificate.certificate.pdfPath = this.certificateUrl(itemCertificate.certificate.pdfPath)
-        // }
-        if (itemCertificate.certificate.imagePath) {
-          itemCertificate.certificate.imagePath = this.certificateUrl(itemCertificate.certificate.imagePath)
-        }
-        certificates.push(itemCertificate);
-      }
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          certificates
-        }
+        auxiliar: params.auxiliar,
+        status: "New"
       })
+
+      return responseUtility.buildResponseSuccess('json', null)
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -2727,8 +2708,10 @@ class CertificateService {
   }
 
   public certificateUrlV2 = (item) => {
+    const certificationMigration = customs?.certificateMigration || false
+    const ext = certificationMigration ? '' : '.pdf'
     return item?.hash && item?.hash !== ''
-      ? `${customs['certificateBaseUrl']}/${item.hash}.pdf`
+      ? `${customs['certificateBaseUrl']}/${item.hash}${ext}`
       : null
   }
 
@@ -2885,8 +2868,10 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 1
    */
-  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html') => {
-    let mappingAcademicModulesList = 'El contenido comprendió: <br/>';
+  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html', showHeader: boolean = true) => {
+    let mappingAcademicModulesList = '';
+    if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
+
     let totalDuration = 0;
     try {
       if (format === 'html') {
@@ -2911,7 +2896,7 @@ class CertificateService {
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
-          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`
+          mappingAcademicModulesList += `- ${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}).\\n`
           if (element.duration)
             totalDuration += element.duration;
         });
