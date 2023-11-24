@@ -601,12 +601,6 @@ class CertificateMultipleService {
 
   private buildCertificateData = async (params: ICertificateMultipleBuildData) => {
     try {
-      const certificationMigration = customs?.certificateMigration || false
-      const formatImage = certificationMigration ? 'public_url' : 'base64'
-      const formatListModules = certificationMigration ? 'plain' : 'html'
-      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
-      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
-
       const {courseId, userId, certificateSettingId, certificateHash, certificateConsecutive, certificateQueueId}  = params;
       const certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
@@ -653,6 +647,12 @@ class CertificateMultipleService {
 
       if (courseSchedulingQuery.status === 'error') return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
       const courseScheduling = courseSchedulingQuery.scheduling
+
+      const certificationMigration = certificateService.certificateProviderStrategy(courseScheduling.metadata.service_id)
+      const formatImage = certificationMigration ? 'public_url' : 'base64'
+      const formatListModules = certificationMigration ? 'plain' : 'html'
+      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
+      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
 
       const driver = attached['driver'];
       const attached_config = attached[driver];

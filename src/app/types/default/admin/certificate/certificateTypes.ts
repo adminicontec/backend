@@ -115,8 +115,10 @@ export interface ICertificateQueue {
   certificate?: {
     hash: string,
     url: string,
+    urlCredencial: string,
     title: string,
-    date: Date
+    date: Date,
+    source: string
   }
 }
 
