@@ -105,7 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
-    // await this.addAttachedCategories();
+    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -495,6 +495,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:students', description: 'Módulo que permite administrar los estudiantes', permissions: [
         {name: 'permission:students_menu_access', description: 'Menu de estudiantes'},
+      ]},
+      {name: 'module:certificate_criteria', description: 'Módulo que permite administrar los criterios de certificación', permissions: [
+        {name: 'permission:certificate_criteria_menu_access', description: 'Menu de criterios de certificación'},
       ]},
       {name: 'module:company_collaborator', description: 'Módulo que permite administrar los colaboradores de Empresa', permissions: [
         {name: 'permission:company_collaborator_access', description: 'Menu de colaboradores de Empresa'},
@@ -1482,6 +1485,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {
         name: "course_scheduling_approval_criteria",
         description: "Adjuntos para criterios de aprobación",
+        config: {
+          limit_files: 1,
+          formats: ['pdf'],
+          limit_size_KB: 1000
+        }
+      },
+      {
+        name: "course_scheduling_certificate_criteria",
+        description: "Adjuntos para criterios de certificación",
         config: {
           limit_files: 1,
           formats: ['pdf'],
