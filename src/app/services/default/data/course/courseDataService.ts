@@ -404,12 +404,14 @@ class CourseDataService {
             const priceOrParam = []
             params.price?.forEach((priceItem) => {
               if (priceItem === 'free') {
-                priceOrParam.push({ hasCost: false })
+                priceOrParam.push({ typeCourse: 'free' })
               } else if (priceItem === 'pay') {
                 priceOrParam.push({ hasCost: true })
               } else if (priceItem === 'discount') {
                 let date = moment()
                 priceOrParam.push({ discount: { $gt: 0 }, endDiscountDate: { $gte: date.format('YYYY-MM-DD') } })
+              } else if (priceItem === 'mooc') {
+                priceOrParam.push({ typeCourse: 'mooc' })
               }
             })
             where['$or'] = priceOrParam
