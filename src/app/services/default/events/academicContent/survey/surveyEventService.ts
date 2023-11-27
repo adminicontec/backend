@@ -43,6 +43,8 @@ class SurveyEventService {
     try {
       const today = moment()
 
+      // TODO: Estimar: Agregar un limite de 6 meses, para que cumplido este tiempo no salga la encuesta
+
       // @INFO: Validando el usuario
       const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
       if (userResponse.status === 'error') return userResponse

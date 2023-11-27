@@ -387,6 +387,29 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.Mixed,
     }]
   },
+  typeCourse: {
+    type: Schema.Types.String,
+    required: false
+  },
+  serviceValidity: { type: Schema.Types.Number, required: false },
+  certificateCriteria: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached',
+    required: false,
+  },
+  specialServiceConditions: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached',
+    required: false,
+  },
+  certificatePriceCOP: {
+    type: Schema.Types.String,
+    required: false
+  },
+  certificatePriceUSD: {
+    type: Schema.Types.String,
+    required: false
+  }
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

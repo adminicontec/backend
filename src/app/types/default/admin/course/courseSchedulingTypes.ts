@@ -5,6 +5,11 @@ import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificat
 
 // @add your types
 
+export enum TypeCourse {
+  MOOC = 'mooc',
+  FREE = 'free'
+}
+
 export enum CourseSchedulingModification {
   SCHEDULING_OBSERVATIONS = 'observations',
   MODALITY = 'modality',

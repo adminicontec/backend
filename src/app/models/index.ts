@@ -1,4 +1,5 @@
 // @import_models
+import { CertificateCriteriaByModalityModel } from "@scnode_app/models/certificateCriteriaByModalityModel";
 import { CustomLogModel } from "@scnode_app/models/customLogModel";
 import { CertificateSettingsModel } from "@scnode_app/models/certificateSettingsModel";
 import { TermModel } from "@scnode_app/models/termModel";
@@ -63,6 +64,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @end
 
 // @export_models
+export const CertificateCriteriaByModality = CertificateCriteriaByModalityModel
 export const CustomLog = CustomLogModel
 export const CertificateSettings = CertificateSettingsModel
 export const Term = TermModel

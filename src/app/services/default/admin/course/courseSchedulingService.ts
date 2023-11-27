@@ -61,7 +61,8 @@ import {
   ReprogramingLabels,
   TCourseSchedulingModificationFn,
   ChangeTeacherStatusAction,
-  IProcessedTeacher
+  IProcessedTeacher,
+  TypeCourse
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
@@ -775,8 +776,10 @@ class CourseSchedulingService {
   public updateCourseSchedulingEndDate = async (courseSchedulingId: string) => {
     try {
       const courseScheduling = await CourseScheduling.findOne({_id: courseSchedulingId})
-      .select('id schedulingMode')
+      .select('id schedulingMode typeCourse')
       .populate({path: 'schedulingMode', select: 'id name'})
+
+      if ([TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)) return;
 
       const courseSchedulingDetails = await CourseSchedulingDetails.find({course_scheduling: courseSchedulingId})
       .select('id startDate endDate')
