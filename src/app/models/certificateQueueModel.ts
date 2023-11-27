@@ -55,11 +55,19 @@ const CertificateQueueSchema = new Schema({
     required: false
   },
   certificate: {
+    source: {
+      type: Schema.Types.String,
+      required: false
+    },
     hash: {
       type: Schema.Types.String,
       required: false
     },
     url: {
+      type: Schema.Types.String,
+      required: false
+    },
+    urlCredencial: {
       type: Schema.Types.String,
       required: false
     },

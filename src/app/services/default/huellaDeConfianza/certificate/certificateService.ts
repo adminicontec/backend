@@ -32,7 +32,7 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue, User } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, User, CourseScheduling } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -917,6 +917,13 @@ class CertificateService {
     }
   }
 
+  public certificateProviderStrategy = (serviceId: string) => {
+    const servicesAvailable = customs?.servicesAvailable || [];
+    if (servicesAvailable.length === 0) return true;
+    if (servicesAvailable.includes(serviceId)) return true;
+    return false;
+  }
+
 
   /**
    *  get needed parameters to create or edit a certificate
@@ -924,12 +931,6 @@ class CertificateService {
   private getStudentCertificateData = async (params: IQueryUserToCertificate, isReissue: boolean, isAuditorCertificate: boolean) => {
 
     try {
-      const certificationMigration = customs?.certificateMigration || false
-      const formatImage = certificationMigration ? 'public_url' : 'base64'
-      const formatListModules = certificationMigration ? 'plain' : 'html'
-      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
-      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
-
       let certificateParamsArray: ISetCertificateParams[] = [];  // return this Array
 
       let logoDataArray: ILogoInformation[] = [];
@@ -972,6 +973,12 @@ class CertificateService {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'program.not_found' } })
       }
+
+      const certificationMigration = this.certificateProviderStrategy(respCourse.scheduling.metadata.service_id)
+      const formatImage = certificationMigration ? 'public_url' : 'base64'
+      const formatListModules = certificationMigration ? 'plain' : 'html'
+      const dimensionsLogos = {width: 233, height: 70, position: 'center'}
+      const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
 
       const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: respCourse.scheduling.moodle_id, moduleType: this.selectActivitiesTest });
       //#endregion
@@ -1297,6 +1304,7 @@ class CertificateService {
           fecha_vencimiento,
           fecha_impresion,
           dato_1: mapping_dato_1,
+          // dato_1: 'Asistió al',
           dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
           // primer logo
           dato_3: location3,
@@ -2174,15 +2182,16 @@ class CertificateService {
    *  request to create a new Certificate to "Huella de Confianza"
    */
   public requestSetCertificate = async (certificateParamsArray: ISetCertificateParams[]) => {
-
-    const certificationMigration = customs?.certificateMigration || false
-    const certificateIssuer = certificationMigration ? 'acredita' : 'huella'
-
     const responseCertQueueArray = [];
     let counter = 1;
     for await (const certificateReq of certificateParamsArray) {
 
       console.log("Certificate n° " + counter);
+
+      const courseScheduling = await CourseScheduling.findOne({_id: certificateReq.queueData.courseId}).select('metadata')
+
+      const certificationMigration = this.certificateProviderStrategy(courseScheduling.metadata.service_id)
+      const certificateIssuer = certificationMigration ? 'acredita' : 'huella'
 
       const responseCertificateQueue: any = await certificateQueueService.insertOrUpdate({
         id: certificateReq.queueData.certificateQueueId,
@@ -2203,6 +2212,8 @@ class CertificateService {
         certificate: {
           hash: '',
           url: '',
+          urlCredencial: '',
+          source: ''
         }
       }
 
@@ -2227,6 +2238,8 @@ class CertificateService {
         responseIssuer.certificate = {
           hash: respHuella?.resultado?.certificado,
           url: respHuella?.resultado?.url,
+          source: 'huella',
+          urlCredencial: '',
         }
         if (respHuella?.status === 'error' || respHuella?.estado === 'Error') {
           responseIssuer.status = 'error'
@@ -2238,7 +2251,7 @@ class CertificateService {
 
         const respIssuer: any = await queryUtility.query({
           method: 'post',
-          url: certificate_setup.endpoint.create_certificate,
+          url: certificate_setup.endpoint.create_certificate_acredita,
           api: 'acredita',
           headers: {
             Authorization: basicAuthHeader
@@ -2254,8 +2267,10 @@ class CertificateService {
           responseIssuer.status = 'success';
           responseIssuer.certificate = {
             hash: respIssuer?.hash,
+            source: 'acredita',
             // hash:urlSplited[urlSplited.length - 1],
             url: respIssuer?.url,
+            urlCredencial: respIssuer?.urlCredencial
           }
         }
       }
@@ -2278,8 +2293,10 @@ class CertificateService {
           certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
           auxiliar: certificateReq.queueData.auxiliarId,
           certificate: {
+            source: responseIssuer.certificate.source,
             hash: responseIssuer.certificate.hash,
             url: responseIssuer.certificate.url,
+            urlCredencial: responseIssuer.certificate.urlCredencial,
             title: (certificateReq.isComplete) ? certificateReq.paramsHuella.certificado : 'Certificado Parcial de ' + certificateReq.programName,
             date: certificateReq.paramsHuella.fecha_aprobacion
           }
@@ -2369,8 +2386,10 @@ class CertificateService {
         certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
         auxiliar: certificateReq.queueData.auxiliarId,
         certificate: {
+          source: 'huella',
           hash: respHuella.resultado.certificado,
           url: respHuella.resultado.url,
+          urlCredencial: '',
           title: (certificateReq.isComplete) ? certificateReq.paramsHuella.certificado : 'Certificado Parcial de ' + certificateReq.programName,
           date: certificateReq.paramsHuella.fecha_aprobacion
         }
@@ -2708,10 +2727,11 @@ class CertificateService {
   }
 
   public certificateUrlV2 = (item) => {
-    const certificationMigration = customs?.certificateMigration || false
+    const certificationMigration = item?.source === 'acredita' ? true : false
     const ext = certificationMigration ? '' : '.pdf'
+    const host = certificationMigration ? customs['certificateBaseUrl_acredita'] : customs['certificateBaseUrl']
     return item?.hash && item?.hash !== ''
-      ? `${customs['certificateBaseUrl']}/${item.hash}${ext}`
+      ? `${host}/${item.hash}${ext}`
       : null
   }
 
