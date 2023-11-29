@@ -544,6 +544,9 @@
     "survey_disabled": "Desactivada"
   },
   "mailer": {
+    "userConfirmMail": {
+      "subject": "Confirmación de Correo Electrónico"
+    },
     "service_sending" : {
       "fail_request": "Fallo en el envío de correo"
     },

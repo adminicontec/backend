@@ -28,3 +28,14 @@ export interface ISendNotificationAssistantCertificateGeneration {
   programName: string
   certifications: IParticipantData[]
 }
+
+
+export interface ISendNotificationConfirmEmail {
+  user: {
+    _id: string;
+    firstName: string;
+    email: string;
+  },
+  duration: number,
+  token: string;
+}

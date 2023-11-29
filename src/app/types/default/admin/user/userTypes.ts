@@ -174,4 +174,8 @@ export interface ISelfRegistration {
   email: string;
   password: string;
 }
+
+export interface IConfirmEmail {
+  token: string;
+}
 //@end

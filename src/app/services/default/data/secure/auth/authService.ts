@@ -353,14 +353,17 @@ class AuthService {
 	 * @param data Información para el inicio de sesión
 	 * @returns
 	 */
-  private validateTokenGenerated = async (data: IValidateTokenGenerated, preserveToken?: boolean) => {
+  public validateTokenGenerated = async (data: IValidateTokenGenerated, preserveToken?: boolean) => {
 
     try {
       const token = await LoginToken.findOne({ token: data.token })
       if (!token) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.not_found',})
 
       const date = new Date()
-      if (token.expedition_date < date) return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.token_expired'})
+      if (token.expedition_date < date) {
+        token.delete()
+        return responseUtility.buildResponseFailed('json', null, {error_key: 'secure.tokenFromDestination.token_expired'})
+      }
 
       if (!preserveToken) {
         token.delete()
@@ -391,16 +394,16 @@ class AuthService {
 	 * @param [duration]
 	 * @returns
 	 */
-   private buildLoginToken = async (user, options: ILoginTokenData = null, duration: number = 15, token_length: number = 32) => {
+   public buildLoginToken = async (user, options: ILoginTokenData = null, duration: number = 15, token_length: number = 32) => {
 
     let durationDefault = (duration) ? duration : 15
 
     const string_generated = generalUtility.buildRandomChain({
       characters: token_length,
-      numbers: 1,
-      symbols: 0,
-      uppercase: 0,
-      lowercase: token_length === 32 ? 1 : 0
+      numbers: options?.numbers !== undefined ? options.numbers : 1,
+      symbols: options?.symbols !== undefined ? options.symbols : 0,
+      uppercase: options?.uppercase !== undefined ? options.uppercase : 0,
+      lowercase: options?.lowercase !== undefined ? options.lowercase : token_length === 32 ? 1 : 0,
     })
 
     const date = new Date()

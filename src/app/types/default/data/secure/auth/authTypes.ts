@@ -30,8 +30,12 @@ export interface IGenerateTokenFromDestination {
 }
 
 export interface ILoginTokenData {
-  token_type?: 'destination',
-  config?: object
+  token_type?: 'destination' | 'confirm_email',
+  config?: object;
+  numbers?: 1 | 0;
+  symbols?: 1 | 0;
+  uppercase?: 1 | 0;
+  lowercase?: 1 | 0;
 }
 
 export interface IChangeRecoveredPassword {

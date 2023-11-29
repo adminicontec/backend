@@ -29,10 +29,12 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration, IConfirmEmail } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
+import { notificationEventService } from "../../events/notifications/notificationEventService";
+import { authService } from "../../data/secure/auth/authService";
 // @end
 class UserService {
 
@@ -970,6 +972,7 @@ class UserService {
   public selfRegistration = async (params: ISelfRegistration) => {
     const defaultCountry = 'Colombia'
     try {
+      // TODO: Pendiente confirmar con David si vamos a agregar algun campo adicional por defecto
       const roleStudent = await Role.findOne({name: 'student'}).select('id')
       const userData: IUser = {
         sendEmail: true,
@@ -990,14 +993,86 @@ class UserService {
       const userInserted = await this.insertOrUpdate(userData)
       if (userInserted?.status === 'error') throw new ExceptionsService({message: userInserted.message, code: userInserted.code})
 
+      const duration = 15
+
+      const user = await User.findOne({username: params.documentNumber})
+
+      const {token} = await authService.buildLoginToken(
+        user,
+        {
+          token_type: 'confirm_email',
+          numbers: 1,
+          lowercase: 1
+        },
+        15,
+        20
+      )
+
+      await notificationEventService.sendNotificationConfirmEmail({
+        user: {
+          firstName: params.firstName,
+          _id: user._id,
+          email: params.email
+        },
+        token,
+        duration
+      })
+
       return responseUtility.buildResponseSuccess('json')
 
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null, {
-        message: e?.message || undefined,
-        code: e?.code || undefined,
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
       })
     }
+  }
+
+
+  /**
+   * Metodo que permite generar el cambio de contraseña
+   * @param req
+   * @param params
+   * @returns
+   */
+  public confirmEmail = async (params: IConfirmEmail) => {
+    try {
+      // @INFO: Validar token
+      const tokenResponse: any = await authService.validateTokenGenerated({ token: params.token }, false)
+      if (tokenResponse.status === 'error') throw new ExceptionsService({message: tokenResponse.message, code: tokenResponse.code})
+
+      const {user} = tokenResponse
+      await User.findByIdAndUpdate(
+        user._id,
+        {
+          emailConfirmed: true
+        },
+        {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
+        }
+      )
+      // TODO: Pendiente ver que debe hacer cuando valide el token
+      return responseUtility.buildResponseSuccess('json')
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
+
+    // //@INFO: Modificando contraseña del usuario
+    // const responseUser = await userService.insertOrUpdate({
+    //     id: tokenResponse.user._id,
+    //     password: params.password,
+    // })
+    // if (responseUser.status === 'error') return responseUser
+
+    // //@INFO: Obteniendo data del usuario
+    // const response = await this.getUserData(req, tokenResponse.user)
+
+    // return response
   }
 
 }

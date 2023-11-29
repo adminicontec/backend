@@ -1,0 +1,29 @@
+{{> partials/page/title title='¡Bienvenid@ al Campus Digital Icontec!'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) {{params.firstName}}</b></p>&nbsp;
+                    <p>Espero que este mensaje te encuentre bien. Queremos agradecerte por registrarte con nosotros y dar la bienvenida a nuestra comunidad.</p>
+                    <p>Para completar el proceso de registro, necesitamos confirmar la validez de tu dirección de correo electrónico.</p>
+                    <p>Por favor, haz clic en el siguiente enlace para verificar tu correo electrónico y activar tu cuenta (validez de {{params.duration}} minutos):</p>
+                    <a href="{{params.goToConfirm}}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;">Confirmar</a>
+                    <p class="mcSpecialText">Para cualquier solicitud recuerde que tiene a disposición la mesa de ayuda donde puede registrar un nuevo ticket y a la cual podrá ingresar, en cualquier momento, a través del asistente virtual del <a href="{{params.mailer.campus_virtual}}">Campus Digital</a>, Daniela. Lo invitamos a consultar el <a href="{{params.mailer.help_desk_instructive_doc}}">instructivo de mesa de ayuda</a>.</p>
+                    <img src="{{params.mailer.virtual_help}}" style="width: 100px">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

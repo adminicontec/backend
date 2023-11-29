@@ -17,7 +17,7 @@ import { User, CourseScheduling } from "@scnode_app/models";
 // @end
 
 // @import types
-import { ISendNotificationParticipantCertificated, ISendNotificationAssistantCertificateGeneration } from "@scnode_app/types/default/events/notifications/notificationTypes";
+import { ISendNotificationParticipantCertificated, ISendNotificationAssistantCertificateGeneration, ISendNotificationConfirmEmail } from "@scnode_app/types/default/events/notifications/notificationTypes";
 // @end
 
 class NotificationEventService {
@@ -119,6 +119,42 @@ class NotificationEventService {
         emails: [user.email],
         mailOptions: {
           subject: `${i18nUtility.__('mailer.participant_certificated_completed_notification.subject')}${params.serviceId}`,
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+        },
+        notification_source: paramsTemplate.notification_source
+      })
+
+      return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+
+  public sendNotificationConfirmEmail = async (params: ISendNotificationConfirmEmail) => {
+    try {
+      const path_template = 'user/confirmEmail'
+
+      const {user} = params
+
+      const paramsTemplate = {
+        firstName: user.firstName,
+        goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}`,
+        duration: params.duration,
+        amount_notifications: 1,
+        notification_source: `user_confirm_email_${user.email}_${user._id}`,
+        mailer: customs['mailer'],
+      }
+
+      const mail = await mailService.sendMail({
+        emails: [user.email],
+        mailOptions: {
+          subject: `${i18nUtility.__('mailer.userConfirmMail.subject')}`,
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
