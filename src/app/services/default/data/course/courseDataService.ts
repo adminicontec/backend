@@ -482,6 +482,13 @@ class CourseDataService {
         where['publish'] = params.publish
       }
 
+      const whereWithouMoocs = {...where, typeCourse: {$nin: ['mooc', 'free']}}
+      const whereWithMoocs = {...where, typeCourse: {$in: ['mooc', 'free']}}
+
+      const totalWithouMoocs = await CourseScheduling.find(whereWithouMoocs).count()
+      const totalMoocs = await CourseScheduling.find(whereWithMoocs).count()
+      const total = totalWithouMoocs + totalMoocs
+
       let sort = null
       if (params.sort) {
         sort = {}
@@ -493,17 +500,29 @@ class CourseDataService {
       try {
         if (params.new) paging = false
 
-        registers = await CourseScheduling.find(where)
+        registers = await CourseScheduling.find(whereWithouMoocs)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'city', select: 'id name' })
+          .sort(sort)
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
-          .sort(sort)
+          .lean()
+
+        const registersWithMooc = await CourseScheduling.find(whereWithMoocs)
+          .populate({ path: 'program', select: 'id name moodle_id code' })
+          .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'city', select: 'id name' })
           .lean()
 
         if (params.random && params.random.size) {
           registers = mapUtility.shuffle(registers).slice(0, params.random.size)
+        }
+
+        for (const item of registersWithMooc) {
+          if (!paging || (paging && registers.length < nPerPage)) {
+             registers.push(item)
+          }
         }
 
         const program_ids = registers.reduce((accum, element) => {
@@ -567,7 +586,7 @@ class CourseDataService {
           courses: [
             ...registers
           ],
-          total_register: (paging) ? await CourseScheduling.find(where).count() : 0,
+          total_register: (paging) ? total : 0,
           pageNumber: pageNumber,
           nPerPage: nPerPage
         }
