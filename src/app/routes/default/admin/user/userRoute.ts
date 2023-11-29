@@ -39,6 +39,8 @@ class UserRoute {
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
     routerUtility.post(app, _route, '/create-multiple', this.instanceController.createMultiple, [], ['auth']);
     routerUtility.post(app, _route, '/sync-moodle', this.instanceController.syncMoodle, [], ['auth'])
+
+    routerUtility.post(app, _route, '/self-registration', this.instanceController.selfRegistration, [{ middleware: 'user', method: 'self-registration', dir: 'admin/user' }], ['auth'])
     // @end
   }
 }

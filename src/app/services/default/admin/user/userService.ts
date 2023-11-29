@@ -10,6 +10,7 @@ import { uploadService } from '@scnode_core/services/default/global/uploadServic
 import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
 import { IMailMessageData, mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
+import { ExceptionsService } from "@scnode_app/helpers/errors";
 // @end
 
 // @import config
@@ -28,7 +29,7 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
@@ -302,7 +303,7 @@ class UserService {
       }
       else {
         const exist = await User.findOne({ username: params.username })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
+        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username} | ${params.email}` } } })
 
         if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
@@ -348,24 +349,24 @@ class UserService {
             if (respMoodleSearch.status == "success") {
               if (respMoodleSearch.user == null) {
                 const paramsMoodleUser: IMoodleUser = {
-                  city: params.profile.city,
+                  city: params?.profile?.city || undefined,
                   country: countryCode,
                   documentNumber: params.profile.doc_number,
                   email: params.email,
                   username: params.username,
                   password: params.password,
-                  phonenumber: params.phoneNumber,
+                  phonenumber: params?.phoneNumber || '',
                   firstname: params.profile.first_name,
                   lastname: params.profile.last_name,
-                  fecha_nacimiento: params.profile.birthDate,
-                  genero: params.profile.genre,
-                  email_2: params.profile.alternativeEmail,
-                  origen: params.profile.origen,
-                  regional: params.profile.regional,
-                  cargo: params.profile.currentPosition,
-                  profesion: params.profile.carreer,
-                  nivel_educativo: params.profile.educationalLevel,
-                  empresa: params.profile.company,
+                  fecha_nacimiento: params?.profile?.birthDate ||'',
+                  genero: params?.profile?.genre || '',
+                  email_2: params?.profile?.alternativeEmail ||'',
+                  origen: params?.profile?.origen || '',
+                  regional: params?.profile?.regional ||'',
+                  cargo: params?.profile?.currentPosition ||'',
+                  profesion: params?.profile?.carreer ||'',
+                  nivel_educativo: params?.profile?.educationalLevel ||'',
+                  empresa: params?.profile?.company ||'',
                 }
 
                 const respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
@@ -959,6 +960,44 @@ class UserService {
       return responseUtility.buildResponseFailed("json");
     }
 
+  }
+
+  /**
+   * Metodo que permite generar autoregistro
+   * @param params Elementos a registrar
+   * @returns
+   */
+  public selfRegistration = async (params: ISelfRegistration) => {
+    const defaultCountry = 'Colombia'
+    try {
+      const roleStudent = await Role.findOne({name: 'student'}).select('id')
+      const userData: IUser = {
+        sendEmail: true,
+        roles: [roleStudent._id],
+        username: params.documentNumber,
+        password: params.password,
+        email: params.email,
+        moodle: 'on',
+        profile: {
+          country: defaultCountry,
+          first_name: params.firstName,
+          last_name: params.lastName,
+          doc_number: params.documentNumber,
+          doc_type: params.documentType,
+          origen: 'self-registration'
+        },
+      }
+      const userInserted = await this.insertOrUpdate(userData)
+      if (userInserted?.status === 'error') throw new ExceptionsService({message: userInserted.message, code: userInserted.code})
+
+      return responseUtility.buildResponseSuccess('json')
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || undefined,
+        code: e?.code || undefined,
+      })
+    }
   }
 
 }

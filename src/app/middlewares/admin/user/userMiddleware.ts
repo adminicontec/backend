@@ -48,6 +48,18 @@ class UserMiddleware {
 		await requestUtility.middlewareValidator(fields_config, req, res, next)
   }
 
+  public selfRegistration = async (req: Request, res: Response, next: NextFunction) => {
+		const fields_config: ValidatorRequest[] = [
+      { key: 'firstName', label: 'Nombre '},
+      { key: 'lastName', label: 'Apellidos'},
+      { key: 'documentType', label: 'Tipo de documento'},
+      { key: 'documentNumber', label: 'Número de documento'},
+      { key: 'email', label: 'Correo electronico'},
+      { key: 'password', label: 'Contraseña'},
+		];
+		await requestUtility.middlewareValidator(fields_config, req, res, next)
+  }
+
 }
 
 export const userMiddleware = new UserMiddleware();
