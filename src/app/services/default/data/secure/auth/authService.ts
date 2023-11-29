@@ -112,7 +112,7 @@ class AuthService {
 
       let check2fa = false
       if (user_exist?.twoFactorEnabled === true && user_exist?.emailConfirmed === true) {
-        const duration = 15
+        const duration = 5
         const encryptData = cryptoUtility.encrypt(password, customs['encrypt'])
         const {token} = await this.buildLoginToken(
           user_exist,
