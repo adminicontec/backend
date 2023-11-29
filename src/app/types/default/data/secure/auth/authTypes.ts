@@ -30,12 +30,13 @@ export interface IGenerateTokenFromDestination {
 }
 
 export interface ILoginTokenData {
-  token_type?: 'destination' | 'confirm_email',
+  token_type?: 'destination' | 'confirm_email' | 'confirm_2fa',
   config?: object;
   numbers?: 1 | 0;
   symbols?: 1 | 0;
   uppercase?: 1 | 0;
   lowercase?: 1 | 0;
+  extraData?: Record<string, any>
 }
 
 export interface IChangeRecoveredPassword {
@@ -44,6 +45,10 @@ export interface IChangeRecoveredPassword {
 }
 
 export interface IValidateTokenGenerated {
+  token: string
+}
+
+export interface IConfirm2FA {
   token: string
 }
 //@end

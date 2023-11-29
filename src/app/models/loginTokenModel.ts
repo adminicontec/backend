@@ -22,6 +22,10 @@ const LoginTokenSchema = new Schema({
   unique: {
     type:Schema.Types.String,
   },
+  extraData: {
+    type: Schema.Types.Mixed,
+    required: false,
+  },
   config: {}
   // @end
 }, {

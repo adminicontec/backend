@@ -3,11 +3,14 @@ import bcrypt from 'bcrypt-nodejs'
 // @end
 
 import { customs } from '@scnode_core/config/globals'
+import { cryptoUtility } from '@scnode_core/utilities/cryptoUtility';
 
 // @import services
 import {userService} from '@scnode_app/services/default/admin/user/userService'
 import {mailService} from '@scnode_app/services/default/general/mail/mailService'
 import { companyService } from '@scnode_app/services/default/admin/company/companyService';
+import { notificationEventService } from '@scnode_app/services/default/events/notifications/notificationEventService';
+import { ExceptionsService } from '@scnode_app/helpers/errors';
 // @end
 
 // @import utilities
@@ -23,7 +26,7 @@ import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCat
 // @end
 
 // @import types
-import {LoginFields, UserFields, IGenerateTokenFromDestination, ILoginTokenData, IValidateTokenGenerated, IChangeRecoveredPassword} from '@scnode_app/types/default/data/secure/auth/authTypes'
+import {LoginFields, UserFields, IGenerateTokenFromDestination, ILoginTokenData, IValidateTokenGenerated, IChangeRecoveredPassword, IConfirm2FA} from '@scnode_app/types/default/data/secure/auth/authTypes'
 // @end
 
 
@@ -46,7 +49,7 @@ class AuthService {
    private findUserToLoginQuery = async (query) => {
 
     const user_exist = await User.findOne(query).select(
-      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company show_profile_interaction admin_company reviewData'
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company show_profile_interaction admin_company reviewData twoFactorEnabled emailConfirmed'
     )
     .populate({
       path: 'roles',
@@ -72,6 +75,9 @@ class AuthService {
 	public login = async (req, loginFields: LoginFields) => {
 		const user_response: any = await this.validateLogin(loginFields)
 		if (user_response.status === 'error') return user_response
+    if (user_response?.check2fa) {
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {check2fa: true}})
+    }
 
     const response = await this.getUserData(req, user_response.user, {username: loginFields.username, password: loginFields.password})
 
@@ -104,9 +110,37 @@ class AuthService {
       user_exist.last_login = new Date()
       user_exist.save()
 
+      let check2fa = false
+      if (user_exist?.twoFactorEnabled === true && user_exist?.emailConfirmed === true) {
+        const duration = 15
+        const encryptData = cryptoUtility.encrypt(password, customs['encrypt'])
+        const {token} = await this.buildLoginToken(
+          user_exist,
+          {
+            token_type: 'confirm_2fa',
+            numbers: 1,
+            extraData: {
+              data: encryptData
+            }
+          },
+          15,
+          6
+        )
+        await notificationEventService.sendNotification2FA({
+          user: {
+            _id: user_exist._id,
+            firstName: user_exist?.profile?.first_name,
+            email: user_exist?.email,
+          },
+          token,
+          duration
+        })
+        check2fa = true
+      }
+
 
 			return responseUtility.buildResponseSuccess('json', null, {
-				additional_parameters: { user: user_exist },
+				additional_parameters: { user: user_exist, check2fa },
 			})
 		} catch (e) {
 			return responseUtility.buildResponseFailed('json')
@@ -429,7 +463,33 @@ class AuthService {
     )
 
     return response
-}
+  }
+
+  /**
+   * Metodo que permite generar el cambio de contraseña
+   * @param req
+   * @param params
+   * @returns
+   */
+  public confirm2FA = async (req, params: IConfirm2FA) => {
+    try {
+      // @INFO: Validar token
+      const tokenResponse: any = await this.validateTokenGenerated({ token: params.token }, false)
+      if (tokenResponse.status === 'error') throw new ExceptionsService({message: tokenResponse.message, code: tokenResponse.code})
+
+      const {user, token_generated} = tokenResponse
+      const data = cryptoUtility.decrypt(token_generated.extraData.data, customs['encrypt'])
+
+      const response = await this.getUserData(req, user, {username: user.username, password: data})
+
+		  return response
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
+  }
 
 }
 

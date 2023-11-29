@@ -541,6 +541,9 @@
     "survey_disabled": "Desactivada"
   },
   "mailer": {
+    "userConfirm2FA": {
+      "subject": "Confirmación 2FA"
+    },
     "userConfirmMail": {
       "subject": "Confirmación de Correo Electrónico"
     },

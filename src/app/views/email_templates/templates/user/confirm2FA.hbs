@@ -1,0 +1,28 @@
+{{> partials/page/title title='¡Bienvenid@ al Campus Digital Icontec!'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) {{params.firstName}}</b></p>&nbsp;
+                    <p>Para completar el proceso de inicio de sesión, necesitamos confirmar la validez de tu identidad.</p>
+                    <p>Por favor, utiliza el siguiente código para verificar tu cuenta (validez de {{params.duration}} minutos):</p>
+                    <p style="font-size: 30px;font-weight: bold;letter-spacing: 1.2rem;">{{params.token}}</p>
+                    <p class="mcSpecialText">Para cualquier solicitud recuerde que tiene a disposición la mesa de ayuda donde puede registrar un nuevo ticket y a la cual podrá ingresar, en cualquier momento, a través del asistente virtual del <a href="{{params.mailer.campus_virtual}}">Campus Digital</a>, Daniela. Lo invitamos a consultar el <a href="{{params.mailer.help_desk_instructive_doc}}">instructivo de mesa de ayuda</a>.</p>
+                    <img src="{{params.mailer.virtual_help}}" style="width: 100px">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

@@ -1045,7 +1045,8 @@ class UserService {
       await User.findByIdAndUpdate(
         user._id,
         {
-          emailConfirmed: true
+          emailConfirmed: true,
+          twoFactorEnabled: true
         },
         {
           useFindAndModify: false,
@@ -1053,7 +1054,6 @@ class UserService {
           lean: true,
         }
       )
-      // TODO: Pendiente ver que debe hacer cuando valide el token
       return responseUtility.buildResponseSuccess('json')
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null, {
@@ -1061,18 +1061,6 @@ class UserService {
         code: e?.code || 500,
       })
     }
-
-    // //@INFO: Modificando contraseña del usuario
-    // const responseUser = await userService.insertOrUpdate({
-    //     id: tokenResponse.user._id,
-    //     password: params.password,
-    // })
-    // if (responseUser.status === 'error') return responseUser
-
-    // //@INFO: Obteniendo data del usuario
-    // const response = await this.getUserData(req, tokenResponse.user)
-
-    // return response
   }
 
 }

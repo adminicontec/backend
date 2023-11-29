@@ -29,6 +29,16 @@ export interface ISendNotificationAssistantCertificateGeneration {
   certifications: IParticipantData[]
 }
 
+export interface ISendNotification2FA {
+  user: {
+    _id: string;
+    firstName: string;
+    email: string;
+  },
+  duration: number,
+  token: string;
+}
+
 
 export interface ISendNotificationConfirmEmail {
   user: {
