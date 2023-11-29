@@ -30,11 +30,11 @@ const LoginTokenSchema = new Schema({
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
 // Example: UserModel.delete({_id: id})
-LoginTokenSchema.plugin(mongoose_delete,{
-  deletedAt : true,
-  overrideMethods: 'all',
-  indexFields: 'all'
-});
+// LoginTokenSchema.plugin(mongoose_delete,{
+//   deletedAt : true,
+//   overrideMethods: 'all',
+//   indexFields: 'all'
+// });
 
 // INFO: Si desea declarar los campos del esquema que no se tendrán en cuenta para la descripción general del modelo
 // LoginTokenSchema.methods.invalid_fields = ["field1", "field2"];
