@@ -998,7 +998,7 @@ class CertificateService {
       //#region   >>>> 2.2. Check for Logos and Signature
       console.log(`Check for Logos and Signature:`);
 
-      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage, {...dimensionsLogos, position: 'right'});
+      let logoImage64_1 = this.encodeAdditionaImageForCertificate(base_path, respCourse.scheduling.path_certificate_icon_1, formatImage, {...dimensionsLogos, position: 'center'});
       if (logoImage64_1) {
         logoDataArray.push({
           imageBase64: logoImage64_1
