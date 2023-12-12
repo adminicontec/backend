@@ -1264,7 +1264,7 @@ class CertificateService {
       let fecha_renovacion = null;
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
-      let dato_16 = undefined;
+      let dato_16 = '';
       let dato_15 = ''
 
       if (certificationMigration) {

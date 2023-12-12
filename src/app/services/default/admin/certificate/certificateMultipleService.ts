@@ -716,7 +716,7 @@ class CertificateMultipleService {
         certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
       }
 
-      let dato_16 = undefined;
+      let dato_16 = '';
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
       let mapping_template = '';
       const mapping_dato_1 = this.getCertificateTypeTranslate(certificateSetting?.certificationType);
