@@ -214,6 +214,7 @@ class AuthService {
 					screen_mode: user.profile.screen_mode,
           show_profile_interaction: user.show_profile_interaction,
           roles: user.roles,
+          email: user.email,
           home,
           moodle: {
             ...tokenCustom,
@@ -221,7 +222,8 @@ class AuthService {
           },
           company: company,
           admin_company: user.admin_company,
-          reviewData: user?.reviewData
+          reviewData: user?.reviewData,
+          emailConfirmed: user?.emailConfirmed
 				},
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,

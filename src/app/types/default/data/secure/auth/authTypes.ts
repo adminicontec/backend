@@ -16,6 +16,8 @@ export interface UserFields {
   show_profile_interaction?: boolean
   company?: Record<any, string> | null | undefined
   admin_company?: boolean
+  email?: string
+  emailConfirmed?: boolean
   reviewData?: {
     status: 'pending' | 'reviewed',
     lastReview?: Date
