@@ -1288,7 +1288,8 @@ class CertificateService {
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
           asistio,
-          certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+          // certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+          certificado: mapping_titulo_certificado.toUpperCase(),
           certificado_ingles: '',
           alcance: '',
           alcance_ingles: '',
@@ -1365,7 +1366,7 @@ class CertificateService {
             }
           }
 
-          let dato_16Auditor = undefined;
+          let dato_16Auditor = '';
           let intensidadAuditor: any = generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration)
 
           if (certificationMigration) {
@@ -1380,7 +1381,8 @@ class CertificateService {
             documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
             nombre: respDataUser.user.profile.full_name.toUpperCase(),
             asistio,
-            certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            // certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            certificado: respCourse.scheduling.auditor_certificate.toUpperCase(),
             certificado_ingles: '',
             alcance: '',
             alcance_ingles: '',
