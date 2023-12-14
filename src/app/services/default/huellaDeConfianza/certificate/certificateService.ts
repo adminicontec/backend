@@ -1365,7 +1365,7 @@ class CertificateService {
             }
           }
 
-          let dato_16Auditor = undefined;
+          let dato_16Auditor = '';
           let intensidadAuditor: any = generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration)
 
           if (certificationMigration) {
