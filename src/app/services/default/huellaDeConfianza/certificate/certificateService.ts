@@ -2939,10 +2939,11 @@ class CertificateService {
    * Format the modules list for Certificate 2
    */
   private formatAuditorModules = (auditorModules: any, format: 'html' | 'plain' = 'html') => {
-    let mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
+    let mappingAuditorModulesList = '';
     let totalDuration = 0;
 
     if (format === 'html') {
+      mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
       mappingAuditorModulesList += '<ul>'
       auditorModules.forEach(element => {
         totalDuration += element.duration;
@@ -2950,9 +2951,10 @@ class CertificateService {
       });
       mappingAuditorModulesList += '</ul>'
     } else {
+      mappingAuditorModulesList = 'El contenido del programa comprendió:\\n';
       auditorModules.forEach(element => {
         totalDuration += element.duration;
-        mappingAuditorModulesList += `${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`;
+        mappingAuditorModulesList += `- ${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}).\\n`;
       });
     }
 
