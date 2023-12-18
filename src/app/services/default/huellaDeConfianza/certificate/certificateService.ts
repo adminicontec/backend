@@ -269,7 +269,6 @@ class CertificateService {
             url: `GetNumTemplates/${programCode}`,
             api: 'acredita',
           });
-          console.log('queryHasTemplateBlockChain', queryHasTemplateBlockChain)
           if (queryHasTemplateBlockChain === 0 || queryHasTemplateBlockChain === "0") {
             previewCertificateParams.warnings.push({
               key: 'Validación de plantilla', message: `El programa con código ${programCode} NO se encuentra registrado en la metadata para emisión por Blockchain`
