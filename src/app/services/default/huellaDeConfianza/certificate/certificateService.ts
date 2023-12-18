@@ -244,11 +244,6 @@ class CertificateService {
         mapping_listado_modulos_auditor += '</ul>'
       }
 
-      // let regionalName = respCourse.scheduling;
-      // console.log("↓↓←←←←");
-      // console.log(regionalName);
-      // console.log("↓↓←←←←");
-
       previewCertificateParams = {
         certificado: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
         certificado_auditor: (respCourse.scheduling.auditor_certificate) ? respCourse.scheduling.auditor_certificate : null,
@@ -263,6 +258,23 @@ class CertificateService {
         fecha_impresion: currentDate,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
         warnings: []
+      }
+
+      const certificationMigration = this.certificateProviderStrategy(respCourse.scheduling.metadata.service_id)
+      if (certificationMigration) {
+        const programCode = respCourse?.scheduling?.program?.code || undefined
+        if (programCode) {
+          const queryHasTemplateBlockChain: any = await queryUtility.query({
+            method: 'get',
+            url: `GetNumTemplates/${programCode}`,
+            api: 'acredita',
+          });
+          if (queryHasTemplateBlockChain === 0 || queryHasTemplateBlockChain === "0") {
+            previewCertificateParams.warnings.push({
+              key: 'Validación de plantilla', message: `El programa con código ${programCode} NO se encuentra registrado en la metadata para emisión por Blockchain`
+            })
+          }
+        }
       }
 
       if (respCourse.scheduling?.signature_1) {
@@ -2916,11 +2928,10 @@ class CertificateService {
    */
   public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html', showHeader: boolean = true) => {
     let mappingAcademicModulesList = '';
-    if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
-
     let totalDuration = 0;
     try {
       if (format === 'html') {
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
         if (programTypeName || programTypeName != null)
           mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
 
@@ -2937,6 +2948,7 @@ class CertificateService {
           totalDuration: totalDuration
         };
       } else {
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió:\\n'
         if (programTypeName || programTypeName != null)
           mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
 
