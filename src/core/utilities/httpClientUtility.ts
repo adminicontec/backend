@@ -125,7 +125,11 @@ class HttpClientUtility {
     const validation: any = await this.validateHttpFields(http_structure_default);
     if (validation.status === "error") return validation;
 
-    const uri = `${http_structure_default.api}${http_structure_default.url}`;
+    let uri = ``;
+    if (http_structure_default.api !== 'N/A') {
+      uri += `${http_structure_default.api}`
+    }
+    uri += `${http_structure_default.url}`
 
     let options: any = {
       uri: uri,
