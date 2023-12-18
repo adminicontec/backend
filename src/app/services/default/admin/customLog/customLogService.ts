@@ -10,7 +10,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 
 // @import models
 import { CustomLog } from '@scnode_app/models'
-import { ICustomLog } from '@scnode_app/types/default/admin/customLog/customLogTypes';
+import { ICustomLog, ICustomLogListParams } from '@scnode_app/types/default/admin/customLog/customLogTypes';
 // @end
 
 // @import types
@@ -26,6 +26,51 @@ class CustomLogService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  list = async ({ content, description, label, userID, schedulingMoodleId, limit, sort }: ICustomLogListParams) => {
+    try {
+      const where = {}
+      if (content) {
+        where['content'] = content
+      }
+      if (description) {
+        where['description'] = { $regex: description, $options: 'i' }
+      }
+      if (label) {
+        where['label'] = { $regex: label, $options: 'i' }
+      }
+      if (userID) {
+        where['userID'] = userID
+      }
+      if (schedulingMoodleId) {
+        where['schedulingMoodleId'] = schedulingMoodleId
+      }
+
+      if (!Object.keys(where)?.length) {
+        where['_id'] = { $exists: false }
+      }
+
+      limit = limit ? Number(limit) : 20
+      sort = sort ? sort : { created_at: -1 }
+
+      const logs = await CustomLog.find(where).limit(limit).sort(sort).lean()
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          total: await CustomLog.find(where).count(),
+          limit,
+          sort,
+          logs
+        }
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        additional_parameters: {
+          message: e.message
+        }
+      })
+    }
+  }
 
   create = async (customLog: ICustomLog) => {
     try {

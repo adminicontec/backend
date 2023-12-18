@@ -2305,6 +2305,14 @@ class CertificateService {
         });
 
         responseCertQueueArray.push(responseCertQueue);
+
+        await this.previewCertificate({
+          certificate_queue: registerId,
+          hash: responseIssuer.certificate.hash,
+          format: 2,
+          template: 1,
+          updateCertificate: true,
+        })
         counter++;
       }
 
@@ -2683,10 +2691,19 @@ class CertificateService {
 
   public fetchCertification = async (certificateQueue: any) => {
     try {
+      const certificationMigration = certificateQueue?.certificate?.source === 'acredita' ? true : false
+
+      let api_link = customs['certificateBaseUrl']
+      let url = `/${certificateQueue?.certificate?.hash}.pdf`
+      if (certificationMigration) {
+        api_link = 'N/A'
+        url = `${certificateQueue?.certificate.url}`
+      }
+
       const buffer = await queryUtility.query({
-        api_link: customs['certificateBaseUrl'],
+        api_link: api_link,
         method: 'get',
-        url: `/${certificateQueue?.certificate?.hash}.pdf`,
+        url: url,
         responseBuffer: true
       })
 
@@ -2731,7 +2748,14 @@ class CertificateService {
   public certificateUrlV2 = (item) => {
     const certificationMigration = item?.source === 'acredita' ? true : false
     const ext = certificationMigration ? '' : '.pdf'
-    const host = certificationMigration ? customs['certificateBaseUrl_acredita'] : customs['certificateBaseUrl']
+    let host = customs['certificateBaseUrl']
+    const hasUrlCredencial = item?.urlCredencial || null;
+    if (certificationMigration) {
+      host = customs['certificateBaseUrl_acredita'];
+      if (hasUrlCredencial) {
+        host += `Pdf`
+      }
+    }
     return item?.hash && item?.hash !== ''
       ? `${host}/${item.hash}${ext}`
       : null
