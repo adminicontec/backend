@@ -57,7 +57,8 @@ export interface ICertificateMultipleDataStudent {
 export interface ICertificateMultipleDataResponse {
   courseSchedulingId: string
   student?: ICertificateMultipleDataStudent
-  students?: ICertificateMultipleDataStudent[]
+  students?: ICertificateMultipleDataStudent[],
+  warnings?: Record<string, string>[]
 }
 
 export interface ICertificateMultipleGenerateStudent {
