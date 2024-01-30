@@ -2661,7 +2661,14 @@ class CertificateService {
 
         await certificate.delete()
 
-        await CertificateQueue.create(item)
+        const responseCertificateQueue = await CertificateQueue.create(item)
+
+        if (responseCertificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseCertificateQueue?._id,
+            output: 'process'
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null)
       } else {
@@ -2679,12 +2686,19 @@ class CertificateService {
 
         await CertificateQueue.delete(query)
 
-        await certificateQueueService.insertOrUpdate({
+        const responseQueue: any = await certificateQueueService.insertOrUpdate({
           users: [params.userId],
           courseId: params.courseId,
           auxiliar: params.auxiliar,
           status: "New"
         })
+
+        if (responseQueue?.status === 'success' && responseQueue?.certificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseQueue?.certificateQueue?._id,
+            output: 'process'
+          })
+        }
 
         return responseUtility.buildResponseSuccess('json', null)
       }
