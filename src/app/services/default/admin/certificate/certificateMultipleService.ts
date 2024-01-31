@@ -134,7 +134,9 @@ class CertificateMultipleService {
             approved: false, // OK
             certificateType: certificateSetting?.certificationType, // OK
             certificate: { // OK
-              isGenerated: false
+              isGenerated: false,
+              certificateStatus: '',
+              certificateId: ''
             },
             modules: [], // OK
             isPartial: false
@@ -146,6 +148,8 @@ class CertificateMultipleService {
             }
             const certificate = studentCertificates[certificateSetting._id.toString()];
             certification.certificate.isGenerated = true;
+            certification.certificate.certificateStatus = certificate.status;
+            certification.certificate.certificateId = certificate._id;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
             if (certificate?.certificate?.hash) {
               certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate)

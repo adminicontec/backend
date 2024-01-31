@@ -141,7 +141,8 @@ export enum CertificateCategory {
 
 export interface ICertificateForceStage {
   certificateQueueIds: string[]
-  category: CertificateCategory
+  category: CertificateCategory,
+  async?: boolean
 }
 
 export interface ICertificateReGenerate {
@@ -150,6 +151,7 @@ export interface ICertificateReGenerate {
   certificateQueueId?: string
   status?: string
   auxiliar?: string;
+  isMultiple?: boolean;
 }
 
 export interface IGenerateCertificatePdf {
@@ -198,6 +200,7 @@ export interface ISignatureInformation{
 
 export interface IProcessCertificateQueue {
   certificateQueueId?: string
+  certificateQueueIds?: string[]
   courseId?: string,
   userId?: string,
   auxiliar?: string,
