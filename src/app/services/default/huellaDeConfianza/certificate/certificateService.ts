@@ -45,6 +45,7 @@ import {
 import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
+import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
 // @end
 
 class CertificateService {
@@ -932,7 +933,10 @@ class CertificateService {
   public certificateProviderStrategy = (serviceId: string) => {
     const servicesAvailable = customs?.servicesAvailable || [];
     if (servicesAvailable.length === 0) return true;
-    if (servicesAvailable.includes(serviceId)) return true;
+    // @INFO: Modificar variable para habilitar por defecto acredita y servicios limitados huella 1
+    if (!servicesAvailable.includes(serviceId)) return true;
+    // @INFO: Modificar variable para habilitar por defecto huella 1 y servicios limitados Acredita
+    // if (servicesAvailable.includes(serviceId)) return true;
     return false;
   }
 
@@ -2566,55 +2570,68 @@ class CertificateService {
     try {
       if (!params.category) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
       if (!params.certificateQueueIds) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
+      const isAsync = params.async || false
 
-      let status = undefined;
-      switch (params.category) {
-        case CertificateCategory.FORCE_PREVIEW:
-          status = 'Requested'
-          break;
+      // let status = undefined;
+      // switch (params.category) {
+      //   case CertificateCategory.FORCE_PREVIEW:
+      //     status = 'Requested'
+      //     break;
+      // }
+      // if (!status) return responseUtility.buildResponseFailed('json', null, { error_key: {key: "certificate.force_stage.error", params: {errorMessage: 'La categoria no tiene un valor valido'}} })
+
+      // const query: any = {
+      //   _id: {$in: params.certificateQueueIds},
+      //   deleted: false
+      // }
+
+      // await CertificateQueue.updateMany(query, {
+      //   $set: {
+      //     status: status
+      //   }
+      // })
+      // const certificatesQuery = await CertificateQueue.find({
+      //   _id: {$in: params.certificateQueueIds},
+      // });
+
+      // const certificateLogs: {key: string, message: string, status: 'success' | 'error'}[] = []
+      let logs = []
+      if (isAsync) {
+        certificateQueueService.processCertificateQueue({
+          certificateQueueIds: params.certificateQueueIds,
+          output: 'process'
+        })
+      } else {
+        const responseProcess: any = await certificateQueueService.processCertificateQueue({
+          certificateQueueIds: params.certificateQueueIds,
+          output: 'process'
+        })
+        logs = responseProcess.logs || []
       }
-      if (!status) return responseUtility.buildResponseFailed('json', null, { error_key: {key: "certificate.force_stage.error", params: {errorMessage: 'La categoria no tiene un valor valido'}} })
-
-      const query: any = {
-        _id: {$in: params.certificateQueueIds},
-        deleted: false
-      }
-
-      await CertificateQueue.updateMany(query, {
-        $set: {
-          status: status
-        }
-      })
-      const certificatesQuery = await CertificateQueue.find({
-        _id: {$in: params.certificateQueueIds},
-      });
-
-      const certificateLogs: {key: string, message: string, status: 'success' | 'error'}[] = []
-
-      for (let certificate of certificatesQuery) {
-        try {
-          const processResponse: any = await certificateQueueService.processCertificateQueue({
-            certificateQueueId: certificate._id,
-            output: 'process'
-          })
-          certificateLogs.push({
-            key: certificate._id,
-            message: processResponse?.message || '-',
-            status: processResponse?.status || undefined
-          })
-        } catch (err) {
-          certificateLogs.push({
-            key: certificate._id,
-            message: err?.message || 'Se ha presentado un error al procesar el certificado',
-            status: 'error'
-          })
-          continue
-        }
-      }
+      // for (let certificate of certificatesQuery) {
+      //   try {
+      //     const processResponse: any = await certificateQueueService.processCertificateQueue({
+      //       certificateQueueId: certificate._id,
+      //       output: 'process'
+      //     })
+      //     certificateLogs.push({
+      //       key: certificate._id,
+      //       message: processResponse?.message || '-',
+      //       status: processResponse?.status || undefined
+      //     })
+      //   } catch (err) {
+      //     certificateLogs.push({
+      //       key: certificate._id,
+      //       message: err?.message || 'Se ha presentado un error al procesar el certificado',
+      //       status: 'error'
+      //     })
+      //     continue
+      //   }
+      // }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          certificateLogs
+          logs
         }
       })
     } catch (err) {
@@ -2624,28 +2641,68 @@ class CertificateService {
 
   public reGenerateCertification = async (params: ICertificateReGenerate) => {
     try {
-      if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
-      if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+      const isMultiple = params.isMultiple || false;
 
-      const query: any = {
-        userId: params.userId,
-        courseId: params.courseId,
-        deleted: false
+      if (isMultiple) {
+        if (!params.certificateQueueId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+
+        const certificate = await CertificateQueue.findOne({_id: params.certificateQueueId})
+
+        const item: ICertificateQueueMultiple = {
+          userId: certificate?.userId,
+          courseId: certificate?.courseId,
+          certificateSetting: certificate.certificateSetting,
+          auxiliar: certificate.auxiliar,
+          certificateType: certificate.certificateType,
+          certificateConsecutive: certificate.certificateConsecutive,
+          status: 'New',
+          isPartial: certificate.isPartial,
+        }
+
+        await certificate.delete()
+
+        const responseCertificateQueue = await CertificateQueue.create(item)
+
+        if (responseCertificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseCertificateQueue?._id,
+            output: 'process'
+          })
+        }
+
+        return responseUtility.buildResponseSuccess('json', null)
+      } else {
+        if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+        if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+
+        const query: any = {
+          userId: params.userId,
+          courseId: params.courseId,
+          deleted: false
+        }
+        if (params.certificateQueueId) {
+          query['_id'] = params.certificateQueueId
+        }
+
+        await CertificateQueue.delete(query)
+
+        const responseQueue: any = await certificateQueueService.insertOrUpdate({
+          users: [params.userId],
+          courseId: params.courseId,
+          auxiliar: params.auxiliar,
+          status: "New"
+        })
+
+        if (responseQueue?.status === 'success' && responseQueue?.certificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseQueue?.certificateQueue?._id,
+            output: 'process'
+          })
+        }
+
+        return responseUtility.buildResponseSuccess('json', null)
       }
-      if (params.certificateQueueId) {
-        query['_id'] = params.certificateQueueId
-      }
 
-      await CertificateQueue.delete(query)
-
-      await certificateQueueService.insertOrUpdate({
-        users: [params.userId],
-        courseId: params.courseId,
-        auxiliar: params.auxiliar,
-        status: "New"
-      })
-
-      return responseUtility.buildResponseSuccess('json', null)
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }

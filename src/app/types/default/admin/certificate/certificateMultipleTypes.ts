@@ -16,6 +16,8 @@ export interface ICertificateMultipleDataCertificationCertificate {
   certificateUrl?: string;
   certificateDate?: string;
   certificateHash?: string;
+  certificateStatus?: string
+  certificateId?: string
 }
 
 export interface ICertificateMultipleDataCertificationModuleCriteriaResume {
