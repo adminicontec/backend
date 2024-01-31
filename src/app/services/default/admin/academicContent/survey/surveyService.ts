@@ -13,7 +13,7 @@ import { i18nUtility } from '@scnode_core/utilities/i18nUtility';
 // @end
 
 // @import models
-import {Survey, AcademicResourceConfig, AcademicResourceConfigCategory} from '@scnode_app/models'
+import {Survey, AcademicResourceConfig, AcademicResourceConfigCategory, CourseSchedulingMode} from '@scnode_app/models'
 // @end
 
 // @import types
@@ -298,10 +298,6 @@ class SurveyService {
           select: 'id config.course_modes academic_resource',
           populate: [
             {
-              path: 'config.course_modes',
-              select: 'id name description'
-            },
-            {
               path: 'academic_resource',
               select: 'id title description'
             }
@@ -310,6 +306,18 @@ class SurveyService {
         .skip(paging ? (pageNumber > 0 ? ( ( pageNumber - 1 ) * nPerPage ) : 0) : null)
         .limit(paging ? nPerPage : null)
         .lean()
+
+        for (const register of registers) {
+          if (typeof register?.config?.content?.config?.course_modes === 'object') {
+            const mode = await CourseSchedulingMode.findOne(register?.config?.content?.config?.course_modes).select('id name description')
+            const idx = registers.findIndex((r) => r._id === register._id)
+            if (idx >= 0) {
+              registers[idx].config.content.config.course_modes = mode
+            }
+          }
+        }
+
+
         for (const register of registers) {
           if (register?.status) {
             if (['enabled', 'disabled'].includes(register?.status)) {

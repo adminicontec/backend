@@ -49,7 +49,10 @@ const QuestionSchema = new Schema({
     },
     category: {
       type: Schema.Types.String,
-    }
+    },
+    show_as_select: {
+      type: Schema.Types.Boolean,
+    },
   },
   answers: [ {
     unique: { type: Schema.Types.String, required: true },

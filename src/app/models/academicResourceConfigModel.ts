@@ -25,8 +25,12 @@ const AcademicResourceConfigSchema = new Schema({
       enum: ['ordered', 'random']
     },
     course_modes: {
-      type: Schema.Types.ObjectId,
+      type: Schema.Types.Mixed,
       ref: "CourseSchedulingMode",
+    },
+    is_characterization_survey: {
+      type: Schema.Types.Boolean,
+      default: false
     }
   },
   // @end

@@ -17,7 +17,7 @@ import { AcademicResourceAttempt, CourseSchedulingDetails, Enrollment, Survey } 
 // @end
 
 // @import types
-import {ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
+import {ICheckCharacterizationSurveyAvailable, ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
@@ -237,6 +237,92 @@ class SurveyEventService {
     } catch (error) {
       console.log(error)
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   *
+   * @param params ICheckCharacterizationSurveyAvailable
+   * @returns
+   */
+  public checkCharacterizationSurveyAvailable = async (params: ICheckCharacterizationSurveyAvailable) => {
+    try {
+      // @INFO: Validando el usuario
+      const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
+      if (userResponse.status === 'error') return userResponse
+
+      const attemptsAggregation = [
+        {
+          $match: {
+            user: ObjectID(params.user),
+            'results.status': 'ended'
+          }
+        },
+        {
+          $lookup: {
+            from: 'academic_resource_configs',
+            localField: 'academic_resource_config',
+            foreignField: '_id',
+            as: 'academicResourceConfig'
+          }
+        },
+        {
+          $unwind: "$academicResourceConfig"
+        },
+        {
+          $match: {
+            'academicResourceConfig.config.is_characterization_survey': true
+          }
+        },
+        {
+          $project: {
+            'results.status': true,
+            user: true,
+            academic_resource_config: true
+          }
+        }
+      ]
+      const userAttempts = await AcademicResourceAttempt.aggregate(attemptsAggregation)
+
+      const userHasAnswer = userAttempts?.length > 0
+      if (userHasAnswer) return responseUtility.buildResponseFailed('json')
+
+      const aggregateQuery = [
+        {
+          $lookup: {
+            from: 'academic_resource_configs',
+            localField: 'config.content',
+            foreignField: '_id',
+            as: 'config.content'
+          }
+        },
+        { $unwind: '$config.content' },
+        {
+          $match: {
+            'config.content.config.is_characterization_survey': true,
+            'deleted': false,
+            'status': 'enabled'
+          }
+        },
+        {
+          $group: {
+            _id: '$_id',
+            survey: { "$first": '$_id'},
+            academic_resource_config: {$first: '$config.content._id'}
+          }
+        }
+      ]
+
+      const data = await Survey.aggregate(aggregateQuery)
+      if (data.length === 0) return responseUtility.buildResponseFailed('json')
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        survey: data[0].survey,
+        academic_resource_config: data[0].academic_resource_config,
+        isCharacterizationSurvey: true
+      }})
+    } catch(e) {
+      console.log(`SurveyEventService => checkCharacterizationSurveyAvailable => ERROR: ${e}`)
     }
   }
 

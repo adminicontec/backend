@@ -1526,6 +1526,7 @@ class CourseSchedulingService {
 
       return responseUtility.buildResponseSuccess('json')
     } catch (error) {
+      console.log(`courseSchedulingService -> delete -> ERROR`, error)
       return responseUtility.buildResponseFailed('json')
     }
   }
