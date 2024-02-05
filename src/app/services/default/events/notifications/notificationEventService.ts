@@ -181,7 +181,7 @@ class NotificationEventService {
         firstName: user.firstName,
         goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}`,
         duration: params.duration,
-        amount_notifications: 1,
+        amount_notifications: null,
         notification_source: `user_confirm_email_${user.email}_${user._id}`,
         mailer: customs['mailer'],
       }

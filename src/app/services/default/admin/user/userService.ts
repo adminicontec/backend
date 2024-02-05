@@ -29,7 +29,7 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration, IConfirmEmail } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration, IConfirmEmail, ISendEmailConfirmationToUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
@@ -993,9 +993,34 @@ class UserService {
       const userInserted = await this.insertOrUpdate(userData)
       if (userInserted?.status === 'error') throw new ExceptionsService({message: userInserted.message, code: userInserted.code})
 
+      const sendEmailResponse = await this.sendEmailConfirmationToUser({
+        username: params.documentNumber
+      })
+      if (sendEmailResponse?.status === 'error') return sendEmailResponse
+
+      return responseUtility.buildResponseSuccess('json')
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
+  }
+
+  /**
+   * Enviar email de confirmación al usuario
+   * @param param0
+   * @returns
+   */
+  public sendEmailConfirmationToUser = async ({ username }: ISendEmailConfirmationToUser) => {
+    try {
       const duration = 15
 
-      const user = await User.findOne({username: params.documentNumber})
+      const user: IUser = await User.findOne({ username })
+      if (!user) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+      const firstName = user?.profile?.first_name
+      const email = user?.email
 
       const {token} = await authService.buildLoginToken(
         user,
@@ -1010,16 +1035,19 @@ class UserService {
 
       await notificationEventService.sendNotificationConfirmEmail({
         user: {
-          firstName: params.firstName,
+          firstName: firstName,
           _id: user._id,
-          email: params.email
+          email: email
         },
         token,
         duration
       })
 
-      return responseUtility.buildResponseSuccess('json')
-
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          ok: true
+        }
+      })
     } catch (e) {
       return responseUtility.buildResponseFailed('json', null, {
         message: e?.message || 'Se ha presentado un error inesperado',

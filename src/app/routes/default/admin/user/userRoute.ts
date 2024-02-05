@@ -41,6 +41,7 @@ class UserRoute {
     routerUtility.post(app, _route, '/sync-moodle', this.instanceController.syncMoodle, [], ['auth'])
 
     routerUtility.post(app, _route, '/self-registration', this.instanceController.selfRegistration, [{ middleware: 'user', method: 'self-registration', dir: 'admin/user' }], [])
+    routerUtility.post(app, _route, '/send-email-confirmation', this.instanceController.sendEmailConfirmationToUser, [], [])
     routerUtility.get(app, _route, '/confirm-email/:token', this.instanceController.confirmEmail, [], [])
     // @end
   }

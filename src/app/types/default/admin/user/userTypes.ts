@@ -178,4 +178,8 @@ export interface ISelfRegistration {
 export interface IConfirmEmail {
   token: string;
 }
+
+export interface ISendEmailConfirmationToUser {
+  username: string
+}
 //@end
