@@ -91,6 +91,7 @@ export interface ICourseScheduling {
   address?: string
   classroom?: string
   user?: string // Identificador del usuario logueado
+  schedule?: string
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   schedulingModeDetails?: 'in_situ' | 'online',
   modular?: string // Identificador del modular
