@@ -17,6 +17,7 @@ export interface ICertificateMultipleDataCertificationCertificate {
   certificateDate?: string;
   certificateHash?: string;
   certificateStatus?: string
+  errorMessage?: string;
   certificateId?: string
 }
 

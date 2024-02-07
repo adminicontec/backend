@@ -74,7 +74,7 @@ class CertificateMultipleService {
       // @INFO: Consultar certificados generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -136,7 +136,8 @@ class CertificateMultipleService {
             certificate: { // OK
               isGenerated: false,
               certificateStatus: '',
-              certificateId: ''
+              certificateId: '',
+              errorMessage: ''
             },
             modules: [], // OK
             isPartial: false
@@ -149,6 +150,7 @@ class CertificateMultipleService {
             const certificate = studentCertificates[certificateSetting._id.toString()];
             certification.certificate.isGenerated = true;
             certification.certificate.certificateStatus = certificate.status;
+            certification.certificate.errorMessage = certificate?.errorMessage || ''
             certification.certificate.certificateId = certificate._id;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
             if (certificate?.certificate?.hash) {
@@ -523,7 +525,7 @@ class CertificateMultipleService {
       // @INFO: Consultando certificados ya generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {

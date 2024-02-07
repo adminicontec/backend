@@ -96,6 +96,10 @@ const CertificateQueueSchema = new Schema({
   isPartial: {
     type: Schema.Types.Boolean,
     required: false
+  },
+  errorMessage: {
+    type: Schema.Types.String,
+    required: false
   }
   // @end
 }, {
