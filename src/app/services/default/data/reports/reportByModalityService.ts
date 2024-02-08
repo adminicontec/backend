@@ -56,7 +56,8 @@ export interface IReportPage {
   isVirtual: boolean;
   isAuditor: boolean;
   isAuditorCerficateEnabled: boolean,
-  firstCertificateIsAuditor: boolean
+  firstCertificateIsAuditor: boolean,
+  typeCourse?: string
 }
 
 export interface IReportCourse {
@@ -223,7 +224,7 @@ class ReportByModalityService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
+      .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration typeCourse')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
       .populate({path: 'program', select: 'id name code isAuditor'})
@@ -398,6 +399,7 @@ class ReportByModalityService {
           city: courseScheduling?.city?.name || '-',
           companyName: courseScheduling?.client?.name || '-',
           accountExecutive: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : '-',
+          typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : null,
           courses: [],
           totalDuration: 0,
           totalDurationFormated: '0h',
@@ -749,6 +751,10 @@ class ReportByModalityService {
         row++
         sheetData.push(['MODALIDAD', reportData?.data?.modalityName])
         row++
+        if (reportData?.data?.typeCourse?.length) {
+          sheetData.push(['TIPO DE CURSO', reportData?.data?.typeCourse])
+          row++
+        }
         sheetData.push(['REGIONAL', reportData?.data?.regional])
         row++
         sheetData.push(['CIUDAD', reportData?.data?.city])

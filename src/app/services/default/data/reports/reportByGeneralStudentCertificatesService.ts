@@ -61,6 +61,7 @@ export interface IReportPage {
     auxiliar: string;
     createdAt: string;
   }
+  typeCourse?: string
 }
 
 
@@ -91,7 +92,7 @@ class ReportByGeneralStudentCertificatesService {
       .select('_id courseId userId auxiliar created_at certificateType message downloadDate certificate.hash certificate.date certificate.title')
       .populate({
         path: 'courseId',
-        select: 'id metadata schedulingMode regional city account_executive client program startDate endDate',
+        select: 'id metadata schedulingMode regional city account_executive client program startDate endDate typeCourse',
         populate: [
           {path: 'schedulingMode', select: 'id name'},
           {path: 'regional', select: 'id name'},
@@ -135,6 +136,7 @@ class ReportByGeneralStudentCertificatesService {
         const itemBase: IReportPage = {
           serviceId: certification?.courseId?.metadata?.service_id || '-',
           modalityName: certification?.courseId?.schedulingMode?.name || '-',
+          typeCourse: certification?.courseId?.typeCourse === 'free' ? 'Gratuito' : certification?.courseId?.typeCourse === 'mooc' ? 'Mooc' : '-',
           regional: certification?.courseId?.regional?.name || '-',
           city: certification?.courseId?.city?.name || '-',
           accountExecutive: (certification?.courseId?.account_executive?.profile) ? `${certification?.courseId?.account_executive?.profile.first_name} ${certification?.courseId?.account_executive?.profile.last_name}` : '-',
@@ -241,6 +243,7 @@ class ReportByGeneralStudentCertificatesService {
 
         const headerTable = [
           'Modalidad',
+          'Gratuito/Mooc',
           'Regional',
           'Ciudad',
           'Ejecutivo de cuenta',
@@ -268,6 +271,7 @@ class ReportByGeneralStudentCertificatesService {
         for (const certification of reportData?.data) {
           const contentScheduling = [
             certification.modalityName,
+            certification.typeCourse,
             certification.regional,
             certification.city,
             certification.accountExecutive,

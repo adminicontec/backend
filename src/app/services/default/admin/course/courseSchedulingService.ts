@@ -1805,7 +1805,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle'
+      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle typeCourse'
 
       let where = {}
 
@@ -1932,7 +1932,7 @@ class CourseSchedulingService {
           .select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations')
           .populate({
             path: 'course_scheduling',
-            select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming schedulingAssociation cancelationTracking reactivateTracking',
+            select: 'id program client schedulingMode schedulingType schedulingStatus regional metadata moodle_id modular city observations account_executive logReprograming schedulingAssociation cancelationTracking reactivateTracking typeCourse',
             populate: [
               { path: 'metadata.user', select: 'id profile.first_name profile.last_name' },
               { path: 'schedulingMode', select: 'id name moodle_id' },
@@ -2055,7 +2055,7 @@ class CourseSchedulingService {
             cancelationPerson: (course?.course_scheduling?.cancelationTracking?.personWhoCancels) ? `${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.first_name} ${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.last_name}` : 'N/A',
             reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
             reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
-
+            typeCourse: course?.course_scheduling?.typeCourse === 'free' ? 'Gratuito' : course?.course_scheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
           }
 
           courses.push(item)
@@ -2161,6 +2161,7 @@ class CourseSchedulingService {
         'Nombre del programa': element.program_name,
         'Tipo de servicio': element.course_scheduling_type,
         'Modalidad': element.scheduling_mode,
+        'Gratuito/Mooc': element.typeCourse,
         'Código del curso': element.course_code,
         'Nombre del curso': element.course_name,
         'Nº de horas del curso': element.course_duration,

@@ -58,6 +58,7 @@ export interface IReportPage {
   city: string,
   schedulingType: string,
   regional: string,
+  typeCourse?: string,
 }
 
 export interface IReportCourseTeacher {
@@ -106,7 +107,7 @@ class ReportByProvisionOfProfessionalsService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingStatus schedulingType schedulingMode modular program client city regional account_executive startDate endDate duration')
+      .select('id metadata schedulingStatus schedulingType schedulingMode modular program client city regional account_executive startDate endDate duration typeCourse')
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
@@ -194,6 +195,7 @@ class ReportByProvisionOfProfessionalsService {
           city: courseScheduling?.city?.name || '-',
           regional: courseScheduling?.regional?.name || '-',
           companyName: courseScheduling?.client?.name || '-',
+          typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -337,6 +339,7 @@ class ReportByProvisionOfProfessionalsService {
           'Nombre del programa',
           'Línea del programa',
           'Modalidad',
+          'Gratuito/Mooc',
           'Código del curso',
           'Nombre del curso',
           'Horas por mes',
@@ -367,6 +370,7 @@ class ReportByProvisionOfProfessionalsService {
             scheduling.programName,
             scheduling.schedulingType,
             scheduling.modalityName,
+            scheduling.typeCourse,
             scheduling.courseCode,
             scheduling.courseName,
             scheduling.hoursPerMonth,
