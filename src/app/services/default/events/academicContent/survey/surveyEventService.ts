@@ -52,7 +52,7 @@ class SurveyEventService {
       // @INFO: Validando el programa
       const enrollments = await Enrollment.find({user: params.user})
       .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate', populate: [
+      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate typeCourse', populate: [
         {
           path: 'schedulingMode', select: 'id name'
         },
@@ -61,11 +61,10 @@ class SurveyEventService {
         }
       ]})
       .lean()
-      // console.log('enrollment', enrollment)
 
       if (enrollments.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
-      // if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
+      console.log({ enrollments, user: params.user })
 
       const surveyAnswered = await AcademicResourceAttempt.find({
         user: params.user,
@@ -75,7 +74,9 @@ class SurveyEventService {
       .lean()
 
       const survey_related = surveyAnswered.reduce((accum, element) => {
-        accum.push(element.results.surveyRelated.toString())
+        if (element.results.surveyRelated) {
+          accum.push(element.results.surveyRelated.toString())
+        }
         return accum
       }, [])
 
@@ -90,6 +91,7 @@ class SurveyEventService {
       let course_scheduling: string | undefined = undefined;
       let course_scheduling_details: string | undefined = undefined;
       let endDateService: Date | undefined = undefined;
+      let courseType: string | undefined = undefined;
 
       for (const enrollment of enrollments) {
         if (!surveyAvailable) {
@@ -176,6 +178,7 @@ class SurveyEventService {
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
                 endDateService = enrollment.course_scheduling.endDate;
+                courseType = enrollment?.course_scheduling?.typeCourse;
               } else {
                 console.log('entro a virtual false')
                 // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -204,7 +207,8 @@ class SurveyEventService {
           $match: {
             'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
             'deleted': false,
-            'status': 'enabled'
+            'status': 'enabled',
+            ...(courseType ? { 'config.content.config.course_type': courseType } : {})
           }
         },
         {
@@ -235,7 +239,7 @@ class SurveyEventService {
         academic_resource_config: data[0].academic_resource_config,
       }})
     } catch (error) {
-      console.log(error)
+      console.log(`SurveyEventService -> checkSurveyAvailable -> ERROR -> ${error}`)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -337,7 +341,9 @@ class SurveyEventService {
 
       const surveysAnswered = await this.getSurveysAnsweredByUser(params.user)
       const surveysRelated = surveysAnswered.reduce((accum, element) => {
-        accum.push(element.results.surveyRelated.toString())
+        if (element.results.surveyRelated) {
+          accum.push(element.results.surveyRelated.toString())
+        }
         return accum
       }, [])
 

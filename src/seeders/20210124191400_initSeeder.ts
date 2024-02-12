@@ -1350,7 +1350,8 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       { name: 'survey', description: 'Encuesta', config: {
         has_order_of_questions: true,
         has_course_modes: true,
-        has_is_characterization_survey: true
+        has_is_characterization_survey: true,
+        has_course_type: true
       }},
     ]
 
@@ -1383,6 +1384,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
           has_order_of_questions: true,
           has_course_modes: true,
           has_is_characterization_survey: true,
+          has_course_type: true,
         }
       },
     ]

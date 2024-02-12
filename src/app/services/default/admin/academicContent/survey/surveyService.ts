@@ -295,7 +295,7 @@ class SurveyService {
         .select(select)
         .populate({
           path: 'config.content',
-          select: 'id config.course_modes academic_resource',
+          select: 'id config.course_modes config.course_type academic_resource',
           populate: [
             {
               path: 'academic_resource',

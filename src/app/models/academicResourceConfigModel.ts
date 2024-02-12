@@ -31,6 +31,9 @@ const AcademicResourceConfigSchema = new Schema({
     is_characterization_survey: {
       type: Schema.Types.Boolean,
       default: false
+    },
+    course_type: {
+      type: Schema.Types.String
     }
   },
   // @end
