@@ -32,7 +32,7 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue, User, CourseScheduling } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, User, CourseScheduling, MailMessageLog } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -46,6 +46,7 @@ import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
 import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
+import { notificationEventService } from "../../events/notifications/notificationEventService";
 // @end
 
 class CertificateService {
@@ -2440,108 +2441,49 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
-      // const detailParams = {
-      //   id: params.hash,
-      //   fr: params.format,
-      //   pl: params.template
-      // }
-      // const respToken: any = await this.login();
+      if (params.updateCertificate) {
+        const certificateQueue = await CertificateQueue.findOne({
+          _id: params.certificate_queue
+        }).populate([
+          {
+            path: 'courseId',
+            select: 'id program metadata certificate auditor_certificate certificate_students certificate_clients multipleCertificate',
+            populate: [{ path: 'program', select: 'id name code' }]
+          }, {
+            path: 'userId',
+            select: 'profile'
+          }
+        ])
 
-      // if (respToken.status == 'error') {
-      //   return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
-      // }
-
-      // const tokenHC = respToken.token;
-
-      // const respHuella: any = await queryUtility.query({
-      //   method: 'get',
-      //   url: certificate_setup.endpoint.certificate_detail,
-      //   api: 'huellaDeConfianza',
-      //   headers: { Authorization: tokenHC },
-      //   params: detailParams
-      // });
-
-      // await certificateLogsService.insertOrUpdate({
-      //   serviceResponse: respHuella.estado,
-      //   idCertificateQueue: params.certificate_queue,
-      //   message: '',
-      //   process: 'Preview certificate',
-      //   previewRequestData: detailParams,
-      //   responseService: respHuella
-      // });
-
-      // if (respHuella.estado === 'error') {
-      //   return responseUtility.buildResponseFailed('json', null, {
-      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-      //   });
-      // }
-
-      // if (respHuella.resultado === "") {
-      //   return responseUtility.buildResponseFailed('json', null, {
-      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-      //   });
-      // }
-
-      if (params.updateCertificate && params.format) {
-        // let updateData = null
-
-        // const userCertificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
-
-        // let respDataUser: any = await userService.findBy({
-        //   query: QueryValues.ONE,
-        //   where: [{ field: '_id', value: userCertificate.userId }]
-        // })
-
-        // var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
-
-        // if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
-        //   const time = new Date().getTime()
-        //   const resultPng: any = await this.generateCertificateFromBase64({
-        //     certificate: respHuella.resultado,
-        //     to_file: {
-        //       file: {
-        //         name: `${filename}_${time}.png`,
-        //       },
-        //       path: this.default_certificate_path,
-        //     }
-        //   })
-        //   if (resultPng.status === 'success') {
-        //     updateData = {
-        //       $set: {
-        //         "certificate.imagePath": resultPng.filename,
-        //         "status": 'Complete'
-        //       }
-        //     }
-        //   }
-        // } else if (params.format.toString() === "2") { // Si el formato es 2 (PDF) guardo el documento en el server y actualizo base de datos
-        //   const time = new Date().getTime()
-        //   const resultPdf: any = await this.generateCertificateFromBase64({
-        //     certificate: respHuella.resultado,
-        //     to_file: {
-        //       file: {
-        //         name: `${filename}_${time}.pdf`,
-        //       },
-        //       path: this.default_certificate_path,
-        //     }
-        //   })
-        //   if (resultPdf.status === 'success') {
-        //     updateData = {
-        //       $set: {
-        //         "certificate.pdfPath": resultPdf.filename,
-        //         "status": 'Complete'
-        //       }
-        //     }
-        //   }
-        // }
+        const { courseId: courseScheduling, userId: user } = certificateQueue;
 
         const updateData = {
           $set: {
-            // "certificate.pdfPath": resultPdf.filename,
             "status": 'Complete'
           }
         }
 
         if (updateData) {
+          if (courseScheduling?.certificate_students === true) {
+            let forceNotificationSended = false;
+            if (courseScheduling?.multipleCertificate?.status === true) {
+              const notifications = await MailMessageLog.find({
+                notification_source: {$regex: `participant_certificated_${user._id}_${courseScheduling._id}`}
+              })
+              .select('id')
+              if (notifications.length > 0) {
+                forceNotificationSended = true
+              }
+            }
+            const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+              certificateQueueId: certificateQueue._id,
+              participantId: user._id,
+              courseSchedulingId: courseScheduling._id,
+              consecutive: certificateQueue.certificateConsecutive,
+              forceNotificationSended
+            });
+            updateData['$set']['notificationSent'] = true
+          }
           await CertificateQueue.findByIdAndUpdate(params.certificate_queue, updateData, { useFindAndModify: false, new: true })
         }
       }
@@ -2573,7 +2515,7 @@ class CertificateService {
     }
 
     catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e.message.toString()})
     }
   }
 
