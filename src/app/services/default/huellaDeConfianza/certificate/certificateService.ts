@@ -2773,8 +2773,8 @@ class CertificateService {
     try {
       const certificationMigration = certificateQueue?.certificate?.source === 'acredita' ? true : false
 
-      let api_link = customs['certificateBaseUrl']
-      let url = `/${certificateQueue?.certificate?.hash}.pdf`
+      let api_link = customs['certificateBaseUrl_acredita']
+      let url = `/${certificateQueue?.certificate?.hash}`
       if (certificationMigration) {
         api_link = 'N/A'
         url = `${certificateQueue?.certificate.url}`
@@ -2826,7 +2826,8 @@ class CertificateService {
   }
 
   public certificateUrlV2 = (item) => {
-    const certificationMigration = item?.source === 'acredita' ? true : false
+    const certificationMigration = true
+    // const certificationMigration = item?.source === 'acredita' ? true : false
     const ext = certificationMigration ? '' : '.pdf'
     let host = customs['certificateBaseUrl']
     const hasUrlCredencial = item?.urlCredencial || null;
