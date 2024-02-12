@@ -275,6 +275,7 @@ class CourseService {
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
+            schedule: register.schedule,
           }
           listOfCourses.push(courseToExport);
         }

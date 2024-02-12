@@ -146,7 +146,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -387,7 +387,7 @@ class CertificateService {
             const certificate = await CertificateQueue.findOne({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
             }).select('');
 
             register.certificate = certificate;
@@ -475,7 +475,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -533,7 +533,7 @@ class CertificateService {
 
         const certifications = await CertificateQueue.find({
           courseId: course._id,
-          status: { $in: ['New', 'Requested', 'In-process', 'Complete'] }
+          status: { $in: ['New', 'Requested', 'In-process', 'Complete', 'Error'] }
         })
           .select('id userId')
 
@@ -692,7 +692,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -2232,7 +2232,8 @@ class CertificateService {
           url: '',
           urlCredencial: '',
           source: ''
-        }
+        },
+        reason: ''
       }
 
       if (certificateIssuer === 'huella') {
@@ -2290,6 +2291,8 @@ class CertificateService {
             url: respIssuer?.url,
             urlCredencial: respIssuer?.urlCredencial
           }
+        } else if (respIssuer?.resultado && respIssuer?.codigo === '404') {
+          responseIssuer.reason = respIssuer?.resultado || 'Se ha presentado un error al generar el certificado'
         }
       }
       await certificateLogsService.insertOrUpdate({
@@ -2330,6 +2333,14 @@ class CertificateService {
           updateCertificate: true,
         })
         counter++;
+      } else {
+        const responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+          id: registerId,
+          status: 'Error',
+          errorMessage: responseIssuer.reason
+        });
+
+        responseCertQueueArray.push(responseCertQueue);
       }
 
     }

@@ -119,7 +119,8 @@ export interface ICertificateQueue {
     title: string,
     date: Date,
     source: string
-  }
+  },
+  errorMessage?: string
 }
 
 export interface ICertificateQueueDelete {

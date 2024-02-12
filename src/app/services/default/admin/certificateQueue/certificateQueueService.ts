@@ -491,7 +491,7 @@ class CertificateQueueService {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
             logs.push(err?.message)
           }
-        } else if (certificate?.status === 'In-process') {
+        } else if (['In-process', 'Error'].includes(certificate?.status)) {
           try {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
             await CertificateQueue.findByIdAndUpdate(certificate._id, {

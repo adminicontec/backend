@@ -67,6 +67,7 @@ export interface IStoreCourse {
   generalities?: any,
   startPublicationDate?: string,
   endPublicationDate?: string,
+  schedule?: string,
 }
 
 export interface ICourseQuery {
