@@ -35,6 +35,7 @@ import {
   IConsolidateSurveyIn,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
 import { AcademicResourceAttempt, ConsolidatedSurveyInformation, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey, User } from '@scnode_app/models';
+import { TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class SurveyDataService {
@@ -429,8 +430,13 @@ class SurveyDataService {
             })
             reportData.push(report)
           } else {
+            const surveyCourseType = survey?.academic_resource_config?.config?.course_type
+            const courseTypeTranslation = {
+              [TypeCourse.FREE]: 'Gratuito',
+              [TypeCourse.MOOC]: 'Mooc'
+            }
             let report: any = {
-              title: modality.name,
+              title: surveyCourseType?.length ? `${modality.name} - ${courseTypeTranslation[surveyCourseType]}` : modality.name,
               queryRange: {
                 reportStartDate,
                 reportEndDate
@@ -441,7 +447,7 @@ class SurveyDataService {
               totalSurvey: 0,
               isVirtual: true
             }
-            report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
+            report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate, courseType: surveyCourseType})
             report.scheduling = await this.getSurveyDataByScheduligs(report.scheduling, {
               questionByCategory: question_by_category,
               questionsRange: report.questionsRange,
@@ -485,10 +491,11 @@ class SurveyDataService {
     }
   }
 
-  private getSchedulingsByModality = async (modality, courseSchedulingStatusInfo, options: {reportStartDate: string | undefined, reportEndDate: string | undefined}) => {
+  private getSchedulingsByModality = async (modality, courseSchedulingStatusInfo, options: {reportStartDate: string | undefined, reportEndDate: string | undefined, courseType?: string}) => {
     const schedulings = []
     let where: any = {
       schedulingMode: modality._id,
+      typeCourse: options?.courseType?.length ? options.courseType : { $nin: [TypeCourse.FREE, TypeCourse.MOOC] },
       schedulingStatus: {$in: [
         courseSchedulingStatusInfo['Confirmado']._id,
         courseSchedulingStatusInfo['Ejecutado']._id,

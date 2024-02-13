@@ -208,7 +208,7 @@ class SurveyEventService {
             'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
             'deleted': false,
             'status': 'enabled',
-            ...(courseType ? { 'config.content.config.course_type': courseType } : {})
+            'config.content.config.course_type': courseType ? courseType : { $nin: ['mooc', 'free'] }
           }
         },
         {
@@ -388,7 +388,11 @@ class SurveyEventService {
       if (!surveysRelated.includes(enrollment.course_scheduling._id.toString())) {
         if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
           const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
-          const dbSurvey = dbSurveys?.find((s) => s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString())
+          const schedulingCourseType = enrollment?.course_scheduling?.typeCourse
+          const dbSurvey = dbSurveys?.find((s) =>
+            s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString() &&
+            ((!schedulingCourseType?.length && !s.courseType?.length) || (schedulingCourseType === s.courseType))
+          )
           if (!!dbSurvey) {
             surveys.push({
               surveyRelated: enrollment.course_scheduling._id,
@@ -465,7 +469,8 @@ class SurveyEventService {
           _id: '$_id',
           survey: { "$first": '$_id'},
           academic_resource_config: {$first: '$config.content._id'},
-          modeId: {$first: '$config.content.config.course_modes'}
+          modeId: {$first: '$config.content.config.course_modes'},
+          courseType: {$first: '$config.content.config.course_type'}
         }
       }
     ]
@@ -536,7 +541,7 @@ class SurveyEventService {
     }
     const enrollments = await Enrollment.find(where)
       .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher', populate: [
+      .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher typeCourse', populate: [
         { path: 'schedulingMode', select: 'id name' },
         { path: 'program', select: 'id name code' },
       ]})
