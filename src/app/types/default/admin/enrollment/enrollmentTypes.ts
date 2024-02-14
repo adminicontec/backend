@@ -3,6 +3,10 @@ import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 // @add your types
+export enum EnrollmentOrigin {
+  AUTOREGISTRO='autoregistro'
+}
+
 export interface IAddCourseSchedulingEnrollment {
   enrollmentIds: string[]
   force?: boolean

@@ -22,11 +22,12 @@ import { i18nUtility } from '@scnode_core/utilities/i18nUtility'
 // @end
 
 // @import models
-import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory, AcademicResourceConfigCategory, AttachedCategory} from '@scnode_app/models'
+import {AppModule, Role, User, LoginToken, AcademicResourceCategory, QuestionCategory, AcademicResourceConfigCategory, AttachedCategory, Enrollment} from '@scnode_app/models'
 // @end
 
 // @import types
 import {LoginFields, UserFields, IGenerateTokenFromDestination, ILoginTokenData, IValidateTokenGenerated, IChangeRecoveredPassword, IConfirm2FA} from '@scnode_app/types/default/data/secure/auth/authTypes'
+import { EnrollmentOrigin } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 // @end
 
 
@@ -49,7 +50,7 @@ class AuthService {
    private findUserToLoginQuery = async (query) => {
 
     const user_exist = await User.findOne(query).select(
-      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.culture profile.screen_mode roles moodle_id company show_profile_interaction admin_company reviewData twoFactorEnabled emailConfirmed'
+      'username email passwordHash profile.first_name profile.last_name profile.avatarImageUrl profile.doc_type profile.doc_number profile.culture profile.screen_mode roles moodle_id company show_profile_interaction admin_company reviewData twoFactorEnabled emailConfirmed'
     )
     .populate({
       path: 'roles',
@@ -183,6 +184,9 @@ class AuthService {
     // @INFO: Consultando categorias de preguntas
     const attachedCategories = await AttachedCategory.find().select('id name description config')
 
+    // @INFO: Consultar los enrollments de autoregistro
+    const selfRegisterEnrollments = await Enrollment.find({ user: user._id, origin: EnrollmentOrigin.AUTOREGISTRO }).select('id courseID')
+
     // @INFO: Consultando los homes segun el tipo de usuario
     let home = null
     if (user.roles) {
@@ -228,6 +232,7 @@ class AuthService {
         academicResourceCategories: academicResourceCategories,
         academicResourceConfigCategories: academicResourceConfigCategories,
         questionCategories: questionCategories,
+        selfRegisterEnrollments,
         attachedCategories,
 				locale: (user.profile && user.profile.culture) ? user.profile.culture : null,
 				token: jwttoken,

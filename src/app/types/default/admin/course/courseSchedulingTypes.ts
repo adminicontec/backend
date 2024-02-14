@@ -271,4 +271,25 @@ export interface IProcessedTeacher {
   _id: string
   moodle_id: string
 }
+
+export interface ISendEnrollmentUserParams {
+  mailer: unknown
+  first_name?: string
+  course_name?: string
+  username?: string
+  service_id?: string
+  course_start?: string
+  course_end?: string
+  notification_source: string
+  type: string
+  amount_notifications?: number
+  observations?: string
+  subject?: string
+  courseType?: string
+  teacher?: unknown
+  program?: unknown
+  service?: unknown
+  courses?: unknown
+  has_sessions?: unknown
+}
 //@end

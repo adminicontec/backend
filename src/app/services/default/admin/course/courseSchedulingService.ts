@@ -62,7 +62,8 @@ import {
   TCourseSchedulingModificationFn,
   ChangeTeacherStatusAction,
   IProcessedTeacher,
-  TypeCourse
+  TypeCourse,
+  ISendEnrollmentUserParams
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
@@ -1364,12 +1365,23 @@ class CourseSchedulingService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-  public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: any) => {
+  public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: ISendEnrollmentUserParams) => {
 
     try {
       let path_template = 'user/enrollmentUser'
       if (paramsTemplate.type && paramsTemplate.type === 'teacher') {
         path_template = 'user/enrollmentTeacher'
+      }
+
+      const courseScheduling = await CourseScheduling.findOne({ "metadata.service_id": paramsTemplate.service_id }).select('typeCourse').lean()
+      const isFreeOrMooc = [TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)
+      const courseTypeTranslation = {
+        [TypeCourse.FREE]: "curso gratuito",
+        [TypeCourse.MOOC]: "mooc"
+      }
+      paramsTemplate.courseType = courseTypeTranslation[courseScheduling?.typeCourse]
+      if (isFreeOrMooc && paramsTemplate?.type === 'student') {
+        path_template = 'user/selfRegistrationEnrollment'
       }
 
       let messageAttacheds = []
