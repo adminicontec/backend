@@ -3017,7 +3017,7 @@ class CertificateService {
           totalDuration: totalDuration
         };
       } else {
-        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió:\\n'
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió:\\n\\n'
         if (programTypeName || programTypeName != null)
           mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
 
