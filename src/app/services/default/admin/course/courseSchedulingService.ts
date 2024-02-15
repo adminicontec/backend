@@ -27,7 +27,7 @@ import { mapUtility } from '@scnode_core/utilities/mapUtility'
 // @end
 
 // @import models
-import { Attached, City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, MailMessageLog, Modular, Program, Regional, Role, User } from '@scnode_app/models'
+import { Attached, CertificateCriteriaByModality, City, Company, Country, Course, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Enrollment, MailMessageLog, Modular, Program, Regional, Role, User } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -1373,7 +1373,11 @@ class CourseSchedulingService {
         path_template = 'user/enrollmentTeacher'
       }
 
-      const courseScheduling = await CourseScheduling.findOne({ "metadata.service_id": paramsTemplate.service_id }).select('typeCourse').lean()
+      const courseScheduling = await CourseScheduling.findOne({ "metadata.service_id": paramsTemplate.service_id })
+        .select('typeCourse certificateCriteria specialServiceConditions')
+        .populate({ path: 'certificateCriteria', select: 'files' })
+        .populate({ path: 'specialServiceConditions', select: 'files' })
+        .lean()
       const isFreeOrMooc = [TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)
       const courseTypeTranslation = {
         [TypeCourse.FREE]: "curso gratuito",
@@ -1407,6 +1411,76 @@ class CourseSchedulingService {
         }
       }
 
+      if (isFreeOrMooc && paramsTemplate?.type === 'student') {
+        if (courseScheduling?.certificateCriteria?.files?.length) {
+          const file = courseScheduling?.specialServiceConditions?.files[0]
+          if (file?.url) {
+            const ext = path.extname(file?.url);
+            messageAttacheds.push({
+              filename: `Criterios de certificación${ext}`,
+              path: attachedService.getFileUrl(file?.url)
+            })
+          }
+        } else {
+          const certificateCriteria = await CertificateCriteriaByModality.aggregate([
+            {
+              $lookup: {
+                from: "course_scheduling_modes",
+                localField: "modality",
+                foreignField: "_id",
+                as: "modality"
+              }
+            },
+            {
+              $match: {
+                'modality.name': "Virtual",
+                typeCourse: courseScheduling?.typeCourse,
+                deletedAt: { $exists: false }
+              }
+            },
+            {
+              $lookup: {
+                from: "attacheds",
+                localField: "certificateCriteria",
+                foreignField: "_id",
+                as: "certificateCriteria"
+              }
+            },
+            {
+              $unwind: "$certificateCriteria"
+            },
+            {
+              $project: {
+                'certificateCriteria.files': true
+              }
+            }
+          ])
+          if (certificateCriteria?.length) {
+            const files = certificateCriteria[0]?.certificateCriteria?.files
+            if (files?.length) {
+              const file = files[0]
+              if (file?.url) {
+                const ext = path.extname(file?.url);
+                messageAttacheds.push({
+                  filename: `Criterios de certificación${ext}`,
+                  path: attachedService.getFileUrl(file?.url)
+                })
+              }
+            }
+          }
+        }
+        if (courseScheduling?.specialServiceConditions?.files?.length) {
+          const file = courseScheduling?.specialServiceConditions?.files[0]
+          if (file?.url) {
+            const ext = path.extname(file?.url);
+            messageAttacheds.push({
+              filename: `Condiciones del servicio${ext}`,
+              path: attachedService.getFileUrl(file?.url)
+            })
+          }
+        }
+      }
+
       const mailOptions: IMailMessageData = {
         emails,
         mailOptions: {
@@ -1422,6 +1496,7 @@ class CourseSchedulingService {
       }
       if (messageAttacheds) {
         if (Array.isArray(messageAttacheds) && messageAttacheds.length > 0) {
+          console.log("Add attachments to email")
           mailOptions.mailOptions['attachments'] = messageAttacheds
         }
       }

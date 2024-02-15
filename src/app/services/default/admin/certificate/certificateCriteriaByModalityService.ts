@@ -82,6 +82,8 @@ class CertificateCriteriaByModalityService {
         }
         if (params.typeCourse) {
           whereCheck['typeCourse'] = params.typeCourse
+        } else {
+          whereCheck['typeCourse'] = { $nin: [TypeCourse.MOOC, TypeCourse.FREE] }
         }
         const alreadyExists = await CertificateCriteriaByModality.findOne(whereCheck)
         if (alreadyExists) throw new ExceptionsService({message: 'Ya existe un registro para esta modalidad', code: 400})
