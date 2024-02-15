@@ -93,6 +93,10 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.Boolean,
     required: false
   },
+  auxiliarNotificationSent: {
+    type: Schema.Types.Boolean,
+    required: false
+  },
   isPartial: {
     type: Schema.Types.Boolean,
     required: false
