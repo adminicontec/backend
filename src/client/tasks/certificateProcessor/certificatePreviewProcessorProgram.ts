@@ -3,10 +3,11 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
 import { certificateService } from "@scnode_app/services/default/huellaDeConfianza/certificate/certificateService"
 import { notificationEventService } from "@scnode_app/services/default/events/notifications/notificationEventService";
+import { customs } from '@scnode_core/config/globals';
 // @end
 
 // @import_models Import models
-import { CourseScheduling, MailMessageLog } from "@scnode_app/models";
+import { CertificateQueue, CourseScheduling, MailMessageLog } from "@scnode_app/models";
 // @end
 
 // @import_utilitites Import utilities
@@ -29,49 +30,78 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
     // @task_logic Add task logic
 
     console.log("Init Task: Certificate Preview Processor ");
-    await this.processRequested()
+    // await this.processRequested()
     await this.processCompleted()
 
     // @end
     return true; // Always return true | false
   }
 
-  private processRequested = async () => {
+  // private processRequested = async () => {
 
-    console.log("Get all requested certificates to process a PDF File")
-    const responseProcessedDocument = [];
-    const select = ["Requested"];
+  //   console.log("Get all requested certificates to process a PDF File")
+  //   const responseProcessedDocument = [];
+  //   const select = ["Completed"];
 
-    const respQueueToPreview: any = await certificateQueueService.
+  //   const respQueueToPreview: any = await certificateQueueService.
+  //     findBy({
+  //       query: QueryValues.ALL, where: [
+  //         { field: 'status', value: { $in: select } },
+  //         // { field: 'courseId', value: '61aa88da325be3c95039b159'},
+  //         // { field: '_id', value: '64ff499113902c48e72264b1'}
+  //       ]
+  //     });
+
+  //   if (respQueueToPreview?.certificateQueue.length !== 0) {
+  //     for await (const docPreview of respQueueToPreview.certificateQueue) {
+  //       const queuePreview: ICertificatePreview = {
+  //         certificate_queue: docPreview._id.toString(),
+  //         hash: docPreview.certificate.hash,
+  //         format: 2,
+  //         template: 1,
+  //         updateCertificate: true,
+  //       }
+  //       const responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
+
+  //       if (responsePreviewCertificate.status == 'success') {
+  //         responseProcessedDocument.push(docPreview);
+  //       }
+  //     }
+
+  //     for await (const docProcessed of responseProcessedDocument) {
+  //       await this.sendStudentNotification(docProcessed.courseId, docProcessed)
+  //     }
+
+
+
+  //   }
+  //   else {
+  //     console.log("There're no certificates to process as PDF.");
+  //   }
+  // }
+
+  private processCompleted = async () => {
+    const minDate = customs?.modules?.auxiliarCertificationNotification?.minDate || undefined;
+    if (!minDate) return;
+
+    console.log("Get all completed certificates to notificate")
+
+    const selectAsComplete = ["Complete"];
+
+    const respNotificationsOnHold: any = await certificateQueueService.
       findBy({
         query: QueryValues.ALL, where: [
-          { field: 'status', value: { $in: select } },
-          // { field: 'courseId', value: '61aa88da325be3c95039b159'},
-          // { field: '_id', value: '64ff499113902c48e72264b1'}
+          { field: 'status', value: { $in: selectAsComplete } },
+          { field: 'auxiliarNotificationSent', value: { $in: [null, false] } },
+          { field: 'created_at', value: {$gte: new Date(minDate)}}
         ]
       });
 
-    if (respQueueToPreview?.certificateQueue.length !== 0) {
-      for await (const docPreview of respQueueToPreview.certificateQueue) {
-        const queuePreview: ICertificatePreview = {
-          certificate_queue: docPreview._id.toString(),
-          hash: docPreview.certificate.hash,
-          format: 2,
-          template: 1,
-          updateCertificate: true,
-        }
-        const responsePreviewCertificate: any = await certificateService.previewCertificate(queuePreview);
+      const { certificateQueue: certificateQueueItems } = respNotificationsOnHold
 
-        if (responsePreviewCertificate.status == 'success') {
-          responseProcessedDocument.push(docPreview);
-        }
-      }
+    if (certificateQueueItems.length !== 0) {
 
-      for await (const docProcessed of responseProcessedDocument) {
-        await this.sendStudentNotification(docProcessed.courseId, docProcessed)
-      }
-
-      const groupByAssistant = responseProcessedDocument.reduce((accum, element) => {
+      const groupByAssistant = certificateQueueItems.reduce((accum, element) => {
         if (!accum[element.auxiliar._id]) {
           accum[element.auxiliar._id] = {}
         }
@@ -87,82 +117,78 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
           const courses = groupByAssistant[auxiliarKey];
           for (const courseSchedulingId in courses) {
-            if (Object.prototype.hasOwnProperty.call(courses, courseSchedulingId)) {
+            try {
+              if (Object.prototype.hasOwnProperty.call(courses, courseSchedulingId)) {
 
-              const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
-                .select('id program metadata certificate auditor_certificate')
-                .populate({ path: 'program', select: 'id name code' })
+                const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
+                  .select('id program metadata certificate auditor_certificate')
+                  .populate({ path: 'program', select: 'id name code' })
 
-              if (!courseScheduling) {
-                console.log(`Error trying to find course: ${courseSchedulingId}`)
-                continue;
-              };
+                if (!courseScheduling) {
+                  console.log(`Error trying to find course: ${courseSchedulingId}`)
+                  continue;
+                };
 
-              const serviceId = courseScheduling?.metadata?.service_id || '-';
-              const certificates = courses[courseSchedulingId];
+                const serviceId = courseScheduling?.metadata?.service_id || '-';
+                const certificates = courses[courseSchedulingId];
 
-              const notificationData: ISendNotificationAssistantCertificateGeneration = {
-                auxiliarId: auxiliarKey,
-                serviceId,
-                certifications: [],
-                programName: courseScheduling.program.name,
-              }
-
-              for (const certificateData of certificates) {
-                let certificateName = '';
-                if (certificateData?.certificateSetting) {
-                  certificateName = certificateData?.certificate?.title || '-'
-                } else {
-                  certificateName = (certificateData.certificateType == 'academic') ? courseScheduling.certificate : courseScheduling.auditor_certificate;
+                const notificationData: ISendNotificationAssistantCertificateGeneration = {
+                  auxiliarId: auxiliarKey,
+                  serviceId,
+                  certifications: [],
+                  programName: courseScheduling.program.name,
                 }
-                const participant: IParticipantData = {
-                  serviceId: serviceId,
-                  participantId: certificateData.userId._id,
-                  participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
-                  certificationName: certificateName,
-                  certificateType: certificateData.certificateType,
-                  document: certificateData.userId.profile.doc_number,
-                  regional: certificateData.userId.profile.regional
-                }
-                notificationData.certifications.push(participant)
-              }
 
-              if (notificationData?.certifications.length > 0) {
-                console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
-                console.log(`Sending notification to Operative Assistant: ${auxiliarKey}`);
-                console.log('Data', notificationData)
-                console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
-                const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar(notificationData);
-                console.log(notificationResponseAuxiliar);
+                const certificateQueueIds = []
+
+                for (const certificateData of certificates) {
+                  try {
+                    let certificateName = '';
+                    if (certificateData?.certificateSetting) {
+                      certificateName = certificateData?.certificate?.title || '-'
+                    } else {
+                      certificateName = (certificateData.certificateType == 'academic') ? courseScheduling.certificate : courseScheduling.auditor_certificate;
+                    }
+                    if (certificateData?.userId?._id) {
+                      const participant: IParticipantData = {
+                        serviceId: serviceId,
+                        participantId: certificateData.userId._id,
+                        participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
+                        certificationName: certificateName,
+                        certificateType: certificateData.certificateType,
+                        document: certificateData.userId.profile.doc_number,
+                        regional: certificateData.userId.profile.regional
+                      }
+                      notificationData.certifications.push(participant)
+                      certificateQueueIds.push(certificateData._id)
+                    }
+                  } catch (err) {
+                    console.log('Error al iterar los certificados', err)
+                    console.log('certificateData',certificateData)
+                    continue;
+                  }
+                }
+
+                if (notificationData?.certifications.length > 0) {
+                  console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+                  console.log(`Sending notification to Operative Assistant: ${auxiliarKey}`);
+                  console.log('Data', notificationData)
+                  console.log('CertificateQueue', certificateQueueIds)
+                  const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar(notificationData);
+                  console.log('Notification', notificationResponseAuxiliar);
+                  console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+                  await CertificateQueue.updateMany(
+                    {_id: {$in: certificateQueueIds}},
+                    {auxiliarNotificationSent: true}
+                  )
+                }
               }
+            } catch (err) {
+              console.log('Error processing courseScheduling', err)
+              continue;
             }
           }
         }
-      }
-
-    }
-    else {
-      console.log("There're no certificates to process as PDF.");
-    }
-  }
-
-  private processCompleted = async () => {
-    console.log("Get all completed certificates to notificate")
-
-    const selectAsComplete = ["Complete"];
-
-    const respNotificationsOnHold: any = await certificateQueueService.
-      findBy({
-        query: QueryValues.ALL, where: [
-          { field: 'status', value: { $in: selectAsComplete } },
-          { field: 'notificationSent', value: { $in: [null, false] } },
-          // { field: 'courseId', value: '61aa88da325be3c95039b159'},
-        ]
-      });
-
-    if (respNotificationsOnHold?.certificateQueue.length !== 0) {
-      for (let notificationToSend of respNotificationsOnHold.certificateQueue) {
-        await this.sendStudentNotification(notificationToSend.courseId, notificationToSend)
       }
     }
   }
@@ -198,6 +224,77 @@ class CertificatePreviewProcessorProgram extends DefaultPluginsTaskTaskService {
 
     }
   }
+
+  // private sendAuxiliarNotification = async () => {
+  //   const groupByAssistant = responseProcessedDocument.reduce((accum, element) => {
+  //     if (!accum[element.auxiliar._id]) {
+  //       accum[element.auxiliar._id] = {}
+  //     }
+  //     if (!accum[element.auxiliar._id][element.courseId]) {
+  //       accum[element.auxiliar._id][element.courseId] = []
+  //     }
+  //     accum[element.auxiliar._id][element.courseId].push(element)
+  //     return accum;
+  //   }, {});
+
+  //   for (const auxiliarKey in groupByAssistant) {
+  //     if (Object.prototype.hasOwnProperty.call(groupByAssistant, auxiliarKey)) {
+
+  //       const courses = groupByAssistant[auxiliarKey];
+  //       for (const courseSchedulingId in courses) {
+  //         if (Object.prototype.hasOwnProperty.call(courses, courseSchedulingId)) {
+
+  //           const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
+  //             .select('id program metadata certificate auditor_certificate')
+  //             .populate({ path: 'program', select: 'id name code' })
+
+  //           if (!courseScheduling) {
+  //             console.log(`Error trying to find course: ${courseSchedulingId}`)
+  //             continue;
+  //           };
+
+  //           const serviceId = courseScheduling?.metadata?.service_id || '-';
+  //           const certificates = courses[courseSchedulingId];
+
+  //           const notificationData: ISendNotificationAssistantCertificateGeneration = {
+  //             auxiliarId: auxiliarKey,
+  //             serviceId,
+  //             certifications: [],
+  //             programName: courseScheduling.program.name,
+  //           }
+
+  //           for (const certificateData of certificates) {
+  //             let certificateName = '';
+  //             if (certificateData?.certificateSetting) {
+  //               certificateName = certificateData?.certificate?.title || '-'
+  //             } else {
+  //               certificateName = (certificateData.certificateType == 'academic') ? courseScheduling.certificate : courseScheduling.auditor_certificate;
+  //             }
+  //             const participant: IParticipantData = {
+  //               serviceId: serviceId,
+  //               participantId: certificateData.userId._id,
+  //               participantFullName: `${certificateData.userId.profile.first_name} ${certificateData.userId.profile.last_name}`,
+  //               certificationName: certificateName,
+  //               certificateType: certificateData.certificateType,
+  //               document: certificateData.userId.profile.doc_number,
+  //               regional: certificateData.userId.profile.regional
+  //             }
+  //             notificationData.certifications.push(participant)
+  //           }
+
+  //           if (notificationData?.certifications.length > 0) {
+  //             console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+  //             console.log(`Sending notification to Operative Assistant: ${auxiliarKey}`);
+  //             console.log('Data', notificationData)
+  //             console.log('::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::');
+  //             const notificationResponseAuxiliar = await notificationEventService.sendNotificationCertificateCompleteToAuxiliar(notificationData);
+  //             console.log(notificationResponseAuxiliar);
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 export const certificatePreviewProcessorProgram = new CertificatePreviewProcessorProgram();
