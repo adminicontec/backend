@@ -2961,7 +2961,7 @@ class CertificateService {
       } else {
         if (showHeader) mappingAcademicModulesList += 'El contenido comprendió:\\n\\n'
         if (programTypeName || programTypeName != null)
-          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
+          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n\\n';
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
@@ -2998,7 +2998,7 @@ class CertificateService {
       });
       mappingAuditorModulesList += '</ul>'
     } else {
-      mappingAuditorModulesList = 'El contenido del programa comprendió:\\n';
+      mappingAuditorModulesList = 'El contenido del programa comprendió:\\n\\n';
       auditorModules.forEach(element => {
         totalDuration += element.duration;
         mappingAuditorModulesList += `- ${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}).\\n`;
