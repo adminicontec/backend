@@ -480,6 +480,52 @@ class CourseSchedulingNotificationsService {
     return completeAssistance;
   }
 
+  public sendReminderEmailForFreeOrMooc = async (courseSchedulingId: string, userId: string) => {
+    try {
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      if (!courseScheduling.material_assistant || !courseScheduling.account_executive) return;
+      // Enviar la notificación
+      let path_template = 'course/schedulingReminderCertificated';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_notification_reminder_certificate_${courseScheduling._id}`,
+        // Información
+        assistant_name: `${courseScheduling.material_assistant?.profile?.first_name} ${courseScheduling.material_assistant?.profile?.last_name}`,
+        program_name: courseScheduling.program.name,
+        program_code: courseScheduling.program.code,
+        service_id: courseScheduling.metadata.service_id,
+        modality: courseScheduling.schedulingMode.name,
+        duration: this.formatSecondsToHours(courseScheduling.duration),
+        startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+        endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+        observations: courseScheduling.observations,
+        accountExecutive: courseScheduling.account_executive?.profile?.first_name,
+        regional: courseScheduling.regional.name
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: i18nUtility.__('mailer.scheduling_reminder_certificate.subject'),
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendReminderEmailForFreeOrMooc Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
   /**
    * @INFO Obtener los módulos del servicio
    * @param courseScheduling
@@ -563,9 +609,6 @@ class CourseSchedulingNotificationsService {
 
       let auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
 
-      // console.log('::::::::::::::');
-      // console.log(auditorQuizModule);
-      // console.log('::::::::::::::');
       if (auditorQuizModule) {
         let quizModuleData: IQuizModuleData = {
           sectionid: auditorQuizModule.sectionid,
