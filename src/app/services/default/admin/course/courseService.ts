@@ -18,7 +18,7 @@ import { courseSchedulingService } from '@scnode_app/services/default/admin/cour
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, CourseSchedulingType } from '@scnode_app/models'
+import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, CourseSchedulingType, CustomLog } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -29,6 +29,8 @@ import { moodleCourseService } from '@scnode_app/services/default/moodle/course/
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { utils } from 'xlsx/types';
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
+import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 // @end
 
 class CourseService {
@@ -103,6 +105,7 @@ class CourseService {
   }
 
   /**
+   * !Important: Este metodo es usado unicamente por hipertexto(tienda virtual) y solo debe ser modificada por solicitud externa
    * Metodo que permite listar todos los registros
    * @param [filters] Estructura de filtros para la consulta
    * @returns
@@ -111,6 +114,7 @@ class CourseService {
 
     try {
       let listOfCourses = []
+      const logContentToSave = []
       const paging = (params.pageNumber && params.nPerPage) ? true : false
 
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
@@ -275,14 +279,23 @@ class CourseService {
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
-            schedule: register.schedule,
+            schedule: register.schedule
           }
           listOfCourses.push(courseToExport);
+          if (courseToExport?.isActive) {
+            logContentToSave.push({
+              name: register.program.name,
+              mode: register.schedulingMode.name,
+              serviceId: register?.metadata?.service_id,
+            })
+          }
         }
       } catch (e) {
         console.log('Error: ' + e);
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
       }
+
+      await this.saveLogAndSendHipertextoEmail(logContentToSave)
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
@@ -303,7 +316,56 @@ class CourseService {
 
   }
 
+  private saveLogAndSendHipertextoEmail = async (logContentToSave) => {
+    try {
+      const notificationData = {
+        activeCourses: logContentToSave,
+        coursesWithVisibilityChange: []
+      }
+      const logsResponse = await CustomLog.find({ label: "csth - active courses sent to hipertexto" })
+        .sort({ created_at: -1 })
+        .limit(1)
+      if (logsResponse?.length) {
+        const lastLogSaved = logsResponse[0]
+        if (lastLogSaved?.content?.length) {
+          const lastContent = lastLogSaved.content
+          notificationData.coursesWithVisibilityChange = lastContent.filter((course) => !notificationData.activeCourses?.some((activeCourse) => activeCourse.serviceId === course.serviceId))
+        }
+      }
+      await customLogService.create({
+        content: logContentToSave,
+        label: 'csth - active courses sent to hipertexto',
+        description: 'Cursos activos que son enviados a hipertexto'
+      })
 
+      const emailsToSend = customs?.mailer?.email_courses_sent_to_hipertexto
+      if (!emailsToSend?.length) {
+        return
+      }
+
+      const mail = await mailService.sendMail({
+        emails: emailsToSend,
+        mailOptions: {
+          // @ts-ignore
+          subject: 'Cursos publicados en tienda',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: 'course/coursesSentToHipertexto',
+            params: {
+              activeCourses: notificationData.activeCourses?.length ? notificationData.activeCourses : null,
+              coursesWithVisibilityChange: notificationData.coursesWithVisibilityChange?.length ? notificationData.coursesWithVisibilityChange : null,
+            }
+          },
+          amount_notifications: null,
+        },
+        notification_source: 'courses_sent_to_hipertexto_notification'
+      })
+
+      return mail
+    } catch (e) {
+      console.log('CourseService -> saveLogAndSendHipertextoEmail -> ERROR: ', e)
+    }
+  }
 
 
   /**
