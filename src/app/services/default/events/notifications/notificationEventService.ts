@@ -110,7 +110,7 @@ class NotificationEventService {
         programName: params.programName || '-',
         serviceId: params.serviceId || '-',
         certifications: params?.certifications || [],
-        amount_notifications: 10,
+        amount_notifications: 100,
         notification_source: `operative_assistant_certificated_${params.serviceId}_${user._id}`,
         mailer: customs['mailer'],
       }

@@ -10,4 +10,14 @@ export interface ICustomLog {
   description?: string
   schedulingMoodleId?: string
 }
+
+export interface ICustomLogListParams {
+  label?: string
+  content?: object
+  userID?: string
+  description?: string
+  schedulingMoodleId?: string
+  limit?: number
+  sort?: unknown
+}
 //@end

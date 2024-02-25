@@ -99,7 +99,7 @@ class HtmlPdfUtility {
 
         const pdfGenerated: {file: any} | null = await new Promise((resolve, reject) => {
           pdf.create(content, configPdf).toFile(full_path_file, function(err, res) {
-            if (err) return null
+            if (err) reject(err)
             resolve({
               file: res.filename,
             })
@@ -112,7 +112,7 @@ class HtmlPdfUtility {
       } else {
         const pdfGenerated: {buffer: any, base64: any} | null = await new Promise((resolve, reject) => {
           pdf.create(content, configPdf).toBuffer(function(err, buffer) {
-            if (err) return null
+            if (err) reject(err)
             resolve({
               buffer: buffer,
               base64: buffer.toString('base64')
@@ -132,7 +132,14 @@ class HtmlPdfUtility {
         ...response
       }})
     } catch (error) {
-      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {error_message: error.message}} )
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
+        error,
+        errorContent: {
+          name: error?.name,
+          stack: error?.stack,
+          message: error?.message,
+        }
+      }} )
     }
   }
 

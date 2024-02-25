@@ -16,6 +16,9 @@ export interface ICertificateMultipleDataCertificationCertificate {
   certificateUrl?: string;
   certificateDate?: string;
   certificateHash?: string;
+  certificateStatus?: string
+  errorMessage?: string;
+  certificateId?: string
 }
 
 export interface ICertificateMultipleDataCertificationModuleCriteriaResume {
@@ -57,7 +60,8 @@ export interface ICertificateMultipleDataStudent {
 export interface ICertificateMultipleDataResponse {
   courseSchedulingId: string
   student?: ICertificateMultipleDataStudent
-  students?: ICertificateMultipleDataStudent[]
+  students?: ICertificateMultipleDataStudent[],
+  warnings?: Record<string, string>[]
 }
 
 export interface ICertificateMultipleGenerateStudent {

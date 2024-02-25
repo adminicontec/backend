@@ -51,6 +51,9 @@ const CourseSchedulingSchema = new Schema({
       require: true
     }
   },
+  schedule: {
+    type: Schema.Types.String
+  },
   schedulingMode: {
     type: Schema.Types.ObjectId,
     ref: "CourseSchedulingMode",

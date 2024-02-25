@@ -28,6 +28,7 @@ import { ICertificate, ILogoInformation, ISetCertificateParams, ISignatureInform
 import { BuildStudentsMoodleDataException } from './buildStudentsError';
 import { courseSchedulingService } from '../course/courseSchedulingService';
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 class CertificateMultipleService {
@@ -73,7 +74,7 @@ class CertificateMultipleService {
       // @INFO: Consultar certificados generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -133,7 +134,10 @@ class CertificateMultipleService {
             approved: false, // OK
             certificateType: certificateSetting?.certificationType, // OK
             certificate: { // OK
-              isGenerated: false
+              isGenerated: false,
+              certificateStatus: '',
+              certificateId: '',
+              errorMessage: ''
             },
             modules: [], // OK
             isPartial: false
@@ -145,6 +149,9 @@ class CertificateMultipleService {
             }
             const certificate = studentCertificates[certificateSetting._id.toString()];
             certification.certificate.isGenerated = true;
+            certification.certificate.certificateStatus = certificate.status;
+            certification.certificate.errorMessage = certificate?.errorMessage || ''
+            certification.certificate.certificateId = certificate._id;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
             if (certificate?.certificate?.hash) {
               certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate)
@@ -234,12 +241,30 @@ class CertificateMultipleService {
 
       const response: ICertificateMultipleDataResponse = {
         courseSchedulingId: course_scheduling,
+        warnings: []
       }
 
       if (studentId) {
         response.student = students[0] || undefined
       } else {
         response.students = students
+      }
+
+      const certificationMigration = certificateService.certificateProviderStrategy(courseScheduling.metadata.service_id)
+      if (certificationMigration) {
+        const programCode = courseScheduling?.program?.code || undefined
+        if (programCode) {
+          const queryHasTemplateBlockChain: any = await queryUtility.query({
+            method: 'get',
+            url: `GetNumTemplates/${programCode}`,
+            api: 'acredita',
+          });
+          if (queryHasTemplateBlockChain === 0 || queryHasTemplateBlockChain === "0") {
+            response.warnings.push({
+              key: 'Validación de plantilla', message: `El programa con código ${programCode} NO se encuentra registrado en la metadata para emisión por Blockchain`
+            })
+          }
+        }
       }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -500,7 +525,7 @@ class CertificateMultipleService {
       // @INFO: Consultando certificados ya generados
       const certificates = await CertificateQueue.find({
         courseId: courseScheduling._id,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
       const certificatesByStudent = certificates?.reduce((accum, certificate) => {
         if (certificate?.userId && certificate?.certificateSetting) {
@@ -560,7 +585,8 @@ class CertificateMultipleService {
       })
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
-      .select('id moodle_id')
+      .populate({ path: 'program', select: 'id name moodle_id code' })
+      .select('id moodle_id metadata program')
 
       if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {
         error_key: 'course_scheduling.not_found'
@@ -716,7 +742,7 @@ class CertificateMultipleService {
         certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
       }
 
-      let dato_16 = undefined;
+      let dato_16 = '';
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
       let mapping_template = '';
       const mapping_dato_1 = this.getCertificateTypeTranslate(certificateSetting?.certificationType);
@@ -786,14 +812,14 @@ class CertificateMultipleService {
       let fecha_certificado: any = currentDate;
       let fecha_aprobacion = approvedDate;
       let fecha_ultima_modificacion = null;
-      let fecha_renovacion;
-      let fecha_vencimiento;
+      let fecha_renovacion = null;
+      let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_15 = ''
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
-        modulo = 'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
+        modulo = courseScheduling?.program?.code, //'IN-1W2345-09' // TODO: En este campo debe ir el CODIGO del programa (Por ahora debe quedar IN-1W2345-09)
         asistio = '1'
         fecha_certificado = fecha_certificado.toISOString().split('T')[0];
         fecha_aprobacion = fecha_aprobacion.toISOString().split('T')[0]
@@ -807,7 +833,8 @@ class CertificateMultipleService {
         documento: `${student?.profile.doc_type} ${student?.profile?.doc_number}`,
         nombre: studentFullName.toUpperCase(),
         asistio,
-        certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+        // certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+        certificado: mapping_titulo_certificado.toUpperCase(),
         certificado_ingles: '',
         alcance: '',
         alcance_ingles: '',

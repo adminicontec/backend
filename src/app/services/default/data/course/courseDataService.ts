@@ -68,7 +68,7 @@ class CourseDataService {
 
   private fetchCourseByCourseScheduling = async (params: IFetchCourse) => {
     try {
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration typeCourse serviceValidity'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration typeCourse serviceValidity schedule'
 
       let where = {}
 

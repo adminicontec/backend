@@ -237,7 +237,7 @@ class CourseService {
 
           if (register.hasCost) {
             if (publishedSchedulingIds?.includes(register?._id?.toString())) {
-              if ([CourseSchedulingModes.VIRTUAL].includes(register.schedulingMode.name))
+              if ([CourseSchedulingModes.VIRTUAL, CourseSchedulingModes.ON_LINE].includes(register.schedulingMode.name))
                 isActive = true;
               else
                 isActive = false;
@@ -275,6 +275,7 @@ class CourseService {
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
+            schedule: register.schedule,
           }
           listOfCourses.push(courseToExport);
         }

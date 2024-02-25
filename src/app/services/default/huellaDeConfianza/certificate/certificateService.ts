@@ -32,7 +32,7 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue, User, CourseScheduling } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, User, CourseScheduling, MailMessageLog } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -45,6 +45,8 @@ import {
 import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
+import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
+import { notificationEventService } from "../../events/notifications/notificationEventService";
 // @end
 
 class CertificateService {
@@ -145,7 +147,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -244,11 +246,6 @@ class CertificateService {
         mapping_listado_modulos_auditor += '</ul>'
       }
 
-      // let regionalName = respCourse.scheduling;
-      // console.log("↓↓←←←←");
-      // console.log(regionalName);
-      // console.log("↓↓←←←←");
-
       previewCertificateParams = {
         certificado: (respCourse.scheduling.certificate) ? respCourse.scheduling.certificate : respCourse.scheduling.program.name,
         certificado_auditor: (respCourse.scheduling.auditor_certificate) ? respCourse.scheduling.auditor_certificate : null,
@@ -263,6 +260,23 @@ class CertificateService {
         fecha_impresion: currentDate,
         dato_2: moment(respCourse.scheduling.endDate).locale('es').format('LL'),
         warnings: []
+      }
+
+      const certificationMigration = this.certificateProviderStrategy(respCourse.scheduling.metadata.service_id)
+      if (certificationMigration) {
+        const programCode = respCourse?.scheduling?.program?.code || undefined
+        if (programCode) {
+          const queryHasTemplateBlockChain: any = await queryUtility.query({
+            method: 'get',
+            url: `GetNumTemplates/${programCode}`,
+            api: 'acredita',
+          });
+          if (queryHasTemplateBlockChain === 0 || queryHasTemplateBlockChain === "0") {
+            previewCertificateParams.warnings.push({
+              key: 'Validación de plantilla', message: `El programa con código ${programCode} NO se encuentra registrado en la metadata para emisión por Blockchain`
+            })
+          }
+        }
       }
 
       if (respCourse.scheduling?.signature_1) {
@@ -374,7 +388,7 @@ class CertificateService {
             const certificate = await CertificateQueue.findOne({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
             }).select('');
 
             register.certificate = certificate;
@@ -462,7 +476,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -520,7 +534,7 @@ class CertificateService {
 
         const certifications = await CertificateQueue.find({
           courseId: course._id,
-          status: { $in: ['New', 'Requested', 'In-process', 'Complete'] }
+          status: { $in: ['New', 'Requested', 'In-process', 'Complete', 'Error'] }
         })
           .select('id userId')
 
@@ -679,7 +693,7 @@ class CertificateService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Error'] }
       })
         .select('id userId')
 
@@ -920,7 +934,10 @@ class CertificateService {
   public certificateProviderStrategy = (serviceId: string) => {
     const servicesAvailable = customs?.servicesAvailable || [];
     if (servicesAvailable.length === 0) return true;
-    if (servicesAvailable.includes(serviceId)) return true;
+    // @INFO: Modificar variable para habilitar por defecto acredita y servicios limitados huella 1
+    if (!servicesAvailable.includes(serviceId)) return true;
+    // @INFO: Modificar variable para habilitar por defecto huella 1 y servicios limitados Acredita
+    // if (servicesAvailable.includes(serviceId)) return true;
     return false;
   }
 
@@ -1264,7 +1281,7 @@ class CertificateService {
       let fecha_renovacion = null;
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
-      let dato_16 = undefined;
+      let dato_16 = '';
       let dato_15 = ''
 
       if (certificationMigration) {
@@ -1288,7 +1305,8 @@ class CertificateService {
           documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
           nombre: respDataUser.user.profile.full_name.toUpperCase(),
           asistio,
-          certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+          // certificado: mapping_titulo_certificado.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+          certificado: mapping_titulo_certificado.toUpperCase(),
           certificado_ingles: '',
           alcance: '',
           alcance_ingles: '',
@@ -1365,7 +1383,7 @@ class CertificateService {
             }
           }
 
-          let dato_16Auditor = undefined;
+          let dato_16Auditor = '';
           let intensidadAuditor: any = generalUtility.getDurationFormatedForCertificate(mappingAuditorList.totalDuration)
 
           if (certificationMigration) {
@@ -1380,7 +1398,8 @@ class CertificateService {
             documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
             nombre: respDataUser.user.profile.full_name.toUpperCase(),
             asistio,
-            certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            // certificado: respCourse.scheduling.auditor_certificate.toUpperCase().replace(/\(/g, this.left_parentheses).replace(/\)/g, this.right_parentheses),
+            certificado: respCourse.scheduling.auditor_certificate.toUpperCase(),
             certificado_ingles: '',
             alcance: '',
             alcance_ingles: '',
@@ -2214,7 +2233,8 @@ class CertificateService {
           url: '',
           urlCredencial: '',
           source: ''
-        }
+        },
+        reason: ''
       }
 
       if (certificateIssuer === 'huella') {
@@ -2272,6 +2292,8 @@ class CertificateService {
             url: respIssuer?.url,
             urlCredencial: respIssuer?.urlCredencial
           }
+        } else if (respIssuer?.resultado && respIssuer?.codigo === '404') {
+          responseIssuer.reason = respIssuer?.resultado || 'Se ha presentado un error al generar el certificado'
         }
       }
       await certificateLogsService.insertOrUpdate({
@@ -2303,7 +2325,23 @@ class CertificateService {
         });
 
         responseCertQueueArray.push(responseCertQueue);
+
+        await this.previewCertificate({
+          certificate_queue: registerId,
+          hash: responseIssuer.certificate.hash,
+          format: 2,
+          template: 1,
+          updateCertificate: true,
+        })
         counter++;
+      } else {
+        const responseCertQueue: any = await certificateQueueService.insertOrUpdate({
+          id: registerId,
+          status: 'Error',
+          errorMessage: responseIssuer.reason
+        });
+
+        responseCertQueueArray.push(responseCertQueue);
       }
 
     }
@@ -2403,108 +2441,49 @@ class CertificateService {
 
   public previewCertificate = async (params: ICertificatePreview) => {
     try {
-      // const detailParams = {
-      //   id: params.hash,
-      //   fr: params.format,
-      //   pl: params.template
-      // }
-      // const respToken: any = await this.login();
+      if (params.updateCertificate) {
+        const certificateQueue = await CertificateQueue.findOne({
+          _id: params.certificate_queue
+        }).populate([
+          {
+            path: 'courseId',
+            select: 'id program metadata certificate auditor_certificate certificate_students certificate_clients multipleCertificate',
+            populate: [{ path: 'program', select: 'id name code' }]
+          }, {
+            path: 'userId',
+            select: 'profile'
+          }
+        ])
 
-      // if (respToken.status == 'error') {
-      //   return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.login_invalid' } })
-      // }
-
-      // const tokenHC = respToken.token;
-
-      // const respHuella: any = await queryUtility.query({
-      //   method: 'get',
-      //   url: certificate_setup.endpoint.certificate_detail,
-      //   api: 'huellaDeConfianza',
-      //   headers: { Authorization: tokenHC },
-      //   params: detailParams
-      // });
-
-      // await certificateLogsService.insertOrUpdate({
-      //   serviceResponse: respHuella.estado,
-      //   idCertificateQueue: params.certificate_queue,
-      //   message: '',
-      //   process: 'Preview certificate',
-      //   previewRequestData: detailParams,
-      //   responseService: respHuella
-      // });
-
-      // if (respHuella.estado === 'error') {
-      //   return responseUtility.buildResponseFailed('json', null, {
-      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-      //   });
-      // }
-
-      // if (respHuella.resultado === "") {
-      //   return responseUtility.buildResponseFailed('json', null, {
-      //     error_key: { key: 'certificate.preview', params: {error: 'Aun no esta disponible'} }
-      //   });
-      // }
-
-      if (params.updateCertificate && params.format) {
-        // let updateData = null
-
-        // const userCertificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
-
-        // let respDataUser: any = await userService.findBy({
-        //   query: QueryValues.ONE,
-        //   where: [{ field: '_id', value: userCertificate.userId }]
-        // })
-
-        // var filename = generalUtility.normalizeFullName(respDataUser.user.profile.first_name, respDataUser.user.profile.last_name);
-
-        // if (params.format.toString() === "1") { // Si el format es 1 (PNG) guardo en base de datos el base 64
-        //   const time = new Date().getTime()
-        //   const resultPng: any = await this.generateCertificateFromBase64({
-        //     certificate: respHuella.resultado,
-        //     to_file: {
-        //       file: {
-        //         name: `${filename}_${time}.png`,
-        //       },
-        //       path: this.default_certificate_path,
-        //     }
-        //   })
-        //   if (resultPng.status === 'success') {
-        //     updateData = {
-        //       $set: {
-        //         "certificate.imagePath": resultPng.filename,
-        //         "status": 'Complete'
-        //       }
-        //     }
-        //   }
-        // } else if (params.format.toString() === "2") { // Si el formato es 2 (PDF) guardo el documento en el server y actualizo base de datos
-        //   const time = new Date().getTime()
-        //   const resultPdf: any = await this.generateCertificateFromBase64({
-        //     certificate: respHuella.resultado,
-        //     to_file: {
-        //       file: {
-        //         name: `${filename}_${time}.pdf`,
-        //       },
-        //       path: this.default_certificate_path,
-        //     }
-        //   })
-        //   if (resultPdf.status === 'success') {
-        //     updateData = {
-        //       $set: {
-        //         "certificate.pdfPath": resultPdf.filename,
-        //         "status": 'Complete'
-        //       }
-        //     }
-        //   }
-        // }
+        const { courseId: courseScheduling, userId: user } = certificateQueue;
 
         const updateData = {
           $set: {
-            // "certificate.pdfPath": resultPdf.filename,
             "status": 'Complete'
           }
         }
 
         if (updateData) {
+          if (courseScheduling?.certificate_students === true) {
+            let forceNotificationSended = false;
+            if (courseScheduling?.multipleCertificate?.status === true) {
+              const notifications = await MailMessageLog.find({
+                notification_source: {$regex: `participant_certificated_${user._id}_${courseScheduling._id}`}
+              })
+              .select('id')
+              if (notifications.length > 0) {
+                forceNotificationSended = true
+              }
+            }
+            const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+              certificateQueueId: certificateQueue._id,
+              participantId: user._id,
+              courseSchedulingId: courseScheduling._id,
+              consecutive: certificateQueue.certificateConsecutive,
+              forceNotificationSended
+            });
+            updateData['$set']['notificationSent'] = true
+          }
           await CertificateQueue.findByIdAndUpdate(params.certificate_queue, updateData, { useFindAndModify: false, new: true })
         }
       }
@@ -2536,7 +2515,7 @@ class CertificateService {
     }
 
     catch (e) {
-      return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseFailed('json', null, {message: e.message.toString()})
     }
   }
 
@@ -2544,55 +2523,68 @@ class CertificateService {
     try {
       if (!params.category) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
       if (!params.certificateQueueIds) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.force_stage.params_invalid" })
+      const isAsync = params.async || false
 
-      let status = undefined;
-      switch (params.category) {
-        case CertificateCategory.FORCE_PREVIEW:
-          status = 'Requested'
-          break;
+      // let status = undefined;
+      // switch (params.category) {
+      //   case CertificateCategory.FORCE_PREVIEW:
+      //     status = 'Requested'
+      //     break;
+      // }
+      // if (!status) return responseUtility.buildResponseFailed('json', null, { error_key: {key: "certificate.force_stage.error", params: {errorMessage: 'La categoria no tiene un valor valido'}} })
+
+      // const query: any = {
+      //   _id: {$in: params.certificateQueueIds},
+      //   deleted: false
+      // }
+
+      // await CertificateQueue.updateMany(query, {
+      //   $set: {
+      //     status: status
+      //   }
+      // })
+      // const certificatesQuery = await CertificateQueue.find({
+      //   _id: {$in: params.certificateQueueIds},
+      // });
+
+      // const certificateLogs: {key: string, message: string, status: 'success' | 'error'}[] = []
+      let logs = []
+      if (isAsync) {
+        certificateQueueService.processCertificateQueue({
+          certificateQueueIds: params.certificateQueueIds,
+          output: 'process'
+        })
+      } else {
+        const responseProcess: any = await certificateQueueService.processCertificateQueue({
+          certificateQueueIds: params.certificateQueueIds,
+          output: 'process'
+        })
+        logs = responseProcess.logs || []
       }
-      if (!status) return responseUtility.buildResponseFailed('json', null, { error_key: {key: "certificate.force_stage.error", params: {errorMessage: 'La categoria no tiene un valor valido'}} })
-
-      const query: any = {
-        _id: {$in: params.certificateQueueIds},
-        deleted: false
-      }
-
-      await CertificateQueue.updateMany(query, {
-        $set: {
-          status: status
-        }
-      })
-      const certificatesQuery = await CertificateQueue.find({
-        _id: {$in: params.certificateQueueIds},
-      });
-
-      const certificateLogs: {key: string, message: string, status: 'success' | 'error'}[] = []
-
-      for (let certificate of certificatesQuery) {
-        try {
-          const processResponse: any = await certificateQueueService.processCertificateQueue({
-            certificateQueueId: certificate._id,
-            output: 'process'
-          })
-          certificateLogs.push({
-            key: certificate._id,
-            message: processResponse?.message || '-',
-            status: processResponse?.status || undefined
-          })
-        } catch (err) {
-          certificateLogs.push({
-            key: certificate._id,
-            message: err?.message || 'Se ha presentado un error al procesar el certificado',
-            status: 'error'
-          })
-          continue
-        }
-      }
+      // for (let certificate of certificatesQuery) {
+      //   try {
+      //     const processResponse: any = await certificateQueueService.processCertificateQueue({
+      //       certificateQueueId: certificate._id,
+      //       output: 'process'
+      //     })
+      //     certificateLogs.push({
+      //       key: certificate._id,
+      //       message: processResponse?.message || '-',
+      //       status: processResponse?.status || undefined
+      //     })
+      //   } catch (err) {
+      //     certificateLogs.push({
+      //       key: certificate._id,
+      //       message: err?.message || 'Se ha presentado un error al procesar el certificado',
+      //       status: 'error'
+      //     })
+      //     continue
+      //   }
+      // }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          certificateLogs
+          logs
         }
       })
     } catch (err) {
@@ -2602,28 +2594,68 @@ class CertificateService {
 
   public reGenerateCertification = async (params: ICertificateReGenerate) => {
     try {
-      if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
-      if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+      const isMultiple = params.isMultiple || false;
 
-      const query: any = {
-        userId: params.userId,
-        courseId: params.courseId,
-        deleted: false
+      if (isMultiple) {
+        if (!params.certificateQueueId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+
+        const certificate = await CertificateQueue.findOne({_id: params.certificateQueueId})
+
+        const item: ICertificateQueueMultiple = {
+          userId: certificate?.userId,
+          courseId: certificate?.courseId,
+          certificateSetting: certificate.certificateSetting,
+          auxiliar: certificate.auxiliar,
+          certificateType: certificate.certificateType,
+          certificateConsecutive: certificate.certificateConsecutive,
+          status: 'New',
+          isPartial: certificate.isPartial,
+        }
+
+        await certificate.delete()
+
+        const responseCertificateQueue = await CertificateQueue.create(item)
+
+        if (responseCertificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseCertificateQueue?._id,
+            output: 'process'
+          })
+        }
+
+        return responseUtility.buildResponseSuccess('json', null)
+      } else {
+        if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+        if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
+
+        const query: any = {
+          userId: params.userId,
+          courseId: params.courseId,
+          deleted: false
+        }
+        if (params.certificateQueueId) {
+          query['_id'] = params.certificateQueueId
+        }
+
+        await CertificateQueue.delete(query)
+
+        const responseQueue: any = await certificateQueueService.insertOrUpdate({
+          users: [params.userId],
+          courseId: params.courseId,
+          auxiliar: params.auxiliar,
+          status: "New"
+        })
+
+        if (responseQueue?.status === 'success' && responseQueue?.certificateQueue?._id) {
+          certificateQueueService.processCertificateQueue({
+            certificateQueueId: responseQueue?.certificateQueue?._id,
+            output: 'process'
+          })
+        }
+
+        return responseUtility.buildResponseSuccess('json', null)
       }
-      if (params.certificateQueueId) {
-        query['_id'] = params.certificateQueueId
-      }
 
-      await CertificateQueue.delete(query)
-
-      await certificateQueueService.insertOrUpdate({
-        users: [params.userId],
-        courseId: params.courseId,
-        auxiliar: params.auxiliar,
-        status: "New"
-      })
-
-      return responseUtility.buildResponseSuccess('json', null)
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
@@ -2681,10 +2713,19 @@ class CertificateService {
 
   public fetchCertification = async (certificateQueue: any) => {
     try {
+      const certificationMigration = certificateQueue?.certificate?.source === 'acredita' ? true : false
+
+      let api_link = customs['certificateBaseUrl_acredita']
+      let url = `/${certificateQueue?.certificate?.hash}`
+      if (certificationMigration) {
+        api_link = 'N/A'
+        url = `${certificateQueue?.certificate.url}`
+      }
+
       const buffer = await queryUtility.query({
-        api_link: customs['certificateBaseUrl'],
+        api_link: api_link,
         method: 'get',
-        url: `/${certificateQueue?.certificate?.hash}.pdf`,
+        url: url,
         responseBuffer: true
       })
 
@@ -2727,9 +2768,17 @@ class CertificateService {
   }
 
   public certificateUrlV2 = (item) => {
-    const certificationMigration = item?.source === 'acredita' ? true : false
+    const certificationMigration = true
+    // const certificationMigration = item?.source === 'acredita' ? true : false
     const ext = certificationMigration ? '' : '.pdf'
-    const host = certificationMigration ? customs['certificateBaseUrl_acredita'] : customs['certificateBaseUrl']
+    let host = customs['certificateBaseUrl']
+    const hasUrlCredencial = item?.urlCredencial || null;
+    if (certificationMigration) {
+      host = customs['certificateBaseUrl_acredita'];
+      if (hasUrlCredencial) {
+        host += `Pdf`
+      }
+    }
     return item?.hash && item?.hash !== ''
       ? `${host}/${item.hash}${ext}`
       : null
@@ -2890,11 +2939,10 @@ class CertificateService {
    */
   public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html', showHeader: boolean = true) => {
     let mappingAcademicModulesList = '';
-    if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
-
     let totalDuration = 0;
     try {
       if (format === 'html') {
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: <br/>'
         if (programTypeName || programTypeName != null)
           mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: <br/>';
 
@@ -2911,8 +2959,9 @@ class CertificateService {
           totalDuration: totalDuration
         };
       } else {
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió:\\n\\n'
         if (programTypeName || programTypeName != null)
-          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n';
+          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió:\\n\\n';
 
         // mappingAcademicModulesList += '<ul>'
         academicModules.forEach(element => {
@@ -2937,10 +2986,11 @@ class CertificateService {
    * Format the modules list for Certificate 2
    */
   private formatAuditorModules = (auditorModules: any, format: 'html' | 'plain' = 'html') => {
-    let mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
+    let mappingAuditorModulesList = '';
     let totalDuration = 0;
 
     if (format === 'html') {
+      mappingAuditorModulesList = 'El contenido del programa comprendió: <br/>';
       mappingAuditorModulesList += '<ul>'
       auditorModules.forEach(element => {
         totalDuration += element.duration;
@@ -2948,9 +2998,10 @@ class CertificateService {
       });
       mappingAuditorModulesList += '</ul>'
     } else {
+      mappingAuditorModulesList = 'El contenido del programa comprendió:\\n\\n';
       auditorModules.forEach(element => {
         totalDuration += element.duration;
-        mappingAuditorModulesList += `${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)})\\n`;
+        mappingAuditorModulesList += `- ${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}).\\n`;
       });
     }
 

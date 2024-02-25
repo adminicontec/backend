@@ -1,4 +1,4 @@
-# Scaffolding Nodejs T 
+# Scaffolding Nodejs
 
 ## Dependencias
 
@@ -117,4 +117,3 @@ $ npm install -g @types/node
   },
 }
 ```
-

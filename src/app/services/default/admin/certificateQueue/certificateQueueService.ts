@@ -160,19 +160,25 @@ class CertificateQueueService {
             status: response.status
           }
 
-          if (params.users.length == 1) {
-            return responseUtility.buildResponseSuccess('json', null, {
-              additional_parameters: {
-                certificateQueue: certificateQueueResponse
-              }
-            });
-          }
-          else
-            totalResponse.push(certificateQueueResponse);
+          totalResponse.push(certificateQueueResponse);
+
+          // if (params.users.length == 1) {
+          //   return responseUtility.buildResponseSuccess('json', null, {
+          //     additional_parameters: {
+          //       certificateQueue: certificateQueueResponse
+          //     }
+          //   });
+          // }
+          // else
+          //   totalResponse.push(certificateQueueResponse);
 
         };
 
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+
+        if (totalResponse.length > 0) {
+          this.sendToProcess(totalResponse.map((item) => item._id))
+        }
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
@@ -192,6 +198,16 @@ class CertificateQueueService {
           }
         })
     }
+  }
+
+  public sendToProcess = (certificatesQueue: string[]) => {
+    console.log('Init SendToProcess', certificatesQueue)
+    certificatesQueue.map((certificateQueue: string) => {
+      this.processCertificateQueue({
+        certificateQueueId: certificateQueue,
+        output: 'process'
+      })
+    })
   }
 
 
@@ -372,6 +388,8 @@ class CertificateQueueService {
       const where = {}
       if (params?.certificateQueueId) {
         where['_id'] = params.certificateQueueId
+      } else if (params?.certificateQueueIds) {
+        where['_id'] = {$in: params?.certificateQueueIds}
       }
       if (params?.courseId) {
         where['courseId'] = params.courseId
@@ -473,12 +491,32 @@ class CertificateQueueService {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
             logs.push(err?.message)
           }
-        } else if (certificate?.status === 'In-process') {
+        } else if (['In-process', 'Error'].includes(certificate?.status)) {
           try {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
             await CertificateQueue.findByIdAndUpdate(certificate._id, {
               status: 'New'
             })
+            try {
+              let respSetCertificate: any = await certificateService.createCertificate({
+                certificateQueueId: certificate._id,
+                courseId: certificate.courseId,
+                userId: certificate.userId,
+                auxiliarId: certificate.auxiliar,
+                certificateConsecutive: certificate.certificateConsecutive,
+                certificateSettingId: certificate?.certificateSetting || undefined
+              });
+              if (respSetCertificate.status === "error") {
+                logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)
+                logs.push(respSetCertificate)
+              }
+              else {
+                logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+              }
+            } catch (err) {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+              logs.push(err?.message)
+            }
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
           } catch (err) {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
