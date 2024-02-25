@@ -10,12 +10,15 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 
 // @import types
 import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
-import { CourseScheduling, Enrollment } from "@scnode_app/models";
+import { CourseScheduling, Enrollment, User } from "@scnode_app/models";
 import { TypeCourse } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
 import { EnrollmentOrigin } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import moment from "moment";
 import { enrollmentService } from "@scnode_app/services/default/admin/enrollment/enrollmentService"
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
+import { certificateMultipleService } from "@scnode_app/services/default/admin/certificate/certificateMultipleService";
+import { ICertificateMultipleDataCertification } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
+import { system_user } from '@scnode_core/config/globals';
 // @end
 
 interface IEnrollment {
@@ -57,6 +60,8 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         for (const enrollment of enrollments) {
           const userWasRemoved = await this.validateConditionsToRemoveUser(enrollment, validityTime)
           if (userWasRemoved) continue;
+          const userHasFinished = await this.verifyStudentQualifications(enrollment, courseScheduling._id)
+          if (userHasFinished) continue;
           const reminderSent = await this.sendReminderBeforeFinishCourse(enrollment, validityTime, courseScheduling._id)
           if (reminderSent) continue;
         }
@@ -89,8 +94,9 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
 
   private sendReminderBeforeFinishCourse = async (enrollment: IEnrollment, validityTime: number, courseSchedulingId: string): Promise<boolean> => {
     try {
+      // TODO: Only send if the user haven't complete the course and don't have certifications
       const startDate = moment(enrollment.created_at)
-      const expectedFinishDate = startDate.add(validityTime, 'second')
+      const expectedFinishDate = moment(enrollment.created_at).add(validityTime, 'second')
       const validityTimeInDays = expectedFinishDate.diff(startDate, 'days')
       const today = moment()
       const daysRemaining = expectedFinishDate.diff(today, 'days')
@@ -101,6 +107,44 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       return false
     } catch (e) {
       console.log('FreeCoursesProgram -> sendReminderBeforeFinishCourse -> ERROR: ', e)
+      return false
+    }
+  }
+
+  private verifyStudentQualifications = async (enrollment: IEnrollment, courseSchedulingId: string): Promise<Boolean> => {
+    try {
+      const certifications = await certificateMultipleService.certificateData({
+        course_scheduling: courseSchedulingId,
+        studentId: enrollment.user,
+        without_certification: true,
+      })
+      const allCertifications: ICertificateMultipleDataCertification[] = certifications?.student?.certifications || []
+      const approvedCertifications = allCertifications?.filter((certification) => certification.approved)
+      const courseHasFinished = allCertifications?.length > 0 && allCertifications?.length === approvedCertifications?.length
+      console.log({ approvedCertifications, completeResponse: certifications })
+      if (approvedCertifications?.length) {
+        const systemUser = await User.findOne({ username: system_user }).select('_id')
+        const response = await certificateMultipleService.generateCertificate({
+          courseSchedulingId: courseSchedulingId,
+          students: [{
+            userId: enrollment.user,
+            certificateSettings: approvedCertifications?.map((certificate) => ({
+              certificateSettingId: certificate.certificateSettingId,
+              isPartial: certificate.isPartial,
+            }))
+          }],
+          user: systemUser?._id
+        })
+        if (response?.status === 'error') {
+          console.log('FreeCoursesProgram -> verifyStudentQualifications -> GenerateCertificates -> ERROR: ', response)
+        }
+      }
+      if (courseHasFinished) {
+        // Send email
+      }
+      return false
+    } catch (e) {
+      console.log('FreeCoursesProgram -> verifyStudentQualifications -> ERROR: ', e)
       return false
     }
   }

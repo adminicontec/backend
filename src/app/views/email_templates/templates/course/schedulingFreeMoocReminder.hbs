@@ -1,0 +1,29 @@
+{{> partials/page/title title='Recordatorio finalización de curso'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado (a) participante {{params.studentName}}:</b></p>&nbsp;
+                    <p>Queremos recordarte que has estado participando en nuestro curso gratuito "{{params.courseName}}" en el <a href="{{params.mailer.campus_virtual}}/login">Campus Digital</a>, y queremos felicitarte por tu dedicación hasta ahora. Sin embargo, nos gustaría recordarte que el curso estará disponible de forma gratuita solo por un tiempo limitado.</p>
+                    <p>Actualmente, te quedan 8 días para completar el curso y aprovechar todos los recursos y lecciones que ofrece. Este curso ha sido diseñado para ayudarte a adquirir nuevas habilidades y conocimientos que seguramente te serán útiles en tu camino educativo y profesional.</p>
+                    <p>Te animamos a que continúes dedicando tiempo al curso y completes todas las secciones antes de que expire el período gratuito. Recuerda que una vez que completes el curso, tendrás la oportunidad de obtener un certificado de finalización que puedes agregar a tu currículum vitae y compartir en tus perfiles profesionales.</p>
+                    <p class="mcSpecialText">En caso de cualquier inquietud registre un <a href="{{params.mailer.help_desk}}">nuevo ticket</a> en la <a href="{{params.mailer.help_desk}}">mesa de ayuda</a>, lo invitamos a consultar el <a href="{{params.mailer.help_desk_instructive_doc}}">instructivo de mesa de ayuda</a>. También dentro del campus puede acceder a soporte con la asistente virtual Daniela en la opción 2. <img src="{{params.mailer.virtual_help}}" style="width: 100px"></p>
+                    <p>Aprovecha al máximo esta oportunidad y sigue avanzando hacia tus metas educativas y profesionales.</p>
+                    <p>¡Te deseamos mucho éxito en tu viaje de aprendizaje!</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
