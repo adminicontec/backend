@@ -73,6 +73,7 @@ export interface ICertificateMultipleGenerate {
   courseSchedulingId: string;
   students: ICertificateMultipleGenerateStudent[];
   user: string;
+  needPayment?: boolean;
 }
 
 export interface ICertificateQueueMultiple {
@@ -84,6 +85,7 @@ export interface ICertificateQueueMultiple {
   certificateConsecutive: string;
   status: string;
   isPartial: boolean
+  needPayment?: boolean
 }
 
 export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}

@@ -46,6 +46,10 @@ const EnrollmentSchema = new Schema({
   enrollmentCode:{
     type: Schema.Types.Number,
     required: false,
+  },
+  needPayment: {
+    type: Schema.Types.Boolean,
+    default: false,
   }
   // @end
 }, {

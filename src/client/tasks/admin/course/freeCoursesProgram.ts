@@ -133,14 +133,17 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
               isPartial: certificate.isPartial,
             }))
           }],
-          user: systemUser?._id
+          user: systemUser?._id,
+          needPayment: true,
         })
         if (response?.status === 'error') {
           console.log('FreeCoursesProgram -> verifyStudentQualifications -> GenerateCertificates -> ERROR: ', response)
+          return false
         }
       }
-      if (courseHasFinished) {
-        // Send email
+      if (courseHasFinished || true) {
+        await courseSchedulingNotificationsService.sendFreeMoocCourseFinished(courseSchedulingId, enrollment.user)
+        return true
       }
       return false
     } catch (e) {
