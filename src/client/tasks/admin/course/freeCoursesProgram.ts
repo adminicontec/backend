@@ -141,7 +141,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
           return false
         }
       }
-      if (courseHasFinished || true) {
+      if (courseHasFinished) {
         await courseSchedulingNotificationsService.sendFreeMoocCourseFinished(courseSchedulingId, enrollment.user)
         return true
       }
