@@ -31,6 +31,7 @@ class CourseRoute {
     const _routeCards = `${prefix}/courseCards`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
+    // !Important: Esta ruta es usada unicamente por hipertexto(tienda virtual) y solo debe ser modificada por solicitud externa
     routerUtility.get(app, _routeGeneric,'/', this.instanceController.list,[], ['auth']);
     routerUtility.get(app, _routeGeneric, '/:id', this.instanceController.get, [], ['auth'])
 

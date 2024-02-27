@@ -30,6 +30,7 @@ class CourseController {
   constructor() { }
 
   /**
+ * !Important: Esta ruta es usada unicamente por hipertexto(tienda virtual) y solo debe ser modificada por solicitud externa
  * Metodo que permite listar los registros
  * @param req Objeto de clase Express
  * @param res Objeto de clase Express
