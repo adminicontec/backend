@@ -1,0 +1,92 @@
+{{> partials/page/title title='Cursos publicados en Tienda'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Los siguientes cursos han sido enviados con un estado activo a Tienda.</b></p>&nbsp;
+                    {{#if params.activeCourses}}
+                      <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%">
+                        <thead>
+                          <tr>
+                            <th style="background: #B4BCBC; width: 100px;">ID del servicio</th>
+                            <th style="background: #B4BCBC; width: 80px;">Fecha de inicio</th>
+                            <th style="background: #B4BCBC; width: 80px;">Modalidad</th>
+                            <th style="background: #B4BCBC;">Nombre del programa</th>
+                          </tr>
+                        </thead>
+                        <tbody style="font-size: 12px;">
+                          {{#each params.activeCourses}}
+                            <tr>
+                              <td>
+                                {{this.serviceId}}
+                              </td>
+                              <td>
+                                {{this.startDate}}
+                              </td>
+                              <td>
+                                {{this.modality}}
+                              </td>
+                              <td>
+                                {{this.name}}
+                              </td>
+                            </tr>
+                          {{/each}}
+                        </tbody>
+                      </table>
+                    {{else}}
+                      <p>No se enviaron servicios activos a Tienda</p>
+                    {{/if}}
+                    <br>
+                    <br>
+                    <br>
+                    <p><b>Los siguientes cursos han cambiado de estado activo a inactivo en Tienda.</b></p>&nbsp;
+                    {{#if params.coursesWithVisibilityChange}}
+                      <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%">
+                        <thead>
+                          <tr>
+                            <th style="background: #B4BCBC; width: 100px;">ID del servicio</th>
+                            <th style="background: #B4BCBC; width: 80px;">Fecha de inicio</th>
+                            <th style="background: #B4BCBC; width: 80px;">Modalidad</th>
+                            <th style="background: #B4BCBC;">Nombre del programa</th>
+                          </tr>
+                        </thead>
+                        <tbody style="font-size: 12px;">
+                          {{#each params.coursesWithVisibilityChange}}
+                            <tr>
+                              <td>
+                                {{this.serviceId}}
+                              </td>
+                              <td>
+                                {{this.startDate}}
+                              </td>
+                              <td>
+                                {{this.modality}}
+                              </td>
+                              <td>
+                                {{this.name}}
+                              </td>
+                            </tr>
+                          {{/each}}
+                        </tbody>
+                      </table>
+                    {{else}}
+                      <p>No hay servicios que hayan cambiado de estado.</p>
+                    {{/if}}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
