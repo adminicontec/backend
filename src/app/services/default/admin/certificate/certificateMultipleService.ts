@@ -29,6 +29,7 @@ import { BuildStudentsMoodleDataException } from './buildStudentsError';
 import { courseSchedulingService } from '../course/courseSchedulingService';
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
+import { certificateQueueService } from '../certificateQueue/certificateQueueService';
 // @end
 
 class CertificateMultipleService {
@@ -565,7 +566,12 @@ class CertificateMultipleService {
       })
       if (itemsToCreate.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: 'certificate_multiple.generate.nothing'})
 
-      await CertificateQueue.insertMany(itemsToCreate)
+      const responseInsertMany = await CertificateQueue.insertMany(itemsToCreate)
+
+      const certificatesSendToProcess = responseInsertMany?.filter((item) => item.status === 'New').map((item) => item._id)
+      if (certificatesSendToProcess?.length > 0) {
+        certificateQueueService.sendToProcess(certificatesSendToProcess)
+      }
 
       await CourseScheduling.findByIdAndUpdate(courseScheduling._id, {
         'multipleCertificate.editingStatus': false,

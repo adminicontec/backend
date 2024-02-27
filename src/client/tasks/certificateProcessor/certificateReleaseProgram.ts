@@ -22,14 +22,14 @@ class CertificateReleaseProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
 
-    console.log("Init Task: Automatic Certificate Release Processor ");
+    // console.log("Init Task: Automatic Certificate Release Processor ");
 
-    let respQueueToProcess: any = await certificateService.automaticRelease(
-      {
-        without_certification: true
-      });
+    // let respQueueToProcess: any = await certificateService.automaticRelease(
+    //   {
+    //     without_certification: true
+    //   });
 
-    console.log(respQueueToProcess);
+    // console.log(respQueueToProcess);
 
     // @end
 
