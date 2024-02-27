@@ -287,6 +287,8 @@ class CourseService {
               name: register.program.name,
               mode: register.schedulingMode.name,
               serviceId: register?.metadata?.service_id,
+              startDate: moment.utc(register.startDate).format('YYYY-MM-DD'),
+              modality: register.schedulingMode.name,
             })
           }
         }
@@ -295,7 +297,9 @@ class CourseService {
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
       }
 
-      await this.saveLogAndSendHipertextoEmail(logContentToSave)
+      if (!params.notSendNotification) {
+        await this.saveLogAndSendHipertextoEmail(logContentToSave)
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
@@ -343,18 +347,20 @@ class CourseService {
         return
       }
 
+      const params = {
+        activeCourses: notificationData.activeCourses?.length ? notificationData.activeCourses : null,
+        coursesWithVisibilityChange: notificationData.coursesWithVisibilityChange?.length ? notificationData.coursesWithVisibilityChange : null,
+      }
+
       const mail = await mailService.sendMail({
-        emails: emailsToSend,
+        emails: emailsToSend?.map(({ email }) => email),
         mailOptions: {
           // @ts-ignore
           subject: 'Cursos publicados en tienda',
           html_template: {
             path_layout: 'icontec',
             path_template: 'course/coursesSentToHipertexto',
-            params: {
-              activeCourses: notificationData.activeCourses?.length ? notificationData.activeCourses : null,
-              coursesWithVisibilityChange: notificationData.coursesWithVisibilityChange?.length ? notificationData.coursesWithVisibilityChange : null,
-            }
+            params,
           },
           amount_notifications: null,
         },
