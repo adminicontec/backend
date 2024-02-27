@@ -882,6 +882,10 @@ class CertificateService {
     try {
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
 
+      if (params?.onlyThisCertificate) {
+        certificateParamsArrayForRequest = certificateParamsArrayForRequest.filter((item) => item.queueData?.certificateConsecutive === params.onlyThisCertificate)
+      }
+
       // Request to Create Certificate(s)
       let respProcessCertificate: any;
       respProcessCertificate = await this.requestSetCertificate(certificateParamsArrayForRequest);
@@ -2212,21 +2216,23 @@ class CertificateService {
       const certificationMigration = this.certificateProviderStrategy(courseScheduling.metadata.service_id)
       const certificateIssuer = certificationMigration ? 'acredita' : 'huella'
 
+      const statusCertificateQueue = 'In-process'
+
       const responseCertificateQueue: any = await certificateQueueService.insertOrUpdate({
         id: certificateReq.queueData.certificateQueueId,
         courseId: certificateReq.queueData.courseId,
         users: [certificateReq.queueData.userId],
         certificateType: certificateReq.certificateType,
         certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
-        status: 'In-process',
+        status: statusCertificateQueue,
         message: '',
         auxiliar: certificateReq.queueData.auxiliarId
       });
-      const registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue.certificateQueue._id;
+      const registerId = (certificateReq.queueData.certificateQueueId) ? (certificateReq.queueData.certificateQueueId) : responseCertificateQueue?.certificateQueue?.totalResponse[0]._id;
 
       const responseIssuer = {
         status: '',
-        serviceResponse: '',
+        serviceResponse: '-',
         responseService: {},
         certificate: {
           hash: '',

@@ -24,9 +24,9 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
-    console.log("Init Task: Certificate Processor ");
-    await this.processNew()
-    await this.processReIssue()
+    // console.log("Init Task: Certificate Processor ");
+    // await this.processNew()
+    // await this.processReIssue()
 
     return true;
   }
