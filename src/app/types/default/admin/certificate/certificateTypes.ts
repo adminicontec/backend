@@ -25,6 +25,7 @@ export interface IQueryUserToCertificate {
   certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
   certificateType?: string
   certificateSettingId?: string;
+  onlyThisCertificate?: string
 }
 
 
@@ -87,6 +88,7 @@ export interface ISetCertificateParams {
   programName: string,
   isComplete: boolean,
   certificateHash?: string
+  onlyThisCertificate?: string
 }
 
 export interface ICertificateQueueQuery {
@@ -129,6 +131,7 @@ export interface ICertificateQueue {
     source: string
   },
   errorMessage?: string
+  force?: boolean
 }
 
 export interface ICertificateQueueDelete {
@@ -215,5 +218,6 @@ export interface IProcessCertificateQueue {
   auxiliar?: string,
   status?: string,
   output?: 'process' | 'query'
+  force?: boolean
 }
 //@end
