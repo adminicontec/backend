@@ -104,6 +104,10 @@ const CertificateQueueSchema = new Schema({
   errorMessage: {
     type: Schema.Types.String,
     required: false
+  },
+  needPayment: {
+    type: Schema.Types.Boolean,
+    default: false,
   }
   // @end
 }, {

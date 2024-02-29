@@ -2,6 +2,14 @@
 // @end
 
 // @add your types
+export enum CertificateQueueStatus {
+  NEW = 'New',
+  IN_PROCESS = 'In-process',
+  REQUESTED = 'Requested',
+  COMPLETE = 'Complete',
+  ERROR = 'Error',
+  RE_ISSUE = 'Re-issue'
+}
 
 export interface IQueryCertificate {
   name: string, // Nombre de la categoria
