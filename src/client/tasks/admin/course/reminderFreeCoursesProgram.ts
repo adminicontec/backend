@@ -1,5 +1,6 @@
 // @import_services Import Services
 import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plugins/tasks/taskService";
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import_models Import models
@@ -13,6 +14,7 @@ import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
 import { CertificateQueue, Transaction } from "@scnode_app/models";
 import { TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 import { CertificateQueueStatus } from "@scnode_app/types/default/admin/certificate/certificateTypes";
+import { courseSchedulingNotificationsService } from "@scnode_app/services/default/admin/course/courseSchedulingNotificationsService";
 // @end
 
 class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
@@ -23,6 +25,7 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
+    await this.validatePendingCertificationsPerUser()
     // @end
 
     return true; // Always return true | false
@@ -30,24 +33,30 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
 
   // @add_more_methods
   private validatePendingCertificationsPerUser = async () => {
-    const certificationsWithNeedPayment = await CertificateQueue.find({
+    const certificationsThatNeedPayment = await CertificateQueue.find({
       needPayment: true,
       courseId: { $exists: true },
       status: CertificateQueueStatus.NEW
     }).select('_id')
-    const certificationsWithNeedPaymentIds = certificationsWithNeedPayment?.map(({ _id }) => _id.toString())
-    if (!certificationsWithNeedPaymentIds?.length) return
-    const paidCertificationIds = await this.getPaidCertificationIds(certificationsWithNeedPaymentIds)
-    const pendingCertificationIds = certificationsWithNeedPaymentIds?.filter((certificate) => !paidCertificationIds.includes(certificate))
-    const servicesToCertificateByUser = this.getCertificationsByUser(pendingCertificationIds)
-    // Send emails
+    const certificationsThatNeedPaymentIds = certificationsThatNeedPayment?.map(({ _id }) => _id.toString())
+    if (!certificationsThatNeedPaymentIds?.length) return
+    const paidCertificationIds = await this.getPaidCertificationIds(certificationsThatNeedPaymentIds)
+    const pendingCertificationIds = certificationsThatNeedPaymentIds?.filter((certificate) => !paidCertificationIds.includes(certificate))
+    if (!pendingCertificationIds?.length) return
+    const certificationsByUser = await this.getCertificationsByUser(pendingCertificationIds)
+    for (const { user, services } of certificationsByUser) {
+      await courseSchedulingNotificationsService.sendFreeMoocCertificationsReminder({
+        user,
+        services,
+      })
+    }
   }
 
   private getCertificationsByUser = async (pendingCertificationIds) => {
     const certificationsByUser = await CertificateQueue.aggregate([
       {
         $match: {
-          _id: { $in: pendingCertificationIds }
+          _id: { $in: pendingCertificationIds?.map((id) => ObjectID(id)) }
         }
       },
       {
@@ -103,8 +112,19 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
           'courseScheduling._id': true,
           'courseScheduling.certificate': true,
           'courseScheduling.metadata': true,
-          'courseScheduling.serviceValidity': true,
+          'courseScheduling.program': true,
         }
+      },
+      {
+        $lookup: {
+          from: 'programs',
+          localField: 'courseScheduling.program',
+          foreignField: '_id',
+          as: 'courseScheduling.program'
+        }
+      },
+      {
+        $unwind: "$courseScheduling.program"
       },
       {
         $group: {
@@ -123,7 +143,7 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
     const paidCertificationsResult = await Transaction.aggregate([
       {
         $match: {
-          certificateQueue: { $in: certificationsWithNeedPaymentIds },
+          certificateQueue: { $in: certificationsWithNeedPaymentIds?.map((id) => ObjectID(id)) },
           status: TransactionStatus.SUCCESS,
         }
       },

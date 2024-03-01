@@ -7,7 +7,7 @@
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { Transaction } from '@scnode_app/models';
-import { TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 // @end
 
 // @import models
@@ -26,6 +26,37 @@ class TransactionService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  public insertOrUpdate = async (params: ITransaction) => {
+
+    try {
+      if (params.id) {
+        const register = await Transaction.findOne({_id: params.id})
+        if (!register) return responseUtility.buildResponseFailed('json')
+
+        const response: any = await Transaction.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            transaction: response
+          }
+        })
+
+      } else {
+        const response: any = await Transaction.create(params)
+
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            transaction: response
+          }
+        })
+      }
+
+    } catch (e) {
+      console.log(`TransactionService -> insertOrUpdate -> ERROR: `, e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   public certificateWasPaid = async (certificateQueueId: string) => {
     const transaction = await Transaction.findOne({

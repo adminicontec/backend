@@ -549,6 +549,42 @@ class CourseSchedulingNotificationsService {
     }
   }
 
+  public sendFreeMoocCertificationsReminder = async ({
+    user,
+    services,
+  }) => {
+    try {
+      if (!user || !services?.length) return
+      let path_template = 'user/freeMoocCertificationsReminder';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_free_mock_certifications_reminder_${user._id}`,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        services,
+        goToCertifications: `${customs.campus_virtual}/login?redirect=/app?section=certifications`
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: 'Recordatorio de certificados disponibles',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: null,
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendFreeMoocCertificationsReminder Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
   /**
    * @INFO Obtener los módulos del servicio
    * @param courseScheduling

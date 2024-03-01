@@ -16,6 +16,7 @@ export const TRANSACTION_STATUSES = [
 
 export interface ITransaction {
   _id?: string
+  id?: string
   status: TransactionStatus
   certificateQueue?: string
 }
