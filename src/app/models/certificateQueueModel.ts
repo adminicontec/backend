@@ -108,6 +108,10 @@ const CertificateQueueSchema = new Schema({
   needPayment: {
     type: Schema.Types.Boolean,
     default: false,
+  },
+  userNotified: {
+    type: Schema.Types.Boolean,
+    default: false
   }
   // @end
 }, {

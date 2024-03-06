@@ -121,7 +121,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const allCertifications: ICertificateMultipleDataCertification[] = certifications?.student?.certifications || []
       const approvedCertifications = allCertifications?.filter((certification) => certification.approved)
       const courseHasFinished = allCertifications?.length > 0 && allCertifications?.length === approvedCertifications?.length
-      console.log({ approvedCertifications, completeResponse: certifications })
+      console.log({ approvedCertifications, certifications, courseHasFinished, allCertifications })
       if (approvedCertifications?.length) {
         const systemUser = await User.findOne({ username: system_user }).select('_id')
         const response = await certificateMultipleService.generateCertificate({

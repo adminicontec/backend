@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -15,7 +16,7 @@ import { Enrollment, CertificateQueue } from '@scnode_app/models';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
 import { customs } from '@scnode_core/config/globals';
 // @end
@@ -545,6 +546,40 @@ class CertificateQueueService {
       })
     } catch (err) {
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {error: err?.message}})
+    }
+  }
+
+  public checkPendingCertificationsWithPayment = async ({
+    user
+  }) => {
+    try {
+      const certificate = await CertificateQueue.findOne({
+        needPayment: true,
+        userNotified: false,
+        status: CertificateQueueStatus.NEW,
+        userId: user,
+        certificateSetting: { $exists: true }
+      })
+      .select('courseId status certificateSetting certificate')
+      .populate([
+        { path: 'courseId', select: 'metadata program', populate: [
+          { path: 'program', select: 'name code moodle_id' }
+        ]},
+        {
+          path: 'certificateSetting', select: 'certificateName'
+        }
+      ])
+
+      if (!certificate) return responseUtility.buildResponseFailed('json')
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificate
+        }
+      })
+    } catch (e) {
+      console.log(`CertificateService -> checkPendingCertificationsWithPayment -> ERROR: `, e)
+      return responseUtility.buildResponseFailed('json')
     }
   }
 
