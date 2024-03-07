@@ -7,6 +7,13 @@ export enum EnrollmentOrigin {
   AUTOREGISTRO='autoregistro'
 }
 
+export enum EnrollmentStatus {
+  REGISTERED = 'registered',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  CERTIFIED = 'certified',
+}
+
 export interface IAddCourseSchedulingEnrollment {
   enrollmentIds: string[]
   force?: boolean
@@ -88,5 +95,9 @@ export interface ILogEnrollment {
   status: 'ERROR' | 'OK'
   message?: string
   row: number
+}
+
+export interface IGetCurrentEnrollmentStatusParams {
+  enrollmentId: string
 }
 //@end

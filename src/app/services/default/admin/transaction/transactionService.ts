@@ -58,12 +58,21 @@ class TransactionService {
     }
   }
 
-  public certificateWasPaid = async (certificateQueueId: string) => {
-    const transaction = await Transaction.findOne({
-      certificateQueue: certificateQueueId,
-      status: TransactionStatus.SUCCESS,
-    })
-    return transaction ? true : false
+  public certificateWasPaid = async (certificateQueueIds: string | string[]) => {
+    if (!certificateQueueIds?.length) return false
+    if (typeof certificateQueueIds === 'string') {
+      certificateQueueIds = [certificateQueueIds]
+    }
+    for (const certificateQueueId of certificateQueueIds) {
+      const transaction = await Transaction.findOne({
+        certificateQueue: certificateQueueId,
+        status: TransactionStatus.SUCCESS,
+      })
+      if (!transaction) {
+        return false
+      }
+    }
+    return true
   }
 
 }

@@ -121,6 +121,11 @@ class EnrollmentController {
     const response = await enrollmentService.addCourseSchedulingToEnrollment(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public getCurrentEnrollmentStatus = async (req: Request, res: Response) => {
+    const response = await enrollmentService.getCurrentEnrollmentStatus(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const enrollmentController = new EnrollmentController();
