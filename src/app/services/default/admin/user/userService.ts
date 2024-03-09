@@ -1037,7 +1037,8 @@ class UserService {
         user: {
           firstName: firstName,
           _id: user._id,
-          email: email
+          email: email,
+          username: user?.username
         },
         token,
         duration

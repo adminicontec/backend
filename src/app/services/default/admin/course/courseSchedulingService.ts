@@ -73,6 +73,7 @@ import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admi
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
+import { durationService } from '@scnode_app/services/default/general/duration/durationService';
 // @end
 
 class CourseSchedulingService {
@@ -1374,7 +1375,7 @@ class CourseSchedulingService {
       }
 
       const courseScheduling = await CourseScheduling.findOne({ "metadata.service_id": paramsTemplate.service_id })
-        .select('typeCourse certificateCriteria specialServiceConditions')
+        .select('typeCourse certificateCriteria specialServiceConditions serviceValidity')
         .populate({ path: 'certificateCriteria', select: 'files' })
         .populate({ path: 'specialServiceConditions', select: 'files' })
         .lean()
@@ -1384,6 +1385,7 @@ class CourseSchedulingService {
         [TypeCourse.MOOC]: "mooc"
       }
       paramsTemplate.courseType = courseTypeTranslation[courseScheduling?.typeCourse]
+      paramsTemplate.serviceValidity = courseScheduling?.serviceValidity ? durationService.getDurationFormated(courseScheduling?.serviceValidity, "large") : null
       if (isFreeOrMooc && paramsTemplate?.type === 'student') {
         path_template = 'user/selfRegistrationEnrollment'
       }

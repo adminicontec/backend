@@ -179,7 +179,7 @@ class NotificationEventService {
 
       const paramsTemplate = {
         firstName: user.firstName,
-        goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}`,
+        goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}&username=${user?.username}`,
         duration: params.duration,
         amount_notifications: null,
         notification_source: `user_confirm_email_${user.email}_${user._id}`,

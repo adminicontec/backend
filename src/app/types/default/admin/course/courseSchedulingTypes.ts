@@ -292,5 +292,6 @@ export interface ISendEnrollmentUserParams {
   service?: unknown
   courses?: unknown
   has_sessions?: unknown
+  serviceValidity?: string
 }
 //@end

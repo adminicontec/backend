@@ -51,7 +51,7 @@ class EnrolledCourseService {
         user: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria certificateCriteria specialServiceConditions typeCourse', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria certificateCriteria specialServiceConditions typeCourse serviceValidity', populate: [
             { path: 'program', select: 'id name code moodle_id' },
             { path: 'schedulingStatus', select: 'id name'},
             { path: 'schedulingMode', select: 'id name' },
@@ -79,6 +79,7 @@ class EnrolledCourseService {
               approval_criteria: e.course_scheduling?.approval_criteria,
               schedulingStatus: e.course_scheduling?.schedulingStatus,
               typeCourse: e.course_scheduling?.typeCourse,
+              serviceValidity: e.course_scheduling?.serviceValidity,
               certificateCriteria:  certificateCriteria?._id,
               certificateCriteriaUrl: certificateCriteria?.files?.length ?
                 attachedService.getFileUrl(certificateCriteria?.files[0]?.url) : null,
@@ -101,7 +102,7 @@ class EnrolledCourseService {
         teacher: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus certificateCriteria specialServiceConditions typeCourse', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus certificateCriteria specialServiceConditions typeCourse serviceValidity', populate: [
             { path: 'program', select: 'id name code moodle_id' },
             { path: 'schedulingStatus', select: 'id name'},
             { path: 'certificateCriteria', select: 'id files' },
@@ -127,6 +128,7 @@ class EnrolledCourseService {
               schedulingMode: e.course_scheduling.schedulingMode,
               schedulingStatus: e.course_scheduling?.schedulingStatus,
               typeCourse: e.course_scheduling?.typeCourse,
+              serviceValidity: e.course_scheduling?.serviceValidity,
               certificateCriteria:  certificateCriteria?._id,
               certificateCriteriaUrl: certificateCriteria?.files?.length ?
                 attachedService.getFileUrl(certificateCriteria?.files[0]?.url) : null,

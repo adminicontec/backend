@@ -12,7 +12,7 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
 import { CourseScheduling, Enrollment, User } from "@scnode_app/models";
 import { TypeCourse } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
-import { EnrollmentOrigin } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
+import { EnrollmentOrigin, EnrollmentStatus } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import moment from "moment";
 import { enrollmentService } from "@scnode_app/services/default/admin/enrollment/enrollmentService"
 import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
@@ -47,6 +47,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const courseSchedulings = await CourseScheduling.find({
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
+        // Agregar estado confirmado
         typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] }
       }).select('_id metadata serviceValidity')
       for (const courseScheduling of courseSchedulings) {
@@ -58,12 +59,19 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         }).select('_id created_at user')
         if (!enrollments?.length) continue
         for (const enrollment of enrollments) {
+          let currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
+
           const userWasRemoved = await this.validateConditionsToRemoveUser(enrollment, validityTime)
           if (userWasRemoved) continue;
-          const userHasFinished = await this.verifyStudentQualifications(enrollment, courseScheduling._id)
-          if (userHasFinished) continue;
-          const reminderSent = await this.sendReminderBeforeFinishCourse(enrollment, validityTime, courseScheduling._id)
-          if (reminderSent) continue;
+
+          if (currentStatus === EnrollmentStatus.IN_PROGRESS) {
+            await this.verifyStudentQualifications(enrollment, courseScheduling._id)
+            currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
+          }
+
+          if ([EnrollmentStatus.REGISTERED, EnrollmentStatus.IN_PROGRESS].includes(currentStatus)) {
+            await this.sendReminderBeforeFinishCourse(enrollment, validityTime, courseScheduling._id)
+          }
         }
       }
     } catch (e) {
@@ -94,7 +102,6 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
 
   private sendReminderBeforeFinishCourse = async (enrollment: IEnrollment, validityTime: number, courseSchedulingId: string): Promise<boolean> => {
     try {
-      // TODO: Only send if the user haven't complete the course and don't have certifications
       const startDate = moment(enrollment.created_at)
       const expectedFinishDate = moment(enrollment.created_at).add(validityTime, 'second')
       const validityTimeInDays = expectedFinishDate.diff(startDate, 'days')
@@ -150,6 +157,12 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       console.log('FreeCoursesProgram -> verifyStudentQualifications -> ERROR: ', e)
       return false
     }
+  }
+
+  private getCurrentEnrollmentStatus = async (enrollmentId: string): Promise<EnrollmentStatus | null> => {
+    const currentStatusResponse: any = await enrollmentService.getCurrentEnrollmentStatus({ enrollmentId })
+    if (currentStatusResponse?.status === 'error') return null
+    return currentStatusResponse.currentStatus
   }
   // @end
 }

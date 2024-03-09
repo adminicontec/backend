@@ -45,6 +45,7 @@ export interface ISendNotificationConfirmEmail {
     _id: string;
     firstName: string;
     email: string;
+    username: string;
   },
   duration: number,
   token: string;

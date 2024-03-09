@@ -71,13 +71,14 @@ class ReportByUsersCharacterizationService {
         pages: []
       }
 
-      const headerKeys = ['Documento de identidad', 'Nombres', 'Apellidos', 'Usuario']
+      const headerKeys = ['Documento de identidad', 'Nombres', 'Apellidos', 'Correo electrónico', 'Usuario']
       const rowItems: IReportCharacterizationItem[] = []
       for (const attempt of attempts) {
         const userInformation = {
           'Documento de identidad': attempt?.user?.profile?.doc_number,
           'Nombres': attempt?.user?.profile?.first_name,
           'Apellidos': attempt?.user?.profile?.last_name,
+          'Correo electrónico': attempt?.user?.email,
           'Usuario': attempt?.user?.username
         }
         rowItems.push({
