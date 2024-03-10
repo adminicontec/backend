@@ -77,6 +77,7 @@ export interface ICertificateMultipleGenerate {
 }
 
 export interface ICertificateQueueMultiple {
+  _id?: string;
   userId: string;
   courseId: string;
   certificateSetting: string;
@@ -86,6 +87,7 @@ export interface ICertificateQueueMultiple {
   status: string;
   isPartial: boolean
   needPayment?: boolean
+  userNotified?: boolean
 }
 
 export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}

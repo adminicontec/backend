@@ -44,10 +44,10 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
     const pendingCertificationIds = certificationsThatNeedPaymentIds?.filter((certificate) => !paidCertificationIds.includes(certificate))
     if (!pendingCertificationIds?.length) return
     const certificationsByUser = await this.getCertificationsByUser(pendingCertificationIds)
-    for (const { user, services } of certificationsByUser) {
+    for (const { user, certifications } of certificationsByUser) {
       await courseSchedulingNotificationsService.sendFreeMoocCertificationsReminder({
         user,
-        services,
+        certifications,
       })
     }
   }
@@ -56,30 +56,47 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
     const certificationsByUser = await CertificateQueue.aggregate([
       {
         $match: {
-          _id: { $in: pendingCertificationIds?.map((id) => ObjectID(id)) }
+          _id: { $in: pendingCertificationIds?.map((id) => ObjectID(id)) },
+          certificateSetting: { $exists: true },
         }
       },
       {
         $project: {
           userId: true,
           courseId: true,
+          certificateSetting: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'certificate_settings',
+          localField: 'certificateSetting',
+          foreignField: '_id',
+          as: 'certificate'
+        }
+      },
+      {
+        $unwind: "$certificate"
+      },
+      {
+        $project: {
+          userId: true,
+          certificate: true
         }
       },
       {
         $group: {
           _id: "$userId",
+          user: { $first: "$userId" },
           certifications: {
-            $addToSet: "$$ROOT"
+            $addToSet: "$certificate"
           }
         }
       },
       {
-        $unwind: "$certifications"
-      },
-      {
         $lookup: {
           from: 'users',
-          localField: 'certifications.userId',
+          localField: 'user',
           foreignField: '_id',
           as: 'user'
         }
@@ -89,50 +106,11 @@ class ReminderFreeCoursesProgram extends DefaultPluginsTaskTaskService {
       },
       {
         $project: {
-          certifications: true,
           'user._id': true,
           'user.email': true,
           'user.profile': true,
-        }
-      },
-      {
-        $lookup: {
-          from: 'course_schedulings',
-          localField: 'certifications.courseId',
-          foreignField: '_id',
-          as: 'courseScheduling'
-        }
-      },
-      {
-        $unwind: "$courseScheduling"
-      },
-      {
-        $project: {
-          user: true,
-          'courseScheduling._id': true,
-          'courseScheduling.certificate': true,
-          'courseScheduling.metadata': true,
-          'courseScheduling.program': true,
-        }
-      },
-      {
-        $lookup: {
-          from: 'programs',
-          localField: 'courseScheduling.program',
-          foreignField: '_id',
-          as: 'courseScheduling.program'
-        }
-      },
-      {
-        $unwind: "$courseScheduling.program"
-      },
-      {
-        $group: {
-          _id: "$_id",
-          user: { $first: "$user" },
-          services: {
-            $addToSet: "$courseScheduling"
-          }
+          'certifications.certificateName': true,
+          'certifications._id': true,
         }
       }
     ])

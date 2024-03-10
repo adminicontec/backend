@@ -20,4 +20,9 @@ export interface ITransaction {
   status: TransactionStatus
   certificateQueue?: string
 }
+
+export interface IUpdateTransactionWithNewCertificateQueueIdParams {
+  transactions: string | string[]
+  certificateQueueId: string
+}
 //@end

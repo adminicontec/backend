@@ -7,7 +7,7 @@
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { Transaction } from '@scnode_app/models';
-import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { ITransaction, IUpdateTransactionWithNewCertificateQueueIdParams, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 // @end
 
 // @import models
@@ -58,6 +58,15 @@ class TransactionService {
     }
   }
 
+  public getTransactionsFromCertificateQueue = async ({
+    certificateQueueId
+  }) => {
+    const transactions = await Transaction.find({
+      certificateQueue: certificateQueueId
+    })
+    return transactions?.length ? transactions : []
+  }
+
   public certificateWasPaid = async (certificateQueueIds: string | string[]) => {
     if (!certificateQueueIds?.length) return false
     if (typeof certificateQueueIds === 'string') {
@@ -73,6 +82,28 @@ class TransactionService {
       }
     }
     return true
+  }
+
+  public updateTransactionWithNewCertificateQueueId = async ({
+    certificateQueueId,
+    transactions,
+  }: IUpdateTransactionWithNewCertificateQueueIdParams) => {
+    if (!transactions?.length || !certificateQueueId) return false
+    if (typeof transactions === 'string') {
+      transactions = [transactions]
+    }
+
+    const transactionsUpdated = await Transaction.updateMany({
+      _id: { $in: transactions }
+    }, {
+      $set: {
+        certificateQueue: certificateQueueId,
+      },
+    })
+
+    if (transactionsUpdated?.modifiedCount === transactions?.length) return true
+
+    return false
   }
 
 }

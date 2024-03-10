@@ -19,22 +19,14 @@
                     <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%">
                       <thead>
                         <tr>
-                          <th style="background: #B4BCBC; width: 100px;">ID del servicio</th>
-                          <th style="background: #B4BCBC;">Nombre del programa</th>
                           <th style="background: #B4BCBC;">Nombre del certificado</th>
                         </tr>
                       </thead>
                       <tbody style="font-size: 12px;">
-                        {{#each params.services}}
+                        {{#each params.certifications}}
                           <tr>
                             <td>
-                              {{this.metadata.service_id}}
-                            </td>
-                            <td>
-                              {{this.program.name}}
-                            </td>
-                            <td>
-                              {{this.certificate}}
+                              {{this.certificateName}}
                             </td>
                           </tr>
                         {{/each}}

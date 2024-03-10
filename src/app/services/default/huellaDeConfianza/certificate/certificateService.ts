@@ -6,6 +6,7 @@ import { Base64 } from 'js-base64';
 import { host, public_dir, attached, AUDITOR_EXAM_REGEXP } from "@scnode_core/config/globals";
 const AdmZip = require("adm-zip");
 const ObjectID = require('mongodb').ObjectID
+import mongoose from 'mongoose';
 // @end
 
 // @import config
@@ -36,17 +37,17 @@ import { Enrollment, CertificateQueue, User, CourseScheduling, MailMessageLog } 
 // @end
 
 // @import types
-import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
+import { QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import {
   IQueryUserToCertificate, ICertificate, IQueryCertificate,
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
   ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate, ICertificateForceStage, CertificateCategory
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
-import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
+import { certificateMultipleService } from "@scnode_app/services/default/admin/certificate/certificateMultipleService";
 import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
-import { notificationEventService } from "../../events/notifications/notificationEventService";
+import { notificationEventService } from "@scnode_app/services/default/events/notifications/notificationEventService";
+import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 // @end
 
 class CertificateService {
@@ -2275,6 +2276,7 @@ class CertificateService {
         const password = 'quAngEraMuSTerGerEDE'
         const basicAuthHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 
+        // !Info: Si necesito probar solo pongo la respuesta como constante
         const respIssuer: any = await queryUtility.query({
           method: 'post',
           url: certificate_setup.endpoint.create_certificate_acredita,
@@ -2604,32 +2606,63 @@ class CertificateService {
 
       if (isMultiple) {
         if (!params.certificateQueueId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
-
         const certificate = await CertificateQueue.findOne({_id: params.certificateQueueId})
 
-        const item: ICertificateQueueMultiple = {
-          userId: certificate?.userId,
-          courseId: certificate?.courseId,
-          certificateSetting: certificate.certificateSetting,
-          auxiliar: certificate.auxiliar,
-          certificateType: certificate.certificateType,
-          certificateConsecutive: certificate.certificateConsecutive,
-          status: 'New',
-          isPartial: certificate.isPartial,
-        }
+        // Usar una transaccion para evitar perdida de datos
+        const mongooseSession = await mongoose.startSession()
+        mongooseSession.startTransaction()
 
-        await certificate.delete()
+        try {
+          const item: ICertificateQueueMultiple = {
+            userId: certificate?.userId,
+            courseId: certificate?.courseId,
+            certificateSetting: certificate.certificateSetting,
+            auxiliar: certificate.auxiliar,
+            certificateType: certificate.certificateType,
+            certificateConsecutive: certificate.certificateConsecutive,
+            status: 'New',
+            isPartial: certificate.isPartial,
+            ...(certificate?.needPayment ? { needPayment: certificate.needPayment } : {}),
+            ...(certificate?.userNotified ? { userNotified: certificate.userNotified } : {}),
+          }
 
-        const responseCertificateQueue = await CertificateQueue.create(item)
+          const responseCertificateQueue = await CertificateQueue.create(item)
 
-        if (responseCertificateQueue?._id) {
-          certificateQueueService.processCertificateQueue({
-            certificateQueueId: responseCertificateQueue?._id,
-            output: 'process'
+          const transactionsToBeUpdated = await transactionService.getTransactionsFromCertificateQueue({
+            certificateQueueId: certificate?._id
           })
+
+          if (transactionsToBeUpdated?.length && responseCertificateQueue?._id) {
+            const transactionsWereUpdated = await transactionService.updateTransactionWithNewCertificateQueueId({
+              transactions: transactionsToBeUpdated.map(({_id}) => _id),
+              certificateQueueId: responseCertificateQueue?._id
+            })
+            if (!transactionsWereUpdated) {
+              await mongooseSession.abortTransaction()
+              mongooseSession.endSession()
+              return responseUtility.buildResponseFailed('json', null, { message: "No se pudo actualizar las transacciones con el nuevo certificado" })
+            }
+          }
+
+          await certificate.delete()
+
+          await mongooseSession.commitTransaction()
+          mongooseSession.endSession()
+
+          if (responseCertificateQueue?._id) {
+            certificateQueueService.processCertificateQueue({
+              certificateQueueId: responseCertificateQueue?._id,
+              output: 'process'
+            })
+          }
+
+          return responseUtility.buildResponseSuccess('json', null)
+        } catch (e) {
+          await mongooseSession.abortTransaction()
+          mongooseSession.endSession()
+          return responseUtility.buildResponseFailed('json', null, { message: "Ha ocurrido un error con la transaccion al reexpedir el certificado" })
         }
 
-        return responseUtility.buildResponseSuccess('json', null)
       } else {
         if (!params.courseId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
         if (!params.userId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })

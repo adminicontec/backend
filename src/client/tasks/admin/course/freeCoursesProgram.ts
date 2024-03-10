@@ -10,7 +10,7 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 
 // @import types
 import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
-import { CourseScheduling, Enrollment, User } from "@scnode_app/models";
+import { CourseScheduling, CourseSchedulingStatus, Enrollment, User } from "@scnode_app/models";
 import { TypeCourse } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
 import { EnrollmentOrigin, EnrollmentStatus } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import moment from "moment";
@@ -19,6 +19,7 @@ import { courseSchedulingNotificationsService } from '@scnode_app/services/defau
 import { certificateMultipleService } from "@scnode_app/services/default/admin/certificate/certificateMultipleService";
 import { ICertificateMultipleDataCertification } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
 import { system_user } from '@scnode_core/config/globals';
+import { CourseSchedulingStatusName } from "@scnode_app/types/default/admin/course/courseSchedulingStatusTypes";
 // @end
 
 interface IEnrollment {
@@ -44,10 +45,13 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
   // @add_more_methods
   private verifyStudentsValidity = async () => {
     try {
+      const courseSchedulingStatus = await CourseSchedulingStatus
+        .find({ name: { $in: [CourseSchedulingStatusName.CONFIRMED] } })
+        .select('_id')
       const courseSchedulings = await CourseScheduling.find({
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
-        // Agregar estado confirmado
+        schedulingStatus: { $in: courseSchedulingStatus?.map(({ _id }) => _id) },
         typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] }
       }).select('_id metadata serviceValidity')
       for (const courseScheduling of courseSchedulings) {

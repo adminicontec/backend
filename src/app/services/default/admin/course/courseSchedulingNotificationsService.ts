@@ -551,17 +551,17 @@ class CourseSchedulingNotificationsService {
 
   public sendFreeMoocCertificationsReminder = async ({
     user,
-    services,
+    certifications,
   }) => {
     try {
-      if (!user || !services?.length) return
+      if (!user || !certifications?.length) return
       let path_template = 'user/freeMoocCertificationsReminder';
       const params = {
         mailer: customs['mailer'],
         today: moment.utc().format('YYYY-MM-DD'),
         notification_source: `scheduling_free_mock_certifications_reminder_${user._id}`,
         studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
-        services,
+        certifications,
         goToCertifications: `${customs.campus_virtual}/login?redirect=/app?section=certifications`
       };
       const emails: string[] = [user.email];

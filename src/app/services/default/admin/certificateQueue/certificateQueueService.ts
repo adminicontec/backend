@@ -19,6 +19,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
 import { customs } from '@scnode_core/config/globals';
+import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -413,7 +414,17 @@ class CertificateQueueService {
 
       if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {message: `Se deben proporcionar filtros para la busqueda`, code: 400})
 
-      const certificateQueues = await CertificateQueue.find(where).select()
+      const certificateQueuesResponse = await CertificateQueue.find(where).select()
+
+      // Filtrar los certificados que no han sido pagados
+      const certificateQueues = []
+      for (const certificate of certificateQueuesResponse) {
+        if (certificate?.needPayment) {
+          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id)
+          if (!certificateWasPaid) continue;
+        }
+        certificateQueues.push(certificate)
+      }
 
       if (output === 'query') {
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
