@@ -66,11 +66,13 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
           let currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
 
           const userWasRemoved = await this.validateConditionsToRemoveUser(enrollment, validityTime)
+          console.log({ userWasRemoved, currentStatus })
           if (userWasRemoved) continue;
 
           if (currentStatus === EnrollmentStatus.IN_PROGRESS) {
             await this.verifyStudentQualifications(enrollment, courseScheduling._id)
             currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
+            console.log({ currentStatus })
           }
 
           if ([EnrollmentStatus.REGISTERED, EnrollmentStatus.IN_PROGRESS].includes(currentStatus)) {
@@ -88,6 +90,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const startDate = moment(enrollment.created_at)
       const today = moment()
       const seconds = today.diff(startDate, 'seconds')
+      console.log({ seconds, validityTime, enrollment: enrollment?._id })
       if (seconds > validityTime) {
         const result = await enrollmentService.delete({ id: enrollment._id })
         if (result.status === 'success') {
@@ -111,6 +114,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const validityTimeInDays = expectedFinishDate.diff(startDate, 'days')
       const today = moment()
       const daysRemaining = expectedFinishDate.diff(today, 'days')
+      console.log({ daysRemaining, validityTimeInDays })
       if (validityTimeInDays > 8 && daysRemaining === 8) {
         await courseSchedulingNotificationsService.sendReminderEmailForFreeOrMooc(courseSchedulingId, enrollment.user)
         return true

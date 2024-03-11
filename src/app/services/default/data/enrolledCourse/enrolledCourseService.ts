@@ -71,6 +71,7 @@ class EnrolledCourseService {
 
             let item = {
               _id: e.course_scheduling.moodle_id,
+              enrollmentId: e._id,
               name: e.course_scheduling.program.name,
               service_id: e.course_scheduling.metadata.service_id,
               startDate: e.course_scheduling.startDate,
