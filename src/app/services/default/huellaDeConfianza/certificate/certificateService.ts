@@ -883,7 +883,7 @@ class CertificateService {
       certificateParamsArrayForRequest = await this.getStudentCertificateData(params, false, false);
 
       if (params?.onlyThisCertificate) {
-        certificateParamsArrayForRequest = certificateParamsArrayForRequest.filter((item) => item.queueData?.certificateConsecutive === params.onlyThisCertificate)
+        certificateParamsArrayForRequest = certificateParamsArrayForRequest.filter((item) => item.paramsHuella?.numero_certificado === params.onlyThisCertificate)
       }
 
       // Request to Create Certificate(s)
@@ -1183,6 +1183,11 @@ class CertificateService {
         // console.log(`******** Academic Modules List -->`)
         // console.log(`progressData.approved_modules: `);
         // console.log(progressData.approved_modules);
+        progressData.approved_modules.sort((a: any, b: any) => {
+          const fechaA = new Date(a.startDate.toString())
+          const fechaB = new Date(b.startDate.toString())
+          return fechaA.getTime() - fechaB.getTime()
+        });
 
         //#region Setting for VIRTUAL
         if (respCourse.scheduling.schedulingMode.name.toLowerCase() == 'virtual') {
@@ -1395,9 +1400,11 @@ class CertificateService {
             dato_16Auditor = 'H'
           }
 
+          const consecutiveA = mapping_numero_certificado + '-A'
+
           let auditorCertificateParams: ICertificate = {
             modulo,
-            numero_certificado: mapping_numero_certificado + '-A',
+            numero_certificado: consecutiveA,
             correo: respDataUser.user.email,
             documento: respDataUser.user.profile.doc_type + " " + respDataUser.user.profile.doc_number,
             nombre: respDataUser.user.profile.full_name.toUpperCase(),
@@ -1443,15 +1450,19 @@ class CertificateService {
           }
           //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
           //certificateParams.certificado = 'Auditor en ' + respCourse.scheduling.program.name;
+          let queueData = {
+            certificateQueueId: null, // as new record
+            userId: params.userId, // Nombre de usario
+            courseId: params.courseId,
+            auxiliarId: params.auxiliarId,
+            certificateConsecutive: consecutiveA
+          }
+          if (params.onlyThisCertificate) {
+            queueData = params
+          }
 
           certificateParamsArray.push({
-            queueData: {
-              certificateQueueId: null, // as new record
-              userId: params.userId, // Nombre de usario
-              courseId: params.courseId,
-              auxiliarId: params.auxiliarId,
-              certificateConsecutive: ''
-            },
+            queueData,
             certificateType: certificate_type.auditor,
             template: mapping_template,
             paramsHuella: auditorCertificateParams,
@@ -1749,7 +1760,7 @@ class CertificateService {
               // console.dir(durationModule);
 
               if (itemModule && durationModule) {
-                studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration });
+                studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration, startDate: durationModule.startDate });
                 flagAttendanceCount++;
               }
             }
@@ -1942,7 +1953,7 @@ class CertificateService {
 
           // keep compatibilty with OnSitu/Online modes
           respSchedulingsDetails.forEach(element => {
-            studentProgress.approved_modules.push({ name: element.course.name, duration: element.duration });
+            studentProgress.approved_modules.push({ name: element.course.name, duration: element.duration, startDate: element.startDate });
           });
 
           //#endregion :::::::::::: Completion percentage ::::::::::::
@@ -2316,7 +2327,7 @@ class CertificateService {
           id: registerId,
           status: 'Requested',
           message: certificateReq.paramsHuella.certificado,
-          certificateModule: certificateReq.paramsHuella.modulo,
+          certificateModule: certificateReq.template,
           certificateType: certificateReq.certificateType,
           certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
           auxiliar: certificateReq.queueData.auxiliarId,
@@ -2344,7 +2355,10 @@ class CertificateService {
         const responseCertQueue: any = await certificateQueueService.insertOrUpdate({
           id: registerId,
           status: 'Error',
-          errorMessage: responseIssuer.reason
+          errorMessage: responseIssuer.reason,
+          certificateModule: certificateReq.template,
+          certificateType: certificateReq.certificateType,
+          certificateConsecutive: certificateReq.paramsHuella.numero_certificado,
         });
 
         responseCertQueueArray.push(responseCertQueue);

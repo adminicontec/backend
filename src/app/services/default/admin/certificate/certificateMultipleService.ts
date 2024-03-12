@@ -747,6 +747,7 @@ class CertificateMultipleService {
       ) {
         certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
       }
+      const consecutiveStarted = certificateConsecutive.search('-') !== -1
 
       let dato_16 = '';
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
@@ -756,7 +757,7 @@ class CertificateMultipleService {
       const mapping_titulo_certificado = certificateSetting?.certificateName || '-';
       const mapping_pais = courseScheduling?.country?.name || '-';
       const mapping_ciudad = courseScheduling?.city?.name || '';
-      const mapping_numero_certificado = (certificateHash) ?
+      const mapping_numero_certificado = (consecutiveStarted) ?
         certificateConsecutive :
         `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${position}` // TODO: Revisar como diferenciar entre certificateSetting
 
