@@ -465,15 +465,15 @@ class CourseSchedulingDetailsService {
           const removedResponse = await attendanceService.removeSession({
             sessionId: moodle_id
           })
-          customLogService.create({
-            label: this.getCustomLogLabel('1'),
-            description: 'Remove session',
-            schedulingMoodleId: courseMoodleID,
-            content: {
-              removedResponse,
-              sessionId: moodle_id,
-            }
-          })
+          // customLogService.create({
+          //   label: this.getCustomLogLabel('1'),
+          //   description: 'Remove session',
+          //   schedulingMoodleId: courseMoodleID,
+          //   content: {
+          //     removedResponse,
+          //     sessionId: moodle_id,
+          //   }
+          // })
         } catch (err) {
           customLogService.create({
             label: this.getCustomLogLabel('2'),
@@ -504,19 +504,19 @@ class CourseSchedulingDetailsService {
               sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
               duration: session.duration,
             })
-            customLogService.create({
-              label: this.getCustomLogLabel('3'),
-              description: 'Add session',
-              schedulingMoodleId: courseMoodleID,
-              content: {
-                attendanceResponse,
-                params: {
-                  attendanceId: attendanceByModule?.instance,
-                  sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
-                  duration: session.duration,
-                }
-              }
-            })
+            // customLogService.create({
+            //   label: this.getCustomLogLabel('3'),
+            //   description: 'Add session',
+            //   schedulingMoodleId: courseMoodleID,
+            //   content: {
+            //     attendanceResponse,
+            //     params: {
+            //       attendanceId: attendanceByModule?.instance,
+            //       sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+            //       duration: session.duration,
+            //     }
+            //   }
+            // })
             if (attendanceResponse?.sessionId) {
               session.moodle_id = attendanceResponse?.sessionId;
             }
