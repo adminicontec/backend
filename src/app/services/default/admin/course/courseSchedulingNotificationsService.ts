@@ -26,6 +26,7 @@ import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@s
 import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 const DATE_FORMAT = 'YYYY-MM-DD'
@@ -114,6 +115,21 @@ class CourseSchedulingNotificationsService {
         }
         return accum;
       }, []);
+
+      await customLogService.create({
+        label: 'csan - Course scheduling assistant notifications',
+        description: 'Enviar notificación a auxiliares',
+        content: {
+          serviceId: courseScheduling?.metadata?.service_id,
+          email_to_notificate,
+          serviceScheduler: {
+            email: serviceScheduler?.email,
+            name: `${serviceScheduler?.profile?.first_name} ${serviceScheduler?.profile?.last_name}`,
+            timezone: serviceScheduler?.profile?.timezone,
+          },
+          type,
+        }
+      })
 
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
