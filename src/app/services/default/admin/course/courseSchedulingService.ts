@@ -71,6 +71,7 @@ import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admi
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
+import { certificateService } from '../../huellaDeConfianza/certificate/certificateService';
 // @end
 
 class CourseSchedulingService {
@@ -195,6 +196,12 @@ class CourseSchedulingService {
           register.path_signature_3 = register.signature_3;
           register.signature_3 = this.getIconUrl(register.signature_3)
         }
+
+        const certificationStrategy = certificateService.certificateProviderStrategy(register.metadata.service_id) ? 'huella2' : 'huella1'
+        const isMultiple = register?.multipleCertificate?.status ? true : false
+
+        register.certificationStrategy = certificationStrategy
+        register.isMultiple = isMultiple
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
