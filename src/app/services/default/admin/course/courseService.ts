@@ -217,6 +217,9 @@ class CourseService {
               if (element.data.items) {
                 courseObjectives.push(element.data.items[0]);
               }
+              if (element.data.text?.length) {
+                courseObjectives.push(element.data.text);
+              }
             });;
 
             // Course content
