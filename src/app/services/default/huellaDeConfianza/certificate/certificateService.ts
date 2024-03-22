@@ -32,7 +32,7 @@ import { fileUtility } from '@scnode_core/utilities/fileUtility'
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue, User, CourseScheduling, MailMessageLog } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, User, CourseScheduling, MailMessageLog, CourseSchedulingStatus } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -47,6 +47,7 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { certificateMultipleService } from "../../admin/certificate/certificateMultipleService";
 import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
 import { notificationEventService } from "../../events/notifications/notificationEventService";
+import { mapUtility } from "@scnode_core/utilities/mapUtility";
 // @end
 
 class CertificateService {
@@ -456,195 +457,172 @@ class CertificateService {
    */
   public automaticRelease = async (filters: ICertificateCompletion) => {
     console.log("→→→ Execution of automaticRelease()");
-    let enrollmentRegisters = [];
+    console.time('Init Task')
     let schedulingMode = '';
-    let isAuditorCerficateEnabled = false;
-    let listOfCertificatesQueue = [];
-    //#region query Filters
-    const paging = (filters.pageNumber && filters.nPerPage) ? true : false
-    const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
-    const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
-
-    let select = 'id user courseID course_scheduling';
-    if (filters.select) {
-      select = filters.select
-    }
-
-    let where = {
-      'origin': 'Tienda Virtual'
-    }
-    if (filters.without_certification && filters.course_scheduling) {
-      const certifications = await CertificateQueue.find({
-        courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Error'] }
-      })
-        .select('id userId')
-
-      const user_ids = certifications.reduce((accum, element) => {
-        accum.push(element.userId)
-        return accum
-      }, [])
-      if (user_ids.length > 0) {
-        where['user'] = { $nin: user_ids }
-      }
-    }
-    //#endregion query Filters
+    const listOfCertificatesQueue = [];
 
     try {
-
-      // System user (this is an automated task)
-      let respSystemUser: any = await userService.findBy({
+      // @INFO: Consultar el usuario del sistema
+      const respSystemUser: any = await userService.findBy({
         query: QueryValues.ONE,
         where: [{ field: 'username', value: system_user }]
       });
+      if (respSystemUser.status == 'error') return responseUtility.buildResponseFailed('json', null, {message: 'No se ha encontrado el usuario de sistema'})
 
-      if (respSystemUser.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null,
-          { error_key: { key: 'user.not_found' } })
-      }
+      // @INFO: Consultando el estado Ejecutado
+      const statusExecuted = await CourseSchedulingStatus.findOne({name: 'Ejecutado'}).select('id')
+      if (!statusExecuted) return responseUtility.buildResponseFailed('json', null, {message: 'No existe el estado ejecutado'})
 
-      console.log("List of course Scheduling");
-      let respCourse: any = await courseSchedulingService.list(
+      // @INFO: Consultando listado de matriculas marcadas como "Tienda Virtual"
+      const {onlineStoreEnrollmentUsers, onlineStoreEnrollmentServices, onlineStoreEnrollmentUsersByService} = (
+        await Enrollment.find({origin: 'Tienda Virtual'})
+        .select('id user course_scheduling')
+        .populate({
+          path: 'user',
+          select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional origin moodle_id'
+        }))
+        .reduce((accum, element) => {
+        if (element?.user?._id) accum.onlineStoreEnrollmentUsers.push(element.user._id.toString())
+        if (element?.course_scheduling) accum.onlineStoreEnrollmentServices.push(element.course_scheduling.toString())
+
+        if (element?.user && element?.course_scheduling) {
+          if (!accum.onlineStoreEnrollmentUsersByService[element?.course_scheduling.toString()]) accum.onlineStoreEnrollmentUsersByService[element?.course_scheduling.toString()] = []
+          accum.onlineStoreEnrollmentUsersByService[element?.course_scheduling.toString()].push(element)
+        }
+        return accum;
+      }, {onlineStoreEnrollmentUsers: [], onlineStoreEnrollmentServices: [], onlineStoreEnrollmentUsersByService: {}})
+
+      const onlineStoreEnrollmentUsersClean = mapUtility.removeDuplicated(onlineStoreEnrollmentUsers)
+      let onlineStoreEnrollmentServicesClean = mapUtility.removeDuplicated(onlineStoreEnrollmentServices)
+
+      if (onlineStoreEnrollmentServicesClean.length === 0) return responseUtility.buildResponseFailed('json', null, {message: 'No hay servicios con estudiantes de tienda Virtual'})
+
+      if (filters?.course_scheduling) onlineStoreEnrollmentServicesClean = [filters?.course_scheduling]
+
+      const dateMin = moment().subtract(6, 'months')
+      const dateMax = moment()
+
+      const {status: courseSchedulingStatus, schedulings}: any = await courseSchedulingService.list(
         {
-          schedulingStatus: ObjectID('615309f85d811e78db3fc91e')
+          schedulingStatus: statusExecuted._id,
+          ids: onlineStoreEnrollmentServicesClean,
+          multicertificates: false,
+          endDateBetween: {
+            init: dateMin.format('YYYY-MM-DD'),
+            end: dateMax.format('YYYY-MM-DD')
+          }
         });
 
-      if (respCourse.status == 'error') {
-        return responseUtility.buildResponseFailed('json', null,
-          { error_key: { key: 'program.not_found' } })
+      if (courseSchedulingStatus == 'error') {
+        return responseUtility.buildResponseFailed('json', null, {message: 'No se encontraron servicios que cumplan las condiciones de busqueda'})
       }
-      let count = 1;
 
-      //1. List of Courses
-      for (var course of respCourse.schedulings) {
-
-        let listOfStudents = [];
-        //#region Información del curso
-        console.log(`-------------------------------------------`)
-        console.log(`Datos para Programa: ${course.program.name}`)
-        console.log(`ID: ${course._id}`)
-        console.log(`→→ Program Status: ${course.schedulingStatus.name}`);
-        console.log(`→→ Modalidad: ${course.schedulingMode.name.toLowerCase()}`);
-        console.log(`-------------------------------------------`)
-        schedulingMode = course.schedulingMode.name;
-        //#endregion Información del curso
-
-        //#region Filters
-        where['courseID'] = course.moodle_id;
-
-        const certifications = await CertificateQueue.find({
-          courseId: course._id,
-          status: { $in: ['New', 'Requested', 'In-process', 'Complete', 'Error'] }
-        })
-          .select('id userId')
-
-        const user_ids = certifications.reduce((accum, element) => {
-          accum.push(element.userId)
-          return accum
-        }, [])
-        if (user_ids.length > 0) {
-          where['user'] = { $nin: user_ids }
-        }
-        //#endregion Filters
-
-        //  course Scheduling Details data
-        let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
-          query: QueryValues.ALL,
-          where: [{ field: 'course_scheduling', value: course._id }]
-        });
-
-        // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
-        if (course.schedulingStatus.name == 'Programado' || course.schedulingStatus.name == 'Cancelado') {
-          return responseUtility.buildResponseFailed('json', null,
-            { error_key: { key: 'certificate.requirements.program_status', params: { error: course.schedulingStatus.name } } });
-        }
-
-        //#region Tipo de programa
-        let programTypeName;
-        const programType = this.getProgramTypeFromCode(course.program.code);
-        programTypeName = this.getProgramTypeName(programType.abbr);
-        //#endregion Tipo de programa
-
-        if (course.auditor_certificate) {
-          isAuditorCerficateEnabled = true;
-        }
-
-        //#region Revisión de Progreso en Actividades para todo el curso
-        const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: course.moodle_id, moduleType: this.selectActivitiesTest });
-
-        if (respListOfActivitiesInModulesTest.status == "error") {
-          return responseUtility.buildResponseFailed('json', null,
-            { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
-        }
-        //#endregion Revisión de Progreso en Actividades para todo el curso
-
-        //#endregion Información del curso
-
-        // filter only students with "Tienda Virtual" as origin
-        enrollmentRegisters = await Enrollment.find(where)
-          .select(select)
-          .populate({
-            path: 'user',
-            select: 'id email phoneNumber profile.first_name profile.last_name profile.doc_type profile.doc_number profile.regional origin moodle_id'
+      const {certificationsByStudent, certificationsByService} = (
+          await CertificateQueue.find({
+            courseId: {$in: onlineStoreEnrollmentServicesClean},
+            status: { $in: ['New', 'Requested', 'In-process', 'Complete', 'Error'] },
+            userId: {$in: onlineStoreEnrollmentUsersClean}
           })
-          .lean();
+          .select('id userId courseId')
+      ).reduce((accum, element) => {
+        if (!accum.certificationsByStudent[element.userId.toString()]) accum.certificationsByStudent[element.userId.toString()] = []
+        accum.certificationsByStudent[element.userId.toString()].push(element)
 
-        for (let student of enrollmentRegisters) {
+        if (!accum.certificationsByService[element.courseId.toString()]) accum.certificationsByService[element.courseId.toString()] = []
+        accum.certificationsByService[element.courseId.toString()].push(element.userId.toString())
 
-          // Check if Completion is done for student
-          let studentProgress: any = await this.rulesForCompleteProgress(
-            course.moodle_id,
-            this.selectActivitiesTest,
-            schedulingMode.toLowerCase(),
-            programTypeName,
-            respListOfActivitiesInModulesTest.courseModules,
-            respCourseDetails.schedulings,
-            isAuditorCerficateEnabled,
-            course.auditor_modules,
-            false,
-            student.user.moodle_id);
+        return accum
+      }, {certificationsByStudent: {}, certificationsByService: {}})
 
-          if (studentProgress.listOfStudentProgress[0]) {
-            console.log(`\tCheck progress for: ${student.user.profile.first_name} ${student.user.profile.last_name}`)
+      for (const course of schedulings) {
+        console.time(`Init course ${course?.metadata?.service_id}`)
+        const listOfStudents = [];
+        console.group(`Start iteration course ${course?.metadata?.service_id} -  ${course?.endDate}`)
+        // console.log(`Datos para Programa: ${course.program.name}`)
+        schedulingMode = course.schedulingMode.name;
 
-            let progressData = studentProgress.listOfStudentProgress[0].student.studentProgress;
-            console.log(`Progress: ${progressData.status}`);
-            if (progressData.status === 'ok' || progressData.status === 'partial') {
-              console.log(`\tAdded to certificate queue.`);
-              listOfStudents.push(student.user._id.toString());
-              count++;
+        const studentsByService = onlineStoreEnrollmentUsersByService[course._id.toString()] || []
+
+        if (studentsByService.length > 0) {
+          const certificatesGeneratedByService = certificationsByService[course._id.toString()] || []
+          const newStudentsByService = studentsByService.filter((s) => !certificatesGeneratedByService.includes(s.user._id.toString()))
+
+          if (newStudentsByService.length > 0) {
+            const programType = this.getProgramTypeFromCode(course.program.code);
+            const programTypeName = this.getProgramTypeName(programType.abbr);
+
+            const respListOfActivitiesInModulesTest: any = await courseContentService.moduleList({ courseID: course.moodle_id, moduleType: this.selectActivitiesTest });
+            if (respListOfActivitiesInModulesTest.status !== "error") {
+              const respCourseDetails: any = await courseSchedulingDetailsService.findBy({
+                query: QueryValues.ALL,
+                where: [{ field: 'course_scheduling', value: course._id }]
+              });
+
+              for (const enrollment of newStudentsByService) {
+                console.time(`Init enrollment ${enrollment._id}`)
+                console.group(`Start iteration enrollment ${enrollment._id}`)
+                const hasCertificates = certificationsByStudent[enrollment.user._id.toString()] ? true : false
+                if (!hasCertificates) {
+                  let isAuditorCerficateEnabled = false;
+
+                  if (course.auditor_certificate) {
+                    isAuditorCerficateEnabled = true;
+                  }
+
+                  const studentProgress: any = await this.rulesForCompleteProgress(
+                    course.moodle_id,
+                    this.selectActivitiesTest,
+                    schedulingMode.toLowerCase(),
+                    programTypeName,
+                    respListOfActivitiesInModulesTest.courseModules,
+                    respCourseDetails.schedulings,
+                    isAuditorCerficateEnabled,
+                    course.auditor_modules,
+                    false,
+                    enrollment.user.moodle_id
+                  );
+
+                  if (studentProgress.listOfStudentProgress[0]) {
+                    const progressData = studentProgress.listOfStudentProgress[0].student.studentProgress;
+                    console.log(`Progress: ${progressData.status}`);
+                    if (progressData.status === 'ok' || progressData.status === 'partial') {
+                      console.log(`\tAdded to certificate queue.`);
+                      listOfStudents.push(enrollment.user._id.toString());
+                    }
+                    else {
+                      console.log(`\tNot available to certificate.`);
+                    }
+                  }
+                }
+                console.groupEnd()
+                console.timeEnd(`Init enrollment ${enrollment._id}`)
+              }
+
+              if (listOfStudents.length > 0) {
+                const queueData = {
+                  status: "New",
+                  courseId: course._id.toString(),
+                  users: listOfStudents,
+                  auxiliar: respSystemUser.user._id.toString()
+                }
+                listOfCertificatesQueue.push(queueData);
+                const responseCertQueue: any = await certificateQueueService.insertOrUpdate(queueData);
+                if (responseCertQueue.status === 'error') {
+                  console.log("Error inserting new Certificate queue record");
+                }
+
+              }
             }
-            else {
-              console.log(`\tNot available to certificate.`);
-            }
           }
-
         }
-
-        if (listOfStudents.length > 0) {
-          let queueData = {
-            status: "New",
-            courseId: course._id.toString(),
-            users: listOfStudents,
-            auxiliar: respSystemUser.user._id.toString()
-          }
-          listOfCertificatesQueue.push(queueData);
-          let responseCertQueue: any = await certificateQueueService.insertOrUpdate(queueData);
-          if (responseCertQueue.status === 'error') {
-            console.log("Error inserting new Certificate queue record");
-
-          }
-
-          console.log(">>>>>>>>>>>>>>>>>>>>><");
-          console.log("responseCertQueue");
-          console.log(responseCertQueue);
-          console.log(">>>>>>>>>>>>>>>>>>>>><");
-        }
-
+        console.log(`-------------------------------------------`)
+        console.groupEnd()
+        console.timeEnd(`Init course ${course?.metadata?.service_id}`)
       }
     }
     catch (e) {
-      console.log(e.message);
+      console.log('error', e)
+      // console.log(e.message);
       return responseUtility.buildResponseFailed('json', null,
         {
           error_key: 'grades.exception',
@@ -654,15 +632,13 @@ class CertificateService {
           }
         });
     }
+    console.timeEnd('Init Task')
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         schedulingMode: schedulingMode,
         automaticRelease: [
           ...listOfCertificatesQueue
         ],
-        total_register: listOfCertificatesQueue.length,
-        pageNumber: pageNumber,
-        nPerPage: nPerPage
       }
     });
   }
