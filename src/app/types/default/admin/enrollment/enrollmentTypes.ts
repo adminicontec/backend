@@ -46,6 +46,8 @@ export interface IEnrollment{
   enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
   timezone?: TimeZone
+  created_at?: string
+  updated_at?: string
 }
 
 export interface IEnrollmentQuery {

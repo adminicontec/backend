@@ -74,6 +74,7 @@ import { courseSchedulingDataService } from '@scnode_app/services/default/data/c
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { durationService } from '@scnode_app/services/default/general/duration/durationService';
+import { IEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 // @end
 
 class CourseSchedulingService {
@@ -931,7 +932,7 @@ class CourseSchedulingService {
     const userEnrolled = await Enrollment.find({
       courseID: courseScheduling.moodle_id
     }).select('id user')
-      .populate({ path: 'user', select: 'id username email profile.first_name profile.last_name' })
+      .populate({ path: 'user', select: 'id username email profile.first_name profile.last_name created_at' })
       .lean()
 
     for await (const enrolled of userEnrolled) {
@@ -948,7 +949,8 @@ class CourseSchedulingService {
         type: 'student',
         notification_source: `course_start_${enrolled.user._id}_${courseScheduling._id}`,
         amount_notifications: 1
-      })
+      },
+      enrolled)
     }
   }
 
@@ -1366,7 +1368,7 @@ class CourseSchedulingService {
    * @param paramsTemplate Parametros para construir el email
    * @returns
    */
-  public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: ISendEnrollmentUserParams) => {
+  public sendEnrollmentUserEmail = async (emails: Array<string>, paramsTemplate: ISendEnrollmentUserParams, enrollment?: IEnrollment) => {
 
     try {
       let path_template = 'user/enrollmentUser'
@@ -1385,9 +1387,12 @@ class CourseSchedulingService {
         [TypeCourse.MOOC]: "mooc"
       }
       paramsTemplate.courseType = courseTypeTranslation[courseScheduling?.typeCourse]
-      paramsTemplate.serviceValidity = courseScheduling?.serviceValidity ? durationService.getDurationFormated(courseScheduling?.serviceValidity, "large") : null
       if (isFreeOrMooc && paramsTemplate?.type === 'student') {
         path_template = 'user/selfRegistrationEnrollment'
+        const startDate = moment.utc(enrollment?.created_at)
+        const endDate = moment.utc(enrollment?.created_at).add(courseScheduling?.serviceValidity, 'second')
+        paramsTemplate.course_start = startDate.format('YYYY-MM-DD')
+        paramsTemplate.course_end = endDate.format('YYYY-MM-DD')
       }
 
       let messageAttacheds = []
