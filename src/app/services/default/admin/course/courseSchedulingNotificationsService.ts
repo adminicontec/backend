@@ -203,6 +203,18 @@ class CourseSchedulingNotificationsService {
             },
             notification_source: params.notification_source
           })
+          if (mail?.status === 'error') {
+            await customLogService.create({
+              label: 'csane - Course scheduling assistant notifications ERROR',
+              description: 'Error al enviar el correo al ejecutivo',
+              content: {
+                serviceId: courseScheduling?.metadata?.service_id,
+                emailNotificate,
+                type,
+                error: mail
+              }
+            })
+          }
         }
         return mail
 
