@@ -71,7 +71,7 @@ import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admi
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
-import { certificateService } from '../../huellaDeConfianza/certificate/certificateService';
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 // @end
 
 class CourseSchedulingService {
