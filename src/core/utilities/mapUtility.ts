@@ -48,6 +48,10 @@ class MapUtility {
     },[])
     return result
   }
+
+  public cleanDuplicated = (array: Array<any>) => {
+    return array.filter((valor, indice) => array.indexOf(valor) === indice);
+  }
 }
 
 export const mapUtility = new MapUtility();

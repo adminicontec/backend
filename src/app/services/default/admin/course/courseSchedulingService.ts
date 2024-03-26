@@ -71,6 +71,7 @@ import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admi
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 // @end
 
 class CourseSchedulingService {
@@ -195,6 +196,12 @@ class CourseSchedulingService {
           register.path_signature_3 = register.signature_3;
           register.signature_3 = this.getIconUrl(register.signature_3)
         }
+
+        const certificationStrategy = certificateService.certificateProviderStrategy(register.metadata.service_id) ? 'huella2' : 'huella1'
+        const isMultiple = register?.multipleCertificate?.status ? true : false
+
+        register.certificationStrategy = certificationStrategy
+        register.isMultiple = isMultiple
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -1578,6 +1585,14 @@ class CourseSchedulingService {
       })
     }
 
+    if (filters.ids) {
+      where.push({
+        $match: {
+          _id: { $in: filters.ids.map((p) => ObjectID(p)) }
+        }
+      })
+    }
+
     if (filters.schedulingType) where.push({ $match: { schedulingType: ObjectID(filters.schedulingType) } })
     if (filters.schedulingStatus) where.push({ $match: { schedulingStatus: ObjectID(filters.schedulingStatus) } })
     if (filters.schedulingMode) where.push({ $match: { schedulingMode: ObjectID(filters.schedulingMode) } })
@@ -1602,6 +1617,24 @@ class CourseSchedulingService {
     if (filters.end_date) where.push({ $match: { endDate: { $lte: new Date(filters.end_date) } } })
     if (filters.schedulingAssociation) where.push({ $match: {'schedulingAssociation.slug': { $regex: '.*' + filters.schedulingAssociation + '.*', $options: 'i' }}})
     if (filters.program) where.push({$match: {'program': ObjectID(filters.program)}})
+    if (filters?.multicertificates !== undefined) {
+      if (filters.multicertificates === true) {
+        where.push({$match: {'multipleCertificate.status': true}})
+      } else if (filters.multicertificates === false) {
+        where.push({$match: {
+          $or: [
+            {'multipleCertificate.status': false},
+            {'multipleCertificate.status': {$exists: false}}
+          ]
+        }})
+      }
+    }
+    if (filters?.endDateBetween !== undefined && filters?.endDateBetween?.init && filters?.endDateBetween?.end) {
+      where.push({$match: {'endDate': {
+        $gte: new Date(filters.endDateBetween.init),
+        $lte: new Date(filters.endDateBetween.end)
+      }}})
+    }
 
     // if (filters.user) {
     // where['metadata.user'] = filters.user

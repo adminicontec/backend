@@ -170,6 +170,9 @@ export interface ICourseSchedulingQuery {
   schedulingAssociation?: string;
   teacher?: string;
   program?: string
+  ids?: string[]
+  multicertificates?: boolean
+  endDateBetween?: {init: string, end: string}
 }
 
 export interface ICourseSchedulingReport {
