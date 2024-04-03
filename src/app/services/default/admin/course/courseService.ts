@@ -182,6 +182,7 @@ class CourseService {
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'modular', select: 'id name' })
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
           .sort(sort)
@@ -203,6 +204,8 @@ class CourseService {
           let courseObjectives = [];
           let courseContent = [];
           let generalities = [];
+          let description = ''
+          let shortDescription = ''
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -240,6 +243,9 @@ class CourseService {
             extra_info.generalities.blocks.forEach(element => {
               generalities.push(element.data.text);
             });
+
+            description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
+            shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
           }
 
           if (register.hasCost) {
@@ -262,7 +268,6 @@ class CourseService {
             name: register.program.name,
             fullname: register.program.name,
             displayname: register.program.name,
-            description: '',
             courseType: courseType,
             mode: register.schedulingMode.name,
             startDate: register.startDate,
@@ -282,7 +287,11 @@ class CourseService {
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
-            schedule: register.schedule
+            schedule: register.schedule,
+            description,
+            shortDescription,
+            modular: register?.modular?.name ? register?.modular?.name : '',
+            withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
           }
           listOfCourses.push(courseToExport);
           if (courseToExport?.isActive) {
