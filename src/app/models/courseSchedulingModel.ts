@@ -390,6 +390,10 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.Mixed,
     }]
   },
+  withoutTutor: {
+    type: Schema.Types.Boolean,
+    default: false,
+  },
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
