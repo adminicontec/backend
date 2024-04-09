@@ -68,6 +68,9 @@ export interface IStoreCourse {
   startPublicationDate?: string,
   endPublicationDate?: string,
   schedule?: string,
+  shortDescription?: string
+  modular?: string
+  withoutTutor?: boolean
 }
 
 export interface ICourseQuery {

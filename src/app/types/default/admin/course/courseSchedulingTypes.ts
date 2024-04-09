@@ -142,6 +142,7 @@ export interface ICourseScheduling {
     status: boolean,
     editingStatus?: boolean
   }
+  withoutTutor?: boolean
 }
 
 export interface ICourseSchedulingDelete {
