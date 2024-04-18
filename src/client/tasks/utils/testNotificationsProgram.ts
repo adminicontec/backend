@@ -32,7 +32,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     // @end
-    await this.executeNotification(Notification.FREE_COURSE_FINISHED)
+    await this.executeNotification(Notification.CONFIRM_2FA)
 
     return true; // Always return true | false
   }
@@ -69,9 +69,11 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
       username: '12365874562',
       firstName: 'David',
       duration: '15',
-      token: 'https://campus.icontecvirtual.edu.co',
+      token: '859140',
       goToConfirm: 'https://campus.icontecvirtual.edu.co',
       goToCertifications: 'https://campus.icontecvirtual.edu.co',
+      serviceValidity:'20 días',
+      footerText: 'pilla',
       certifications: [
         {
           certificateName: 'Certificate test 1'
