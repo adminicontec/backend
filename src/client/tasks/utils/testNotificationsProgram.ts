@@ -32,7 +32,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     // @end
-    await this.executeNotification(Notification.CONFIRM_2FA)
+    await this.executeNotification(Notification.FINISH_FREE_COURSE_REMINDER)
 
     return true; // Always return true | false
   }
@@ -41,7 +41,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
     const mail = await mailService.sendMail({
       emails: [email],
       mailOptions: {
-        subject: 'Recordatorio finalización de curso',
+        subject: `Test email - ${template}`,
         html_template: {
           path_layout: 'icontec',
           path_template: template,
