@@ -1387,6 +1387,7 @@ class CourseSchedulingService {
         [TypeCourse.MOOC]: "mooc"
       }
       paramsTemplate.courseType = courseTypeTranslation[courseScheduling?.typeCourse]
+      paramsTemplate.serviceValidity = courseScheduling?.serviceValidity ? durationService.getDurationFormated(courseScheduling?.serviceValidity, "large") : null
       if (isFreeOrMooc && paramsTemplate?.type === 'student') {
         path_template = 'user/selfRegistrationEnrollment'
         const startDate = moment.utc(enrollment?.created_at)
