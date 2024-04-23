@@ -32,7 +32,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     // @end
-    await this.executeNotification(Notification.FINISH_FREE_COURSE_REMINDER)
+    await this.executeNotification(Notification.CONFIRM_2FA)
 
     return true; // Always return true | false
   }
