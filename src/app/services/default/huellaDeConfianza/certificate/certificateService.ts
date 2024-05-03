@@ -2285,7 +2285,7 @@ class CertificateService {
             url: respIssuer?.url,
             urlCredencial: respIssuer?.urlCredencial
           }
-        } else if (respIssuer?.resultado && respIssuer?.codigo === '404') {
+        } else if (respIssuer?.resultado && ['404', '100'].includes(respIssuer?.codigo)) {
           responseIssuer.reason = respIssuer?.resultado || 'Se ha presentado un error al generar el certificado'
         }
       }
