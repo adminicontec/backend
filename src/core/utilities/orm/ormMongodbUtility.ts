@@ -50,7 +50,7 @@ class OrmMongodbUtility {
             options.sslCA = fs.readFileSync(connection_data.cert);
         }
         //const mongoUrl = `mongodb://${connection_data['host']}/${connection_data['dbname']}${(connection_data.options) ? connection_data.options : ''}`;
-        const mongoUrl = `mongodb+srv://mongodbicontec:GaLD8hHJymfKdiktoT9u@adminmongodbicontec.mongocluster.cosmos.azure.com/campusicontec?tls=true&authMechanism=SCRAM-SHA-256`
+        const mongoUrl = `mongodb+srv://mongodbicontec:GaLD8hHJymfKdiktoT9u@adminmongodbicontec1.mongocluster.cosmos.azure.com/campusicontec?tls=true&authMechanism=SCRAM-SHA-256`
         mongoose_global.Promise = global.Promise;
 
         await mongoose_global.connect(mongoUrl, options);
