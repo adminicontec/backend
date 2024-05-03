@@ -1,32 +1,25 @@
-# Use the recommended version of Node.js
-FROM node:10.15.3
+FROM repositoriopolitecnico.azurecr.io/app/cliente:latest AS builder
 
-# Set the working directory in the Docker container
 WORKDIR /app
 
-# Install TypeScript, ts-node, and Node.js types globally
-RUN npm install -g typescript ts-node @types/node
-
-# Copy the package.json and package-lock.json (or yarn.lock) files
-COPY package*.json ./
-
-# Install project dependencies
-RUN npm install --production
-
-# Copy the project source code into the Docker container
 COPY . .
 
-# Install scnode_cli from the given repository
-#RUN npm install -g @screeps/scnode_cli
+RUN scnode_cli --deploy prod --dist /app/backend_dist --package_name campus_virtual_icontec
 
-# Use scnode_cli to deploy the project
-#RUN scnode_cli --deploy prod --dist ./dist
+FROM repositoriopolitecnico.azurecr.io/app/cliente:latest AS prod
 
-# Change to the directory containing the production build
-WORKDIR /app/dist
+WORKDIR /app
 
-# Install any necessary production dependencies in the distribution directory
-RUN npm install --production
+COPY --from=builder /app/backend_dist /app/
 
-# Specify the command to start the app in production
-CMD ["npm", "start"]
+RUN npm install
+
+RUN npm install -g phantomjs-prebuilt --unsafe-perm
+
+RUN npm install html-pdf -g --unsafe-perm
+
+RUN npm link html-pdf
+
+EXPOSE 3000
+
+CMD ["node","./src/app/server.js"]
