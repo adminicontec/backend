@@ -49,7 +49,8 @@ class OrmMongodbUtility {
         if (connection_data.hasOwnProperty('cert')) {
             options.sslCA = fs.readFileSync(connection_data.cert);
         }
-        const mongoUrl = `mongodb://${connection_data['host']}/${connection_data['dbname']}${(connection_data.options) ? connection_data.options : ''}`;
+        //const mongoUrl = `mongodb://${connection_data['host']}/${connection_data['dbname']}${(connection_data.options) ? connection_data.options : ''}`;
+        const mongoUrl = connection_data['uri'];
         mongoose_global.Promise = global.Promise;
 
         await mongoose_global.connect(mongoUrl, options);
