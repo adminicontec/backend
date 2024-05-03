@@ -54,7 +54,6 @@ Thumbs.db
 #skip config files
 /src/config/cert.pem
 /src/config/key.pem
-/src/config/env.json
 /src/config/env.qa.json
 /src/config/env.dev.json
 /coreconfig.json
