@@ -45,7 +45,7 @@ class OrmMongodbUtility {
     let connection = false;
     if (connection_data.hasOwnProperty('host') && connection_data.hasOwnProperty('dbname')) {
       try {
-        let options: any = { useNewUrlParser: true, useUnifiedTopology: false, useCreateIndex: true, }
+        let options: any = { useNewUrlParser: true, useUnifiedTopology: false, }
         if (connection_data.hasOwnProperty('cert')) {
             options.sslCA = fs.readFileSync(connection_data.cert);
         }
