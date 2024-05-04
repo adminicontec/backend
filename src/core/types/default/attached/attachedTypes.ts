@@ -13,15 +13,23 @@ export interface FileFormat {
   md5         : string,    // MD5 del archivo cargado
 }
 
+export interface IFileDimensions {
+  min?: {
+    width: number,
+    height: number
+  },
+  max?: {
+    width: number,
+    height: number
+  }
+}
+
 export interface UploadConfig {
   driver?        : AttachedDriver;  // Metodo de carga de los archivos. Sobre-escribe la configuración proporcionada desde las variables de configuración globales
   rename?        : boolean;                  // Renombrar el archivo con el algoritmo propio del sistema. Default true
   file_size?     : number | null;            // Valida el tamaño del archivo a cargar. Su valor se representa en byte(B) Default NULL
   file_mime_type?: Array<string> | null;     // Valida el formato (MIME) del archivo a cargar. Default NULL
-  file_dimensions?: {
-    width: number,
-    height: number
-  },
+  file_dimensions?: IFileDimensions,
   path_upload?: string,   // Ruta del directorio donde se almacenara el archivo
   credentials?: string;   // Llave de configuración
   base_path?  : string    // Ruta base de servidor

@@ -17,6 +17,7 @@ import { Enrollment, CertificateQueue } from '@scnode_app/models';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
+import { customs } from '@scnode_core/config/globals';
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -84,6 +85,9 @@ class CertificateQueueService {
   public insertOrUpdate = async (params: ICertificateQueue) => {
 
     try {
+      const moduleEnabled = customs?.modules?.certificate?.enabled !== undefined ? customs?.modules?.certificate?.enabled : true
+      const force = params?.force || false
+
       if (params.id) {
         // console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         // console.log("UPDATE certificate queue");
@@ -117,6 +121,7 @@ class CertificateQueueService {
         })
 
       } else {
+        if (!moduleEnabled && !force) return responseUtility.buildResponseFailed('json', null, {message: 'Módulo deshabilitado. Consulte con el administrador.'})
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         console.log("INSERT certificate queue");
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
@@ -160,19 +165,25 @@ class CertificateQueueService {
             status: response.status
           }
 
-          if (params.users.length == 1) {
-            return responseUtility.buildResponseSuccess('json', null, {
-              additional_parameters: {
-                certificateQueue: certificateQueueResponse
-              }
-            });
-          }
-          else
-            totalResponse.push(certificateQueueResponse);
+          totalResponse.push(certificateQueueResponse);
+
+          // if (params.users.length == 1) {
+          //   return responseUtility.buildResponseSuccess('json', null, {
+          //     additional_parameters: {
+          //       certificateQueue: certificateQueueResponse
+          //     }
+          //   });
+          // }
+          // else
+          //   totalResponse.push(certificateQueueResponse);
 
         };
 
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+
+        if (totalResponse.length > 0) {
+          this.sendToProcess(totalResponse.filter((item) => item._id && item.status === 'New').map((item) => item._id))
+        }
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             certificateQueue: {
@@ -192,6 +203,16 @@ class CertificateQueueService {
           }
         })
     }
+  }
+
+  public sendToProcess = (certificatesQueue: string[]) => {
+    console.log('Init SendToProcess', certificatesQueue)
+    certificatesQueue.map((certificateQueue: string) => {
+      this.processCertificateQueue({
+        certificateQueueId: certificateQueue,
+        output: 'process'
+      })
+    })
   }
 
 
@@ -368,10 +389,13 @@ class CertificateQueueService {
   public processCertificateQueue = async (params: IProcessCertificateQueue) => {
     try {
       const output = params.output || 'process'
+      const force = params.force || false
 
       const where = {}
       if (params?.certificateQueueId) {
         where['_id'] = params.certificateQueueId
+      } else if (params?.certificateQueueIds) {
+        where['_id'] = {$in: params?.certificateQueueIds}
       }
       if (params?.courseId) {
         where['courseId'] = params.courseId
@@ -399,6 +423,9 @@ class CertificateQueueService {
       if (certificateQueues.length === 0) return responseUtility.buildResponseFailed('json', null, {message: `No hay certificados a procesar`, code: 400})
 
       const logs = ["Init Task: Certificate Processor "]
+
+      const moduleEnabled = customs?.modules?.certificate?.enabled !== undefined ? customs?.modules?.certificate?.enabled : true
+      if (!moduleEnabled && !force) return responseUtility.buildResponseFailed('json', null, {message: 'Módulo deshabilitado. Consulte con el administrador.'})
 
       for (const certificate of certificateQueues) {
         if (certificate?.status === 'New') {
@@ -469,6 +496,38 @@ class CertificateQueueService {
               logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
             }
 
+          } catch (err) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+            logs.push(err?.message)
+          }
+        } else if (['In-process', 'Error'].includes(certificate?.status)) {
+          try {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) process started`)
+            await CertificateQueue.findByIdAndUpdate(certificate._id, {
+              status: 'In-process'
+            })
+            try {
+              let respSetCertificate: any = await certificateService.createCertificate({
+                certificateQueueId: certificate._id,
+                courseId: certificate.courseId,
+                userId: certificate.userId,
+                auxiliarId: certificate.auxiliar,
+                certificateConsecutive: certificate.certificateConsecutive,
+                certificateSettingId: certificate?.certificateSetting || undefined,
+                onlyThisCertificate: certificate.certificateConsecutive
+              });
+              if (respSetCertificate.status === "error") {
+                logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended with error`)
+                logs.push(respSetCertificate)
+              }
+              else {
+                logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
+              }
+            } catch (err) {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
+              logs.push(err?.message)
+            }
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process ended successful`)
           } catch (err) {
             logs.push(`Certificate ${certificate._id} (${certificate?.status}) - process failed`)
             logs.push(err?.message)

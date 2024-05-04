@@ -10,6 +10,7 @@ export interface HttpStructure{
   headers?: object;          // Encabezados de la peticion
   req?    : object | null    // Objeto de clase Request de express
   sendBy?  : 'body' | 'form' | null | undefined // Define el metodo usado para enviar los parametros de la peticion (Solo disponible para el metodo POST)
+  responseBuffer?: boolean;
 }
 
 export interface OptionsRequestPromise {
@@ -33,6 +34,7 @@ export interface HttpCustomStructure {
   headers?    : object,         // Encabezados de la peticion
   req?        : object,         // Objeto de clase Request express
   sendBy?  : 'body' | 'form' | null | undefined // Define el metodo usado para enviar los parametros de la peticion (Solo disponible para el metodo POST)
+  responseBuffer?: boolean
 }
 //@end
 

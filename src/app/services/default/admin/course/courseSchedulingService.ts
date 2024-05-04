@@ -71,6 +71,7 @@ import { TimeZone, TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admi
 import { courseSchedulingDataService } from '@scnode_app/services/default/data/course/courseSchedulingDataService'
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
+import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 // @end
 
 class CourseSchedulingService {
@@ -99,7 +100,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle'
+      let select = 'id withoutTutor metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle schedule'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -196,6 +197,12 @@ class CourseSchedulingService {
           register.signature_3 = this.getIconUrl(register.signature_3)
         }
 
+        const certificationStrategy = certificateService.certificateProviderStrategy(register.metadata.service_id) ? 'huella2' : 'huella1'
+        const isMultiple = register?.multipleCertificate?.status ? true : false
+
+        register.certificationStrategy = certificationStrategy
+        register.isMultiple = isMultiple
+
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             scheduling: register
@@ -243,10 +250,15 @@ class CourseSchedulingService {
   public insertOrUpdate = async (params: ICourseScheduling, files?: any, options?: ICourseSchedulingInsertOrUpdateOptions) => {
 
     const file_dimensions = {
-      width: 235,
-      height: 105
+      min: {
+        width: 100,// 100, // 235
+        height: 50// 50 // 105
+      },
+      max: {
+        width: 2000, // 500
+        height: 2000 // 500
+      }
     }
-    const errorFileMessage = `Se ha presentado un error al cargar el adjunto. Recuerde que el archivo debe cumplir peso máximo 250 KB, extensión PNG y  tamaño máximo en ancho ${file_dimensions.width}px y alto ${file_dimensions.height}px`
     let steps = [];
     try {
       let user = undefined;
@@ -318,7 +330,7 @@ class CourseSchedulingService {
         const response_upload: any = await uploadService.uploadFile(files.icon_1_file, this.default_icon_path, {
           file_dimensions
         });
-        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
+        if (response_upload.status === 'error') return {...response_upload};
         if (response_upload.hasOwnProperty('name')) params.certificate_icon_1 = response_upload.name
       }
 
@@ -326,7 +338,7 @@ class CourseSchedulingService {
         const response_upload: any = await uploadService.uploadFile(files.icon_2_file, this.default_icon_path, {
           file_dimensions
         });
-        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
+        if (response_upload.status === 'error') return {...response_upload};
         if (response_upload.hasOwnProperty('name')) params.certificate_icon_2 = response_upload.name
       }
 
@@ -335,7 +347,7 @@ class CourseSchedulingService {
         const response_upload: any = await uploadService.uploadFile(files.signature_1_file, this.default_icon_path, {
           file_dimensions
         });
-        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
+        if (response_upload.status === 'error') return {...response_upload};
         if (response_upload.hasOwnProperty('name')) params.signature_1 = response_upload.name
       }
 
@@ -343,7 +355,7 @@ class CourseSchedulingService {
         const response_upload: any = await uploadService.uploadFile(files.signature_2_file, this.default_icon_path, {
           file_dimensions
         });
-        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
+        if (response_upload.status === 'error') return {...response_upload};
         if (response_upload.hasOwnProperty('name')) params.signature_2 = response_upload.name
       }
 
@@ -351,7 +363,7 @@ class CourseSchedulingService {
         const response_upload: any = await uploadService.uploadFile(files.signature_3_file, this.default_icon_path, {
           file_dimensions
         });
-        if (response_upload.status === 'error') return {...response_upload, message: errorFileMessage};
+        if (response_upload.status === 'error') return {...response_upload};
         if (response_upload.hasOwnProperty('name')) params.signature_3 = response_upload.name
       }
 
@@ -483,8 +495,8 @@ class CourseSchedulingService {
             }
             visibleAtMoodle = 1;
           }
-          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && prevSchedulingStatus === 'Confirmado') {
-            await this.serviceSchedulingCancelled(response)
+          if (response && response.schedulingStatus && response.schedulingStatus.name === 'Cancelado' && (prevSchedulingStatus === 'Confirmado' || prevSchedulingStatus === 'Programado')) {
+            await this.serviceSchedulingCancelled(response, prevSchedulingStatus !== 'Programado')
             visibleAtMoodle = 1;
           }
         }
@@ -565,7 +577,7 @@ class CourseSchedulingService {
         steps.push('7')
         params.multipleCertificate = {
           status: false,
-          editingStatus: false,
+          editingStatus: true,
         }
         if (params.hasMultipleCertificate) {
           params.multipleCertificate.status = true
@@ -1091,9 +1103,11 @@ class CourseSchedulingService {
     }
   }
 
-  private serviceSchedulingCancelled = async (courseScheduling) => {
+  private serviceSchedulingCancelled = async (courseScheduling, shouldSendToStudentsAndTeachers = true) => {
     // @INFO Enviar notificación de cancelado al auxiliar del servicio
-    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel');
+    await courseSchedulingNotificationsService.sendNotificationOfServiceToAssistant(courseScheduling, 'cancel', undefined, undefined, undefined, !shouldSendToStudentsAndTeachers ? 'Programación de servicio cancelada' : undefined);
+
+    if (!shouldSendToStudentsAndTeachers) return
 
     let email_to_notificate = []
     const userEnrolled = await Enrollment.find({
@@ -1532,7 +1546,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle'
+    let select = 'id withoutTutor metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle schedule'
     if (filters.select) {
       select = filters.select
     }
@@ -1571,6 +1585,14 @@ class CourseSchedulingService {
       })
     }
 
+    if (filters.ids) {
+      where.push({
+        $match: {
+          _id: { $in: filters.ids.map((p) => ObjectID(p)) }
+        }
+      })
+    }
+
     if (filters.schedulingType) where.push({ $match: { schedulingType: ObjectID(filters.schedulingType) } })
     if (filters.schedulingStatus) where.push({ $match: { schedulingStatus: ObjectID(filters.schedulingStatus) } })
     if (filters.schedulingMode) where.push({ $match: { schedulingMode: ObjectID(filters.schedulingMode) } })
@@ -1595,6 +1617,24 @@ class CourseSchedulingService {
     if (filters.end_date) where.push({ $match: { endDate: { $lte: new Date(filters.end_date) } } })
     if (filters.schedulingAssociation) where.push({ $match: {'schedulingAssociation.slug': { $regex: '.*' + filters.schedulingAssociation + '.*', $options: 'i' }}})
     if (filters.program) where.push({$match: {'program': ObjectID(filters.program)}})
+    if (filters?.multicertificates !== undefined) {
+      if (filters.multicertificates === true) {
+        where.push({$match: {'multipleCertificate.status': true}})
+      } else if (filters.multicertificates === false) {
+        where.push({$match: {
+          $or: [
+            {'multipleCertificate.status': false},
+            {'multipleCertificate.status': {$exists: false}}
+          ]
+        }})
+      }
+    }
+    if (filters?.endDateBetween !== undefined && filters?.endDateBetween?.init && filters?.endDateBetween?.end) {
+      where.push({$match: {'endDate': {
+        $gte: new Date(filters.endDateBetween.init),
+        $lte: new Date(filters.endDateBetween.end)
+      }}})
+    }
 
     // if (filters.user) {
     // where['metadata.user'] = filters.user
@@ -1794,7 +1834,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle'
+      let select = 'id withoutTutor metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle schedule'
 
       let where = {}
 

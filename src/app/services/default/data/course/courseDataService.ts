@@ -68,7 +68,7 @@ class CourseDataService {
 
   private fetchCourseByCourseScheduling = async (params: IFetchCourse) => {
     try {
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule'
 
       let where = {}
 
@@ -327,7 +327,7 @@ class CourseDataService {
   public fetchCourses = async (params: IFetchCourses) => {
 
     try {
-      const paging = (params.pageNumber && params.nPerPage) ? true : false
+      let paging = (params.pageNumber && params.nPerPage) ? true : false
 
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
@@ -388,19 +388,42 @@ class CourseDataService {
 
       // @INFO: Filtro para Mode
       if (params.mode) {
-        where['schedulingMode'] = params.mode
+        if (Array.isArray(params.mode)) {
+          if (params.mode.length) {
+            where['schedulingMode'] = { $in: params.mode }
+          }
+        } else {
+          where['schedulingMode'] = params.mode
+        }
       }
 
       // @Filtro para precio
       if (params.price) {
-        if (params.price === 'free') {
-          where['hasCost'] = false
-        } else if (params.price === 'pay') {
-          where['hasCost'] = true
-        } else if (params.price === 'discount') {
-          let date = moment()
-          where['discount'] = { $gt: 0 }
-          where['endDiscountDate'] = { $gte: date.format('YYYY-MM-DD') }
+        if (Array.isArray(params.price)) {
+          if (params.price?.length) {
+            const priceOrParam = []
+            params.price?.forEach((priceItem) => {
+              if (priceItem === 'free') {
+                priceOrParam.push({ hasCost: false })
+              } else if (priceItem === 'pay') {
+                priceOrParam.push({ hasCost: true })
+              } else if (priceItem === 'discount') {
+                let date = moment()
+                priceOrParam.push({ discount: { $gt: 0 }, endDiscountDate: { $gte: date.format('YYYY-MM-DD') } })
+              }
+            })
+            where['$or'] = priceOrParam
+          }
+        } else {
+          if (params.price === 'free') {
+            where['hasCost'] = false
+          } else if (params.price === 'pay') {
+            where['hasCost'] = true
+          } else if (params.price === 'discount') {
+            let date = moment()
+            where['discount'] = { $gt: 0 }
+            where['endDiscountDate'] = { $gte: date.format('YYYY-MM-DD') }
+          }
         }
       }
 
@@ -466,6 +489,8 @@ class CourseDataService {
       let registers = []
 
       try {
+        if (params.new) paging = false
+
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -512,6 +537,7 @@ class CourseDataService {
 
       // @INFO Filtrar solo los cursos nuevos
       if (params.new && registers && registers.length) {
+        const newPaging = (params.pageNumber && params.nPerPage) ? true : false
         const programs = registers.map((r) => r.program._id)
         const courses = await Course.find({ program: { $in: programs } }).lean()
         registers = registers.reduce((accumCourses, schedule) => {
@@ -524,7 +550,9 @@ class CourseDataService {
               const endPublic = moment(schedule.endPublicationDate)
               const today = moment(new Date())
               if (today.isBetween(startNew, endNew) && today.isBetween(startPublic, endPublic)) {
-                accumCourses.push(schedule);
+                if (!newPaging || newPaging && accumCourses.length < params.nPerPage) {
+                  accumCourses.push(schedule);
+                }
               }
             }
           }

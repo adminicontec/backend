@@ -26,6 +26,7 @@ import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@s
 import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 const DATE_FORMAT = 'YYYY-MM-DD'
@@ -49,7 +50,8 @@ class CourseSchedulingNotificationsService {
     type: 'started' | 'cancel' | 'modify' = 'started',
     populate?: boolean,
     changesFn?: TCourseSchedulingDetailsModificationFn | TCourseSchedulingModificationFn,
-    syncupSessionsInMoodle?: CourseSchedulingDetailsSync
+    syncupSessionsInMoodle?: CourseSchedulingDetailsSync,
+    subject?: string
   ) => {
     try {
       let email_to_notificate: { email: string, name: string, timezone?: TimeZone }[] = []
@@ -114,6 +116,21 @@ class CourseSchedulingNotificationsService {
         return accum;
       }, []);
 
+      await customLogService.create({
+        label: 'csan - Course scheduling assistant notifications',
+        description: 'Enviar notificación a auxiliares',
+        content: {
+          serviceId: courseScheduling?.metadata?.service_id,
+          email_to_notificate,
+          serviceScheduler: {
+            email: serviceScheduler?.email,
+            name: `${serviceScheduler?.profile?.first_name} ${serviceScheduler?.profile?.last_name}`,
+            timezone: serviceScheduler?.profile?.timezone,
+          },
+          type,
+        }
+      })
+
       // @INFO Encontrar las programaciones del servicio
       const modules = await this.getModulesOfCourseScheduling(courseScheduling);
 
@@ -173,7 +190,7 @@ class CourseSchedulingNotificationsService {
             emails: [emailNotificate.email],
             mailOptions: {
               // @ts-ignore
-              subject: i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject'),
+              subject: subject ? subject : (i18nUtility.__(type === 'started' ? 'mailer.scheduling_notification.subject' : type === 'modify' ? 'mailer.scheduling_update.subject' : 'mailer.scheduling_cancelled_notification.subject')),
               html_template: {
                 path_layout: 'icontec',
                 path_template: path_template,
@@ -186,6 +203,18 @@ class CourseSchedulingNotificationsService {
             },
             notification_source: params.notification_source
           })
+          if (mail?.status === 'error') {
+            await customLogService.create({
+              label: 'csane - Course scheduling assistant notifications ERROR',
+              description: 'Error al enviar el correo al ejecutivo',
+              content: {
+                serviceId: courseScheduling?.metadata?.service_id,
+                emailNotificate,
+                type,
+                error: mail
+              }
+            })
+          }
         }
         return mail
 

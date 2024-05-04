@@ -19,6 +19,8 @@ export interface ICertificateLogQuery {
   idCertificateQueue?: string
   idCertificateQueues?: string[]
   process?: ProcessList
+  dateGte?: string
+  dateLte?: string
 }
 
 export interface ICertificateLog {

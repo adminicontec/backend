@@ -57,6 +57,7 @@ Thumbs.db
 /src/config/env.json
 /src/config/env.prod.json
 /src/config/env.qa.json
+/src/config/env.dev.json
 /coreconfig.json
 ##/package.json
 ##/package-lock.json

@@ -26,7 +26,8 @@ class CertificateReleaseProgram extends DefaultPluginsTaskTaskService {
 
     let respQueueToProcess: any = await certificateService.automaticRelease(
       {
-        without_certification: true
+        // without_certification: true
+        // course_scheduling: '629609f017001a6e7a42e79a'
       });
 
     console.log(respQueueToProcess);

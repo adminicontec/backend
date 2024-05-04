@@ -83,7 +83,7 @@ class EnrollmentService {
     if (filters.without_certification && filters.course_scheduling) {
       const certifications = await CertificateQueue.find({
         courseId: filters.course_scheduling,
-        status: { $in: ['New', 'In-process', 'Complete', 'Re-issue'] }
+        status: { $in: ['New', 'In-process', 'Complete', 'Re-issue', 'Error'] }
       })
         .select('id userId')
 
@@ -124,15 +124,18 @@ class EnrollmentService {
             const certificates = await CertificateQueue.find({
               userId: register.user._id,
               courseId: register.course_scheduling,
-              status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue'] }
+              status: { $in: ['New', 'In-process', 'Requested', 'Complete', 'Re-issue', 'Error'] }
             }); //.select('');
 
             register.certificate = [];
 
             for (let itemCertificate of certificates) {
-              if (itemCertificate.certificate.pdfPath) {
-                itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
+              if (itemCertificate.certificate.hash) {
+                itemCertificate.certificate.pdfPath = certificateService.certificateUrlV2(itemCertificate.certificate)
               }
+              // if (itemCertificate.certificate.pdfPath) {
+              //   itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
+              // }
               if (itemCertificate.certificate.imagePath) {
                 itemCertificate.certificate.imagePath = certificateService.certificateUrl(itemCertificate.certificate.imagePath)
               }
@@ -698,7 +701,7 @@ class EnrollmentService {
         let idx: number = 0;
         for await (let register of registers) {
           const certificates = await CertificateQueue
-            .find({ userId: register.user, courseId: register.course_scheduling })
+            .find({ userId: register.user, courseId: register.course_scheduling, status: 'Complete' })
             .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
           if (certificates && certificates.length) {
             registers[idx].certificates = [...certificates]

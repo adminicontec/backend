@@ -1,0 +1,42 @@
+{{> partials/page/title title='Nueva calificación docente registrada en Campus Digital'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado Profesional:</b></p>&nbsp;
+                    <p>Después de haber cumplido con los procesos de Calificación definidos por la organización, le informamos que usted se ha habilitado en el Campus Digital de Icontec para prestar el servicio de educación, de acuerdo con la demanda de servicios futura, en el o los siguiente(s) curso(s):</p>
+                    <table align="left" border="0" cellpadding="5" cellspacing="5" style="border-collapse:separate;max-width:100%; min-width:100%;" width="100%" >
+                      <thead>
+                        <tr>
+<th style="background: #B4BCBC;">Modular</th>
+                          <th style="background: #B4BCBC;">Código</th>
+                          <th style="background: #B4BCBC;">Nombre del curso</th>
+                        </tr>
+                      </thead>
+                      <tbody style="font-size: 12px;">
+                        {{#each params.courses}}
+                          <tr>
+<td>{{modular}}</td>
+                            <td>{{code}}</td>
+                            <td>{{courseName}}</td>
+                          </tr>
+                        {{/each}}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

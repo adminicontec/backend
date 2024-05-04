@@ -6,7 +6,7 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { moodle_setup } from '@scnode_core/config/globals';
+import { AUDITOR_EXAM_REGEXP, moodle_setup } from '@scnode_core/config/globals';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
@@ -145,7 +145,7 @@ class CourseContentService {
               sectionname: section.name,
               name: module.name,
               modname: module.modname,
-              isauditorquiz: (respMoodleModules && respMoodleModules.cm && respMoodleModules.cm.idnumber) ? ((respMoodleModules.cm.idnumber.trim() == 'auditor') ? true : false) : false,
+              isauditorquiz: (respMoodleModules && respMoodleModules.cm && respMoodleModules.cm.idnumber) ? (AUDITOR_EXAM_REGEXP.test(respMoodleModules.cm.idnumber.trim()) ? true : false) : false,
               instance: module.instance,
               visible: module.visible,
               uservisible: module.uservisible,

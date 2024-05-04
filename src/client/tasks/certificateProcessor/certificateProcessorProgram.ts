@@ -5,6 +5,7 @@ import { certificateService } from "@scnode_app/services/default/huellaDeConfian
 // @end
 
 // @import_models Import models
+import { CertificateQueue } from "@scnode_app/models";
 // @end
 
 // @import_utilitites Import utilities
@@ -23,22 +24,22 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
-    console.log("Init Task: Certificate Processor ");
-    await this.processNew()
-    await this.processReIssue()
+    // console.log("Init Task: Certificate Processor ");
+    // await this.processNew()
+    // await this.processReIssue()
 
     return true;
   }
 
   private processNew = async () => {
     console.log("1. Get all items on Certificate Queue [New] status")
-    const select = ["New"];
+    const select = ["New", "In-process"];
     const respQueueToProcess: any = await certificateQueueService.
       findBy({
         query: QueryValues.ALL, where: [
           { field: 'status', value: { $in: select } },
           // { field: 'courseId', value: '647908575eb784617f045948'},
-          // { field: '_id', value: '64875a62b97e122466a2e61b'}
+          // { field: '_id', value: '64ff499113902c48e72264b1'}
         ]
       });
 
@@ -48,6 +49,11 @@ class CertificateProcessorProgram extends DefaultPluginsTaskTaskService {
       console.log("Request for " + respQueueToProcess.certificateQueue.length + " certificates.");
 
       for await (const element of respQueueToProcess.certificateQueue) {
+        if (element.status === 'In-process') {
+          await CertificateQueue.findByIdAndUpdate(element._id, {
+            status: 'New'
+          })
+        }
         const respSetCertificate: any = await certificateService.createCertificate({
           certificateQueueId: element._id,
           courseId: element.courseId,

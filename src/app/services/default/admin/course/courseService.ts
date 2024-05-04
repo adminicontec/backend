@@ -18,7 +18,7 @@ import { courseSchedulingService } from '@scnode_app/services/default/admin/cour
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, CourseSchedulingType } from '@scnode_app/models'
+import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, CourseSchedulingType, CustomLog } from '@scnode_app/models'
 // @end
 
 // @import types
@@ -28,6 +28,9 @@ import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCou
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { utils } from 'xlsx/types';
+import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
+import { mailService } from '@scnode_app/services/default/general/mail/mailService';
 // @end
 
 class CourseService {
@@ -102,6 +105,7 @@ class CourseService {
   }
 
   /**
+   * !Important: Este metodo es usado unicamente por hipertexto(tienda virtual) y solo debe ser modificada por solicitud externa
    * Metodo que permite listar todos los registros
    * @param [filters] Estructura de filtros para la consulta
    * @returns
@@ -109,8 +113,8 @@ class CourseService {
   public list = async (params: IFetchCourses = {}) => {
 
     try {
-      console.log("List of available courses:")
       let listOfCourses = []
+      const logContentToSave = []
       const paging = (params.pageNumber && params.nPerPage) ? true : false
 
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
@@ -139,20 +143,11 @@ class CourseService {
       }
 
       let where: any = {
-        schedulingType: { $in: schedulingTypesIds }
+        schedulingType: { $in: schedulingTypesIds },
       }
 
       if (params.search) {
         const search = params.search
-        // where = {
-        //   ...where,
-        //   $or: [
-        //     { name: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { fullname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { displayname: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //     { description: { $regex: '.*' + search + '.*', $options: 'i' } },
-        //   ]
-        // }
         const programs = await Program.find({
           name: { $regex: '.*' + search + '.*', $options: 'i' }
         }).select('id')
@@ -163,17 +158,10 @@ class CourseService {
         where['program'] = { $in: program_ids }
       }
 
-      // @INFO: Filtro para Mode
       if (params.mode) {
         where['schedulingMode'] = params.mode
-        // if (schedulingModesIds.includes(params.mode.toString())) {
-        //   where['schedulingMode'] = params.mode
-        // } else {
-        //   where['schedulingMode'] = {$in: []}
-        // }
       }
 
-      // @Filtro para precio
       if (params.price) {
         if (params.price === 'free') {
           where['hasCost'] = false
@@ -181,27 +169,6 @@ class CourseService {
           where['hasCost'] = true
         }
       }
-      /*
-            // Filtro para FEcha de inicio de curso
-            if (params.startPublicationDate) {
-              let direction = 'gte'
-              let date = moment()
-              if (params.startPublicationDate.date !== 'today') {
-                date = moment(params.startPublicationDate.date)
-              }
-              if (params.startPublicationDate.direction) direction = params.startPublicationDate.direction
-              where['startPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-            }
-
-            if (params.endPublicationDate) {
-              let direction = 'lte'
-              let date = moment()
-              if (params.endPublicationDate.date !== 'today') {
-                date = moment(params.endPublicationDate.date)
-              }
-              if (params.endPublicationDate.direction) direction = params.endPublicationDate.direction
-              where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
-            }*/
 
       let sort = null
       if (params.sort) {
@@ -215,16 +182,21 @@ class CourseService {
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
-          //.populate({ path: 'course', select: 'objectives' })
+          .populate({ path: 'modular', select: 'id name' })
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
           .sort(sort)
           .lean()
 
-        // console.log('===============================');
-        // console.log('Cursos Programados');
-        // console.dir(registers, { depth: 1 });
-        // console.log('===============================');
+        const publishedSchedules = await CourseScheduling.find({
+            ...where,
+            endPublicationDate: { [`$gte`]: moment().format('YYYY-MM-DD') },
+            startPublicationDate: { [`$lte`]: moment().format('YYYY-MM-DD') },
+            publish: true,
+          })
+          .select('_id')
+          .lean()
+        const publishedSchedulingIds = publishedSchedules?.map((scheduling) => scheduling._id.toString())
 
         for await (const register of registers) {
           let isActive = false;
@@ -232,9 +204,8 @@ class CourseService {
           let courseObjectives = [];
           let courseContent = [];
           let generalities = [];
-
-          console.log("»»»»»»»»»»»»");
-          console.log("Data for: " + register.program.name);
+          let description = ''
+          let shortDescription = ''
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -248,6 +219,9 @@ class CourseService {
             extra_info.objectives.blocks.forEach(element => {
               if (element.data.items) {
                 courseObjectives.push(element.data.items[0]);
+              }
+              if (element.data.text?.length) {
+                courseObjectives.push(element.data.text);
               }
             });;
 
@@ -269,16 +243,14 @@ class CourseService {
             extra_info.generalities.blocks.forEach(element => {
               generalities.push(element.data.text);
             });
+
+            description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
+            shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
           }
 
-          // course Is Active given end date
-          let current = new Date();
-          let startDate = new Date(register.startPublicationDate);
-          let endDate = new Date(register.endPublicationDate);
-
           if (register.hasCost) {
-            if (current.valueOf() >= startDate.valueOf() && current.valueOf() <= endDate.valueOf()) {
-              if (register.schedulingMode.name.toLowerCase() == 'virtual')
+            if (publishedSchedulingIds?.includes(register?._id?.toString())) {
+              if ([CourseSchedulingModes.VIRTUAL, CourseSchedulingModes.ON_LINE].includes(register.schedulingMode.name))
                 isActive = true;
               else
                 isActive = false;
@@ -289,7 +261,6 @@ class CourseService {
           else {
             isActive = false;
           }
-          console.log("Course is active: " + isActive);
 
           let courseToExport: IStoreCourse = {
             id: register._id,
@@ -297,7 +268,6 @@ class CourseService {
             name: register.program.name,
             fullname: register.program.name,
             displayname: register.program.name,
-            description: '',
             courseType: courseType,
             mode: register.schedulingMode.name,
             startDate: register.startDate,
@@ -313,16 +283,34 @@ class CourseService {
             quota: register.amountParticipants,
             lang: 'ES',
             duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
-            isActive: isActive,
+            isActive,
             objectives: courseObjectives,
             content: courseContent,
             generalities: generalities,
+            schedule: register.schedule,
+            description,
+            shortDescription,
+            modular: register?.modular?.name ? register?.modular?.name : '',
+            withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
           }
           listOfCourses.push(courseToExport);
+          if (courseToExport?.isActive) {
+            logContentToSave.push({
+              name: register.program.name,
+              mode: register.schedulingMode.name,
+              serviceId: register?.metadata?.service_id,
+              startDate: moment.utc(register.startDate).format('YYYY-MM-DD'),
+              modality: register.schedulingMode.name,
+            })
+          }
         }
       } catch (e) {
         console.log('Error: ' + e);
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
+      }
+
+      if (!params.notSendNotification) {
+        await this.saveLogAndSendHipertextoEmail(logContentToSave)
       }
 
       return responseUtility.buildResponseSuccess('json', null, {
@@ -344,7 +332,58 @@ class CourseService {
 
   }
 
+  private saveLogAndSendHipertextoEmail = async (logContentToSave) => {
+    try {
+      const notificationData = {
+        activeCourses: logContentToSave,
+        coursesWithVisibilityChange: []
+      }
+      const logsResponse = await CustomLog.find({ label: "csth - active courses sent to hipertexto" })
+        .sort({ created_at: -1 })
+        .limit(1)
+      if (logsResponse?.length) {
+        const lastLogSaved = logsResponse[0]
+        if (lastLogSaved?.content?.length) {
+          const lastContent = lastLogSaved.content
+          notificationData.coursesWithVisibilityChange = lastContent.filter((course) => !notificationData.activeCourses?.some((activeCourse) => activeCourse.serviceId === course.serviceId))
+        }
+      }
+      await customLogService.create({
+        content: logContentToSave,
+        label: 'csth - active courses sent to hipertexto',
+        description: 'Cursos activos que son enviados a hipertexto'
+      })
 
+      const emailsToSend = customs?.mailer?.email_courses_sent_to_hipertexto
+      if (!emailsToSend?.length) {
+        return
+      }
+
+      const params = {
+        activeCourses: notificationData.activeCourses?.length ? notificationData.activeCourses : null,
+        coursesWithVisibilityChange: notificationData.coursesWithVisibilityChange?.length ? notificationData.coursesWithVisibilityChange : null,
+      }
+
+      const mail = await mailService.sendMail({
+        emails: emailsToSend?.map(({ email }) => email),
+        mailOptions: {
+          // @ts-ignore
+          subject: 'Cursos publicados en tienda',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: 'course/coursesSentToHipertexto',
+            params,
+          },
+          amount_notifications: null,
+        },
+        notification_source: 'courses_sent_to_hipertexto_notification'
+      })
+
+      return mail
+    } catch (e) {
+      console.log('CourseService -> saveLogAndSendHipertextoEmail -> ERROR: ', e)
+    }
+  }
 
 
   /**

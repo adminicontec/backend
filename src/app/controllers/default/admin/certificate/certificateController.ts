@@ -49,7 +49,11 @@ class CertificateController {
   }
 
   public reGenerateCertification = async (req: Request, res: Response) => {
-    const response = await certificateService.reGenerateCertification(req.getParameters.all())
+    const user_id = req.user.sub;
+    let params = req.getParameters.all();
+    params['auxiliar'] = user_id;
+
+    const response = await certificateService.reGenerateCertification(params)
     return responseUtility.sendResponseFromObject(res, response)
   }
 

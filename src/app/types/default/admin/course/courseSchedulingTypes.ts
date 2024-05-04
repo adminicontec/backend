@@ -91,6 +91,7 @@ export interface ICourseScheduling {
   address?: string
   classroom?: string
   user?: string // Identificador del usuario logueado
+  schedule?: string
   schedulingMode?: {value: number, label: string} | string // Identificador del modo de programación
   schedulingModeDetails?: 'in_situ' | 'online',
   modular?: string // Identificador del modular
@@ -141,6 +142,7 @@ export interface ICourseScheduling {
     status: boolean,
     editingStatus?: boolean
   }
+  withoutTutor?: boolean
 }
 
 export interface ICourseSchedulingDelete {
@@ -169,6 +171,9 @@ export interface ICourseSchedulingQuery {
   schedulingAssociation?: string;
   teacher?: string;
   program?: string
+  ids?: string[]
+  multicertificates?: boolean
+  endDateBetween?: {init: string, end: string}
 }
 
 export interface ICourseSchedulingReport {

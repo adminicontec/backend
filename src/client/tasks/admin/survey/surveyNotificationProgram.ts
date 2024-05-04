@@ -65,10 +65,11 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   private sendSchedulingExamNotification = async () => {
     const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado'] } });
     const today = moment.utc();
-    // const ids = ['6331b3249cfa2f84c37518b7']
+    // const ids = ['6525b1deddf7dd0287019504']
 
     const schedulings = await CourseScheduling.find({
       schedulingStatus: { $in: status.map(s => s._id) },
+      endDate: { $lt: new Date() },
       // _id: {
       //   $in: ids
       // }
@@ -144,6 +145,8 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
                   let sendNotificationToStudent = false;
                   console.log(`++++++++++++++++++++++++++++++++`);
                   console.log(`Student ${student.user.fullname}: ${student.user.email}`)
+                  const endDate = scheduling?.endDate
+                  const scheduleHasFinished = moment().isAfter(moment(endDate))
                   if (isVirtual) {
                     sendNotificationToStudent = true;
                   } else {
@@ -152,7 +155,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
                       // @INFO: Para presencial / enlinea se debe validar la asistencia
                       const progress = academicDataByUser[student.user._id].progress || undefined
                       const percentage = progress && progress?.assistanceDetails?.percentage || 0
-                      if (percentage >= 75) {
+                      if (percentage >= 100 && scheduleHasFinished) {
                         sendNotificationToStudent = true;
                       }
                     }
@@ -196,7 +199,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
     const date = new Date();
     // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
     date.setMonth(date.getMonth() - 3);
-    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date } }).select('id moodle_id').lean();
+    const schedulings = await CourseScheduling.find({ schedulingStatus: { $in: status.map(s => s._id) }, endDate: { $gt: date, $lt: new Date() } }).select('id moodle_id').lean();
     // Enviar notificación de activación de examen
     if (schedulings && schedulings.length) {
       for await (let scheduling of schedulings) {
@@ -234,7 +237,7 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
             compareDate2.setMonth(compareDate2.getMonth() + 2);
             if (moment().format('YYYY - MM - DD') === moment(compareDate2).format('YYYY - MM - DD')) {
               // Revisar si hay certificados pendientes por descargar en el servicio
-              const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exist: false } });
+              const certificates = await CertificateQueue.find({ courseId: scheduling._id, downloadDate: { $exists: false } });
               if (certificates && certificates.length) {
                 await courseSchedulingNotificationsService.sendNotificationReminderCertificate(scheduling._id);
               }

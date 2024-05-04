@@ -55,11 +55,19 @@ const CertificateQueueSchema = new Schema({
     required: false
   },
   certificate: {
+    source: {
+      type: Schema.Types.String,
+      required: false
+    },
     hash: {
       type: Schema.Types.String,
       required: false
     },
     url: {
+      type: Schema.Types.String,
+      required: false
+    },
+    urlCredencial: {
       type: Schema.Types.String,
       required: false
     },
@@ -85,6 +93,18 @@ const CertificateQueueSchema = new Schema({
     type: Schema.Types.Boolean,
     required: false
   },
+  auxiliarNotificationSent: {
+    type: Schema.Types.Boolean,
+    required: false
+  },
+  isPartial: {
+    type: Schema.Types.Boolean,
+    required: false
+  },
+  errorMessage: {
+    type: Schema.Types.String,
+    required: false
+  }
   // @end
 }, {
   collection: 'certificate_queues', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

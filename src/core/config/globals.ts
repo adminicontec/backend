@@ -119,4 +119,6 @@ export const certificate_type = {
   academic: 'academic',
   auditor: 'auditor',
 }
+
+export const AUDITOR_EXAM_REGEXP = /auditor/i
 //#endregion

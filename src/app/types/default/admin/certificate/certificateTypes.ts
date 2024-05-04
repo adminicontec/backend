@@ -17,6 +17,7 @@ export interface IQueryUserToCertificate {
   certificateHash?: string    // Hash de creación de ceertificado en Huella de confianza, requerido para proceso de Actualización
   certificateType?: string
   certificateSettingId?: string;
+  onlyThisCertificate?: string
 }
 
 
@@ -36,7 +37,7 @@ export interface ICertificate {
   regional: string,
   ciudad: string,
   pais: string,
-  fecha_certificado: Date,
+  fecha_certificado: Date | string,
   fecha_aprobacion?: Date,
   fecha_ultima_modificacion?: Date,
   fecha_renovacion?: Date,
@@ -55,6 +56,8 @@ export interface ICertificate {
   dato_11?: string,
   dato_12?: string,
   dato_13?: string
+  dato_15?: string,
+  dato_16?: string,
   anexos?: {
     dato_1?: string,
     dato_2?: string,
@@ -77,6 +80,7 @@ export interface ISetCertificateParams {
   programName: string,
   isComplete: boolean,
   certificateHash?: string
+  onlyThisCertificate?: string
 }
 
 export interface ICertificateQueueQuery {
@@ -113,9 +117,13 @@ export interface ICertificateQueue {
   certificate?: {
     hash: string,
     url: string,
+    urlCredencial: string,
     title: string,
-    date: Date
-  }
+    date: Date,
+    source: string
+  },
+  errorMessage?: string
+  force?: boolean
 }
 
 export interface ICertificateQueueDelete {
@@ -137,7 +145,8 @@ export enum CertificateCategory {
 
 export interface ICertificateForceStage {
   certificateQueueIds: string[]
-  category: CertificateCategory
+  category: CertificateCategory,
+  async?: boolean
 }
 
 export interface ICertificateReGenerate {
@@ -145,6 +154,8 @@ export interface ICertificateReGenerate {
   courseId: string
   certificateQueueId?: string
   status?: string
+  auxiliar?: string;
+  isMultiple?: boolean;
 }
 
 export interface IGenerateCertificatePdf {
@@ -158,7 +169,8 @@ export interface IGenerateCertificatePdf {
 }
 
 export interface IGenerateZipCertifications {
-  files: Array<string>
+  files?: Array<string>
+  filesFromBuffer?: Array<{fileName: string, buffer: Buffer}>,
   to_file: {
     file: {
       name: string,   // Nombre original del archivo adjunto (Ex: car.jpg)
@@ -192,10 +204,12 @@ export interface ISignatureInformation{
 
 export interface IProcessCertificateQueue {
   certificateQueueId?: string
+  certificateQueueIds?: string[]
   courseId?: string,
   userId?: string,
   auxiliar?: string,
   status?: string,
   output?: 'process' | 'query'
+  force?: boolean
 }
 //@end

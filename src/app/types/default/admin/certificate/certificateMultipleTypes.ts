@@ -7,6 +7,8 @@ export interface ICertificateMultipleData {
   course_scheduling: string;
   without_certification?: boolean
   studentId?: string,
+  certificateSettingId?: string
+  only_certificates?: boolean
 }
 
 export interface ICertificateMultipleDataCertificationCertificate {
@@ -14,6 +16,9 @@ export interface ICertificateMultipleDataCertificationCertificate {
   certificateUrl?: string;
   certificateDate?: string;
   certificateHash?: string;
+  certificateStatus?: string
+  errorMessage?: string;
+  certificateId?: string
 }
 
 export interface ICertificateMultipleDataCertificationModuleCriteriaResume {
@@ -22,6 +27,7 @@ export interface ICertificateMultipleDataCertificationModuleCriteriaResume {
   percentageObtainer: number;
   approved: boolean
   complement?: any
+  isPartial: boolean
 }
 
 export interface ICertificateMultipleDataCertificationModule {
@@ -29,6 +35,7 @@ export interface ICertificateMultipleDataCertificationModule {
   courseSchedulingDetailName: string;
   moduleCriteriaResume: ICertificateMultipleDataCertificationModuleCriteriaResume[]
   approved: boolean;
+  isPartial: boolean
 }
 
 export interface ICertificateMultipleDataCertification {
@@ -37,7 +44,8 @@ export interface ICertificateMultipleDataCertification {
   certificateType: CertificateSettingType;
   approved: boolean,
   certificate?: ICertificateMultipleDataCertificationCertificate
-  modules: ICertificateMultipleDataCertificationModule[]
+  modules: ICertificateMultipleDataCertificationModule[],
+  isPartial: boolean
 }
 
 export interface ICertificateMultipleDataStudent {
@@ -52,12 +60,13 @@ export interface ICertificateMultipleDataStudent {
 export interface ICertificateMultipleDataResponse {
   courseSchedulingId: string
   student?: ICertificateMultipleDataStudent
-  students?: ICertificateMultipleDataStudent[]
+  students?: ICertificateMultipleDataStudent[],
+  warnings?: Record<string, string>[]
 }
 
 export interface ICertificateMultipleGenerateStudent {
   userId: string;
-  certificateSettings: string[]
+  certificateSettings: {certificateSettingId: string, isPartial: boolean}[]
 }
 
 export interface ICertificateMultipleGenerate {
@@ -74,6 +83,7 @@ export interface ICertificateQueueMultiple {
   certificateType: string;
   certificateConsecutive: string;
   status: string;
+  isPartial: boolean
 }
 
 export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}

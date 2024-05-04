@@ -51,6 +51,9 @@ const CourseSchedulingSchema = new Schema({
       require: true
     }
   },
+  schedule: {
+    type: Schema.Types.String
+  },
   schedulingMode: {
     type: Schema.Types.ObjectId,
     ref: "CourseSchedulingMode",
@@ -386,6 +389,10 @@ const CourseSchedulingSchema = new Schema({
     logs: [{
       type: Schema.Types.Mixed,
     }]
+  },
+  withoutTutor: {
+    type: Schema.Types.Boolean,
+    default: false,
   },
   // @end
 }, {

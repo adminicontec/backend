@@ -79,9 +79,11 @@ class UserDataService {
             url: element?.certificate?.url,
             status: element?.status,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
-            pdfPath: element?.certificate?.pdfPath ? certificateService.certificateUrl(element?.certificate.pdfPath) : null,
+            pdfPath: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate) : null,
             certificateSetting: element?.certificateSetting,
             certificate: element?.certificate,
+            urlDownload: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate) : null,
+            urlCredencial: element?.certificate?.urlCredencial || null
           })
         }
         return accum

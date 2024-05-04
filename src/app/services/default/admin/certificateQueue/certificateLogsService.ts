@@ -69,13 +69,23 @@ class CertificateLogsService {
       where['process'] = filters.process
     }
 
+    if (filters?.dateGte || filters?.dateLte) {
+      if (filters?.dateGte && filters?.dateLte) {
+        where['created_at'] = {$gte: new Date(filters?.dateGte), $lte: new Date(filters?.dateLte)}
+      } else if (filters?.dateGte) {
+        where['created_at'] = {$gte: new Date(filters?.dateGte)}
+      } else if (filters?.dateLte) {
+        where['created_at'] = {$lte: new Date(filters?.dateLte)}
+      }
+    }
+
     let registers = []
     try {
       registers = await CertificateLogs.find(where)
         .select(select)
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        .sort({ name: 1 })
+        .sort({created_at: -1})
     } catch (e) { }
 
     return responseUtility.buildResponseSuccess('json', null, {
