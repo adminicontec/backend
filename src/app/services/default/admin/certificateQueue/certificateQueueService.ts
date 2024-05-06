@@ -134,7 +134,7 @@ class CertificateQueueService {
         // Multiple request from List in front
         for await (const userId of params.users) {
 
-          const exist = await CertificateQueue.findOne({ userid: userId, courseid: params.courseId, auxiliar: params.auxiliar });
+          const exist = await CertificateQueue.findOne({ userId: userId, courseId: params.courseId, auxiliar: params.auxiliar });
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'certificate.queue.already_exists', params: { userid: userId, courseid: params.courseId } } });
 
           let consecutive = '';
