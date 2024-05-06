@@ -169,7 +169,7 @@ class UserService {
 
         // @INFO: Validando campos unicos
         if (params.username) {
-          const exist = await User.findOne({ name: params.username, _id: { $ne: params.id } })
+          const exist = await User.findOne({ username: params.username, _id: { $ne: params.id } })
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}` } } })
         }
 
