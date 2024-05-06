@@ -72,8 +72,6 @@ class QualifiedTeachersService {
       registers = await QualifiedTeachers.find(where)
         .select(select)
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.contractType.type profile.contractType.isTeacher profile.contractType.isTutor' })
-        .populate({ path: 'modular', select: 'id name' })
-        // .populate({ path: 'modulars', select: 'id name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
     } catch (e) { }
