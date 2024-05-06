@@ -1,0 +1,39 @@
+version: '3.3'
+services:
+  icontec_mongo:
+    image: mongo:5.0
+    expose:
+      - 27017
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo-data/db:/data/db
+      - ./mongo-data/db-dump:/db-dump
+    networks:
+      icontec-network:
+        aliases:
+          - icontec_mongo
+  icontec_backend:
+    image: icontec_backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - 8080
+    ports:
+      - 8080:8080
+    depends_on:
+      - icontec_mongo
+    networks:
+      - icontec-network
+  icontec_front:
+    image: icontec_frontend
+    expose:
+      - 80
+    ports:
+      - 80:80
+    depends_on:
+      - icontec_backend
+networks:
+  icontec-network:
+
