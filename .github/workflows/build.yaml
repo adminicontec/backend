@@ -17,7 +17,7 @@ jobs:
 
       - name: Get the version
         id: vars
-        run: echo "tag=$(git rev-list --count HEAD))" >> $GITHUB_OUTPUT
+        run: echo "tag=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
