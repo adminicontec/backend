@@ -15,6 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get the version
+        id: vars
+        run: echo "tag=$(echo ${GITHUB_REF#refs/heads/}:$(git rev-list --count HEAD))" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -29,8 +33,8 @@ jobs:
           password: '${{ secrets.ICONTEC_AZURE_REGISTRY_PASSWORD }}'
 
       - name: Build Docker Image
-        run: docker build -t repositoriopolitecnico.azurecr.io/app/backend:latest -f Dockerfile .
+        run: docker build -t repositoriopolitecnico.azurecr.io/app/backend:${{ steps.vars.outputs.tag }} -f Dockerfile .
 
       - name: Push Docker Image
-        run: docker push repositoriopolitecnico.azurecr.io/app/backend:latest
+        run: docker push repositoriopolitecnico.azurecr.io/app/backend:${{ steps.vars.outputs.tag }}
 
