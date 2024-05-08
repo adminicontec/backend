@@ -1893,8 +1893,8 @@ class CourseSchedulingService {
               consecutive: index + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
               teacher_city: element?.teacher?.profile?.city || '-',
-              start_date: (element.startDate) ? moment(element.startDate).format('DD/MM/YYYY') : '',
-              end_date: (element.endDate) ? moment(element.endDate).format('DD/MM/YYYY') : '',
+              start_date: (element.startDate) ? moment(element.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
+              end_date: (element.endDate) ? moment(element.endDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
               duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
               schedule: '-',
             }
@@ -1914,13 +1914,13 @@ class CourseSchedulingService {
               let schedule = ''
               if (session.startDate && session.duration) {
                 let endDate = moment(session.startDate).add(session.duration, 'seconds')
-                schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+                schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('hh:mm a')}`
               }
               let session_data = {
                 consecutive: session_count + 1,
                 teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
                 teacher_city: element?.teacher?.profile?.city || '-',
-                start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
+                start_date: (session.startDate) ? moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
                 duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
                 schedule: schedule,
               }
