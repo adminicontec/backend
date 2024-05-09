@@ -31,7 +31,7 @@ const AcademicResourceConfigSchema = new Schema({
   },
   // @end
 }, {
-  collection: 'academic_resource_configs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  collection: 'academic_resource_configs' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }, strictPopulate: false
 });
 
 // INFO: Para usar soft delete se debe invocar exactamente el metodo delete() o sus derivados en lugar de remove()
