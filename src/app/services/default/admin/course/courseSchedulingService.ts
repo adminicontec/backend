@@ -14,7 +14,7 @@ import { courseSchedulingNotificationsService } from '@scnode_app/services/defau
 // @end
 
 // @import config
-import { customs } from '@scnode_core/config/globals'
+import { customs, moodle_setup } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -72,6 +72,7 @@ import { courseSchedulingDataService } from '@scnode_app/services/default/data/c
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 class CourseSchedulingService {
@@ -2524,6 +2525,49 @@ class CourseSchedulingService {
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
         err
       }})
+    }
+  }
+
+  public sincroniceServiceMoodle = async ({ courseSchedulingId }: { courseSchedulingId: string }) => {
+    try {
+      if (!courseSchedulingId) return responseUtility.buildResponseFailed('json', null, { message: 'El ID del course scheduling es oblicatorio' })
+      const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
+        .select('_id metadata program')
+        .populate({ path: 'program', select: '_id code' })
+      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio no existe' })
+      const shortName = `${courseScheduling.program.code}_${courseScheduling.metadata.service_id}`
+
+      const moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.courses.getByField,
+        moodlewsrestformat: moodle_setup.restformat,
+        'field': 'shortname',
+        'value': shortName
+      }
+      const moodleCoursesResponse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams })
+
+      if (!moodleCoursesResponse?.courses?.length) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio aún no ha sido creado en Moodle, por favor vuelve a intenarlo en unos minutos.' })
+      const moodleId = moodleCoursesResponse.courses[0].id
+      if (!moodleId) return responseUtility.buildResponseFailed('json', null, { message: 'El ID de moodle no ha sido encontrado' })
+
+      const paramsToUpdate = {
+        provisioningMoodle: {
+          logs: [],
+          status: 'completed'
+        },
+        moodle_id: moodleId
+      }
+      const response: any = await CourseScheduling.findByIdAndUpdate(courseSchedulingId, paramsToUpdate, { useFindAndModify: false, new: true })
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          courseScheduling: response,
+          paramsToUpdate
+        }
+      })
+    } catch (e) {
+      console.log('courseSchedulingService -> sincroniceServiceMoodle -> ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
     }
   }
 

@@ -45,6 +45,8 @@ class CourseSchedulingRoute {
 
     routerUtility.post(app, _route, '/change-scheduling-modular', this.instanceController.changeSchedulingModular, [], ['auth'])
     routerUtility.post(app, _route, '/change-scheduling-element', this.instanceController.changeSchedulingElement, [], ['auth'])
+
+    routerUtility.post(app, _route, '/sincronice-service-moodle', this.instanceController.sincroniceServiceMoodle, [], ['auth'])
     // @end
   }
 }
