@@ -39,7 +39,7 @@ class AcademicResourceDataService {
   protected getResourceContainerPopulateStructure = () => {
 
     const structure = {
-      path: 'config.content actions.config.content',
+      path: 'config.content',
       populate: [
         {
           path: 'academic_resource',
