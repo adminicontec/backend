@@ -14,7 +14,7 @@ import { courseSchedulingNotificationsService } from '@scnode_app/services/defau
 // @end
 
 // @import config
-import { customs } from '@scnode_core/config/globals'
+import { customs, moodle_setup } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -72,6 +72,7 @@ import { courseSchedulingDataService } from '@scnode_app/services/default/data/c
 import { eventEmitterUtility } from '@scnode_core/utilities/eventEmitterUtility';
 import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enrollment/moodleEnrollmentService';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 class CourseSchedulingService {
@@ -1893,8 +1894,8 @@ class CourseSchedulingService {
               consecutive: index + 1,
               teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
               teacher_city: element?.teacher?.profile?.city || '-',
-              start_date: (element.startDate) ? moment(element.startDate).format('DD/MM/YYYY') : '',
-              end_date: (element.endDate) ? moment(element.endDate).format('DD/MM/YYYY') : '',
+              start_date: (element.startDate) ? moment(element.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
+              end_date: (element.endDate) ? moment(element.endDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
               duration: (element.duration) ? generalUtility.getDurationFormated(element.duration) : '0h',
               schedule: '-',
             }
@@ -1914,13 +1915,13 @@ class CourseSchedulingService {
               let schedule = ''
               if (session.startDate && session.duration) {
                 let endDate = moment(session.startDate).add(session.duration, 'seconds')
-                schedule += `${moment(session.startDate).format('hh:mm a')} a ${moment(endDate).format('hh:mm a')}`
+                schedule += `${moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('hh:mm a')} a ${moment(endDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('hh:mm a')}`
               }
               let session_data = {
                 consecutive: session_count + 1,
                 teacher_name: `${element.teacher.profile.first_name} ${element.teacher.profile.last_name}`,
                 teacher_city: element?.teacher?.profile?.city || '-',
-                start_date: (session.startDate) ? moment(session.startDate).format('DD/MM/YYYY') : '',
+                start_date: (session.startDate) ? moment(session.startDate).zone(TIME_ZONES_WITH_OFFSET[TimeZone.GMT_5]).format('DD/MM/YYYY') : '',
                 duration: (session.duration) ? generalUtility.getDurationFormated(session.duration) : '0h',
                 schedule: schedule,
               }
@@ -2524,6 +2525,49 @@ class CourseSchedulingService {
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {
         err
       }})
+    }
+  }
+
+  public sincroniceServiceMoodle = async ({ courseSchedulingId }: { courseSchedulingId: string }) => {
+    try {
+      if (!courseSchedulingId) return responseUtility.buildResponseFailed('json', null, { message: 'El ID del course scheduling es oblicatorio' })
+      const courseScheduling = await CourseScheduling.findOne({ _id: courseSchedulingId })
+        .select('_id metadata program')
+        .populate({ path: 'program', select: '_id code' })
+      if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio no existe' })
+      const shortName = `${courseScheduling.program.code}_${courseScheduling.metadata.service_id}`
+
+      const moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.courses.getByField,
+        moodlewsrestformat: moodle_setup.restformat,
+        'field': 'shortname',
+        'value': shortName
+      }
+      const moodleCoursesResponse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams })
+
+      if (!moodleCoursesResponse?.courses?.length) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio aún no ha sido creado en Moodle, por favor vuelve a intenarlo en unos minutos.' })
+      const moodleId = moodleCoursesResponse.courses[0].id
+      if (!moodleId) return responseUtility.buildResponseFailed('json', null, { message: 'El ID de moodle no ha sido encontrado' })
+
+      const paramsToUpdate = {
+        provisioningMoodle: {
+          logs: [],
+          status: 'completed'
+        },
+        moodle_id: moodleId
+      }
+      const response: any = await CourseScheduling.findByIdAndUpdate(courseSchedulingId, paramsToUpdate, { useFindAndModify: false, new: true })
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          courseScheduling: response,
+          paramsToUpdate
+        }
+      })
+    } catch (e) {
+      console.log('courseSchedulingService -> sincroniceServiceMoodle -> ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
     }
   }
 
