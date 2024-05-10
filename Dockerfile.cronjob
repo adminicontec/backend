@@ -27,4 +27,13 @@ RUN chmod 0644 /etc/cron.d/my-crontab
 RUN touch /var/log/cron.log
 
 EXPOSE 3000
-CMD ["cron"]
+
+# Copy your custom entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /entrypoint.sh
+
+# Use the entrypoint script to start cron and the server
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node", "./src/app/server.js"]
