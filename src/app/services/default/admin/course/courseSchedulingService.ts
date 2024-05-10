@@ -1875,6 +1875,7 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.city' })
           .select(select)
+          .sort({ created_at: 1 })
           .lean()
 
         let session_count = 0
