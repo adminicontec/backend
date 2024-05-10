@@ -699,7 +699,7 @@ class CourseSchedulingDetailsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations'
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations created_at updated_at'
     if (filters.select) {
       select = filters.select
     }
@@ -740,7 +740,7 @@ class CourseSchedulingDetailsService {
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        // .sort({ created_at: -1 })
+        .sort({ created_at: 1 })
         .lean()
 
       for await (const register of registers) {
