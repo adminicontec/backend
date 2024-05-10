@@ -10,5 +10,7 @@ RUN npm install
 RUN npm install -g phantomjs-prebuilt --unsafe-perm
 RUN npm install html-pdf -g --unsafe-perm
 RUN npm link html-pdf
+RUN npm i -g ts-node
+RUN npm run init
 EXPOSE 3000
 CMD ["node","./src/app/server.js"]
