@@ -38,3 +38,8 @@ jobs:
       - name: Push Docker Image
         run: docker push repositoriopolitecnico.azurecr.io/app/backend:${{ steps.vars.outputs.tag }}
 
+      - name: Build Docker Image Cron
+        run: docker build -t repositoriopolitecnico.azurecr.io/app/backend-cron:${{ steps.vars.outputs.tag }} -f Dockerfile.cronjob .
+
+      - name: Push Docker Image Cron
+        run: docker push repositoriopolitecnico.azurecr.io/app/backend-cron:${{ steps.vars.outputs.tag }}

@@ -1,0 +1,5 @@
+0 */6 * * * campus_virtual_icontec_distribution --program task --task survey-notification
+0 17 * * * campus_virtual_icontec_distribution --program task --task certificate-preview-processor
+*/5 * * * * campus_virtual_icontec_distribution --program task --task document-processor
+0 */4 * * * campus_virtual_icontec_distribution --program task --task scheduling-information
+0 23 * * * campus_virtual_icontec_distribution --program task --task program-update
