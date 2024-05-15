@@ -32,6 +32,8 @@ import { qualifiedTeachersService } from '@scnode_app/services/default/admin/qua
 
 // @end
 
+const SCHEDULING_ASSOCIATION_DELAY = 1000 * 60 * 1
+
 class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
 
   private default_document_path = 'documents/qualified';
@@ -58,6 +60,7 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
         if (documentQueue.type === 'CourseScheduling Association') {
           let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
           const response = await queryUtility.query({ method: 'post', url: 'api/admin/course-scheduling-association/process-document', api: 'campus', params: {data: JSON.stringify(params)} });
+          await this.delay(SCHEDULING_ASSOCIATION_DELAY)
           console.log(`CourseScheduling Association - response`, response);
         } else if (documentQueue.type === 'Generate Report') {
           let params: any = {recordToProcess: documentQueue, mixedParams: { ...documentQueue.mixedParams }};
@@ -114,6 +117,14 @@ class DocumentProcessorProgram extends DefaultPluginsTaskTaskService {
       console.log("There's no records to process");
     }
     return true; // Always return true | false
+  }
+
+  private delay = async (ms: number): Promise<string> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve('Success')
+      }, ms)
+    })
   }
 
 }

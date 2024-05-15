@@ -19,6 +19,9 @@ import { courseSchedulingDetailsService } from '@scnode_app/services/default/adm
 // @import types
 // @end
 
+const CHECK_MOODLE_SERVICE_CREATION_INTERVAL = 1000 * 60 * 1
+const LIMIT_ATTEMPTS_CREATION = 10
+
 class CourseSchedulingService {
 
   /*===============================================
@@ -29,6 +32,25 @@ class CourseSchedulingService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor () {}
+
+  createMoodleService = async (courseSchedulingId, paramsMoodle, steps) => {
+    const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
+    if (moodleResponse.status !== 'success') {
+      steps.push('Attempt service creation ERROR')
+      steps.push(moodleResponse)
+    }
+    let sincroniceResponse: any = { status: 'error' }
+    let attempts = 0
+    while (sincroniceResponse.status !== 'success' && attempts < LIMIT_ATTEMPTS_CREATION) {
+      sincroniceResponse = await courseSchedulingServiceAdmin.sincroniceServiceMoodle({ courseSchedulingId })
+      attempts++
+      steps.push(`Sincronice moodle service attempt ${attempts}`)
+      if (sincroniceResponse.status !== 'success') {
+        await this.delay(CHECK_MOODLE_SERVICE_CREATION_INTERVAL)
+      }
+    }
+    return sincroniceResponse
+  }
 
   provisioningMoodleCourses = async ({
     steps,
@@ -41,18 +63,11 @@ class CourseSchedulingService {
     originalScheduling,
     itemsToDuplicate,
   }: IProvisioningMoodleCoursesParams) => {
-    steps.push('22')
-    const moodleResponse: any = await moodleCourseService.createFromMaster(paramsMoodle)
-    steps.push(moodleResponse)
-    if (moodleResponse.status === 'success') {
-      steps.push('23')
-      if (moodleResponse.course && moodleResponse.course.id) {
-        steps.push('24')
-        await CourseScheduling.findByIdAndUpdate(_id, { moodle_id: moodleResponse.course.id }, {
-          useFindAndModify: false,
-          new: true,
-          lean: true,
-        })
+    const moodleCreationResponse = await this.createMoodleService(_id, paramsMoodle, steps)
+    steps.push('Moodle creation sincronice response')
+    steps.push(moodleCreationResponse)
+    if (moodleCreationResponse.status === 'success') {
+        steps.push('23')
         if (shouldDuplicateSessions) {
           try {
             await this.duplicateSessions({
@@ -75,14 +90,7 @@ class CourseSchedulingService {
           await courseSchedulingServiceAdmin.checkEnrollmentTeachers(response)
           await courseSchedulingServiceAdmin.serviceSchedulingNotification(response, prevSchedulingStatus)
         }
-      } else {
-        steps.push('24-b')
-        // await courseSchedulingServiceAdmin.delete({ id: _id })
-        this.updateCourseSchedulingStatus(_id, CourseSchedulingProvisioningMoodleStatus.ERROR, steps)
-        return
-      }
     } else {
-      // await courseSchedulingServiceAdmin.delete({ id: _id })
       this.updateCourseSchedulingStatus(_id, CourseSchedulingProvisioningMoodleStatus.ERROR, steps)
       return
     }
@@ -146,6 +154,14 @@ class CourseSchedulingService {
         }
       }
     }
+  }
+
+  private delay = async (ms: number): Promise<string> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve('Success')
+      }, ms)
+    })
   }
 
 }
