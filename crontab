@@ -1,5 +1,5 @@
-0 */6 * * * campus_virtual_icontec_distribution --program task --task survey-notification
-0 17 * * * campus_virtual_icontec_distribution --program task --task certificate-preview-processor
-*/5 * * * * campus_virtual_icontec_distribution --program task --task document-processor
-0 */4 * * * campus_virtual_icontec_distribution --program task --task scheduling-information
-0 23 * * * campus_virtual_icontec_distribution --program task --task program-update
+0 */6 * * * campus_virtual_icontec_distribution --program task --task survey-notification >> /var/log/cron.log 2>&1
+0 17 * * * campus_virtual_icontec_distribution --program task --task certificate-preview-processor >> /var/log/cron.log 2>&1
+*/5 * * * * campus_virtual_icontec_distribution --program task --task document-processor >> /var/log/cron.log 2>&1
+0 */4 * * * campus_virtual_icontec_distribution --program task --task scheduling-information >> /var/log/cron.log 2>&1
+0 23 * * * campus_virtual_icontec_distribution --program task --task program-update >> /var/log/cron.log 2>&1
