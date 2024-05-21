@@ -7,4 +7,4 @@ service cron start
 tail -f /var/log/cron.log &
 
 # Start Node.js application
-node ./src/app/server.js  # Replace with the name of your main server file
+exec "$@"
