@@ -89,7 +89,7 @@ class CourseSchedulingDataService {
       let scheduling = []
       let courses = []
 
-      let selectDetails = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration'
+      let selectDetails = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration created_at'
 
       let sessions_where = {
         course_scheduling: register._id
@@ -128,6 +128,7 @@ class CourseSchedulingDataService {
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .select(select)
+        .sort({ created_at: 1 })
         .lean()
 
       let session_count = 0
@@ -164,7 +165,8 @@ class CourseSchedulingDataService {
             schedule: '-',
             address: register.address ? register.address : '',
             startDate: element.startDate,
-            endDate: element.endDate
+            endDate: element.endDate,
+            created_at: element.created_at
           }
 
           scheduling.push(item)
@@ -250,7 +252,7 @@ class CourseSchedulingDataService {
               }
             )
 
-            item = { ...item, ...row_content, ...session_data, webex: webexSession }
+            item = { ...item, ...row_content, ...session_data, webex: webexSession, created_at: element.created_at }
 
             session_count++
             first_session = false

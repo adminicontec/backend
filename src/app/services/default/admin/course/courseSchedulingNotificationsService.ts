@@ -517,6 +517,7 @@ class CourseSchedulingNotificationsService {
     const response = await CourseSchedulingDetails.find({ course_scheduling: courseScheduling._id })
       .populate({ path: 'teacher', select: 'profile' })
       .populate({ path: 'course', select: 'name code moodle_id id' })
+      .sort({ created_at: 1 })
       .lean();
     if (response) {
       return response;
@@ -556,6 +557,7 @@ class CourseSchedulingNotificationsService {
     const courseSchedulingDetails = await CourseSchedulingDetails.findOne({ _id: id })
       .populate({ path: 'teacher', select: 'id profile' })
       .populate({ path: 'course', select: 'name code moodle_id id' })
+      .sort({ created_at: 1 })
       .lean();
     return courseSchedulingDetails;
   }
