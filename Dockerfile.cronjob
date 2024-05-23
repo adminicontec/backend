@@ -25,8 +25,8 @@ RUN chmod 0644 /etc/cron.d/backend
 # Apply the cron job
 RUN crontab /etc/cron.d/backend
 # Create the log file to be able to run tail
-RUN touch /app/uploads/cron.log
-RUN chmod 0666 /app/uploads/cron.log
+#RUN touch /app/uploads/cron.log
+#RUN chmod 0666 /app/uploads/cron.log
 
 EXPOSE 3000
 
