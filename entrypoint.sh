@@ -4,7 +4,7 @@
 service cron start
 
 # Tail the cron log file
-tail -f /var/log/cron.log &
+tail -f /uploads/cron.log &
 
 # Start Node.js application
 exec "$@"
