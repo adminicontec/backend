@@ -18,6 +18,9 @@ import {runTaskService} from '@scnode_core/services/default/plugins/tasks/runTas
 
 class Client {
   public run = async() => {
+    // Debug check
+    consoleUtility.showInfoConsole('Starting script...');
+
     i18nUtility.initConfigI18n();
     await orm.initConfigDb();
 
