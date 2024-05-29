@@ -1,6 +1,3 @@
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-
 0 */6 * * * /usr/local/bin/node /usr/local/bin/ts-node /usr/local/bin/campus_virtual_icontec_distribution --program task --task survey-notification >> /app/uploads/cron.log 2>&1
 0 17 * * * /usr/local/bin/node /usr/local/bin/ts-node /usr/local/bin/campus_virtual_icontec_distribution --program task --task certificate-preview-processor >> /app/uploads/cron.log 2>&1
 */5 * * * * /usr/local/bin/node /usr/local/bin/ts-node /usr/local/bin/campus_virtual_icontec_distribution --program task --task document-processor >> /app/uploads/cron.log 2>&1
