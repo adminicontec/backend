@@ -48,6 +48,8 @@ import { certificateMultipleService } from "../../admin/certificate/certificateM
 import { ICertificateQueueMultiple } from "@scnode_app/types/default/admin/certificate/certificateMultipleTypes";
 import { notificationEventService } from "../../events/notifications/notificationEventService";
 import { mapUtility } from "@scnode_core/utilities/mapUtility";
+import { courseSchedulingNotificationsService } from "../../admin/course/courseSchedulingNotificationsService";
+import { CourseSchedulingNotificationEvents } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
 // @end
 
 class CertificateService {
@@ -2471,14 +2473,18 @@ class CertificateService {
                 forceNotificationSended = true
               }
             }
-            const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
-              certificateQueueId: certificateQueue._id,
-              participantId: user._id,
-              courseSchedulingId: courseScheduling._id,
-              consecutive: certificateQueue.certificateConsecutive,
-              forceNotificationSended
-            });
-            updateData['$set']['notificationSent'] = true
+            const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(courseScheduling._id,CourseSchedulingNotificationEvents.CERTIFICATE_GENERATED)
+
+            if (sendMailsStudents) {
+              const notificationResponse = await notificationEventService.sendNotificationParticipantCertificated({
+                certificateQueueId: certificateQueue._id,
+                participantId: user._id,
+                courseSchedulingId: courseScheduling._id,
+                consecutive: certificateQueue.certificateConsecutive,
+                forceNotificationSended
+              });
+              updateData['$set']['notificationSent'] = true
+            }
           }
           await CertificateQueue.findByIdAndUpdate(params.certificate_queue, updateData, { useFindAndModify: false, new: true })
         }

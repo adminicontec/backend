@@ -262,6 +262,8 @@ class CourseService {
             isActive = false;
           }
 
+          const {serviceTypeLabel} = courseSchedulingService.getServiceType(register)
+
           let courseToExport: IStoreCourse = {
             id: register._id,
             moodleID: register.moodle_id,
@@ -292,6 +294,8 @@ class CourseService {
             shortDescription,
             modular: register?.modular?.name ? register?.modular?.name : '',
             withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
+            quickLearning: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.quickLearning : false,
+            serviceType: serviceTypeLabel
           }
           listOfCourses.push(courseToExport);
           if (courseToExport?.isActive) {

@@ -17,6 +17,7 @@ import { TaskParams } from '@scnode_core/types/default/task/taskTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService'
 import { calendarEventsService } from "@scnode_app/services/default/moodle/calendarEvents/calendarEventsService";
+import { CourseSchedulingNotificationEvents } from "@scnode_app/types/default/admin/course/courseSchedulingTypes";
 // @end
 
 class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
@@ -83,6 +84,8 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
         console.group(`--------  Service ${scheduling?.metadata?.service_id} - ${scheduling?.schedulingMode?.name} --------`)
         const isVirtual = scheduling?.schedulingMode?.name === 'Virtual' ? true : false;
         const examData = await courseSchedulingNotificationsService.verifyCourseSchedulingExercise(scheduling.moodle_id);
+
+        const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(scheduling._id,CourseSchedulingNotificationEvents.SURVEY_NOTIFICATION)
 
         if (examData?.hasExam) {
           const eventsByCourse: any = await calendarEventsService.fetchOnlyEvents({
@@ -160,6 +163,9 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
                       }
                     }
                   }
+
+                  if (!sendMailsStudents) sendNotificationToStudent = false;
+
                   console.log(`Status to notificate: ${sendNotificationToStudent}`)
 
                   if (sendNotificationToStudent) {

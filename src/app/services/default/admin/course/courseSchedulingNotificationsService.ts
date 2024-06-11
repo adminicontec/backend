@@ -22,11 +22,12 @@ import { Role, User, CourseSchedulingDetails, CourseScheduling } from '@scnode_a
 // @import types
 import { IQuizModuleData } from '@scnode_app/types/default/admin/completionStatus/completionstatusTypes'
 import { IStudentExamNotification } from '@scnode_app/types/default/admin/notification/notificationTypes'
-import { CourseSchedulingDetailsSync, TCourseSchedulingModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { CourseSchedulingDetailsSync, CourseSchedulingNotificationEvents, CourseSchedulingNotificationRules, CourseSchedulingTypesKeys, TCourseSchedulingModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { IUser, TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/default/admin/course/courseSchedulingDetailsTypes';
 import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
+import { courseSchedulingService } from './courseSchedulingService';
 // @end
 
 const DATE_FORMAT = 'YYYY-MM-DD'
@@ -41,6 +42,41 @@ class CourseSchedulingNotificationsService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor() { }
+
+  public checkIfNotificationsCanSendToStudents = async (courseSchedulingId: string, event: CourseSchedulingNotificationEvents) => {
+    const courseScheduling = await CourseScheduling.findOne({_id: courseSchedulingId})
+    .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+    switch (event) {
+      case CourseSchedulingNotificationEvents.SCHEDULE_UPDATED:
+      case CourseSchedulingNotificationEvents.UNENROLLMENT:
+      case CourseSchedulingNotificationEvents.SERVICE_CANCEL:
+      case CourseSchedulingNotificationEvents.SURVEY_NOTIFICATION:
+      case CourseSchedulingNotificationEvents.CERTIFICATE_GENERATED:
+        return this.checkRulesToNotificate(courseScheduling, [CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING])
+      case CourseSchedulingNotificationEvents.ENROLLMENT:
+        return this.checkRulesToNotificate(courseScheduling, [])
+    }
+
+  }
+
+  private checkRulesToNotificate = (courseScheduling: any, rules: CourseSchedulingNotificationRules[]) => {
+    const rulesValidation = []
+    for (const rule of rules) {
+      switch (rule) {
+        case CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING:
+          const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
+          if (serviceTypeKey !== CourseSchedulingTypesKeys.QUICK_LEARNING) {
+            rulesValidation.push(true)
+          } else {
+            rulesValidation.push(false)
+          }
+          break
+      }
+    }
+    if (rulesValidation.length === 0) return true
+    if (rulesValidation.some((value) => value === false)) return false
+    return true
+  }
 
   /**
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado

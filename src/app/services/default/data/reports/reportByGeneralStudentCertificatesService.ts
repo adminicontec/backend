@@ -17,6 +17,7 @@ import { CertificateQueue, User } from '@scnode_app/models';
 
 // @import types
 import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/reportsFactoryTypes';
+import { courseSchedulingService } from "../../admin/course/courseSchedulingService";
 // @end
 
 export interface IReportByGeneralStudentCertificates {
@@ -60,7 +61,8 @@ export interface IReportPage {
     downloadDate: string;
     auxiliar: string;
     createdAt: string;
-  }
+  },
+  serviceType: string;
 }
 
 
@@ -91,7 +93,7 @@ class ReportByGeneralStudentCertificatesService {
       .select('_id courseId userId auxiliar created_at certificateType message downloadDate certificate.hash certificate.date certificate.title')
       .populate({
         path: 'courseId',
-        select: 'id metadata schedulingMode regional city account_executive client program startDate endDate',
+        select: 'id withoutTutor quickLearning metadata schedulingMode regional city account_executive client program startDate endDate',
         populate: [
           {path: 'schedulingMode', select: 'id name'},
           {path: 'regional', select: 'id name'},
@@ -132,6 +134,7 @@ class ReportByGeneralStudentCertificatesService {
       }
 
       for (const certification of certifications) {
+        const {serviceTypeLabel} = courseSchedulingService.getServiceType(certification?.courseId)
         const itemBase: IReportPage = {
           serviceId: certification?.courseId?.metadata?.service_id || '-',
           modalityName: certification?.courseId?.schedulingMode?.name || '-',
@@ -157,7 +160,8 @@ class ReportByGeneralStudentCertificatesService {
             downloadDate: certification?.downloadDate ? moment(certification?.downloadDate).format('DD/MM/YYYY') : '-',
             auxiliar: (certification?.auxiliar?.profile) ? `${certification?.auxiliar?.profile.first_name} ${certification?.auxiliar?.profile.last_name}` : '-',
             createdAt: (certification?.created_at) ? moment(certification?.created_at).format('DD/MM/YYYY') : '-',
-          }
+          },
+          serviceType: serviceTypeLabel
         }
 
         reportDataPerPage.data.push(itemBase)
@@ -241,6 +245,7 @@ class ReportByGeneralStudentCertificatesService {
 
         const headerTable = [
           'Modalidad',
+          'Tipo de curso',
           'Regional',
           'Ciudad',
           'Ejecutivo de cuenta',
@@ -268,6 +273,7 @@ class ReportByGeneralStudentCertificatesService {
         for (const certification of reportData?.data) {
           const contentScheduling = [
             certification.modalityName,
+            certification.serviceType,
             certification.regional,
             certification.city,
             certification.accountExecutive,
