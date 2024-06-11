@@ -49,8 +49,10 @@ class MasterCourseService {
     // Params for Moodle, fetch the complete list. Filtering only from results.
     let moodleParams = {
       wstoken: moodle_setup.wstoken,
-      wsfunction: moodle_setup.services.courses.get,
+      wsfunction: moodle_setup.services.courses.getByField,
       moodlewsrestformat: moodle_setup.restformat,
+      field: 'category',
+      value: params.categoryId
     };
 
     console.log("--------------- Fetch courses in Moodle : ---------------------------");
@@ -63,7 +65,8 @@ class MasterCourseService {
     else {
       console.log("Response: ");
       // Filter if the course belongs to categoryID
-      let courses = respMoodle.filter(course => course.categoryid === params.categoryId);
+      // let courses = respMoodle.filter(course => course.categoryid === params.categoryId);
+      let courses = respMoodle?.courses;
 
       courses.forEach(courseDetail => {
 
