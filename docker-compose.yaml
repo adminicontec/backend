@@ -14,7 +14,7 @@ services:
         aliases:
           - icontec_mongo
   icontec_backend:
-    image: icontec_backend
+    image: repositoriopolitecnico.azurecr.io/app/backend:1510
     build:
       context: .
       dockerfile: Dockerfile
@@ -27,7 +27,7 @@ services:
     networks:
       - icontec-network
   icontec_front:
-    image: icontec_frontend
+    image: repositoriopolitecnico.azurecr.io/app/frontend:959
     expose:
       - 80
     ports:
