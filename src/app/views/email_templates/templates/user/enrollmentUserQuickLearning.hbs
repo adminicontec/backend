@@ -11,18 +11,19 @@
                 <tr>
                   <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
                     <p><b>Estimado (a) {{params.first_name}}</b></p>&nbsp;
-                    <p>Usted ha sido inscrito al programa {{params.course_name}} (QuickLearning) como parte de su plan de formación, con ID de servicio Nro: {{params.service_id}}</p>
-                    <p>La programación del curso/programa/diplomado es:</p>
+                    <p>Te has inscrito al quick learning, {{params.course_name}} con el ID de servicio No.: {{params.service_id}}. Esta formación incluye la consulta de la norma en formato digital, así como una clase en video sobre la misma. </p>
+                    <p>La activación para el estudio de tu quick learning será:</p>
                     <p>Fecha de inicio: {{params.course_start}}</p>
                     <p>Fecha de fin: {{params.course_end}}</p>
-                    <p>En su <b>cuenta de estudiante</b> se encuentran las fechas de cada sesión de formación (Modalidad Presencial y Online) o las actividades a desarrollar  (Modalidad Virtual).</p>
-                    <p>Por favor siga los siguientes pasos para ingresar a la <b>cuenta de estudiante</b> y posteriormente <b>al curso</b>:</p>
-                    <p><b>PASO 1</b>: Ingrese al campus a la siguiente dirección <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></p>
-                    <p><b>PASO 2</b>: Ingrese a la sesión en el botón de la parte derecha superior <img src="{{params.mailer.button_session}}" style="width: 100px;"> con su usuario y contraseña (revise el primer correo recibido asunto: Bienvenida al Campus Digital). Recuerde que su usuario es: {{params.username}}.</p>
-                    <p><b>PASO 3</b>:  Dentro de su Cuenta de Estudiante revise el cuadro de programación (Modalidad Presencial y Online) o las actividades a desarrollar (Modalidad Virtual).</p>
-                    <p><b>PASO 4</b>: Ingrese al curso en el botón de la parte superior derecha <img src="{{params.mailer.button_moodle}}" style="width: 100px;"></p>&nbsp;
-                    <p class="mcSpecialText">El acceso a las normas Icontec en formato digital E-book, si aplica, podrá realizarlo una vez ingrese al aula.  Este formato le permite acceder de manera off line a los documentos siguiendo los pasos que se describen en el siguiente <a href="{{params.mailer.video_tutorial}}">tutorial</a>.</p>
-                    <p class="mcSpecialText">Para cualquier solicitud recuerde que tiene a disposición la mesa de ayuda donde puede registrar un nuevo ticket y a la cual podrá ingresar, en cualquier momento, a través del asistente virtual del <a href="{{params.mailer.campus_virtual}}">Campus Digital</a>, Daniela. Lo invitamos a consultar el <a href="{{params.mailer.help_desk_instructive_doc}}">instructivo de mesa de ayuda</a>.</p>
+                    <p>Tiempo de vigencia para ver el video y descargar la norma en formato digital: {{params.serviceValidity}}. Una vez descargues la norma tendrás tiempo ilimitado para su consulta.</p>
+                    <p>En tu tablero de estudiante encontrarás la información de tu <b>quick learning</b>. Sigue los pasos para acceder al mismo:</p>
+                    <p><b>Paso 1</b>: Ingresa al Campus Digital aquí <a href="{{params.mailer.campus_virtual}}/login">{{params.mailer.campus_virtual}}</a></p>
+                    <p><b>Paso 2</b>: Haz clic en el botón “iniciar sesión” ubicado en la parte superior derecha <img src="{{params.mailer.button_session}}" style="width: 100px;"> con tu usuario {{params.username}} y con la contraseña (enviada en el primer correo remitido con el asunto “Bienvenida al Campus Digital”)</p>
+                    <p><b>Paso 3</b>: Dentro de tu tablero de estudiante, cliquea el botón ubicado en la parte superior derecha “ingreso a cursos” <img src="{{params.mailer.button_moodle}}" style="width: 100px;">, donde encontrarás el video y la norma en formato digital de tu quick learning.</p>
+                    <p><b>Paso 4</b>: Sigue las indicaciones dentro del aula para descargar la norma (<a href="{{params.mailer.video_tutorial}}">link acceso al tutorial de descarga de norma</a>).</p>
+                    <p><b>¿Necesita ayuda?</b></p>
+                    <p class="mcSpecialText">Para cualquier solicitud o inquietud, accede al asistente virtual "Daniela" del Campus Digital de ICONTEC, selecciona la segunda opción "mesa de ayuda estudiante", y abre un ticket (<a href="{{params.mailer.help_desk_instructive_doc}}">para saber cómo hacerlo, haz clic aquí</a>).</p>
+                    <p>¡Disfruta tu quick learning!</p>
                     <img src="{{params.mailer.virtual_help}}" style="width: 100px">
                   </td>
                 </tr>

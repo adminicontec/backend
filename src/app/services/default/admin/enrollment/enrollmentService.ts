@@ -489,9 +489,15 @@ class EnrollmentService {
               if (sendMailsStudents) {
                 const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
                 let customTemplate = undefined
+                let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
+                let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
+                let serviceValidity = courseScheduling.serviceValidity || undefined
+
                 if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
-                  // TODO: Falta configurar la plantilla
                   customTemplate = 'user/enrollmentUserQuickLearning'
+                  course_start = moment.utc().format('YYYY-MM-DD')
+                  course_end = moment.utc().add(courseScheduling.serviceValidity, 'seconds').format('YYYY-MM-DD')
+                  serviceValidity = generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true)
                 }
                 await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
@@ -499,11 +505,12 @@ class EnrollmentService {
                   username: userEnrollment.username || '',
                   course_name: courseScheduling.program.name,
                   service_id: courseScheduling?.metadata?.service_id || '',
-                  course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-                  course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                  course_start,
+                  course_end,
                   notification_source: `course_start_${userEnrollment._id}_${courseScheduling._id}`,
                   type: 'student',
-                  customTemplate
+                  customTemplate,
+                  serviceValidity
                 })
               }
             }

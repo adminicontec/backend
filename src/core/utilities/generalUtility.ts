@@ -549,11 +549,26 @@ class GeneralUtility {
    * @INFO Obtener duración con el formato
    * @param seconds
    */
-  public getDurationFormated = (seconds: number, format: 'short' | 'large' = 'short') => {
-    const hours = Math.trunc(seconds / 3600)
-    const minutes = Math.trunc((seconds - (hours * 3600)) / 60)
-    const seconds2 = Math.trunc(seconds - (hours * 3600) - (minutes * 60))
+  public getDurationFormated = (seconds: number, format: 'short' | 'large' = 'short', showDays: boolean = false) => {
+    let days = 0;
+    let hours = 0;
+    let minutes = 0;
+    let seconds2 = 0;
+    if (showDays === true) {
+      days = Math.trunc(seconds / 86400);
+      hours = Math.trunc((seconds - (days * 86400)) / 3600);
+      minutes = Math.trunc((seconds - (days * 86400) - (hours * 3600)) / 60);
+      seconds2 = Math.trunc(seconds - (days * 86400) - (hours * 3600) - (minutes * 60));
+    } else {
+      hours = Math.trunc(seconds / 3600)
+      minutes = Math.trunc((seconds - (hours * 3600)) / 60)
+      seconds2 = Math.trunc(seconds - (hours * 3600) - (minutes * 60))
+    }
+
     let response: string = ''
+    if (days) {
+      response = `${response} ${days}${(format === 'short') ? 'd' : ' Días'}`;
+    }
     if (hours) {
       response = `${response} ${hours}${(format === 'short') ? 'h' : ' Horas'}`
     }
