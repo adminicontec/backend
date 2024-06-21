@@ -16,6 +16,7 @@ import { CourseScheduling, CourseSchedulingStatus, Enrollment, User } from "@scn
 import moment from "moment";
 import { enrollmentService } from "@scnode_app/services/default/admin/enrollment/enrollmentService"
 import { CourseSchedulingStatusName } from "@scnode_app/types/default/admin/course/courseSchedulingStatusTypes";
+import { courseSchedulingNotificationsService } from "@scnode_app/services/default/admin/course/courseSchedulingNotificationsService";
 // import { courseSchedulingNotificationsService } from '@scnode_app/services/default/admin/course/courseSchedulingNotificationsService';
 // import { certificateMultipleService } from "@scnode_app/services/default/admin/certificate/certificateMultipleService";
 // import { ICertificateMultipleDataCertification } from '@scnode_app/types/default/admin/certificate/certificateMultipleTypes';
@@ -27,6 +28,7 @@ interface IEnrollment {
   _id: string
   created_at: string
   user: string
+  course_scheduling: string
 }
 
 class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
@@ -63,7 +65,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
           course_scheduling: courseScheduling._id,
           // origin: EnrollmentOrigin.AUTOREGISTRO,
           deletedAt: { $exists: false },
-        }).select('_id created_at user')
+        }).select('_id created_at user course_scheduling')
         if (!enrollments?.length) continue
         for (const enrollment of enrollments) {
           // let currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
@@ -93,21 +95,30 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const startDate = moment(enrollment.created_at)
       const today = moment()
       const seconds = today.diff(startDate, 'seconds')
-      console.log({ seconds, validityTime, enrollment: enrollment?._id })
-      if (seconds > validityTime) {
-        const result = await enrollmentService.delete({ id: enrollment._id })
-        if (result.status === 'success') {
-          return true
+      const days = this.getDays(validityTime - seconds)
+      console.log({ days, seconds, validityTime, enrollment: enrollment?._id })
+      if (days <= -1) {
+        console.log('1 Dia despues de vencer el plazo del curso')
+        if (seconds > validityTime) {
+          const result = await enrollmentService.delete({ id: enrollment._id })
+          if (result.status === 'success') return true
+          if (result.status === 'error') {
+            console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> removeEnrollmentError: ', result)
+          }
         }
-        if (result.status === 'error') {
-          console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> removeEnrollmentError: ', result)
-        }
+      } else if (days === 5) {
+        console.log('5 Dias antes, enviando notificación...')
+        await courseSchedulingNotificationsService.sendReminderEmailForQuickLearning(enrollment.course_scheduling, enrollment.user)
       }
       return false
     } catch (e) {
       console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> ERROR: ', e)
       return false
     }
+  }
+
+  private getDays(seconds) {
+    return Math.floor(seconds / (24 * 60 * 60));
   }
 
   // private sendReminderBeforeFinishCourse = async (enrollment: IEnrollment, validityTime: number, courseSchedulingId: string): Promise<boolean> => {

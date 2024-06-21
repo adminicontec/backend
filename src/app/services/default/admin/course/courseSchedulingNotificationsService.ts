@@ -78,6 +78,45 @@ class CourseSchedulingNotificationsService {
     return true
   }
 
+  public sendReminderEmailForQuickLearning = async (courseSchedulingId: string, userId: string) => {
+    try {
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+
+      // TODO: Pendiente la plantilla
+
+      let path_template = 'course/schedulingQuickLearningReminder';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_quick_learning_reminder_${courseScheduling._id}_${userId}`,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        courseName: courseScheduling.program.name,
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: 'Recordatorio finalización de curso',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+
+    } catch (err) {
+      console.log('CourseSchedulingNotification - sendReminderEmailForQuickLearning', err)
+      return responseUtility.buildResponseFailed('json', null)
+    }
+  }
+
   /**
    * @INFO Enviar notificación de inicio de servicio al auxiliar logístico encargado
    */
