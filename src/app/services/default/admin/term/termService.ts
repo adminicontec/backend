@@ -51,7 +51,7 @@ class TermService {
         const register = await Term.findOne(where)
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'term.not_found'})
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
-          terms: register
+          term: register
         }})
       }
 
@@ -151,6 +151,23 @@ class TermService {
       where = {
         ...where,
         type: filters.type,
+      }
+    }
+
+    if (filters.types?.length) {
+      filters.types = JSON.parse(filters.types as unknown as string)
+      where = {
+        ...where,
+        type: {
+          $in: filters.types
+        },
+      }
+    }
+
+    if (filters.enabled !== undefined) {
+      where = {
+        ...where,
+        enabled: filters.enabled,
       }
     }
 

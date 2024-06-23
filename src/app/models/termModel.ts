@@ -1,7 +1,6 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
-import { TERMS } from "@scnode_app/types/default/admin/term/termTypes";
 const { Schema } = mongoose;
 // @end
 
@@ -9,11 +8,17 @@ const TermSchema = new Schema({
   // @add_schema Add schema here
   type: {
     type: Schema.Types.String,
-    enum: TERMS,
     required: true,
   },
   name: { type: Schema.Types.String, required: true },
   position: { type: Schema.Types.Number },
+  custom: {
+    type: Schema.Types.Mixed,
+  },
+  enabled: {
+    type: Schema.Types.Boolean,
+    default: true
+  }
   // @end
 }, {
   collection: 'terms' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

@@ -5,6 +5,7 @@
 export interface IModular {
   name: string, // Nombre del modular
   description: string // Descripción del modular
+  filterCategories?: string[]
   id?: string // Identificador del modular
 }
 

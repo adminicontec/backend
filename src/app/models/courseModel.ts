@@ -153,12 +153,11 @@ const CourseSchema = new Schema({
   },
   new_end_date: {
     type: Schema.Types.Date
-  }
-  // benefits: {
-  //   type: Schema.Types.Mixed,
-  //   required: false,
-  // },
-  // @end
+  },
+  filterCategories: [{
+    type: Schema.Types.ObjectId,
+    ref: "Term"
+  }]
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

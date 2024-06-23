@@ -13,6 +13,10 @@ const ModularSchema = new Schema({
   description: {
     type: Schema.Types.String,
   },
+  filterCategories: [{
+    type: Schema.Types.ObjectId,
+    ref: "Term"
+  }]
   // @end
 }, {
   collection: 'modulars' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

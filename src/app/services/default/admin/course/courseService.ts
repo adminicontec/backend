@@ -59,7 +59,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration'
+      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration filterCategories'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -399,7 +399,7 @@ class CourseService {
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
     let where = {}
-    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date'
+    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date filterCategories'
     // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
     if (filters.select) {
       select = filters.select
@@ -500,6 +500,10 @@ class CourseService {
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+
+      if (params.filterCategories) {
+        params.filterCategories = typeof params.filterCategories === 'string' ? JSON.parse(params.filterCategories) : params.filterCategories
       }
 
       if (params.id) {

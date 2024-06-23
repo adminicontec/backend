@@ -41,7 +41,7 @@ class ModularService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name description'
+      let select = 'id name description filterCategories'
       if (params.query === QueryValues.ALL) {
         const registers = await Modular.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -77,6 +77,10 @@ class ModularService {
         if (params.name) {
           const exist = await Modular.findOne({ name: params.name, _id: {$ne: params.id}})
           if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: {key: 'modular.insertOrUpdate.already_exists', params: {name: params.name}} })
+        }
+
+        if (params.filterCategories) {
+          params.filterCategories = typeof params.filterCategories === 'string' ? JSON.parse(params.filterCategories) : params.filterCategories
         }
 
         const response: any = await Modular.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
@@ -143,7 +147,7 @@ class ModularService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name description'
+    let select = 'id name description filterCategories'
     if (filters.select) {
       select = filters.select
     }
