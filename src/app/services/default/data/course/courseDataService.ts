@@ -17,7 +17,7 @@ import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, Program } from '@scnode_app/models';
+import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, Program, Term } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -576,6 +576,21 @@ class CourseDataService {
     } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  public getActivePublicFilter = async (params: IFetchCourses) => {
+    const coursesResponse: any = await this.fetchCourses({
+      ...params,
+      nPerPage: '1000'
+    })
+    if (coursesResponse.status === 'error') return coursesResponse
+    const courses = coursesResponse.courses?.length ? coursesResponse.courses : []
+    const filterCategories = courses.map(
+      (course) => course.extra_info.filterCategories?.length ? course.extra_info.filterCategories : []
+    ).flat()
+    const termCategories = await Term.find({ 'custom.typeRelated': { $in: filterCategories } })
+    const terms = await Term.find({ _id: { $in: filterCategories } })
+
   }
 
 

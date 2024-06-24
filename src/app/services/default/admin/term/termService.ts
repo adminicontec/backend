@@ -155,7 +155,7 @@ class TermService {
     }
 
     if (filters.types?.length) {
-      filters.types = JSON.parse(filters.types as unknown as string)
+      filters.types = typeof filters.types === 'string' ? JSON.parse(filters.types as unknown as string) : filters.types
       where = {
         ...where,
         type: {
