@@ -43,6 +43,7 @@ export interface IFetchCourses {
   new?: boolean
   publish?: boolean
   notSendNotification?: boolean
+  filterCategories?: string[]
 }
 
 export type ISlugType = 'course_scheduling' | 'program'
@@ -122,5 +123,11 @@ export interface ICourse {
       url?: string
     }
   }
+}
+
+export interface IFilterItem {
+  name: string
+  value: string
+  childs?: IFilterItem[]
 }
 //@end

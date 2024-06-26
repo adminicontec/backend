@@ -21,7 +21,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @end
 
 // @import types
-import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem } from '@scnode_app/types/default/data/course/courseDataTypes'
 // @end
 
 class CourseDataService {
@@ -399,6 +399,11 @@ class CourseDataService {
         }
       }
 
+      if (params.filterCategories?.length) {
+        const coursesWithCategories = await Course.find<ICourse>({ filterCategories: { $in: params.filterCategories } })
+        where['program'] = { $in: coursesWithCategories?.map((c) => c.program) }
+      }
+
       // @Filtro para precio
       if (params.price) {
         if (Array.isArray(params.price)) {
@@ -458,6 +463,16 @@ class CourseDataService {
         }
         if (params.startDate.direction) direction = params.startDate.direction
         where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+      }
+
+      if (params.endDate) {
+        let direction = 'lte'
+        let date = moment()
+        if (params.endDate.date !== 'today') {
+          date = moment(params.endDate.date)
+        }
+        if (params.endDate.direction) direction = params.endDate.direction
+        where['endDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
       // @INFO: Filtro según ciudad
@@ -579,18 +594,47 @@ class CourseDataService {
   }
 
   public getActivePublicFilter = async (params: IFetchCourses) => {
-    const coursesResponse: any = await this.fetchCourses({
-      ...params,
-      nPerPage: '1000'
-    })
-    if (coursesResponse.status === 'error') return coursesResponse
-    const courses = coursesResponse.courses?.length ? coursesResponse.courses : []
-    const filterCategories = courses.map(
-      (course) => course.extra_info.filterCategories?.length ? course.extra_info.filterCategories : []
-    ).flat()
-    const termCategories = await Term.find({ 'custom.typeRelated': { $in: filterCategories } })
-    const terms = await Term.find({ _id: { $in: filterCategories } })
-
+    try {
+      const coursesResponse: any = await this.fetchCourses({
+        ...params,
+        nPerPage: '1000'
+      })
+      if (coursesResponse.status === 'error') return coursesResponse
+      const courses = coursesResponse.courses?.length ? coursesResponse.courses : []
+      const filterCategories = courses?.length ? courses?.map(
+        (course) => course.extra_info.filterCategories?.length ? course.extra_info.filterCategories : []
+      ).flat() : []
+      const activeModalities = courses?.length ? courses.map(
+        (course) => course.schedulingMode
+      ).reduce((accum, item) => {
+        if (!accum.some((modality) => modality.value === item._id)) {
+          accum.push({
+            name: item.name,
+            value: item._id
+          })
+        }
+        return accum
+      }, []) : []
+      const terms = await Term.find({ _id: { $in: filterCategories }, enabled: true })
+      const termCategories = await Term.find({ 'custom.typeRelated': { $in: terms?.map((t) => t.type) }, enabled: true })
+      const filters: IFilterItem[] = termCategories.map((term): IFilterItem => {
+        return {
+          name: term.name,
+          value: term._id,
+          childs: terms.filter((childTerm) => childTerm.type === term.custom.typeRelated)
+                    .map((childTerm) => ({ name: childTerm.name, value: childTerm._id }))
+        }
+      })
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          activeModalities,
+          filters,
+        }
+      })
+    } catch (e) {
+      console.log(`CourseDataService - getActivePublicFilter - ERROR: ${e}`)
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
 
