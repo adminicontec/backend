@@ -28,7 +28,7 @@ const CertificateLogsSchema = new Schema({
   },
   process: {
     type: Schema.Types.String,
-    enum: ['Set certificate', 'Preview certificate', 'Re-issue certificate', 'Complete']
+    enum: ['Set certificate', 'Preview certificate', 'Re-issue certificate', 'Complete', 'Revocate certificate']
   },
   responseService: {
     type: Schema.Types.Mixed

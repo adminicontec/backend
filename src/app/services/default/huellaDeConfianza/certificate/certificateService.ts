@@ -40,7 +40,8 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import {
   IQueryUserToCertificate, ICertificate, IQueryCertificate,
   ICertificatePreview, IGenerateCertificatePdf, IGenerateZipCertifications,
-  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate, ICertificateForceStage, CertificateCategory
+  ICertificateCompletion, ISetCertificateParams, ILogoInformation, ISignatureInformation, ICertificateReGenerate, ICertificateForceStage, CertificateCategory,
+  IRequestCertificateRevocation
 } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { IStudentProgress } from '@scnode_app/types/default/admin/courseProgress/courseprogressTypes';
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -2188,6 +2189,54 @@ class CertificateService {
     }
   }
 
+  public requestCertificateRevocation = async (certificateInfo: IRequestCertificateRevocation) => {
+    const courseScheduling = await CourseScheduling.findOne({_id: certificateInfo.courseSchedulingId}).select('metadata')
+
+    const certificationMigration = this.certificateProviderStrategy(courseScheduling.metadata.service_id)
+    const certificateIssuer = certificationMigration ? 'acredita' : 'huella'
+
+    const responseIssuer = {
+      status: '',
+      responseService: {},
+      serviceResponse: 'N/A',
+      reason: ''
+    }
+
+    if (certificateIssuer === 'acredita') {
+      const username = 'LegadoCampus'
+      const password = 'quAngEraMuSTerGerEDE'
+      const basicAuthHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+
+      const respIssuer: any = await queryUtility.query({
+        method: 'get',
+        url: `${certificate_setup.endpoint.certificate_revocation_acredita}/${certificateInfo.certificateHash}`,
+        api: 'acredita',
+        headers: {
+          Authorization: basicAuthHeader
+        }
+      });
+      console.log('respIssuer', respIssuer)
+      // TODO: Esperar a validación de respueta por parte de Huella
+      responseIssuer.status = respIssuer.status || 'error'
+      responseIssuer.responseService = respIssuer
+      // if (respIssuer?.resultado && respIssuer?.codigo === '200') {
+      //   responseIssuer.status = 'success';
+      // } else {
+      //   responseIssuer.reason = respIssuer?.resultado || 'Se ha presentado un error al revocar el certificado'
+      // }
+    }
+
+    await certificateLogsService.insertOrUpdate({
+      serviceResponse: responseIssuer.serviceResponse,
+      idCertificateQueue: certificateInfo.certificateQueueId,
+      message: '',
+      process: 'Revocate certificate',
+      requestData: certificateInfo,
+      responseService: responseIssuer.responseService
+    });
+    return responseIssuer;
+  }
+
   /**
    *  request to create a new Certificate to "Huella de Confianza"
    */
@@ -3005,6 +3054,10 @@ class CertificateService {
       mappingModules: mappingAuditorModulesList,
       totalDuration: totalDuration
     };
+  }
+
+  public certificateRevocation = () => {
+
   }
 
   //#endregion Private Methods

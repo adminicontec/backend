@@ -15,7 +15,7 @@ import { Enrollment, CertificateQueue } from '@scnode_app/models';
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, ICertificateRevocation } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
 import { customs } from '@scnode_core/config/globals';
 // @end
@@ -537,6 +537,89 @@ class CertificateQueueService {
       }
 
       logs.push(`End Task: Certificate Processor`)
+      const certificateQueuesAfter = await CertificateQueue.find(where).select()
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificateQueues: certificateQueuesAfter,
+          logs
+        }
+      })
+    } catch (err) {
+      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {error: err?.message}})
+    }
+  }
+
+
+  public certificateRevocation = async (params: ICertificateRevocation) => {
+    try {
+      const output = params.output || 'process'
+      const force = params.force || false
+
+      const where = {}
+      if (params?.certificateQueueId) {
+        where['_id'] = params.certificateQueueId
+      } else if (params?.certificateQueueIds) {
+        where['_id'] = {$in: params?.certificateQueueIds}
+      }
+      if (params?.courseId) {
+        where['courseId'] = params.courseId
+      }
+      if (params?.userId) {
+        where['userId'] = params.userId
+      }
+      if (params?.auxiliar) {
+        where['auxiliar'] = params.auxiliar
+      }
+      if (params?.status) {
+        where['status'] = params.status
+      }
+
+      if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {message: `Se deben proporcionar filtros para la busqueda`, code: 400})
+
+      const certificateQueues = await CertificateQueue.find(where).select()
+
+      if (output === 'query') {
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          certificateQueues
+        }})
+      }
+
+      if (certificateQueues.length === 0) return responseUtility.buildResponseFailed('json', null, {message: `No hay certificados a procesar`, code: 400})
+
+      const logs = ["Init Task: Certificate Revocation"]
+
+      const moduleEnabled = customs?.modules?.certificate?.enabled !== undefined ? customs?.modules?.certificate?.enabled : true
+      if (!moduleEnabled && !force) return responseUtility.buildResponseFailed('json', null, {message: 'Módulo deshabilitado. Consulte con el administrador.'})
+
+      for (const certificate of certificateQueues) {
+        logs.push(`Certificate ${certificate._id} (${certificate?.status}) - revocate`)
+        try {
+          console.log('certificate', certificate)
+          if (certificate?.certificate?.hash) {
+            logs.push(`Certificate ${certificate._id} (${certificate?.status}) - revocate in provider`)
+            const revocationResponse: any = await certificateService.requestCertificateRevocation({
+              courseSchedulingId: certificate.courseId,
+              certificateHash: certificate.certificate.hash,
+              certificateQueueId: certificate._id,
+            });
+            if (revocationResponse.status === "error") {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - revocation ended with error`)
+              logs.push(revocationResponse)
+            }
+            else {
+              logs.push(`Certificate ${certificate._id} (${certificate?.status}) - revocation ended successful`)
+              await certificate.delete()
+            }
+          } else {
+            await certificate.delete()
+          }
+        } catch (err) {
+          logs.push(`Certificate ${certificate._id} (${certificate?.status}) - revocation failed`)
+          logs.push(err?.message)
+        }
+      }
+
+      logs.push(`End Task: Certificate Revocation`)
       const certificateQueuesAfter = await CertificateQueue.find(where).select()
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

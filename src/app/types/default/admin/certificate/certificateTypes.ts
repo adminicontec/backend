@@ -212,4 +212,21 @@ export interface IProcessCertificateQueue {
   output?: 'process' | 'query'
   force?: boolean
 }
+
+export interface ICertificateRevocation {
+  certificateQueueId?: string
+  certificateQueueIds?: string[]
+  courseId?: string,
+  userId?: string,
+  auxiliar?: string,
+  status?: string,
+  output?: 'process' | 'query'
+  force?: boolean
+}
+
+export interface IRequestCertificateRevocation {
+  courseSchedulingId: string,
+  certificateHash: string
+  certificateQueueId: string
+}
 //@end
