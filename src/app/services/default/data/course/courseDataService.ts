@@ -372,6 +372,14 @@ class CourseDataService {
         where['program'] = { $in: program_ids }
       }
 
+      if (params.filterCategories?.length) {
+        const coursesWithCategories = await Course.find<ICourse>({ filterCategories: { $in: params.filterCategories } })
+        const currentFilterProgram = where['program']?.$in?.length ? where['program']?.$in : []
+        const programsCategories = coursesWithCategories?.map((c) => c.program)?.length ? coursesWithCategories?.map((c) => c.program) : []
+        const programsToFilter = currentFilterProgram?.length ? currentFilterProgram.filter(x => programsCategories.some(y => y.toString() === x.toString())) : programsCategories
+        where['program'] = { $in: programsToFilter}
+      }
+
       if (params.highlighted) {
         const coursesHighlighted: any = await Course.find({ highlighted: true }).select('id program').lean()
         const programsHighlighted = coursesHighlighted.reduce((accum, element) => {
@@ -397,11 +405,6 @@ class CourseDataService {
         } else {
           where['schedulingMode'] = params.mode
         }
-      }
-
-      if (params.filterCategories?.length) {
-        const coursesWithCategories = await Course.find<ICourse>({ filterCategories: { $in: params.filterCategories } })
-        where['program'] = { $in: coursesWithCategories?.map((c) => c.program) }
       }
 
       // @Filtro para precio
@@ -455,7 +458,7 @@ class CourseDataService {
         where['endPublicationDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
-      if (params.startDate) {
+      if (params.startDate && !params.endDate) {
         let direction = 'gte'
         let date = moment()
         if (params.startDate.date !== 'today') {
@@ -465,14 +468,23 @@ class CourseDataService {
         where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
       }
 
-      if (params.endDate) {
+      if (params.endDate && !params.startDate) {
         let direction = 'lte'
         let date = moment()
         if (params.endDate.date !== 'today') {
           date = moment(params.endDate.date)
         }
         if (params.endDate.direction) direction = params.endDate.direction
-        where['endDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+        where['startDate'] = { [`$${direction}`]: date.format('YYYY-MM-DD') }
+      }
+
+      if (params.startDate?.direction && params.endDate?.direction) {
+        const startDate = params.startDate
+        const endDate = params.endDate
+        where['startDate'] = {
+          [`$${params.startDate.direction}`]: moment(startDate.date).format('YYYY-MM-DD'),
+          [`$${params.endDate.direction}`]: moment(endDate.date).format('YYYY-MM-DD'),
+        }
       }
 
       // @INFO: Filtro según ciudad
