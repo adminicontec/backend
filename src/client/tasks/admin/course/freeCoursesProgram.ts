@@ -98,7 +98,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const days = this.getDays(validityTime - seconds)
       console.log({ days, seconds, validityTime, enrollment: enrollment?._id })
       if (days <= -1) {
-        console.log('1 Dia despues de vencer el plazo del curso')
+        console.log(`${days} dia(s) despues de vencer el plazo del curso`)
         if (seconds > validityTime) {
           const result = await enrollmentService.delete({ id: enrollment._id })
           if (result.status === 'success') return true

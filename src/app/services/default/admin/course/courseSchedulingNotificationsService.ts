@@ -85,8 +85,6 @@ class CourseSchedulingNotificationsService {
 
       const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
 
-      // TODO: Pendiente la plantilla
-
       let path_template = 'course/schedulingQuickLearningReminder';
       const params = {
         mailer: customs['mailer'],
