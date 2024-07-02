@@ -2207,7 +2207,7 @@ class CertificateService {
       const password = 'quAngEraMuSTerGerEDE'
       const basicAuthHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
 
-      const respIssuer: any = await queryUtility.query({
+      let respIssuer: any = await queryUtility.query({
         method: 'get',
         url: `${certificate_setup.endpoint.certificate_revocation_acredita}/${certificateInfo.certificateHash}`,
         api: 'acredita',
@@ -2216,9 +2216,16 @@ class CertificateService {
         }
       });
       console.log('respIssuer', respIssuer)
-      // TODO: Esperar a validación de respueta por parte de Huella
-      responseIssuer.status = respIssuer.status || 'error'
+      console.log('respIssuerTypeof', typeof respIssuer)
+      if (typeof respIssuer === 'string') respIssuer = JSON.parse(respIssuer)
+      console.log('respIssuer?.status', respIssuer?.status)
+      console.log('respIssuer?.status2', respIssuer?.status === 'revoked')
       responseIssuer.responseService = respIssuer
+      if (respIssuer?.status === 'revoked') {
+        responseIssuer.status = 'success';
+      } else {
+        responseIssuer.status = 'error';
+      }
       // if (respIssuer?.resultado && respIssuer?.codigo === '200') {
       //   responseIssuer.status = 'success';
       // } else {
