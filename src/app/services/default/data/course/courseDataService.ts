@@ -627,8 +627,8 @@ class CourseDataService {
         }
         return accum
       }, []) : []
-      const terms = await Term.find({ _id: { $in: filterCategories }, enabled: true })
-      const termCategories = await Term.find({ 'custom.typeRelated': { $in: terms?.map((t) => t.type) }, enabled: true })
+      const terms = await Term.find({ _id: { $in: filterCategories }, enabled: true }).sort({ position: 1 })
+      const termCategories = await Term.find({ 'custom.typeRelated': { $in: terms?.map((t) => t.type) }, enabled: true, 'custom.publish': true }).sort({ position: 1 })
       const filters: IFilterItem[] = termCategories.map((term): IFilterItem => {
         return {
           name: term.name,
