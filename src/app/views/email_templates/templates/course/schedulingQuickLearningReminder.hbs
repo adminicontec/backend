@@ -1,0 +1,26 @@
+{{> partials/page/title title='Recordatorio finalización de curso'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado(a) participante {{params.studentName}}:</b></p>&nbsp;
+                    <p>Espero que te encuentres muy bien. Te escribimos para informarte que te restan 5 días calendario para descargar e instalar el IPC Reader y redimir la norma. Después de este periodo, no tendrás acceso a la descarga para la consulta indefinida offline.</p>
+                    <p>Te recomiendo que realices la descarga lo antes posible para asegurarte de tener acceso a la norma cuando la necesites. Si tienes alguna duda o necesitas ayuda con el proceso, no dudes en contactarme.  Te dejo un link a un video tutorial que te ayudará con la descarga: <a href="{{params.mailer.video_tutorial}}">link</a></p>
+                    <p>Saludos cordiales</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

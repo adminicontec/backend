@@ -71,6 +71,8 @@ export interface IStoreCourse {
   shortDescription?: string
   modular?: string
   withoutTutor?: boolean
+  quickLearning?: boolean
+  serviceType?: string
 }
 
 export interface ICourseQuery {
