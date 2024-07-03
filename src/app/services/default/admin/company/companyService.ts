@@ -308,7 +308,7 @@ class CompanyService {
       const usersAvalaibleResponse: any = await userService.list({
         role_names: 'company_collaborator',
         without_company: true,
-        sort: 'first_name'
+        // sort: 'first_name'
       })
       response['users_available'] = usersAvalaibleResponse
     }
