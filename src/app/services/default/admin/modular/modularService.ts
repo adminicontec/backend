@@ -15,9 +15,13 @@ import {Modular} from '@scnode_app/models'
 // @import types
 import {IQueryFind, QueryValues} from '@scnode_app/types/default/global/queryTypes'
 import {IModular, IModularDelete, IModularQuery} from '@scnode_app/types/default/admin/modular/modularTypes'
+import { uploadService } from '@scnode_core/services/default/global/uploadService';
+import { customs } from '@scnode_core/config/globals';
 // @end
 
 class ModularService {
+
+  private default_cover_path = 'modulares'
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -41,16 +45,24 @@ class ModularService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id name description filterCategories'
+      let select = 'id name description filterCategories coverUrl'
       if (params.query === QueryValues.ALL) {
         const registers = await Modular.find(where).select(select)
+        for await (const register of registers) {
+          if (register.coverUrl) {
+            register.coverUrl = this.coverUrl(register)
+          }
+        }
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           modulars: registers
         }})
       } else if (params.query === QueryValues.ONE) {
         const register = await Modular.findOne(where).select(select)
         if (!register) return responseUtility.buildResponseFailed('json', null, {error_key: 'modular.not_found'})
-        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          if (register.coverUrl) {
+            register.coverUrl = this.coverUrl(register)
+          }
+          return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           modular: register
         }})
       }
@@ -66,7 +78,7 @@ class ModularService {
    * @param params Elementos a registrar
    * @returns
    */
-  public insertOrUpdate = async (params: IModular) => {
+  public insertOrUpdate = async (params: IModular, files?: any) => {
 
     try {
       if (params.id) {
@@ -81,6 +93,13 @@ class ModularService {
 
         if (params.filterCategories) {
           params.filterCategories = typeof params.filterCategories === 'string' ? JSON.parse(params.filterCategories) : params.filterCategories
+        }
+
+        if (files?.coverFile && typeof files?.coverFile === 'object') {
+          const defaulPath = this.default_cover_path
+          const response_upload: any = await uploadService.uploadFile(files.coverFile, defaulPath)
+          if (response_upload.status === 'error') return response_upload
+          if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
         }
 
         const response: any = await Modular.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
@@ -113,6 +132,7 @@ class ModularService {
       }
 
     } catch (e) {
+      console.log('ModularService -> insertOrUpdate -> ERROR: ', e)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -147,7 +167,7 @@ class ModularService {
     const pageNumber= filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage= filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id name description filterCategories'
+    let select = 'id name description filterCategories coverUrl'
     if (filters.select) {
       select = filters.select
     }
@@ -173,6 +193,12 @@ class ModularService {
       .limit(paging ? nPerPage : null)
     } catch (e) {}
 
+    for await (const register of registers) {
+      if (register.coverUrl) {
+        register.coverUrl = this.coverUrl(register)
+      }
+    }
+
     return responseUtility.buildResponseSuccess('json', null, {
       additional_parameters: {
         modulars: [
@@ -183,6 +209,17 @@ class ModularService {
         nPerPage: nPerPage
       }
     })
+  }
+
+  /**
+   * Metodo que convierte el valor del cover de un curso a la URL donde se aloja el recurso
+   * @param {config} Objeto con data del Course
+   */
+  public coverUrl = ({ coverUrl }) => {
+    let base = customs['uploads']
+    return coverUrl && coverUrl !== ''
+      ? `${base}/${this.default_cover_path}/${coverUrl}`
+      : `${base}/${this.default_cover_path}/default.jpg`
   }
 
 }

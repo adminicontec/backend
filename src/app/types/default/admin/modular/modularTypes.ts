@@ -7,6 +7,8 @@ export interface IModular {
   description: string // Descripción del modular
   filterCategories?: string[]
   id?: string // Identificador del modular
+  coverUrl?: string
+  coverFile?: any,
 }
 
 export interface IModularDelete {

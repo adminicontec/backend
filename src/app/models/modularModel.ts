@@ -13,6 +13,9 @@ const ModularSchema = new Schema({
   description: {
     type: Schema.Types.String,
   },
+  coverUrl: {
+    type: Schema.Types.String
+  },
   filterCategories: [{
     type: Schema.Types.ObjectId,
     ref: "Term"
