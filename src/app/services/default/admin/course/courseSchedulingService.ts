@@ -77,6 +77,7 @@ import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enr
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 class CourseSchedulingService {
@@ -640,6 +641,15 @@ class CourseSchedulingService {
           service_id,
           year: moment().format('YYYY')
         }
+
+        await customLogService.create({
+          label: 'cscs - Course scheduling create service',
+          description: 'Crear servicio',
+          content: {
+            serviceId: service_id,
+            metadata: params.metadata
+          }
+        })
 
         params.endDate = params.endDate ? moment(params.endDate + "T23:59:59Z") : moment(params.startDate + "T23:59:59Z");
         params.endDiscountDate = (params.endDiscountDate) ? moment(params.endDiscountDate + "T23:59:59Z") : null;
@@ -2241,7 +2251,7 @@ class CourseSchedulingService {
         'Fecha de reactivación del servicio': element.reactivateDate,
         'Persona que reactivo el servicio': element.reactivatePerson,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo
-        // 'Coordinador Servicio': element.service_user,
+        'Programador': element.service_user,
       })
       cols.push({ width: 20 })
       return accum

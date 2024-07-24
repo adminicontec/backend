@@ -192,6 +192,20 @@ class CourseSchedulingDetailsService {
               courseid: response.course_scheduling.moodle_id,
               userid: response.teacher.moodle_id
             });
+            await customLogService.create({
+              label: 'cset - Course scheduling enrollment teacher',
+              description: 'Matricular profesor en un servicio',
+              content: {
+                serviceId: response.course_scheduling?.metadata?.service_id,
+                teacher: response.teacher,
+                params: {
+                  roleid: 4,
+                  courseid: response.course_scheduling.moodle_id,
+                  userid: response.teacher.moodle_id
+                },
+                response: respMoodle3
+              }
+            })
           } else {
             let respMoodle3: any = await moodleEnrollmentService.update({
               roleid: 4,
@@ -199,6 +213,21 @@ class CourseSchedulingDetailsService {
               olduserid: register.teacher.moodle_id,
               newuserid: response.teacher.moodle_id
             });
+            await customLogService.create({
+              label: 'csuet - Course scheduling update enrollment teacher',
+              description: 'Actualizar matricula de profesor en un servicio',
+              content: {
+                serviceId: response.course_scheduling?.metadata?.service_id,
+                teacher: response.teacher,
+                params: {
+                  roleid: 4,
+                  courseid: response.course_scheduling.moodle_id,
+                  olduserid: register.teacher.moodle_id,
+                  newuserid: response.teacher.moodle_id
+                },
+                response: respMoodle3
+              }
+            })
           }
         }
 
@@ -393,6 +422,21 @@ class CourseSchedulingDetailsService {
           courseid: response.course_scheduling.moodle_id,
           userid: response.teacher.moodle_id
         });
+
+        await customLogService.create({
+          label: 'cscet - Course scheduling create enrollment teacher',
+          description: 'Crear matricula de profesor en un servicio - nueva sesion',
+          content: {
+            serviceId: response.course_scheduling?.metadata?.service_id,
+            teacher: response.teacher,
+            params: {
+              roleid: 4,
+              courseid: response.course_scheduling.moodle_id,
+              userid: response.teacher.moodle_id
+            },
+            response: respMoodle3
+          }
+        })
 
         try {
           if (response?.sessions) {
