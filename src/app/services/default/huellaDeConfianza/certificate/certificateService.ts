@@ -185,7 +185,11 @@ class CertificateService {
       //  course Scheduling Details data
       let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
         query: QueryValues.ALL,
-        where: [{ field: 'course_scheduling', value: filters.course_scheduling }]
+        where: [{ field: 'course_scheduling', value: filters.course_scheduling }],
+        sort: {
+          field: 'startDate',
+          direction: "1"
+        }
       });
 
       // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
@@ -960,7 +964,11 @@ class CertificateService {
       //  course Scheduling Details data
       let respCourseDetails: any = await courseSchedulingDetailsService.findBy({
         query: QueryValues.ALL,
-        where: [{ field: 'course_scheduling', value: params.courseId }]
+        where: [{ field: 'course_scheduling', value: params.courseId }],
+        sort: {
+          field: 'startDate',
+          direction: "1"
+        }
       });
       // console.log('--------respCourse----------');
       // console.log(respCourse);
@@ -1161,10 +1169,13 @@ class CertificateService {
         // console.log(`******** Academic Modules List -->`)
         // console.log(`progressData.approved_modules: `);
         // console.log(progressData.approved_modules);
+        // progressData.approved_modules.sort((a: any, b: any) => {
+        //   const fechaA = new Date(a.startDate.toString())
+        //   const fechaB = new Date(b.startDate.toString())
+        //   return fechaA.getTime() - fechaB.getTime()
+        // });
         progressData.approved_modules.sort((a: any, b: any) => {
-          const fechaA = new Date(a.startDate.toString())
-          const fechaB = new Date(b.startDate.toString())
-          return fechaA.getTime() - fechaB.getTime()
+          return a.position - b.position
         });
 
         //#region Setting for VIRTUAL
@@ -1733,12 +1744,16 @@ class CertificateService {
               let itemModule = respListOfActivitiesInModules.find(field => field.instance == grade.iteminstance.toString());
               // console.log("itemModule: ")
               // console.dir(itemModule);
-              let durationModule = respSchedulingsDetails.find(field => field.course.moodle_id == itemModule.sectionid.toString());
+              let durationModule = null
+              let durationModuleIndex = respSchedulingsDetails.findIndex(field => field.course.moodle_id == itemModule.sectionid.toString());
+              if (durationModuleIndex !== -1) {
+                durationModule = respSchedulingsDetails[durationModuleIndex]
+              }
               // console.log("durationModule: ");
               // console.dir(durationModule);
 
               if (itemModule && durationModule) {
-                studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration, startDate: durationModule.startDate });
+                studentProgress.approved_modules.push({ name: itemModule.sectionname, duration: durationModule.duration, startDate: durationModule.startDate, position: durationModuleIndex });
                 flagAttendanceCount++;
               }
             }
@@ -1930,8 +1945,8 @@ class CertificateService {
           }
 
           // keep compatibilty with OnSitu/Online modes
-          respSchedulingsDetails.forEach(element => {
-            studentProgress.approved_modules.push({ name: element.course.name, duration: element.duration, startDate: element.startDate });
+          respSchedulingsDetails.forEach((element, index) => {
+            studentProgress.approved_modules.push({ name: element.course.name, duration: element.duration, startDate: element.startDate, position: index });
           });
 
           //#endregion :::::::::::: Completion percentage ::::::::::::
