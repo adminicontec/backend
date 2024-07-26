@@ -5,6 +5,10 @@
 export interface IQueryFind {
   query: QueryValues.ALL | QueryValues.ONE // Tipo de consulta
   where: IQueryWhereFind[] // Parametros de la consulta
+  sort?: {
+    field: string,
+    direction: string
+  },
 }
 
 interface IQueryWhereFind {
