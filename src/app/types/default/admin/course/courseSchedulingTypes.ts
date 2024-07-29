@@ -295,4 +295,9 @@ export enum CourseSchedulingNotificationEvents {
 export enum CourseSchedulingNotificationRules {
   SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning'
 }
+
+export enum CourseSchedulingServiceTypeMap {
+  WITHOUT_TUTOR = 'withoutTutor',
+  QUICK_LEARNING = 'quickLearning'
+}
 //@end

@@ -22,6 +22,8 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 
 // @import types
 import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
+import { CourseSchedulingServiceTypeMap } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseDataService {
@@ -351,7 +353,7 @@ class CourseDataService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule withoutTutor quickLearning'
       if (params.select) {
         select = params.select
       }
@@ -400,7 +402,16 @@ class CourseDataService {
       if (params.mode) {
         if (Array.isArray(params.mode)) {
           if (params.mode.length) {
-            where['schedulingMode'] = { $in: params.mode }
+            const modalitiesToSearch = params.mode?.filter(
+              (mode) => ![CourseSchedulingServiceTypeMap.QUICK_LEARNING, CourseSchedulingServiceTypeMap.WITHOUT_TUTOR].includes(mode)
+            )
+            const searchQuickLearning = params.mode?.some((mode) => mode === CourseSchedulingServiceTypeMap.QUICK_LEARNING)
+            const searchWithoutTutor = params.mode?.some((mode) => mode === CourseSchedulingServiceTypeMap.WITHOUT_TUTOR)
+            where['$or'] = [
+              ...(modalitiesToSearch?.length ? [{ schedulingMode: { $in: modalitiesToSearch } }] : []),
+              ...(searchQuickLearning ? [{ quickLearning: true }] : []),
+              ...(searchWithoutTutor ? [{ withoutTutor: true }] : []),
+            ]
           }
         } else {
           where['schedulingMode'] = params.mode
@@ -437,7 +448,7 @@ class CourseDataService {
         }
       }
 
-      // Filtro para FEcha de inicio de curso
+      // Filtro para Fecha de inicio de curso
       if (params.startPublicationDate) {
         let direction = 'gte'
         let date = moment()
@@ -617,7 +628,25 @@ class CourseDataService {
         (course) => course.extra_info.filterCategories?.length ? course.extra_info.filterCategories : []
       ).flat() : []
       const activeModalities = courses?.length ? courses.map(
-        (course) => course.schedulingMode
+        (course) => {
+          if (course.schedulingMode?.name === CourseSchedulingModes.VIRTUAL) {
+            if (course?.withoutTutor) {
+              return {
+                name: 'Virtual sin tutor',
+                _id: 'withoutTutor'
+              }
+            } else if (course?.quickLearning) {
+              return {
+                name: 'Quick Learning',
+                _id: 'quickLearning'
+              }
+            }
+          }
+          return {
+            name: course.schedulingMode.name,
+            _id: course.schedulingMode._id
+          }
+        }
       ).reduce((accum, item) => {
         if (!accum.some((modality) => modality.value === item._id)) {
           accum.push({
