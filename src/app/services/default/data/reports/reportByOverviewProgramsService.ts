@@ -19,6 +19,7 @@ import { CourseSchedulingInformation,CourseSchedulingStatus, CourseScheduling, E
 
 // @import types
 import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/reportsFactoryTypes';
+import { courseSchedulingService } from "../../admin/course/courseSchedulingService";
 // @end
 
 export interface IReportByOverviewPrograms {
@@ -70,6 +71,7 @@ export interface IReportPage {
   auxiliar: string,
   isVirtual: boolean,
   isAuditor: boolean,
+  serviceType: string
 }
 
 
@@ -111,7 +113,7 @@ class ReportByOverviewProgramsService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
+      .select('id withoutTutor quickLearning metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
       .populate({path: 'program', select: 'id name code isAuditor'})
@@ -243,6 +245,7 @@ class ReportByOverviewProgramsService {
       }
 
       for (const courseScheduling of courseSchedulings) {
+        const {serviceTypeLabel} = courseSchedulingService.getServiceType(courseScheduling)
         const itemBase: IReportPage = {
           _id: courseScheduling._id,
           modular: courseScheduling?.modular?.name || '-',
@@ -276,6 +279,7 @@ class ReportByOverviewProgramsService {
           auxiliar: (courseScheduling?.material_assistant?.profile) ? `${courseScheduling?.material_assistant?.profile.first_name} ${courseScheduling?.material_assistant?.profile.last_name}` : '-',
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
           isAuditor: courseScheduling?.program?.isAuditor || false,
+          serviceType: serviceTypeLabel
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -433,6 +437,7 @@ class ReportByOverviewProgramsService {
           '',
           '',
           '',
+          '',
           '1er Certificado programa completo',
           '',
           '',
@@ -450,7 +455,7 @@ class ReportByOverviewProgramsService {
         let colCount = 0
         let itemMergePreHeaderOne = {}
         itemMergePreHeaderOne['s'] = {r: row, c: colCount}
-        colCount = 8;
+        colCount = 9;
         itemMergePreHeaderOne['e'] = {r: row, c: colCount}
         merge.push(itemMergePreHeaderOne)
 
@@ -480,6 +485,7 @@ class ReportByOverviewProgramsService {
           'Fecha inicio',
           'Fecha finalización',
           'Modalidad',
+          'Tipo de curso',
           'Duración',
           'Participantes por grupo (inscritos)',
           'Participantes que cumplen la asistencia/avance al programa completo',
@@ -511,6 +517,7 @@ class ReportByOverviewProgramsService {
             scheduling.startDate,
             scheduling.endDate,
             scheduling.modalityName,
+            scheduling.serviceType,
             scheduling.totalDurationFormated,
             scheduling.participants,
             scheduling.certification?.standar?.participantsWithAttendanceProgressComplete,

@@ -19,6 +19,7 @@ import { User, CourseSchedulingMode, CourseSchedulingStatus, CourseScheduling, C
 
 // @import types
 import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/reportsFactoryTypes';
+import { courseSchedulingService } from "../../admin/course/courseSchedulingService";
 // @end
 
 export interface IReportByModalityStructure {
@@ -57,6 +58,7 @@ export interface IReportPage {
   isAuditor: boolean;
   isAuditorCerficateEnabled: boolean,
   firstCertificateIsAuditor: boolean
+  serviceType: string;
 }
 
 export interface IReportCourse {
@@ -223,7 +225,7 @@ class ReportByModalityService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
+      .select('id withoutTutor quickLearning  metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
       .populate({path: 'program', select: 'id name code isAuditor'})
@@ -387,6 +389,8 @@ class ReportByModalityService {
           data: undefined
         }
 
+        const {serviceTypeLabel} = courseSchedulingService.getServiceType(courseScheduling)
+
         const itemBase: IReportPage = {
           _id: courseScheduling._id,
           programName: courseScheduling?.program?.name || '-',
@@ -408,6 +412,7 @@ class ReportByModalityService {
           isAuditor: false,
           isAuditorCerficateEnabled: false,
           firstCertificateIsAuditor: false,
+          serviceType: serviceTypeLabel
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -748,6 +753,8 @@ class ReportByModalityService {
         sheetData.push(['ID DEL SERVICIO', reportData?.data?.serviceId])
         row++
         sheetData.push(['MODALIDAD', reportData?.data?.modalityName])
+        row++
+        sheetData.push(['TIPO DE CURSO', reportData?.data?.serviceType])
         row++
         sheetData.push(['REGIONAL', reportData?.data?.regional])
         row++

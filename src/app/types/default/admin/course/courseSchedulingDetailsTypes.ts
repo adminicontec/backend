@@ -64,7 +64,11 @@ export interface ICourseSchedulingDetailQuery {
   nPerPage?:string, // Cantidad de elementos por pagina
   select?: string, // Campos de la coleccion a buscar
   search?:string, // Busca sobre los campos de la coleccion
-  teacher?: string
+  teacher?: string,
+  sort?: {
+    field: string,
+    direction: string
+  },
 }
 export interface IDuplicateCourseSchedulingDetail {
   courseSchedulingId: string;

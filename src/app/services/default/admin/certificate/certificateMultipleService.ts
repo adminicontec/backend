@@ -655,7 +655,7 @@ class CertificateMultipleService {
       const allCertificateSettings = await CertificateSettings.find({
         courseScheduling: courseId
       })
-      .populate({path: 'modules.courseSchedulingDetail', select: 'course endDate', populate: [
+      .populate({path: 'modules.courseSchedulingDetail', select: 'course startDate endDate sessions', populate: [
         {path: 'course', select: 'name'}
       ]})
 
@@ -784,6 +784,22 @@ class CertificateMultipleService {
       }
 
       const endDates = []
+
+      let hasSessions = false
+      certificateSetting?.modules.sort((a, b) => {
+        if (a.courseSchedulingDetail?.sessions && Array.isArray(a.courseSchedulingDetail?.sessions) && a.courseSchedulingDetail?.sessions.length > 0) {
+          hasSessions = true
+        }
+        return a.courseSchedulingDetail.startDate - b.courseSchedulingDetail.startDate;
+      })
+      if (hasSessions) {
+        certificateSetting.modules = certificateSetting.modules.sort((a, b) => {
+          const aDate = a.courseSchedulingDetail.sessions && a.courseSchedulingDetail.sessions[0] ? a.courseSchedulingDetail.sessions[0].startDate : a.startDate;
+          const bDate = b.courseSchedulingDetail.sessions && b.courseSchedulingDetail.sessions[0] ? b.courseSchedulingDetail.sessions[0].startDate : b.startDate;
+
+          return aDate - bDate;
+        });
+      }
 
       const approvedModules = certificateSetting?.modules?.map((module) => {
         endDates.push(module?.courseSchedulingDetail?.endDate.toISOString().replace('T00:00:00.000Z', ''))
