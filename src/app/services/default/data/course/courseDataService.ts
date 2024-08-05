@@ -662,6 +662,8 @@ class CourseDataService {
         return {
           name: term.name,
           value: term._id,
+          type: term.type,
+          typeRelated: term.custom.typeRelated,
           childs: terms.filter((childTerm) => childTerm.type === term.custom.typeRelated)
                     .map((childTerm) => ({ name: childTerm.name, value: childTerm._id }))
         }

@@ -128,6 +128,8 @@ export interface ICourse {
 export interface IFilterItem {
   name: string
   value: string
+  type?: string
+  typeRelated?: string
   childs?: IFilterItem[]
 }
 //@end

@@ -398,7 +398,10 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.Boolean,
     default: false,
   },
-  serviceValidity: {type: Schema.Types.Number, required: false}
+  serviceValidity: {type: Schema.Types.Number, required: false},
+  serviceInformation: {
+    type: Schema.Types.String
+  }
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
