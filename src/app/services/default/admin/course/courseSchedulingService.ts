@@ -1895,7 +1895,7 @@ class CourseSchedulingService {
         let total_scheduling = 0
         let courses = []
 
-        const detailSessions = await CourseSchedulingDetails.find({
+        let detailSessions = await CourseSchedulingDetails.find({
           course_scheduling: register._id
         }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
@@ -1903,8 +1903,17 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.city' })
           .select(select)
-          .sort({ created_at: 1 })
+          .sort({ startDate: 1 })
           .lean()
+
+        if (detailSessions[0].sessions && Array.isArray(detailSessions[0].sessions) && detailSessions[0].sessions.length > 0) {
+          detailSessions = detailSessions.sort((a, b) => {
+            const aDate = a.sessions && a.sessions[0] ? a.sessions[0].startDate : a.startDate;
+            const bDate = b.sessions && b.sessions[0] ? b.sessions[0].startDate : b.startDate;
+
+            return aDate - bDate;
+          });
+        }
 
         let session_count = 0
 
