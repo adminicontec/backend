@@ -590,17 +590,17 @@ class SurveyDataService {
       { $unwind: '$account_executive' },
       {
         $project: {
-          id: 1,
+          _id: 1,
           metadata: 1,
-          schedulingMode: { id: 1, name: 1 },
-          modular: { id: 1, name: 1 },
-          program: { id: 1, name: 1, code: 1 },
-          client: { id: 1, name: 1 },
-          city: { id: 1, name: 1 },
+          schedulingMode: { _id: 1, name: 1 },
+          modular: { _id: 1, name: 1 },
+          program: { _id: 1, name: 1, code: 1 },
+          client: { _id: 1, name: 1 },
+          city: { _id: 1, name: 1 },
           schedulingType: { id: 1, name: 1 },
           regional: { id: 1, name: 1 },
           account_executive: {
-            id: 1,
+            _id: 1,
             'profile.first_name': 1,
             'profile.last_name': 1
           },
@@ -652,12 +652,12 @@ class SurveyDataService {
               id: 1,
               course_scheduling: 1,
               teacher: {
-                id: 1,
+                _id: 1,
                 'profile.first_name': 1,
                 'profile.last_name': 1
               },
               course: {
-                id: 1,
+                _id: 1,
                 name: 1,
                 code: 1
               },
