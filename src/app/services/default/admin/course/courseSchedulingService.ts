@@ -1906,7 +1906,7 @@ class CourseSchedulingService {
           .sort({ startDate: 1 })
           .lean()
 
-        if (detailSessions[0].sessions && Array.isArray(detailSessions[0].sessions) && detailSessions[0].sessions.length > 0) {
+        if (detailSessions[0] && detailSessions[0].sessions && Array.isArray(detailSessions[0].sessions) && detailSessions[0].sessions.length > 0) {
           detailSessions = detailSessions.sort((a, b) => {
             const aDate = a.sessions && a.sessions[0] ? a.sessions[0].startDate : a.startDate;
             const bDate = b.sessions && b.sessions[0] ? b.sessions[0].startDate : b.startDate;
