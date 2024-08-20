@@ -39,6 +39,9 @@ const BannerSchema = new Schema({
   registerUrl: {
     type: Schema.Types.String,
   },
+  positionOnScreen: {
+    type: Schema.Types.String,
+  },
   start_date: {
     type: Schema.Types.Date
   },

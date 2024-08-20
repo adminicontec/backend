@@ -95,6 +95,19 @@ class CourseController {
   }
 
   /**
+   * Metodo que permite validar que el slug sea unico
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+  public validateSlug = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+
+    const response = await courseService.validateSlug(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
    * Metodo que permite eliminar un registro
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express
