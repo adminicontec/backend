@@ -974,7 +974,7 @@ class CourseSchedulingService {
   public checkEnrollmentTeachers = async (courseScheduling, teacher?: string, amount_notifications: number | null = 1) => {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
-    }).select('id startDate endDate duration course sessions teacher')
+    }).select('id startDate endDate duration course sessions teacher observations')
       .populate({ path: 'course', select: 'id name code' })
       .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name profile.timezone' })
       .lean()
@@ -1063,6 +1063,7 @@ class CourseSchedulingService {
         let item = {
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
+          observations: course?.observations || '',
           info: {
             start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
             end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
@@ -1077,6 +1078,7 @@ class CourseSchedulingService {
         let item = {
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
+          observations: course?.observations || '',
           timezone: courseSchedulingDetailsService.getTimezoneName(timezone),
           sessions: []
         }
