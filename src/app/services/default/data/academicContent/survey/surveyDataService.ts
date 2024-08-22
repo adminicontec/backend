@@ -1361,7 +1361,7 @@ class SurveyDataService {
                     section.questions[result.question.toString()].answers.list.push(result.answer)
                     section.questions[result.question.toString()].answers.total += parseInt(result.answer)
 
-                    section.questions[result.question.toString()].average = Math.round(((section.questions[result.question.toString()].answers.total / section.questions[result.question.toString()].total_answers) * 100)) / 100
+                    section.questions[result.question.toString()].average = Math.round(((section.questions[result.question.toString()].answers.total / section.questions[result.question.toString()].total_answers)) * 100) / 100
                   }
                 }
                 break;
@@ -1477,6 +1477,11 @@ class SurveyDataService {
       row++
 
       if (data.section_questions_range) {
+        let averageGeneral = {
+          total: 0,
+          amountRegisters: 0,
+          average: 0
+        };
         for (const section of data.section_questions_range) {
           if (Object.keys(section.questions).length > 0) {
             let total_question_for_section = 0;
@@ -1508,7 +1513,10 @@ class SurveyDataService {
             }
 
             if (total_question_for_section > 0) {
-              sheet_data_aoa.push(['Promedio', Math.round(((total_answer_value / total_question_for_section) * 100)) / 100])
+              const averageSection = Math.round(((total_answer_value / total_question_for_section) * 100)) / 100
+              averageGeneral.total += averageSection
+              averageGeneral.amountRegisters += 1;
+              sheet_data_aoa.push(['Promedio', averageSection])
               row++;
             }
 
@@ -1520,6 +1528,13 @@ class SurveyDataService {
             }
           }
         }
+
+        averageGeneral.average = Math.round(((averageGeneral.total / averageGeneral.amountRegisters)) * 100) / 100
+        sheet_data_aoa.push(['Promedio del curso', averageGeneral.average])
+        row++
+
+        sheet_data_aoa.push([])
+        row++;
       }
 
       if (data.section_questions_choice_simple) {
