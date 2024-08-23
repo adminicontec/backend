@@ -625,7 +625,7 @@ class CourseDataService {
       if (coursesResponse.status === 'error') return coursesResponse
       const courses = coursesResponse.courses?.length ? coursesResponse.courses : []
       const filterCategories = courses?.length ? courses?.map(
-        (course) => course.extra_info.filterCategories?.length ? course.extra_info.filterCategories : []
+        (course) => course.extra_info?.filterCategories?.length ? course.extra_info.filterCategories : []
       ).flat() : []
       const activeModalities = courses?.length ? courses.map(
         (course) => {
