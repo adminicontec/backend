@@ -39,6 +39,7 @@ export interface ICourse {
   generalities?: string
   content?: Array<{ category?: string, data: string }>,   // Contenido del curso
   filterCategories?: string[]
+  slug: string
   // benefits?        : Array<string>,   // Beneficios
 }
 
@@ -91,5 +92,10 @@ export interface ICourseQuery {
 
 export interface ICourseDelete {
   id: string // Identificador del pais
+}
+
+export interface IValidateSlugParams {
+  courseId: string
+  slug: string
 }
 //@end

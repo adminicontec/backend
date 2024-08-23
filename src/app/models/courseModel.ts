@@ -157,7 +157,12 @@ const CourseSchema = new Schema({
   filterCategories: [{
     type: Schema.Types.ObjectId,
     ref: "Term"
-  }]
+  }],
+  slug: {
+    type: Schema.Types.String,
+    unique: true,
+    required: true
+  }
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
