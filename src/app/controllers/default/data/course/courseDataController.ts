@@ -43,6 +43,18 @@ class CourseDataController {
   }
 
   /**
+   * Metodo que permite consultar los cursos por el slug
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+  public fetchCoursesByCourseSlug = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseDataService.fetchCoursesByCourseSlug(params)
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
+  /**
    * Metodo que permite consultar el filtro publico activo
    * @param req Objeto de clase Express
    * @param res Objeto de clase Express

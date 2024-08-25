@@ -21,7 +21,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @end
 
 // @import types
-import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem, IFetchCoursesByCourseSlug } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 import { CourseSchedulingServiceTypeMap } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
@@ -71,7 +71,7 @@ class CourseDataService {
 
   private fetchCourseByCourseScheduling = async (params: IFetchCourse) => {
     try {
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule slug'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule'
 
       let where = {}
 
@@ -353,7 +353,7 @@ class CourseDataService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule withoutTutor quickLearning slug'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule withoutTutor quickLearning'
       if (params.select) {
         select = params.select
       }
@@ -361,6 +361,10 @@ class CourseDataService {
       let where: any = {
         schedulingType: { $in: schedulingTypesIds }
       }
+
+      const allowedCourses = await Course.find<ICourse>({ slug: { $exists: true } }).select('program')
+      const allowedProgramIds = allowedCourses?.map(({ program }) => program)
+      const arrayProgramsToIntersect = [allowedProgramIds]
 
       if (params.search) {
         const search = params.search
@@ -371,7 +375,7 @@ class CourseDataService {
           accum.push(element._id)
           return accum
         }, [])
-        where['program'] = { $in: program_ids }
+        arrayProgramsToIntersect.push(program_ids ? program_ids : [])
       }
 
       if (params.filterCategories?.length) {
@@ -379,7 +383,7 @@ class CourseDataService {
         const currentFilterProgram = where['program']?.$in?.length ? where['program']?.$in : []
         const programsCategories = coursesWithCategories?.map((c) => c.program)?.length ? coursesWithCategories?.map((c) => c.program) : []
         const programsToFilter = currentFilterProgram?.length ? currentFilterProgram.filter(x => programsCategories.some(y => y.toString() === x.toString())) : programsCategories
-        where['program'] = { $in: programsToFilter}
+        arrayProgramsToIntersect.push(programsToFilter)
       }
 
       if (params.highlighted) {
@@ -388,13 +392,19 @@ class CourseDataService {
           accum.push(element.program)
           return accum;
         }, [])
+        arrayProgramsToIntersect.push(programsHighlighted)
+      }
 
-        if (!where['program']) {
-          where['program'] = { $in: programsHighlighted }
-        } else if (!where['program']['$in']) {
-          where['program']['$in'] = programsHighlighted
-        } else {
-          where['program']['$in'] = where['program']['$in'].concat(programsHighlighted)
+      if (arrayProgramsToIntersect?.length > 1) {
+        const programsIntersection = arrayProgramsToIntersect.reduce((acc, currArray) =>
+          acc.filter(item => currArray.some(item2 => item2.toString() === item.toString()))
+        )
+        where['program'] = {
+          $in: programsIntersection
+        }
+      } else {
+        where['program'] = {
+          $in: allowedProgramIds
         }
       }
 
@@ -531,13 +541,27 @@ class CourseDataService {
       try {
         if (params.new) paging = false
 
+        if (params.moreViewed) {
+          const schedulingWithMoreViews = await this.getMoreViewedPrograms(where, nPerPage, pageNumber)
+          if (schedulingWithMoreViews?.length) {
+            where['_id'] = {
+              $in: schedulingWithMoreViews
+            }
+          } else {
+            where['_id'] = {
+              $exists: false
+            }
+          }
+        }
+
+
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'city', select: 'id name' })
-          .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
-          .limit(paging ? nPerPage : null)
-          .sort(sort)
+          .skip(paging && !params.moreViewed ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+          .limit(paging && !params.moreViewed ? nPerPage : null)
+          .sort(!params.moreViewed ? sort : null)
           .lean()
 
         if (params.random && params.random.size) {
@@ -680,6 +704,74 @@ class CourseDataService {
     }
   }
 
+  public fetchCoursesByCourseSlug = async ({ slug }: IFetchCoursesByCourseSlug) => {
+    try {
+      const course = await Course.findOne<ICourse>({ slug }).select('program')
+      if (!course) return responseUtility.buildResponseFailed('json')
+      const coursesResponse: any = await this.fetchCourses({
+        startPublicationDate: {
+          date: 'today',
+          direction: 'lte'
+        },
+        endPublicationDate: {
+          date: 'today',
+          direction: 'gte'
+        },
+        publish: true,
+        program: course.program as string
+      })
+
+      if (coursesResponse?.status === 'error') return coursesResponse
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          courses: coursesResponse.courses
+        }
+      })
+    } catch (e) {
+      console.log(`CourseDataService -> fetchCoursesByCourseSlug -> ERROR: ${e}`)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private getMoreViewedPrograms = async (where: any, nPerPage: number, pageNumber: number): Promise<string[]> => {
+    try {
+      const schedulings = await CourseScheduling.find(where).select('program')
+      const programIds = schedulings?.map(({program}) => program)
+      const moreViewedPrograms = await CourseScheduling.aggregate([
+        {
+          $match: {
+            program: { $in: programIds },
+            deleted: false
+          }
+        },
+        {
+          $group: {
+            _id: "$program",
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: {
+            count: -1
+          }
+        }
+      ])
+      const moreViewedProgramIds = moreViewedPrograms?.map(({ _id }) => _id.toString())
+      schedulings?.sort((a, b) => {
+        return moreViewedProgramIds?.indexOf(a.program.toString()) - moreViewedProgramIds?.indexOf(b.program.toString())
+      })
+      const idxStart = pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0
+      const idxEnd = idxStart + nPerPage
+      const schedulingIds = schedulings?.slice(idxStart, idxEnd)?.map(({_id}) => _id)
+
+      return schedulingIds ? schedulingIds : []
+
+    } catch (e) {
+      console.log(`CourseDataService -> getMoreViewedPrograms -> ERROR: ${e}`)
+      return []
+    }
+  }
 
 }
 

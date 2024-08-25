@@ -59,7 +59,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration filterCategories slug'
+      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration filterCategories slug formationType'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -137,7 +137,7 @@ class CourseService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline slug'
+      let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline slug formationType'
       if (params.select) {
         select = params.select
       }
@@ -403,8 +403,7 @@ class CourseService {
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
     let where = {}
-    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date filterCategories slug'
-    // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
+    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date filterCategories slug formationType'
     if (filters.select) {
       select = filters.select
     }

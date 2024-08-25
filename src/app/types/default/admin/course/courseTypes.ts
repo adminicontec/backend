@@ -2,6 +2,18 @@
 // @end
 
 // @add your types
+export enum CourseFormationType {
+  COURSE = 'course',
+  PROGRAM = 'program',
+  DIPLOMA = 'diploma'
+}
+
+export const COURSE_FORMATION_TYPE = [
+  CourseFormationType.COURSE,
+  CourseFormationType.PROGRAM,
+  CourseFormationType.DIPLOMA
+]
+
 export interface ICourse {
   schedulingMode: { value: number, label: string } | string // Identificador del modo de programación
   program: { value: number, label: string } | string // Identificador del programa
@@ -40,6 +52,7 @@ export interface ICourse {
   content?: Array<{ category?: string, data: string }>,   // Contenido del curso
   filterCategories?: string[]
   slug: string
+  formationType?: CourseFormationType
   // benefits?        : Array<string>,   // Beneficios
 }
 

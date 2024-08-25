@@ -1,6 +1,7 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
+import { COURSE_FORMATION_TYPE } from "app/types/default/admin/course/courseTypes";
 const { Schema } = mongoose;
 // @end
 
@@ -162,6 +163,11 @@ const CourseSchema = new Schema({
     type: Schema.Types.String,
     unique: true,
     required: true
+  },
+  formationType: {
+    type: Schema.Types.String,
+    required: true,
+    enum: COURSE_FORMATION_TYPE
   }
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
