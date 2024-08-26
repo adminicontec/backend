@@ -364,7 +364,7 @@ class CourseDataService {
 
       const allowedCourses = await Course.find<ICourse>({ slug: { $exists: true } }).select('program')
       const allowedProgramIds = allowedCourses?.map(({ program }) => program)
-      const arrayProgramsToIntersect = [allowedProgramIds]
+      const arrayProgramsToIntersect: string[][] = [allowedProgramIds as unknown as string[]]
 
       if (params.search) {
         const search = params.search
@@ -376,6 +376,10 @@ class CourseDataService {
           return accum
         }, [])
         arrayProgramsToIntersect.push(program_ids ? program_ids : [])
+      }
+
+      if (params.program) {
+        arrayProgramsToIntersect.push([params.program])
       }
 
       if (params.filterCategories?.length) {
@@ -558,11 +562,14 @@ class CourseDataService {
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+          .populate({ path: 'schedulingType', select: 'id name' })
           .populate({ path: 'city', select: 'id name' })
           .skip(paging && !params.moreViewed ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging && !params.moreViewed ? nPerPage : null)
           .sort(!params.moreViewed ? sort : null)
           .lean()
+
+          console.log({ schedulings: registers.length, where })
 
         if (params.random && params.random.size) {
           registers = mapUtility.shuffle(registers).slice(0, params.random.size)
@@ -707,7 +714,9 @@ class CourseDataService {
   public fetchCoursesByCourseSlug = async ({ slug }: IFetchCoursesByCourseSlug) => {
     try {
       const course = await Course.findOne<ICourse>({ slug }).select('program')
-      if (!course) return responseUtility.buildResponseFailed('json')
+      if (!course) return responseUtility.buildResponseFailed('json', null, {
+        code: 404
+      })
       const coursesResponse: any = await this.fetchCourses({
         startPublicationDate: {
           date: 'today',
@@ -722,10 +731,27 @@ class CourseDataService {
       })
 
       if (coursesResponse?.status === 'error') return coursesResponse
+      const courses = coursesResponse?.courses ? coursesResponse?.courses : []
+      for(const register of courses) {
+        register['enrollment_enabled'] = false
+        register['slug_type'] = 'course_scheduling'
+
+        const today = moment()
+        if (register.enrollmentDeadline) {
+          const enrollmentDeadline = moment(register.enrollmentDeadline.toISOString().replace('T23:59:59.999Z', ''))
+          if (today.format('YYYY-MM-DD') <= enrollmentDeadline.format('YYYY-MM-DD')) {
+            if (register.schedulingType.name.toLowerCase() == 'abierto')
+              register['enrollment_enabled'] = true
+          }
+        }
+        if (register.endDiscountDate) {
+          register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
+        }
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          courses: coursesResponse.courses
+          courses
         }
       })
     } catch (e) {
