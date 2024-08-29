@@ -8,6 +8,12 @@ export enum CourseFormationType {
   DIPLOMA = 'diploma'
 }
 
+export const COURSE_FORMATION_TYPE_TRANSLATIONS = {
+  [CourseFormationType.COURSE]: "Curso",
+  [CourseFormationType.PROGRAM]: "Programa",
+  [CourseFormationType.DIPLOMA]: "Diplomado",
+}
+
 export const COURSE_FORMATION_TYPE = [
   CourseFormationType.COURSE,
   CourseFormationType.PROGRAM,
@@ -88,6 +94,7 @@ export interface IStoreCourse {
   withoutTutor?: boolean
   quickLearning?: boolean
   serviceType?: string
+  formationType?: string
 }
 
 export interface ICourseQuery {

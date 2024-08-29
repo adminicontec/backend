@@ -23,7 +23,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, C
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse, IValidateSlugParams } from '@scnode_app/types/default/admin/course/courseTypes'
+import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse, IValidateSlugParams, COURSE_FORMATION_TYPE_TRANSLATIONS } from '@scnode_app/types/default/admin/course/courseTypes'
 import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
@@ -206,6 +206,7 @@ class CourseService {
           let generalities = [];
           let description = ''
           let shortDescription = ''
+          let formationType = null
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -246,6 +247,7 @@ class CourseService {
 
             description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
             shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
+            formationType = extra_info.formationType?.length ? COURSE_FORMATION_TYPE_TRANSLATIONS[extra_info.formationType] : null
           }
 
           if (register.hasCost) {
@@ -295,7 +297,8 @@ class CourseService {
             modular: register?.modular?.name ? register?.modular?.name : '',
             withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
             quickLearning: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.quickLearning : false,
-            serviceType: serviceTypeLabel
+            serviceType: serviceTypeLabel,
+            formationType,
           }
           listOfCourses.push(courseToExport);
           if (courseToExport?.isActive) {
