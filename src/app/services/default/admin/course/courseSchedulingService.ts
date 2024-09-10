@@ -974,7 +974,7 @@ class CourseSchedulingService {
   public checkEnrollmentTeachers = async (courseScheduling, teacher?: string, amount_notifications: number | null = 1) => {
     const courses = await CourseSchedulingDetails.find({
       course_scheduling: courseScheduling._id
-    }).select('id startDate endDate duration course sessions teacher')
+    }).select('id startDate endDate duration course sessions teacher observations')
       .populate({ path: 'course', select: 'id name code' })
       .populate({ path: 'teacher', select: 'id email profile.first_name profile.last_name profile.timezone' })
       .lean()
@@ -1063,6 +1063,7 @@ class CourseSchedulingService {
         let item = {
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
+          observations: course?.observations || '',
           info: {
             start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
             end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
@@ -1077,6 +1078,7 @@ class CourseSchedulingService {
         let item = {
           course_code: (course.course && course.course.code) ? course.course.code : '',
           course_name: (course.course && course.course.name) ? course.course.name : '',
+          observations: course?.observations || '',
           timezone: courseSchedulingDetailsService.getTimezoneName(timezone),
           sessions: []
         }
@@ -1895,7 +1897,7 @@ class CourseSchedulingService {
         let total_scheduling = 0
         let courses = []
 
-        const detailSessions = await CourseSchedulingDetails.find({
+        let detailSessions = await CourseSchedulingDetails.find({
           course_scheduling: register._id
         }).select('id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration')
           .populate({ path: 'course_scheduling', select: 'id moodle_id' })
@@ -1903,8 +1905,17 @@ class CourseSchedulingService {
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name profile.city' })
           .select(select)
-          .sort({ created_at: 1 })
+          .sort({ startDate: 1 })
           .lean()
+
+        if (detailSessions[0] && detailSessions[0].sessions && Array.isArray(detailSessions[0].sessions) && detailSessions[0].sessions.length > 0) {
+          detailSessions = detailSessions.sort((a, b) => {
+            const aDate = a.sessions && a.sessions[0] ? a.sessions[0].startDate : a.startDate;
+            const bDate = b.sessions && b.sessions[0] ? b.sessions[0].startDate : b.startDate;
+
+            return aDate - bDate;
+          });
+        }
 
         let session_count = 0
 
@@ -2079,47 +2090,49 @@ class CourseSchedulingService {
 
           const {serviceTypeLabel} = this.getServiceType(course?.course_scheduling)
 
-          let item = {
-            service_id: (course?.course_scheduling?.metadata?.service_id) ? course.course_scheduling.metadata.service_id : '-',
-            course_scheduling_status: (course?.course_scheduling?.schedulingStatus?.name) ? course?.course_scheduling?.schedulingStatus?.name : '-',
-            modular: (course?.course_scheduling?.modular?.name) ? course?.course_scheduling?.modular?.name : '-',
-            program_code: (course?.course_scheduling?.program?.code) ? course.course_scheduling.program.code : '-',
-            program_name: (course?.course_scheduling?.program?.name) ? course.course_scheduling.program.name : '-',
-            course_scheduling_type: (course?.course_scheduling?.schedulingType?.name) ? course?.course_scheduling?.schedulingType?.name : '-',
-            scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
-            course_code: (course.course && course.course.code) ? course.course.code : '-',
-            course_name: (course.course && course.course.name) ? course.course.name : '-',
-            course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
-            start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
-            end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
-            start_month: (course.startDate) ? moment.utc(course.startDate).format('MM') : '',
-            start_year: (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '',
-            teacher_name: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
-            teacher_type,
-            teacher_id: (course.teacher?._id) ? course.teacher._id : '-',
-            teacher_city: (course.teacher?.profile?.city) ? course.teacher.profile.city : '-',
-            teacher_regional: (course.teacher?.profile?.regional) ? course.teacher.profile.regional : '-',
-            city: (course?.course_scheduling?.city?.name) ? course.course_scheduling.city.name : '-',
-            regional: (course?.course_scheduling?.regional?.name) ? course.course_scheduling.regional.name : '-',
-            participants: (participantsByProgram[course?.course_scheduling?._id]) ? participantsByProgram[course?.course_scheduling._id] : 0,
-            observations: (course?.course_scheduling?.observations) ? course.course_scheduling.observations : '-',
-            executive: (course?.course_scheduling?.account_executive?.profile) ? `${course.course_scheduling.account_executive.profile.first_name} ${course.course_scheduling.account_executive.profile.last_name}` : '-',
-            client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
-            service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
-            reprogramingCount,
-            reprogramingTypes,
-            moduleObservations: (course?.observations) ? course.observations : '-',
-            schedulingAssociationSlug: (course?.course_scheduling?.schedulingAssociation?.slug) ? course?.course_scheduling?.schedulingAssociation?.slug : '-',
-            schedulingAssociationDate: (course?.course_scheduling?.schedulingAssociation?.date) ? moment.utc(course?.course_scheduling?.schedulingAssociation?.date).format('DD/MM/YYYY') : '-',
-            schedulingAssociationPerson: (course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation) ? `${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.first_name} ${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.last_name}` : '-',
-            cancelationDate: (course?.course_scheduling?.cancelationTracking?.date) ? moment.utc(course?.course_scheduling?.cancelationTracking?.date).format('DD/MM/YYYY') : 'N/A',
-            cancelationPerson: (course?.course_scheduling?.cancelationTracking?.personWhoCancels) ? `${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.first_name} ${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.last_name}` : 'N/A',
-            reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
-            reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
-            service_type: serviceTypeLabel
-          }
+          if (course?.course_scheduling?.metadata?.service_id) {
+            let item = {
+              service_id: (course?.course_scheduling?.metadata?.service_id) ? course.course_scheduling.metadata.service_id : '-',
+              course_scheduling_status: (course?.course_scheduling?.schedulingStatus?.name) ? course?.course_scheduling?.schedulingStatus?.name : '-',
+              modular: (course?.course_scheduling?.modular?.name) ? course?.course_scheduling?.modular?.name : '-',
+              program_code: (course?.course_scheduling?.program?.code) ? course.course_scheduling.program.code : '-',
+              program_name: (course?.course_scheduling?.program?.name) ? course.course_scheduling.program.name : '-',
+              course_scheduling_type: (course?.course_scheduling?.schedulingType?.name) ? course?.course_scheduling?.schedulingType?.name : '-',
+              scheduling_mode: (course.course_scheduling && course.course_scheduling.schedulingMode && course.course_scheduling.schedulingMode.name) ? course.course_scheduling.schedulingMode.name : '-',
+              course_code: (course.course && course.course.code) ? course.course.code : '-',
+              course_name: (course.course && course.course.name) ? course.course.name : '-',
+              course_duration: (duration_scheduling) ? generalUtility.getDurationFormated(duration_scheduling) : '0h',
+              start_date: (course.startDate) ? moment.utc(course.startDate).format('DD/MM/YYYY') : '',
+              end_date: (course.endDate) ? moment.utc(course.endDate).format('DD/MM/YYYY') : '',
+              start_month: (course.startDate) ? moment.utc(course.startDate).format('MM') : '',
+              start_year: (course.startDate) ? moment.utc(course.startDate).format('YYYY') : '',
+              teacher_name: (course.teacher?.profile) ? `${course.teacher.profile.first_name} ${course.teacher.profile.last_name}` : '-',
+              teacher_type,
+              teacher_id: (course.teacher?._id) ? course.teacher._id : '-',
+              teacher_city: (course.teacher?.profile?.city) ? course.teacher.profile.city : '-',
+              teacher_regional: (course.teacher?.profile?.regional) ? course.teacher.profile.regional : '-',
+              city: (course?.course_scheduling?.city?.name) ? course.course_scheduling.city.name : '-',
+              regional: (course?.course_scheduling?.regional?.name) ? course.course_scheduling.regional.name : '-',
+              participants: (participantsByProgram[course?.course_scheduling?._id]) ? participantsByProgram[course?.course_scheduling._id] : 0,
+              observations: (course?.course_scheduling?.observations) ? course.course_scheduling.observations : '-',
+              executive: (course?.course_scheduling?.account_executive?.profile) ? `${course.course_scheduling.account_executive.profile.first_name} ${course.course_scheduling.account_executive.profile.last_name}` : '-',
+              client: (course?.course_scheduling?.client?.name) ? course.course_scheduling.client.name : '-',
+              service_user: (course.course_scheduling && course.course_scheduling.metadata && course.course_scheduling.metadata.user) ? `${course.course_scheduling.metadata.user.profile.first_name} ${course.course_scheduling.metadata.user.profile.last_name}` : '-',
+              reprogramingCount,
+              reprogramingTypes,
+              moduleObservations: (course?.observations) ? course.observations : '-',
+              schedulingAssociationSlug: (course?.course_scheduling?.schedulingAssociation?.slug) ? course?.course_scheduling?.schedulingAssociation?.slug : '-',
+              schedulingAssociationDate: (course?.course_scheduling?.schedulingAssociation?.date) ? moment.utc(course?.course_scheduling?.schedulingAssociation?.date).format('DD/MM/YYYY') : '-',
+              schedulingAssociationPerson: (course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation) ? `${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.first_name} ${course?.course_scheduling?.schedulingAssociation?.personWhoGeneratedAssociation.profile.last_name}` : '-',
+              cancelationDate: (course?.course_scheduling?.cancelationTracking?.date) ? moment.utc(course?.course_scheduling?.cancelationTracking?.date).format('DD/MM/YYYY') : 'N/A',
+              cancelationPerson: (course?.course_scheduling?.cancelationTracking?.personWhoCancels) ? `${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.first_name} ${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.last_name}` : 'N/A',
+              reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
+              reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
+              service_type: serviceTypeLabel
+            }
 
-          courses.push(item)
+            courses.push(item)
+          }
         })
 
         if (params.format === 'pdf') {
@@ -2705,11 +2718,7 @@ class CourseSchedulingService {
     let serviceTypeLabel = '-'
     let serviceTypeStatus = false
     let serviceTypeKey = undefined
-    console.log('courseScheduling', courseScheduling)
-    console.log('courseScheduling?.schedulingMode?.name', courseScheduling?.schedulingMode?.name)
     if (courseScheduling?.schedulingMode?.name === CourseSchedulingModes.VIRTUAL) {
-      console.log('courseScheduling?.withoutTutor', courseScheduling?.withoutTutor)
-      console.log('courseScheduling?.quickLearning', courseScheduling?.quickLearning)
       if (courseScheduling?.withoutTutor === true) {
         serviceTypeLabel = CourseSchedulingTypesNames.WITHOUT_TUTOR
         serviceTypeStatus = true

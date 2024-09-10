@@ -22,7 +22,21 @@ enum Notification {
   WELCOME_FREE_COURSE = 'user/selfRegistrationEnrollment',
   FINISH_FREE_COURSE_REMINDER = 'course/schedulingFreeMoocReminder',
   ENROLLMENT_USER = 'user/enrollmentUser',
-  ENROLLMENT_USER_QUICK_LEARNING = 'user/enrollmentUserQuickLearning'
+  ENROLLMENT_USER_QUICK_LEARNING = 'user/enrollmentUserQuickLearning',
+  WELCOME_PLATFORM = 'user/welcomeUser',
+  EXAM_TO_PARTICIPANT = 'course/schedulingExamToParticipant'
+}
+
+const SUBJECTS = {
+  [Notification.WELCOME_PLATFORM]: '¡Bienvenid@ al Campus Digital Icontec!',
+  [Notification.ENROLLMENT_USER]: 'Inicio del curso/programa/diplomado',
+  [Notification.EXAM_TO_PARTICIPANT]: 'Activación de examen'
+}
+
+interface IExecuteNotificationParams {
+  template: Notification
+  email?: string
+  withRealSubject?: boolean
 }
 
 class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
@@ -34,16 +48,23 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     // @end
-    await this.executeNotification(Notification.ENROLLMENT_USER_QUICK_LEARNING)
+    await this.executeNotification({
+      template: Notification.ENROLLMENT_USER,
+      withRealSubject: true
+    })
 
     return true; // Always return true | false
   }
 
-  private executeNotification = async (template: Notification, email = 'davidtest@test.com') => {
+  private executeNotification = async ({
+    template,
+    email = 'davidtest@test.com',
+    withRealSubject
+  }: IExecuteNotificationParams) => {
     const mail = await mailService.sendMail({
       emails: [email],
       mailOptions: {
-        subject: `Test email - ${template}`,
+        subject: (withRealSubject && SUBJECTS[template]) ? SUBJECTS[template] : `Test email - ${template}`,
         html_template: {
           path_layout: 'icontec',
           path_template: template,
@@ -59,9 +80,9 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
   private getMockParams = () => {
     return {
       mailer: customs['mailer'],
-      studentName: 'David Test',
+      studentName: 'Demo Test',
       courseName: 'Course name test',
-      first_name: 'David',
+      first_name: 'Demo',
       last_name: 'Test',
       courseType: 'mooc',
       course_name: 'Course name test',
@@ -69,7 +90,8 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
       course_start: '2024-04-12',
       course_end: '2024-04-20',
       username: '12365874562',
-      firstName: 'David',
+      password: '12365874562',
+      firstName: 'Demo',
       duration: '15',
       token: '859140',
       goToConfirm: 'https://campus.icontecvirtual.edu.co',
@@ -83,7 +105,14 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
         {
           certificateName: 'Certificate test 2'
         }
-      ]
+      ],
+      studentParams: {
+        studentName: 'Demo Test',
+        moduleName: 'Módulo prueba',
+        endDate: 'YYYY-MM-DD 23:59:59',
+        serviceId: '5TR202404164587',
+
+      }
     }
   }
 
