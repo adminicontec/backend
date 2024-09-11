@@ -95,6 +95,8 @@ export interface IStoreCourse {
   quickLearning?: boolean
   serviceType?: string
   formationType?: string
+  serviceOffer?: string
+  serviceOfferLong?: string
 }
 
 export interface ICourseQuery {

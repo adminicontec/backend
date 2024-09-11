@@ -31,6 +31,7 @@ import { utils } from 'xlsx/types';
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { CourseSchedulingTypesNames } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseService {
@@ -247,7 +248,13 @@ class CourseService {
 
             description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
             shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
-            formationType = extra_info.formationType?.length ? COURSE_FORMATION_TYPE_TRANSLATIONS[extra_info.formationType] : null
+            if (register?.withoutTutor) {
+              formationType = CourseSchedulingTypesNames.WITHOUT_TUTOR
+            } else if (register?.quickLearning) {
+              formationType = CourseSchedulingTypesNames.QUICK_LEARNING
+            } else if (extra_info.formationType?.length) {
+              formationType = COURSE_FORMATION_TYPE_TRANSLATIONS[extra_info.formationType]
+            }
           }
 
           if (register.hasCost) {
@@ -299,6 +306,8 @@ class CourseService {
             quickLearning: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.quickLearning : false,
             serviceType: serviceTypeLabel,
             formationType,
+            serviceOffer: register?.serviceInformation?.length ? register?.serviceInformation : null,
+            serviceOfferLong: register?.longServiceInformation?.length ? register?.longServiceInformation : null,
           }
           listOfCourses.push(courseToExport);
           if (courseToExport?.isActive) {

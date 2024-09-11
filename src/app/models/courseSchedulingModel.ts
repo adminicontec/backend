@@ -401,6 +401,9 @@ const CourseSchedulingSchema = new Schema({
   serviceValidity: {type: Schema.Types.Number, required: false},
   serviceInformation: {
     type: Schema.Types.String
+  },
+  longServiceInformation: {
+    type: Schema.Types.String
   }
   // @end
 }, {

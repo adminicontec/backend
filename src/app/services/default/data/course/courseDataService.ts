@@ -21,7 +21,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @end
 
 // @import types
-import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem, IFetchCoursesByCourseSlug } from '@scnode_app/types/default/data/course/courseDataTypes'
+import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem, IFetchCoursesByCourseSlug, FetchCourseSlug } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 import { CourseSchedulingServiceTypeMap } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
@@ -45,12 +45,20 @@ class CourseDataService {
   public fetchCourse = async (params: IFetchCourse) => {
 
     try {
-      const slug_type = (params.slug_type) ? params.slug_type : 'course_scheduling'
+      const slug_type = (params.slug_type) ? params.slug_type : FetchCourseSlug.COURSE_SCHEDULING
       let courseResponse = null
 
-      if (slug_type === 'course_scheduling') {
+      if (slug_type === FetchCourseSlug.COURSE_SCHEDULING) {
         courseResponse = await this.fetchCourseByCourseScheduling(params)
-      } else if (slug_type === 'program') {
+      } else if (slug_type === FetchCourseSlug.PROGRAM) {
+        courseResponse = await this.fetchCourseByProgram(params)
+      } else if (slug_type === FetchCourseSlug.COURSE_SLUG) {
+        const courseBySlug = await Course.findOne<ICourse>({ slug: params.slug })
+        if (!courseBySlug) return responseUtility.buildResponseFailed('json', null, {
+          code: 404
+        })
+        params.id = courseBySlug.program as string
+        params.slug = courseBySlug.program as string
         courseResponse = await this.fetchCourseByProgram(params)
       }
 
@@ -546,7 +554,7 @@ class CourseDataService {
         if (params.new) paging = false
 
         if (params.moreViewed) {
-          const schedulingWithMoreViews = await this.getMoreViewedPrograms(where, nPerPage, pageNumber)
+          const schedulingWithMoreViews = await this.getMoreViewedPrograms(where, nPerPage)
           if (schedulingWithMoreViews?.length) {
             where['_id'] = {
               $in: schedulingWithMoreViews
@@ -760,10 +768,11 @@ class CourseDataService {
     }
   }
 
-  private getMoreViewedPrograms = async (where: any, nPerPage: number, pageNumber: number): Promise<string[]> => {
+  private getMoreViewedPrograms = async (where: any, nPerPage: number): Promise<string[]> => {
     try {
       const schedulings = await CourseScheduling.find(where).select('program')
       const programIds = schedulings?.map(({program}) => program)
+      let schedulingIds = []
       const moreViewedPrograms = await CourseScheduling.aggregate([
         {
           $match: {
@@ -787,9 +796,16 @@ class CourseDataService {
       schedulings?.sort((a, b) => {
         return moreViewedProgramIds?.indexOf(a.program.toString()) - moreViewedProgramIds?.indexOf(b.program.toString())
       })
-      const idxStart = pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0
-      const idxEnd = idxStart + nPerPage
-      const schedulingIds = schedulings?.slice(idxStart, idxEnd)?.map(({_id}) => _id)
+      if (schedulings?.length > nPerPage) {
+        const newsAmount = Math.trunc(nPerPage/2)
+        const idxStart = schedulings?.length - newsAmount
+        schedulingIds = [
+          ...schedulings?.slice(0,Math.floor(nPerPage/2))?.map(({_id}) => _id),
+          ...schedulings?.slice(idxStart)?.map(({_id}) => _id),
+        ]
+      } else {
+        schedulingIds = schedulings?.map(({_id}) => _id)
+      }
 
       return schedulingIds ? schedulingIds : []
 

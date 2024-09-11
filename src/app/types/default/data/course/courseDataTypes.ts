@@ -57,6 +57,12 @@ export interface IFetchCourse {
   slug_type?: ISlugType
 }
 
+export enum FetchCourseSlug {
+  COURSE_SCHEDULING = 'course_scheduling',
+  PROGRAM = 'program',
+  COURSE_SLUG = 'course_slug'
+}
+
 export interface IFetchCoursesByCourseSlug {
   slug: string
 }
