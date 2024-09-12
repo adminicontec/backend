@@ -62,6 +62,7 @@ class CourseDataService {
       })
 
     } catch (e) {
+      console.log('courseDataService -> fetchCourse -> ERROR: ', e)
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -192,6 +193,7 @@ class CourseDataService {
 
       return file
     } catch (e) {
+      console.log('courseDataService -> generateCourseFile -> ERROR: ', e)
       return responseUtility.buildResponseFailed('json')
     }
   }

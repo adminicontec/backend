@@ -211,6 +211,18 @@ class CourseSchedulingController {
   }
 
   /**
+	 * Metodo que permite enlazar un servicio de campus con moodle
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public sincroniceServiceMoodle = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseSchedulingService.sincroniceServiceMoodle(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
 	 * Metodo que permite crear un registro
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express

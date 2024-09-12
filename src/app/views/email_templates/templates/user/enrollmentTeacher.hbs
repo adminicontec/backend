@@ -133,6 +133,9 @@
                     {{#each params.courses}}
                       <p><b>Código: </b>{{this.course_code}}</p>
                       <p><b>Curso: </b>{{this.course_name}}</p>
+                      {{#if this.observations}}
+                      <p><b>Observaciones: </b>{{this.observations}}</p>
+                      {{/if}}
                       {{#if this.timezone}}
                       <p><b>Zona horaria: </b>{{this.timezone}}</p>
                       {{/if}}

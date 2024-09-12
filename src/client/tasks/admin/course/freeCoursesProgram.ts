@@ -26,6 +26,7 @@ interface IEnrollment {
   _id: string
   created_at: string
   user: string
+  course_scheduling: string
 }
 
 class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
@@ -52,15 +53,17 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
         schedulingStatus: { $in: courseSchedulingStatus?.map(({ _id }) => _id) },
-        typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] }
+        typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] },
+        quickLearning: true
       }).select('_id metadata serviceValidity')
+
       for (const courseScheduling of courseSchedulings) {
         const validityTime = courseScheduling?.serviceValidity ? courseScheduling.serviceValidity : 0
         const enrollments = await Enrollment.find({
           course_scheduling: courseScheduling._id,
-          origin: EnrollmentOrigin.AUTOREGISTRO,
+          // origin: EnrollmentOrigin.AUTOREGISTRO,
           deletedAt: { $exists: false },
-        }).select('_id created_at user')
+        }).select('_id created_at user course_scheduling')
         if (!enrollments?.length) continue
         for (const enrollment of enrollments) {
           let currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
@@ -90,15 +93,20 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
       const startDate = moment(enrollment.created_at)
       const today = moment()
       const seconds = today.diff(startDate, 'seconds')
-      console.log({ seconds, validityTime, enrollment: enrollment?._id })
-      if (seconds > validityTime) {
-        const result = await enrollmentService.delete({ id: enrollment._id })
-        if (result.status === 'success') {
-          return true
+      const days = this.getDays(validityTime - seconds)
+      console.log({ days, seconds, validityTime, enrollment: enrollment?._id })
+      if (days <= -1) {
+        console.log(`${days} dia(s) despues de vencer el plazo del curso`)
+        if (seconds > validityTime) {
+          const result = await enrollmentService.delete({ id: enrollment._id })
+          if (result.status === 'success') return true
+          if (result.status === 'error') {
+            console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> removeEnrollmentError: ', result)
+          }
         }
-        if (result.status === 'error') {
-          console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> removeEnrollmentError: ', result)
-        }
+      } else if (days === 5) {
+        console.log('5 Dias antes, enviando notificación...')
+        await courseSchedulingNotificationsService.sendReminderEmailForQuickLearning(enrollment.course_scheduling, enrollment.user)
       }
       return false
     } catch (e) {
@@ -171,6 +179,10 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
     const currentStatusResponse: any = await enrollmentService.getCurrentEnrollmentStatus({ enrollmentId })
     if (currentStatusResponse?.status === 'error') return null
     return currentStatusResponse.currentStatus
+  }
+
+  private getDays(seconds) {
+    return Math.floor(seconds / (24 * 60 * 60));
   }
   // @end
 }

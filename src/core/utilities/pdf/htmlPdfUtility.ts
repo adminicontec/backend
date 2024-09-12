@@ -53,6 +53,7 @@ class HtmlPdfUtility {
           ...config.options
         }
       }
+      console.log('PDFConfig', configPdf)
 
       let content = null
 

@@ -260,6 +260,7 @@ class PostDataService {
       })
 
     } catch (e) {
+      console.log('PostDataService', e)
       return responseUtility.buildResponseFailed('json')
     }
   }

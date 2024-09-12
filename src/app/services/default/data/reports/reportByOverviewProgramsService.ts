@@ -19,6 +19,7 @@ import { CourseSchedulingInformation,CourseSchedulingStatus, CourseScheduling, E
 
 // @import types
 import { IFactoryGenerateReport } from '@scnode_app/types/default/data/reports/reportsFactoryTypes';
+import { courseSchedulingService } from "../../admin/course/courseSchedulingService";
 // @end
 
 export interface IReportByOverviewPrograms {
@@ -71,6 +72,7 @@ export interface IReportPage {
   isVirtual: boolean,
   isAuditor: boolean,
   typeCourse?: string,
+  serviceType: string
 }
 
 
@@ -112,7 +114,7 @@ class ReportByOverviewProgramsService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration typeCourse')
+      .select('id withoutTutor quickLearning metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration typeCourse')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
       .populate({path: 'program', select: 'id name code isAuditor'})
@@ -244,6 +246,7 @@ class ReportByOverviewProgramsService {
       }
 
       for (const courseScheduling of courseSchedulings) {
+        const {serviceTypeLabel} = courseSchedulingService.getServiceType(courseScheduling)
         const itemBase: IReportPage = {
           _id: courseScheduling._id,
           modular: courseScheduling?.modular?.name || '-',
@@ -278,6 +281,7 @@ class ReportByOverviewProgramsService {
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
           isAuditor: courseScheduling?.program?.isAuditor || false,
           typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
+          serviceType: serviceTypeLabel
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -484,6 +488,7 @@ class ReportByOverviewProgramsService {
           'Fecha finalización',
           'Modalidad',
           'Gratuito/Mooc',
+          'Tipo de curso',
           'Duración',
           'Participantes por grupo (inscritos)',
           'Participantes que cumplen la asistencia/avance al programa completo',
@@ -516,6 +521,7 @@ class ReportByOverviewProgramsService {
             scheduling.endDate,
             scheduling.modalityName,
             scheduling.typeCourse,
+            scheduling.serviceType,
             scheduling.totalDurationFormated,
             scheduling.participants,
             scheduling.certification?.standar?.participantsWithAttendanceProgressComplete,

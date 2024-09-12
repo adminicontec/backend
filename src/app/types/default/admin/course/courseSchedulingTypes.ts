@@ -147,6 +147,8 @@ export interface ICourseScheduling {
     status: boolean,
     editingStatus?: boolean
   }
+  withoutTutor?: boolean
+  quickLearning?: boolean
 }
 
 export interface ICourseSchedulingDelete {
@@ -175,6 +177,9 @@ export interface ICourseSchedulingQuery {
   schedulingAssociation?: string;
   teacher?: string;
   program?: string
+  ids?: string[]
+  multicertificates?: boolean
+  endDateBetween?: {init: string, end: string}
 }
 
 export interface ICourseSchedulingReport {
@@ -187,6 +192,16 @@ export interface ICourseSchedulingReportData {
   courses: Array<any>,
   total_scheduling: number
   scheduling_free: number
+}
+
+export enum CourseSchedulingTypesKeys {
+  WITHOUT_TUTOR = 'without_tutor',
+  QUICK_LEARNING = 'quick_learning',
+}
+
+export enum CourseSchedulingTypesNames {
+  WITHOUT_TUTOR = 'Virtual sin tutor',
+  QUICK_LEARNING = 'Quick learning',
 }
 
 export enum ReprogramingLabels {
@@ -293,5 +308,18 @@ export interface ISendEnrollmentUserParams {
   courses?: unknown
   has_sessions?: unknown
   serviceValidity?: string
+}
+
+export enum CourseSchedulingNotificationEvents {
+  SCHEDULE_UPDATED = 'schedule_updated',
+  ENROLLMENT = 'enrollment',
+  UNENROLLMENT = 'unenrollment',
+  SERVICE_CANCEL = 'service_cancel',
+  SURVEY_NOTIFICATION = 'survey_notification',
+  CERTIFICATE_GENERATED = 'certificate_generated'
+}
+
+export enum CourseSchedulingNotificationRules {
+  SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning'
 }
 //@end

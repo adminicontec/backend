@@ -656,7 +656,7 @@ class CertificateMultipleService {
       const allCertificateSettings = await CertificateSettings.find({
         courseScheduling: courseId
       })
-      .populate({path: 'modules.courseSchedulingDetail', select: 'course endDate', populate: [
+      .populate({path: 'modules.courseSchedulingDetail', select: 'course startDate endDate sessions', populate: [
         {path: 'course', select: 'name'}
       ]})
 
@@ -748,6 +748,7 @@ class CertificateMultipleService {
       ) {
         certificateSetting.certificationType = CertificateSettingType.ATTENDANCE
       }
+      const consecutiveStarted = certificateConsecutive.search('-') !== -1
 
       let dato_16 = '';
       let mapping_dato_13 = ''; // "Certifica" or "Certifican" text (singular/plural)
@@ -757,7 +758,7 @@ class CertificateMultipleService {
       const mapping_titulo_certificado = certificateSetting?.certificateName || '-';
       const mapping_pais = courseScheduling?.country?.name || '-';
       const mapping_ciudad = courseScheduling?.city?.name || '';
-      const mapping_numero_certificado = (certificateHash) ?
+      const mapping_numero_certificado = (consecutiveStarted) ?
         certificateConsecutive :
         `${courseScheduling?.metadata.service_id}-${certificateConsecutive.padStart(4, '0')}-${position}` // TODO: Revisar como diferenciar entre certificateSetting
 
@@ -784,6 +785,22 @@ class CertificateMultipleService {
       }
 
       const endDates = []
+
+      let hasSessions = false
+      certificateSetting?.modules.sort((a, b) => {
+        if (a.courseSchedulingDetail?.sessions && Array.isArray(a.courseSchedulingDetail?.sessions) && a.courseSchedulingDetail?.sessions.length > 0) {
+          hasSessions = true
+        }
+        return a.courseSchedulingDetail.startDate - b.courseSchedulingDetail.startDate;
+      })
+      if (hasSessions) {
+        certificateSetting.modules = certificateSetting.modules.sort((a, b) => {
+          const aDate = a.courseSchedulingDetail.sessions && a.courseSchedulingDetail.sessions[0] ? a.courseSchedulingDetail.sessions[0].startDate : a.startDate;
+          const bDate = b.courseSchedulingDetail.sessions && b.courseSchedulingDetail.sessions[0] ? b.courseSchedulingDetail.sessions[0].startDate : b.startDate;
+
+          return aDate - bDate;
+        });
+      }
 
       const approvedModules = certificateSetting?.modules?.map((module) => {
         endDates.push(module?.courseSchedulingDetail?.endDate.toISOString().replace('T00:00:00.000Z', ''))

@@ -412,7 +412,15 @@ const CourseSchedulingSchema = new Schema({
   certificatePriceUSD: {
     type: Schema.Types.String,
     required: false
-  }
+  },
+  withoutTutor: {
+    type: Schema.Types.Boolean,
+    default: false,
+  },
+  quickLearning: {
+    type: Schema.Types.Boolean,
+    default: false,
+  },
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

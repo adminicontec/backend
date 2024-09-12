@@ -43,6 +43,8 @@ import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessR
 import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService';
 import { CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
+import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
 // @end
 
 class EnrollmentService {
@@ -436,17 +438,20 @@ class EnrollmentService {
               !isNew &&
               email_old !== params.email
             ) {
-              await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
-                mailer: customs['mailer'],
-                first_name: respCampusDataUser.user.profile.first_name,
-                course_name: courseScheduling.program.name,
-                username: respCampusDataUser.username || '',
-                service_id: courseScheduling?.metadata?.service_id || '',
-                course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-                course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
-                notification_source: `course_start_${respCampusDataUser.user._id}_${courseScheduling._id}`,
-                type: 'student'
-              })
+              const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(courseScheduling._id,CourseSchedulingNotificationEvents.ENROLLMENT)
+              if (sendMailsStudents) {
+                await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
+                  mailer: customs['mailer'],
+                  first_name: respCampusDataUser.user.profile.first_name,
+                  course_name: courseScheduling.program.name,
+                  username: respCampusDataUser.username || '',
+                  service_id: courseScheduling?.metadata?.service_id || '',
+                  course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
+                  course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
+                  notification_source: `course_start_${respCampusDataUser.user._id}_${courseScheduling._id}`,
+                  type: 'student'
+                })
+              }
             }
             return responseUtility.buildResponseFailed('json', null,
               { error_key: { key: 'enrollment.insertOrUpdate.already_exists', params: { username: params.documentID, coursename: params.courseID } } })
@@ -483,17 +488,34 @@ class EnrollmentService {
             }
             // @INFO: Se envia email de bienvenida
             if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
-              await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
-                mailer: customs['mailer'],
-                first_name: userEnrollment.profile.first_name,
-                username: userEnrollment.username || '',
-                course_name: courseScheduling.program.name,
-                service_id: courseScheduling?.metadata?.service_id || '',
-                course_start: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
-                course_end: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
-                notification_source: `course_start_${userEnrollment._id}_${courseScheduling._id}`,
-                type: 'student'
-              })
+              const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(courseScheduling._id,CourseSchedulingNotificationEvents.ENROLLMENT)
+              if (sendMailsStudents) {
+                const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
+                let customTemplate = undefined
+                let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
+                let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
+                let serviceValidity = courseScheduling.serviceValidity || undefined
+
+                if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
+                  customTemplate = 'user/enrollmentUserQuickLearning'
+                  course_start = moment.utc().format('YYYY-MM-DD')
+                  course_end = moment.utc().add(courseScheduling.serviceValidity, 'seconds').format('YYYY-MM-DD')
+                  serviceValidity = generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true)
+                }
+                await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
+                  mailer: customs['mailer'],
+                  first_name: userEnrollment.profile.first_name,
+                  username: userEnrollment.username || '',
+                  course_name: courseScheduling.program.name,
+                  service_id: courseScheduling?.metadata?.service_id || '',
+                  course_start,
+                  course_end,
+                  notification_source: `course_start_${userEnrollment._id}_${courseScheduling._id}`,
+                  type: 'student',
+                  customTemplate,
+                  serviceValidity
+                })
+              }
             }
           }
 
@@ -575,14 +597,17 @@ class EnrollmentService {
           const amountNotification = await MailMessageLog.findOne({ notification_source: `course_start_${user._id}_${course_scheduling._id}` })
           if (amountNotification) await amountNotification.delete()
 
-          // @INFO: Enviando mensaje de desmatriculación
-          await courseSchedulingService.sendUnenrollmentUserEmail(user.email, {
-            mailer: customs['mailer'],
-            first_name: user.profile.first_name,
-            course_name: course_scheduling.program.name,
-            service_id: (course_scheduling?.metadata?.service_id) ? course_scheduling?.metadata?.service_id : '-',
-            notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
-          })
+          const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(course_scheduling._id,CourseSchedulingNotificationEvents.UNENROLLMENT)
+          if (sendMailsStudents) {
+            // @INFO: Enviando mensaje de desmatriculación
+            await courseSchedulingService.sendUnenrollmentUserEmail(user.email, {
+              mailer: customs['mailer'],
+              first_name: user.profile.first_name,
+              course_name: course_scheduling.program.name,
+              service_id: (course_scheduling?.metadata?.service_id) ? course_scheduling?.metadata?.service_id : '-',
+              notification_source: `course_unenrollment_${user._id}_${course_scheduling._id}`
+            })
+          }
         }
       }
       return responseUtility.buildResponseSuccess('json')
@@ -704,7 +729,7 @@ class EnrollmentService {
         let idx: number = 0;
         for await (let register of registers) {
           const certificates = await CertificateQueue
-            .find({ userId: register.user, courseId: register.course_scheduling })
+            .find({ userId: register.user, courseId: register.course_scheduling, status: 'Complete' })
             .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
           if (certificates && certificates.length) {
             registers[idx].certificates = [...certificates]

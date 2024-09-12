@@ -252,9 +252,11 @@ class SurveyDataService {
       const surveyData = await Survey.aggregate(aggregateQuery)
 
       let reportData: IGeneralReportSurvey[] = []
+      console.time('Init')
 
       for (const survey of surveyData) {
         if (survey?.academic_resource_config?.config?.course_modes && courseSchedulingModesInfoById[survey?.academic_resource_config?.config?.course_modes]) {
+          console.time(`Survey ${survey._id}`)
           const modality = courseSchedulingModesInfoById[survey?.academic_resource_config?.config?.course_modes]
 
           let questions = []
@@ -422,12 +424,16 @@ class SurveyDataService {
               totalSurvey: 0,
               isVirtual: false
             }
+            console.time('getSchedulingsByModality')
             report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate})
+            console.timeEnd('getSchedulingsByModality')
+            console.time('getSurveyDataByScheduligs')
             report.scheduling = await this.getSurveyDataByScheduligs(report.scheduling, {
               questionByCategory: question_by_category,
               questionsRange: report.questionsRange,
               questionsWithOptions: report.questionsWithOptions
             })
+            console.timeEnd('getSurveyDataByScheduligs')
             reportData.push(report)
           } else {
             const surveyCourseType = survey?.academic_resource_config?.config?.course_type
@@ -447,17 +453,23 @@ class SurveyDataService {
               totalSurvey: 0,
               isVirtual: true
             }
+            console.time('getSchedulingsByModality')
             report.scheduling = await this.getSchedulingsByModality(modality, courseSchedulingStatusInfo, {reportStartDate, reportEndDate, courseType: surveyCourseType})
+            console.timeEnd('getSchedulingsByModality')
+            console.time('getSurveyDataByScheduligs')
             report.scheduling = await this.getSurveyDataByScheduligs(report.scheduling, {
               questionByCategory: question_by_category,
               questionsRange: report.questionsRange,
               questionsWithOptions: report.questionsWithOptions
             })
+            console.timeEnd('getSurveyDataByScheduligs')
             reportData.push(report)
           }
-
+          console.timeEnd(`Survey ${survey._id}`)
+          console.log('-------------------------------------------------')
         }
       }
+      console.timeEnd('Init')
 
       if (output_format === 'xlsx') {
         if (reportData.length === 0) {
@@ -494,33 +506,122 @@ class SurveyDataService {
   private getSchedulingsByModality = async (modality, courseSchedulingStatusInfo, options: {reportStartDate: string | undefined, reportEndDate: string | undefined, courseType?: string}) => {
     const schedulings = []
     let where: any = {
-      schedulingMode: modality._id,
+      schedulingMode: ObjectID(modality._id),
       typeCourse: options?.courseType?.length ? options.courseType : { $nin: [TypeCourse.FREE, TypeCourse.MOOC] },
       schedulingStatus: {$in: [
-        courseSchedulingStatusInfo['Confirmado']._id,
-        courseSchedulingStatusInfo['Ejecutado']._id,
-        courseSchedulingStatusInfo['Cancelado']._id,
+        ObjectID(courseSchedulingStatusInfo['Confirmado']._id),
+        ObjectID(courseSchedulingStatusInfo['Ejecutado']._id),
+        // courseSchedulingStatusInfo['Cancelado']._id,
       ]}
     }
 
     if (options?.reportStartDate && options?.reportEndDate) {
       where['startDate'] = {$gte: new Date(`${options.reportStartDate}T00:00:00Z`), $lte: new Date(`${options.reportEndDate}T23:59:59Z`)}
     }
+    console.time(`GetSchedulingsByModality: ${modality._id}`)
+    const aggregationPipeline = [
+      {
+        $match: where // Aplica el filtro `where` tal como lo harías en el método `find`
+      },
+      {
+        $lookup: {
+          from: 'course_scheduling_modes',
+          localField: 'schedulingMode',
+          foreignField: '_id',
+          as: 'schedulingMode'
+        }
+      },
+      { $unwind: '$schedulingMode' },
+      {
+        $lookup: {
+          from: 'modulars',
+          localField: 'modular',
+          foreignField: '_id',
+          as: 'modular'
+        }
+      },
+      { $unwind: '$modular' },
+      {
+        $lookup: {
+          from: 'programs',
+          localField: 'program',
+          foreignField: '_id',
+          as: 'program'
+        }
+      },
+      { $unwind: '$program' },
+      {
+        $lookup: {
+          from: 'companies',
+          localField: 'client',
+          foreignField: '_id',
+          as: 'client'
+        }
+      },
+      { $unwind: '$client' },
+      {
+        $lookup: {
+          from: 'cities',
+          localField: 'city',
+          foreignField: '_id',
+          as: 'city'
+        }
+      },
+      { $unwind: '$city' },
+      {
+        $lookup: {
+          from: 'course_scheduling_types',
+          localField: 'schedulingType',
+          foreignField: '_id',
+          as: 'schedulingType'
+        }
+      },
+      { $unwind: '$schedulingType' },
+      {
+        $lookup: {
+          from: 'regionals',
+          localField: 'regional',
+          foreignField: '_id',
+          as: 'regional'
+        }
+      },
+      { $unwind: '$regional' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'account_executive',
+          foreignField: '_id',
+          as: 'account_executive'
+        }
+      },
+      { $unwind: '$account_executive' },
+      {
+        $project: {
+          _id: 1,
+          metadata: 1,
+          schedulingMode: { _id: 1, name: 1 },
+          modular: { _id: 1, name: 1 },
+          program: { _id: 1, name: 1, code: 1 },
+          client: { _id: 1, name: 1 },
+          city: { _id: 1, name: 1 },
+          schedulingType: { id: 1, name: 1 },
+          regional: { id: 1, name: 1 },
+          account_executive: {
+            _id: 1,
+            'profile.first_name': 1,
+            'profile.last_name': 1
+          },
+          startDate: 1,
+          endDate: 1,
+          duration: 1
+        }
+      }
+    ];
 
-    const courseSchedulings = await CourseScheduling.find(where)
-    .select('id metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
-    .populate({path: 'schedulingMode', select: 'id name'})
-    .populate({path: 'modular', select: 'id name'})
-    .populate({path: 'program', select: 'id name code'})
-    .populate({path: 'client', select: 'id name'})
-    .populate({path: 'city', select: 'id name'})
-    .populate({path: 'schedulingType', select: 'id name'})
-    .populate({path: 'regional', select: 'id name'})
-    .populate({path: 'account_executive', select: 'id profile.first_name profile.last_name'})
-    .lean()
-
+    const courseSchedulings = await CourseScheduling.aggregate(aggregationPipeline);
+    console.timeEnd(`GetSchedulingsByModality: ${modality._id}`)
     const courseSchedulingIds = courseSchedulings.reduce((accum, element) => {
-      accum.push(element._id.toString())
+      accum.push(ObjectID(element._id))
       return accum
     }, [])
 
@@ -528,21 +629,61 @@ class SurveyDataService {
 
     // if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(modality.name)) {
       if (courseSchedulingIds.length > 0) {
-        const details = await CourseSchedulingDetails.find({
-          course_scheduling: {$in: courseSchedulingIds}
-        })
-        .select('id course_scheduling teacher course startDate endDate duration sessions')
-        .populate({path: 'teacher', select: 'id profile.first_name profile.last_name'})
-        .populate({path: 'course', select: 'id name code'})
-        .lean();
+        console.time('CourseSchedulingDetails')
+        const aggregationPipeline = [
+          {
+            $match: {
+              course_scheduling: { $in: courseSchedulingIds }
+            }
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'teacher',
+              foreignField: '_id',
+              as: 'teacher'
+            }
+          },
+          { $unwind: '$teacher' },
+          {
+            $lookup: {
+              from: 'course_scheduling_sections',
+              localField: 'course',
+              foreignField: '_id',
+              as: 'course'
+            }
+          },
+          { $unwind: '$course' },
+          {
+            $project: {
+              id: 1,
+              course_scheduling: 1,
+              teacher: {
+                _id: 1,
+                'profile.first_name': 1,
+                'profile.last_name': 1
+              },
+              course: {
+                _id: 1,
+                name: 1,
+                code: 1
+              },
+              startDate: 1,
+              endDate: 1,
+              duration: 1,
+              sessions: 1
+            }
+          }
+        ];
+
+        const details = await CourseSchedulingDetails.aggregate(aggregationPipeline)
+        console.timeEnd('CourseSchedulingDetails')
 
         courseSchedulingDetails = {};
         courseSchedulingDetails = details.reduce((accum, element) => {
-          if (element?.course_scheduling) {
-            if (!accum[element.course_scheduling.toString()]) {
-              accum[element.course_scheduling.toString()] = []
-            }
-            accum[element.course_scheduling.toString()].push(element)
+          const course_scheduling = element?.course_scheduling?.toString()
+          if (course_scheduling) {
+            (accum[course_scheduling] ??= []).push(element)
           }
           return accum
         }, {})
@@ -552,6 +693,7 @@ class SurveyDataService {
     let participantsByProgram = {}
 
     if (courseSchedulingIds.length > 0) {
+      console.time('GetEnrollments')
       const enrolledByProgramQuery = await Enrollment.aggregate([
         {
           $match: {
@@ -567,6 +709,7 @@ class SurveyDataService {
           $group: { _id: "$course_scheduling", count: { $sum: 1} }
         }
       ])
+      console.timeEnd('GetEnrollments')
       if (enrolledByProgramQuery.length > 0) {
         participantsByProgram = enrolledByProgramQuery.reduce((accum, element) => {
           if (!accum[element._id.toString()]) {
@@ -576,7 +719,7 @@ class SurveyDataService {
         }, {})
       }
     }
-
+    console.time('IterationCourseScheduling')
     for (const courseScheduling of courseSchedulings) {
       const itemBase = {
         _id: courseScheduling._id,
@@ -643,61 +786,86 @@ class SurveyDataService {
         }
       }
     }
+    console.timeEnd('IterationCourseScheduling')
 
     return schedulings;
   }
 
   private getSurveyDataByScheduligs = async (schedulings, options: {questionByCategory: any, questionsRange: any[], questionsWithOptions: any}) => {
+    console.time('getIds')
     const getIds = schedulings.reduce((accum, element) => {
-      accum.push(element._id)
+      accum.push(element._id.toString())
       return accum;
     }, [])
+    console.timeEnd('getIds')
 
     if (getIds.length > 0) {
       // @INFO: Consultando los resultados de los usuarios
-      const academicResourceAttemps = await AcademicResourceAttempt.find({'results.surveyRelated': {$in: getIds}, 'results.status': 'ended'})
-
-      const academicResourceAttempsGrouped = academicResourceAttemps.reduce((accum, element) => {
-        if (element?.results?.surveyRelated) {
-          if (!accum[element?.results?.surveyRelated]) {
-            accum[element?.results?.surveyRelated] = []
+      console.time('AcademicResourceAttempt')
+      const aggregationPipeline = [
+        {
+          $match: {
+            'results.surveyRelated': { $in: getIds },
+            'results.status': 'ended',
+            'deleted': false
           }
-          accum[element?.results?.surveyRelated].push(element)
+        },
+        {
+          $project: {
+            "results.statistics": 1,
+            "results.surveyRelated": 1
+          }
+        }
+      ];
+
+      const academicResourceAttemps = await AcademicResourceAttempt.aggregate(aggregationPipeline);
+      console.timeEnd('AcademicResourceAttempt')
+      console.time('AcademicResourceAttemptReduce')
+      const academicResourceAttempsGrouped = academicResourceAttemps.reduce((accum, element) => {
+        const surveyRelated = element?.results?.surveyRelated;
+        if (surveyRelated) {
+          (accum[surveyRelated] ??= []).push(element);
         }
         return accum;
       }, {})
+      console.timeEnd('AcademicResourceAttemptReduce')
       // console.log('academicResourceAttempsGrouped', academicResourceAttempsGrouped)
 
+      console.time('Iterationschedulings2')
       for (const scheduling of schedulings) {
 
         scheduling.questionsRange = JSON.parse(JSON.stringify(options.questionsRange))
         scheduling.questionsWithOptions = JSON.parse(JSON.stringify(options.questionsWithOptions))
         scheduling.totalSurvey = (academicResourceAttempsGrouped[scheduling._id]) ? academicResourceAttempsGrouped[scheduling._id].length : 0
         if (academicResourceAttempsGrouped[scheduling._id]) {
+          const schedulingQuestionsRange = scheduling.questionsRange;
+          const schedulingQuestionsWithOptions = scheduling.questionsWithOptions;
+          const questionByCategory = options.questionByCategory;
+
           for (const userAttemp of academicResourceAttempsGrouped[scheduling._id]) {
-            if (userAttemp.results && userAttemp.results.statistics && Array.isArray(userAttemp.results.statistics)) {
-              for (const result of userAttemp.results.statistics) {
-                const category = (options.questionByCategory[result.question.toString()]) ? options.questionByCategory[result.question] : null
+            const statistics = userAttemp.results?.statistics;
+            if (Array.isArray(statistics)) {
+              for (const result of statistics) {
+                const question = result.question.toString();
+                const category = questionByCategory[question] || null;
 
                 switch (category) {
                   case 'select-range':
-                    for (const section of scheduling.questionsRange) {
-                      if (section.questions[result.question.toString()]) {
-                        section.questions[result.question.toString()].total_answers += 1;
-                        section.questions[result.question.toString()].answers.list.push(result.answer)
-                        section.questions[result.question.toString()].answers.total += parseInt(result.answer)
+                    for (const section of schedulingQuestionsRange) {
+                      const sectionQuestion = section.questions[question];
+                      if (sectionQuestion) {
+                        sectionQuestion.total_answers += 1;
+                        sectionQuestion.answers.list.push(result.answer);
+                        sectionQuestion.answers.total += parseInt(result.answer, 10);
                       }
                     }
                     break;
-                  // case 'open-answer':
-                  //   if (section_questions_open[result.question.toString()]) {
-                  //     section_questions_open[result.question.toString()].answers.push(result.answer)
-                  //   }
-                  //   break;
+
                   case 'multiple-choice-unique-answer':
-                    if (scheduling.questionsWithOptions[result.question.toString()] && scheduling.questionsWithOptions[result.question.toString()].answers[result.answer]) {
-                      scheduling.questionsWithOptions[result.question.toString()].answers[result.answer].total_answers += 1;
-                      scheduling.questionsWithOptions[result.question.toString()].total_answers += 1;
+                    const questionOptions = schedulingQuestionsWithOptions[question];
+                    if (questionOptions && questionOptions.answers[result.answer]) {
+                      questionOptions.answers[result.answer].total_answers += 1;
+                      questionOptions.total_answers += 1;
                     }
                     break;
                 }
@@ -739,6 +907,7 @@ class SurveyDataService {
           }
         }
       }
+      console.timeEnd('Iterationschedulings2')
 
     }
 
@@ -1199,7 +1368,7 @@ class SurveyDataService {
                     section.questions[result.question.toString()].answers.list.push(result.answer)
                     section.questions[result.question.toString()].answers.total += parseInt(result.answer)
 
-                    section.questions[result.question.toString()].average = Math.round(((section.questions[result.question.toString()].answers.total / section.questions[result.question.toString()].total_answers) * 100)) / 100
+                    section.questions[result.question.toString()].average = Math.round(((section.questions[result.question.toString()].answers.total / section.questions[result.question.toString()].total_answers)) * 100) / 100
                   }
                 }
                 break;
@@ -1315,6 +1484,11 @@ class SurveyDataService {
       row++
 
       if (data.section_questions_range) {
+        let averageGeneral = {
+          total: 0,
+          amountRegisters: 0,
+          average: 0
+        };
         for (const section of data.section_questions_range) {
           if (Object.keys(section.questions).length > 0) {
             let total_question_for_section = 0;
@@ -1346,7 +1520,10 @@ class SurveyDataService {
             }
 
             if (total_question_for_section > 0) {
-              sheet_data_aoa.push(['Promedio', Math.round(((total_answer_value / total_question_for_section) * 100)) / 100])
+              const averageSection = Math.round(((total_answer_value / total_question_for_section) * 100)) / 100
+              averageGeneral.total += averageSection
+              averageGeneral.amountRegisters += 1;
+              sheet_data_aoa.push(['Promedio', averageSection])
               row++;
             }
 
@@ -1358,6 +1535,13 @@ class SurveyDataService {
             }
           }
         }
+
+        averageGeneral.average = Math.round(((averageGeneral.total / averageGeneral.amountRegisters)) * 100) / 100
+        sheet_data_aoa.push(['Promedio del curso', averageGeneral.average])
+        row++
+
+        sheet_data_aoa.push([])
+        row++;
       }
 
       if (data.section_questions_choice_simple) {

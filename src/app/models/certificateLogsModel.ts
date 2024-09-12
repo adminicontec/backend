@@ -8,11 +8,11 @@ const CertificateLogsSchema = new Schema({
   // @add_schema Add schema here
   serviceResponse: {
     type: Schema.Types.String,
-    required: true,
+    required: false,
   },
   idCertificateQueue: {
     type: Schema.Types.ObjectId,
-    required: true,
+    required: false,
   },
   message: {
     type: Schema.Types.String

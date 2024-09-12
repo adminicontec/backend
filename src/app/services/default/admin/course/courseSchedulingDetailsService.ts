@@ -59,15 +59,33 @@ class CourseSchedulingDetailsService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
+      let sort = null
+      if (params?.sort) {
+        sort = {}
+        if (typeof params?.sort === 'string') {
+          params.sort = JSON.parse(params?.sort)
+        }
+        sort[params.sort.field] = params.sort.direction
+      }
+
       let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations'
       if (params.query === QueryValues.ALL) {
-        const registers: any = await CourseSchedulingDetails.find(where)
+        let registers: any = await CourseSchedulingDetails.find(where)
           .populate({ path: 'course_scheduling', select: 'id moodle_id multipleCertificate' })
           .populate({ path: 'course', select: 'id name code moodle_id' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
           .select(select)
+          .sort(sort)
           .lean()
+        if (registers[0].sessions && Array.isArray(registers[0].sessions) && registers[0].sessions.length > 0) {
+          registers = registers.sort((a, b) => {
+            const aDate = a.sessions && a.sessions[0] ? a.sessions[0].startDate : a.startDate;
+            const bDate = b.sessions && b.sessions[0] ? b.sessions[0].startDate : b.startDate;
+
+            return aDate - bDate;
+          });
+        }
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -192,6 +210,20 @@ class CourseSchedulingDetailsService {
               courseid: response.course_scheduling.moodle_id,
               userid: response.teacher.moodle_id
             });
+            await customLogService.create({
+              label: 'cset - Course scheduling enrollment teacher',
+              description: 'Matricular profesor en un servicio',
+              content: {
+                serviceId: response.course_scheduling?.metadata?.service_id,
+                teacher: response.teacher,
+                params: {
+                  roleid: 4,
+                  courseid: response.course_scheduling.moodle_id,
+                  userid: response.teacher.moodle_id
+                },
+                response: respMoodle3
+              }
+            })
           } else {
             let respMoodle3: any = await moodleEnrollmentService.update({
               roleid: 4,
@@ -199,6 +231,21 @@ class CourseSchedulingDetailsService {
               olduserid: register.teacher.moodle_id,
               newuserid: response.teacher.moodle_id
             });
+            await customLogService.create({
+              label: 'csuet - Course scheduling update enrollment teacher',
+              description: 'Actualizar matricula de profesor en un servicio',
+              content: {
+                serviceId: response.course_scheduling?.metadata?.service_id,
+                teacher: response.teacher,
+                params: {
+                  roleid: 4,
+                  courseid: response.course_scheduling.moodle_id,
+                  olduserid: register.teacher.moodle_id,
+                  newuserid: response.teacher.moodle_id
+                },
+                response: respMoodle3
+              }
+            })
           }
         }
 
@@ -394,6 +441,21 @@ class CourseSchedulingDetailsService {
           userid: response.teacher.moodle_id
         });
 
+        await customLogService.create({
+          label: 'cscet - Course scheduling create enrollment teacher',
+          description: 'Crear matricula de profesor en un servicio - nueva sesion',
+          content: {
+            serviceId: response.course_scheduling?.metadata?.service_id,
+            teacher: response.teacher,
+            params: {
+              roleid: 4,
+              courseid: response.course_scheduling.moodle_id,
+              userid: response.teacher.moodle_id
+            },
+            response: respMoodle3
+          }
+        })
+
         try {
           if (response?.sessions) {
             await this.syncClassSessions(
@@ -465,15 +527,15 @@ class CourseSchedulingDetailsService {
           const removedResponse = await attendanceService.removeSession({
             sessionId: moodle_id
           })
-          customLogService.create({
-            label: this.getCustomLogLabel('1'),
-            description: 'Remove session',
-            schedulingMoodleId: courseMoodleID,
-            content: {
-              removedResponse,
-              sessionId: moodle_id,
-            }
-          })
+          // customLogService.create({
+          //   label: this.getCustomLogLabel('1'),
+          //   description: 'Remove session',
+          //   schedulingMoodleId: courseMoodleID,
+          //   content: {
+          //     removedResponse,
+          //     sessionId: moodle_id,
+          //   }
+          // })
         } catch (err) {
           customLogService.create({
             label: this.getCustomLogLabel('2'),
@@ -504,19 +566,19 @@ class CourseSchedulingDetailsService {
               sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
               duration: session.duration,
             })
-            customLogService.create({
-              label: this.getCustomLogLabel('3'),
-              description: 'Add session',
-              schedulingMoodleId: courseMoodleID,
-              content: {
-                attendanceResponse,
-                params: {
-                  attendanceId: attendanceByModule?.instance,
-                  sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
-                  duration: session.duration,
-                }
-              }
-            })
+            // customLogService.create({
+            //   label: this.getCustomLogLabel('3'),
+            //   description: 'Add session',
+            //   schedulingMoodleId: courseMoodleID,
+            //   content: {
+            //     attendanceResponse,
+            //     params: {
+            //       attendanceId: attendanceByModule?.instance,
+            //       sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+            //       duration: session.duration,
+            //     }
+            //   }
+            // })
             if (attendanceResponse?.sessionId) {
               session.moodle_id = attendanceResponse?.sessionId;
             }
@@ -699,7 +761,7 @@ class CourseSchedulingDetailsService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations'
+    let select = 'id course_scheduling course schedulingMode startDate endDate teacher number_of_sessions sessions duration observations created_at updated_at'
     if (filters.select) {
       select = filters.select
     }
@@ -723,6 +785,14 @@ class CourseSchedulingDetailsService {
     //     ]
     //   }
     // }
+    let sort: any = {created_at: 1}
+    if (filters?.sort) {
+      sort = {}
+      if (typeof filters?.sort === 'string') {
+        filters.sort = JSON.parse(filters?.sort)
+      }
+      sort[filters.sort.field] = filters.sort.direction
+    }
 
     let registers = []
     try {
@@ -740,8 +810,18 @@ class CourseSchedulingDetailsService {
         .populate({ path: 'teacher', select: 'id profile.first_name profile.last_name' })
         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
         .limit(paging ? nPerPage : null)
-        // .sort({ created_at: -1 })
+        .sort(sort)
         .lean()
+
+      if (registers[0].sessions && Array.isArray(registers[0].sessions) && registers[0].sessions.length > 0) {
+        registers = registers.sort((a, b) => {
+          const aDate = a.sessions && a.sessions[0] ? a.sessions[0].startDate : a.startDate;
+          const bDate = b.sessions && b.sessions[0] ? b.sessions[0].startDate : b.startDate;
+
+          return aDate - bDate;
+        });
+      }
+
 
       for await (const register of registers) {
         if (register.startDate) register.startDate = moment.utc(register.startDate).format('YYYY-MM-DD')
