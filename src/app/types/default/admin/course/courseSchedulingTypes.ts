@@ -308,6 +308,7 @@ export interface ISendEnrollmentUserParams {
   courses?: unknown
   has_sessions?: unknown
   serviceValidity?: string
+  customTemplate?: string
 }
 
 export enum CourseSchedulingNotificationEvents {
