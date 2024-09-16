@@ -139,7 +139,6 @@ class ReportByGeneralStudentCertificatesService {
         const itemBase: IReportPage = {
           serviceId: certification?.courseId?.metadata?.service_id || '-',
           modalityName: certification?.courseId?.schedulingMode?.name || '-',
-          typeCourse: certification?.courseId?.typeCourse === 'free' ? 'Gratuito' : certification?.courseId?.typeCourse === 'mooc' ? 'Mooc' : '-',
           regional: certification?.courseId?.regional?.name || '-',
           city: certification?.courseId?.city?.name || '-',
           accountExecutive: (certification?.courseId?.account_executive?.profile) ? `${certification?.courseId?.account_executive?.profile.first_name} ${certification?.courseId?.account_executive?.profile.last_name}` : '-',
@@ -247,7 +246,6 @@ class ReportByGeneralStudentCertificatesService {
 
         const headerTable = [
           'Modalidad',
-          'Gratuito/Mooc',
           'Tipo de curso',
           'Regional',
           'Ciudad',
@@ -276,7 +274,6 @@ class ReportByGeneralStudentCertificatesService {
         for (const certification of reportData?.data) {
           const contentScheduling = [
             certification.modalityName,
-            certification.typeCourse,
             certification.serviceType,
             certification.regional,
             certification.city,

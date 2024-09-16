@@ -10,6 +10,27 @@ export enum TypeCourse {
   FREE = 'free'
 }
 
+export enum CourseSchedulingTypesKeys {
+  WITHOUT_TUTOR = 'withoutTutor',
+  QUICK_LEARNING = 'quickLearning',
+  MOOC = 'mooc',
+  FREE = 'free',
+}
+
+export enum CourseSchedulingTypesNames {
+  WITHOUT_TUTOR = 'Virtual sin tutor',
+  QUICK_LEARNING = 'Quick learning',
+  MOOC = 'Mooc',
+  FREE = 'Gratuito',
+}
+
+export const COURSE_SCHEDULING_TYPE_TRANSLATIONS = {
+  [CourseSchedulingTypesKeys.FREE]: CourseSchedulingTypesNames.FREE,
+  [CourseSchedulingTypesKeys.MOOC]: CourseSchedulingTypesNames.MOOC,
+  [CourseSchedulingTypesKeys.WITHOUT_TUTOR]: CourseSchedulingTypesNames.WITHOUT_TUTOR,
+  [CourseSchedulingTypesKeys.QUICK_LEARNING]: CourseSchedulingTypesNames.QUICK_LEARNING,
+}
+
 export enum CourseSchedulingModification {
   SCHEDULING_OBSERVATIONS = 'observations',
   MODALITY = 'modality',
@@ -194,16 +215,6 @@ export interface ICourseSchedulingReportData {
   scheduling_free: number
 }
 
-export enum CourseSchedulingTypesKeys {
-  WITHOUT_TUTOR = 'without_tutor',
-  QUICK_LEARNING = 'quick_learning',
-}
-
-export enum CourseSchedulingTypesNames {
-  WITHOUT_TUTOR = 'Virtual sin tutor',
-  QUICK_LEARNING = 'Quick learning',
-}
-
 export enum ReprogramingLabels {
   client = 'Solicitud del cliente',
   account_executive = 'Ejecutivo de cuenta',
@@ -322,5 +333,11 @@ export enum CourseSchedulingNotificationEvents {
 
 export enum CourseSchedulingNotificationRules {
   SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning'
+}
+
+export interface IGetServiceTypeResponse {
+  serviceTypeLabel?: CourseSchedulingTypesNames
+  serviceTypeStatus?: boolean
+  serviceTypeKey?: CourseSchedulingTypesKeys
 }
 //@end

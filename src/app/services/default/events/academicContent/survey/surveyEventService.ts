@@ -19,6 +19,8 @@ import { AcademicResourceAttempt, CourseSchedulingDetails, Enrollment, Survey } 
 // @import types
 import {ICheckCharacterizationSurveyAvailable, ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
+import { CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 const SCHEDULING_MODES = ['Presencial - En linea', 'Presencial', 'En linea', 'En Línea']
@@ -178,7 +180,8 @@ class SurveyEventService {
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
                 endDateService = enrollment.course_scheduling.endDate;
-                courseType = enrollment?.course_scheduling?.typeCourse;
+                const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
+                courseType = serviceTypeKey;
               } else {
                 console.log('entro a virtual false')
                 // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -208,7 +211,7 @@ class SurveyEventService {
             'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
             'deleted': false,
             'status': 'enabled',
-            'config.content.config.course_type': courseType ? courseType : { $nin: ['mooc', 'free'] }
+            'config.content.config.course_type': courseType ? courseType : { $nin: Object.values(CourseSchedulingTypesKeys) }
           }
         },
         {
@@ -388,7 +391,8 @@ class SurveyEventService {
       if (!surveysRelated.includes(enrollment.course_scheduling._id.toString())) {
         if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
           const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
-          const schedulingCourseType = enrollment?.course_scheduling?.typeCourse
+          const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
+          const schedulingCourseType = serviceTypeKey
           const dbSurvey = dbSurveys?.find((s) =>
             s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString() &&
             ((!schedulingCourseType?.length && !s.courseType?.length) || (schedulingCourseType === s.courseType))

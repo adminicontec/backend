@@ -403,7 +403,6 @@ class ReportByModalityService {
           city: courseScheduling?.city?.name || '-',
           companyName: courseScheduling?.client?.name || '-',
           accountExecutive: (courseScheduling?.account_executive?.profile) ? `${courseScheduling?.account_executive?.profile.first_name} ${courseScheduling?.account_executive?.profile.last_name}` : '-',
-          typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : null,
           courses: [],
           totalDuration: 0,
           totalDurationFormated: '0h',
@@ -756,10 +755,6 @@ class ReportByModalityService {
         row++
         sheetData.push(['MODALIDAD', reportData?.data?.modalityName])
         row++
-        if (reportData?.data?.typeCourse?.length) {
-          sheetData.push(['TIPO DE CURSO', reportData?.data?.typeCourse])
-          row++
-        }
         sheetData.push(['TIPO DE CURSO', reportData?.data?.serviceType])
         row++
         sheetData.push(['REGIONAL', reportData?.data?.regional])

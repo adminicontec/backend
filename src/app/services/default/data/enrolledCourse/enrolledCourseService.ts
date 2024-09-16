@@ -17,8 +17,9 @@ import { CertificateCriteriaByModality, CertificateQueue, CourseScheduling, Cour
 // @import types
 import { IFetchEnrollementByUser, IFetchCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
 import { IDownloadMasiveCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
-import { TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { CourseSchedulingTypesKeys, TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { attachedService } from '@scnode_app/services/default/admin/attached/attachedService';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
 // @end
 
 class EnrolledCourseService {
@@ -66,8 +67,9 @@ class EnrolledCourseService {
       for (const e of enrolled) {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
+            const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
             const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
-              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, e.course_scheduling?.typeCourse)
+              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
 
             let item = {
               _id: e.course_scheduling.moodle_id,
@@ -117,8 +119,9 @@ class EnrolledCourseService {
       for (const e of courses) {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
+            const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
             const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
-              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, e.course_scheduling?.typeCourse)
+              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
 
             let item = {
               _id: e.course_scheduling.moodle_id,
@@ -169,10 +172,10 @@ class EnrolledCourseService {
     })
   }
 
-  private getCertificateCriteriaByModality = async (modalityId: string, typeCourse?: TypeCourse) => {
+  private getCertificateCriteriaByModality = async (modalityId: string, typeCourse?: CourseSchedulingTypesKeys) => {
     const certificateCriteria = await CertificateCriteriaByModality.findOne({
       modality: modalityId,
-      typeCourse: typeCourse ? typeCourse : { $nin: [TypeCourse.FREE, TypeCourse.MOOC] }
+      typeCourse: typeCourse ? typeCourse : { $nin: [CourseSchedulingTypesKeys.FREE, CourseSchedulingTypesKeys.MOOC] }
     }).populate({
       path: 'certificateCriteria',
       select: 'id files'

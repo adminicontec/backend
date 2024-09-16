@@ -66,7 +66,8 @@ import {
   ISendEnrollmentUserParams,
   CourseSchedulingTypesNames,
   CourseSchedulingTypesKeys,
-  CourseSchedulingNotificationEvents
+  CourseSchedulingNotificationEvents,
+  IGetServiceTypeResponse
 } from '@scnode_app/types/default/admin/course/courseSchedulingTypes'
 import { courseSchedulingDetailsService } from "./courseSchedulingDetailsService";
 import { attachedService } from "../attached/attachedService";
@@ -804,7 +805,8 @@ class CourseSchedulingService {
       .select('id schedulingMode typeCourse')
       .populate({path: 'schedulingMode', select: 'id name'})
 
-      if ([TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)) return;
+      const { serviceTypeKey } = this.getServiceType(courseScheduling)
+      if ([CourseSchedulingTypesKeys.FREE, CourseSchedulingTypesKeys.MOOC].includes(serviceTypeKey)) return;
 
       const courseSchedulingDetails = await CourseSchedulingDetails.find({course_scheduling: courseSchedulingId})
       .select('id startDate endDate')
@@ -1411,16 +1413,14 @@ class CourseSchedulingService {
       }
 
       const courseScheduling = await CourseScheduling.findOne({ "metadata.service_id": paramsTemplate.service_id })
-        .select('typeCourse certificateCriteria specialServiceConditions serviceValidity')
+        .select('typeCourse certificateCriteria specialServiceConditions serviceValidity schedulingMode')
         .populate({ path: 'certificateCriteria', select: 'files' })
         .populate({ path: 'specialServiceConditions', select: 'files' })
+        .populate({ path: 'schedulingMode', select: 'id name' })
         .lean()
-      const isFreeOrMooc = [TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)
-      const courseTypeTranslation = {
-        [TypeCourse.FREE]: "curso gratuito",
-        [TypeCourse.MOOC]: "mooc"
-      }
-      paramsTemplate.courseType = courseTypeTranslation[courseScheduling?.typeCourse]
+      const { serviceTypeKey, serviceTypeLabel } = this.getServiceType(courseScheduling)
+      const isFreeOrMooc = [CourseSchedulingTypesKeys.FREE, CourseSchedulingTypesKeys.MOOC].includes(serviceTypeKey)
+      paramsTemplate.courseType = serviceTypeLabel
       paramsTemplate.serviceValidity = courseScheduling?.serviceValidity ? durationService.getDurationFormated(courseScheduling?.serviceValidity, "large") : null
       if (isFreeOrMooc && paramsTemplate?.type === 'student') {
         path_template = 'user/selfRegistrationEnrollment'
@@ -2228,7 +2228,6 @@ class CourseSchedulingService {
               reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
               reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
               service_type: serviceTypeLabel,
-              typeCourse: course?.course_scheduling?.typeCourse === 'free' ? 'Gratuito' : course?.course_scheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
             }
 
             courses.push(item)
@@ -2335,7 +2334,6 @@ class CourseSchedulingService {
         'Nombre del programa': element.program_name,
         'Tipo de servicio': element.course_scheduling_type,
         'Modalidad': element.scheduling_mode,
-        'Gratuito/Mooc': element.typeCourse,
         'Tipo de curso': element.service_type,
         'Código del curso': element.course_code,
         'Nombre del curso': element.course_name,
@@ -2815,8 +2813,8 @@ class CourseSchedulingService {
     }
   }
 
-  public getServiceType = (courseScheduling: any, ) => {
-    let serviceTypeLabel = '-'
+  public getServiceType = (courseScheduling: any): IGetServiceTypeResponse => {
+    let serviceTypeLabel: CourseSchedulingTypesNames = '-' as CourseSchedulingTypesNames
     let serviceTypeStatus = false
     let serviceTypeKey = undefined
     if (courseScheduling?.schedulingMode?.name === CourseSchedulingModes.VIRTUAL) {
@@ -2828,6 +2826,14 @@ class CourseSchedulingService {
         serviceTypeLabel = CourseSchedulingTypesNames.QUICK_LEARNING
         serviceTypeStatus = true
         serviceTypeKey =  CourseSchedulingTypesKeys.QUICK_LEARNING
+      } else if (courseScheduling?.typeCourse === TypeCourse.FREE) {
+        serviceTypeLabel = CourseSchedulingTypesNames.FREE
+        serviceTypeStatus = true
+        serviceTypeKey =  CourseSchedulingTypesKeys.FREE
+      } else if (courseScheduling?.typeCourse === TypeCourse.MOOC) {
+        serviceTypeLabel = CourseSchedulingTypesNames.MOOC
+        serviceTypeStatus = true
+        serviceTypeKey =  CourseSchedulingTypesKeys.MOOC
       }
     }
     return {serviceTypeLabel, serviceTypeStatus, serviceTypeKey}

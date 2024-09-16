@@ -280,7 +280,6 @@ class ReportByOverviewProgramsService {
           auxiliar: (courseScheduling?.material_assistant?.profile) ? `${courseScheduling?.material_assistant?.profile.first_name} ${courseScheduling?.material_assistant?.profile.last_name}` : '-',
           isVirtual: courseScheduling?.schedulingMode?.name === 'Virtual' ? true : false,
           isAuditor: courseScheduling?.program?.isAuditor || false,
-          typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
           serviceType: serviceTypeLabel
         }
 
@@ -487,7 +486,6 @@ class ReportByOverviewProgramsService {
           'Fecha inicio',
           'Fecha finalización',
           'Modalidad',
-          'Gratuito/Mooc',
           'Tipo de curso',
           'Duración',
           'Participantes por grupo (inscritos)',
@@ -520,7 +518,6 @@ class ReportByOverviewProgramsService {
             scheduling.startDate,
             scheduling.endDate,
             scheduling.modalityName,
-            scheduling.typeCourse,
             scheduling.serviceType,
             scheduling.totalDurationFormated,
             scheduling.participants,

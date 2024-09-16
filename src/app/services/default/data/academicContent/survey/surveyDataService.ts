@@ -35,7 +35,7 @@ import {
   IConsolidateSurveyIn,
 } from '@scnode_app/types/default/data/academicContent/survey/surveyDataTypes'
 import { AcademicResourceAttempt, ConsolidatedSurveyInformation, CourseScheduling, CourseSchedulingDetails, CourseSchedulingMode, CourseSchedulingStatus, Enrollment, Question, Survey, User } from '@scnode_app/models';
-import { TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { COURSE_SCHEDULING_TYPE_TRANSLATIONS, TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class SurveyDataService {
@@ -437,12 +437,8 @@ class SurveyDataService {
             reportData.push(report)
           } else {
             const surveyCourseType = survey?.academic_resource_config?.config?.course_type
-            const courseTypeTranslation = {
-              [TypeCourse.FREE]: 'Gratuito',
-              [TypeCourse.MOOC]: 'Mooc'
-            }
             let report: any = {
-              title: surveyCourseType?.length ? `${modality.name} - ${courseTypeTranslation[surveyCourseType]}` : modality.name,
+              title: surveyCourseType?.length ? `${modality.name} - ${COURSE_SCHEDULING_TYPE_TRANSLATIONS[surveyCourseType]}` : modality.name,
               queryRange: {
                 reportStartDate,
                 reportEndDate

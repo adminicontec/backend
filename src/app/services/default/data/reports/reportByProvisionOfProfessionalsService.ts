@@ -195,7 +195,6 @@ class ReportByProvisionOfProfessionalsService {
           city: courseScheduling?.city?.name || '-',
           regional: courseScheduling?.regional?.name || '-',
           companyName: courseScheduling?.client?.name || '-',
-          typeCourse: courseScheduling?.typeCourse === 'free' ? 'Gratuito' : courseScheduling?.typeCourse === 'mooc' ? 'Mooc' : '-',
         }
 
         if (courseSchedulingDetails && courseSchedulingDetails[courseScheduling._id.toString()]) {
@@ -339,7 +338,6 @@ class ReportByProvisionOfProfessionalsService {
           'Nombre del programa',
           'Línea del programa',
           'Modalidad',
-          'Gratuito/Mooc',
           'Código del curso',
           'Nombre del curso',
           'Horas por mes',
@@ -370,7 +368,6 @@ class ReportByProvisionOfProfessionalsService {
             scheduling.programName,
             scheduling.schedulingType,
             scheduling.modalityName,
-            scheduling.typeCourse,
             scheduling.courseCode,
             scheduling.courseName,
             scheduling.hoursPerMonth,
