@@ -58,6 +58,21 @@ class TransactionService {
     }
   }
 
+  public delete = async (transactionId: string) => {
+    try {
+      const find: any = await Transaction.findOne({ _id: transactionId })
+      if (!find) return responseUtility.buildResponseFailed('json', null, {
+        code: 404,
+        message: 'Transaction not found'
+      })
+
+      await find.delete()
+    } catch (e) {
+      console.log(`TransactionService -> delete -> ERROR: `, e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
   public getTransactionsFromCertificateQueue = async ({
     certificateQueueId
   }) => {

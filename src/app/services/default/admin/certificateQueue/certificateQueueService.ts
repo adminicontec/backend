@@ -11,15 +11,21 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, Course } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus, ICertificatePaymentParams } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
-import { customs } from '@scnode_core/config/globals';
+import { customs, efipaySetup } from '@scnode_core/config/globals';
 import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
+import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
+import { erpService } from "@scnode_app/services/default/erp/erpService";
+import { ICourse } from "app/types/default/admin/course/courseTypes";
+import { EfipayCheckoutType, EfipayTransactionStatus } from "@scnode_app/types/default/efipay/efipayTypes";
+import { courseService } from "@scnode_app/services/default/admin/course/courseService";
+import { ITransaction } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -591,6 +597,87 @@ class CertificateQueueService {
       })
     } catch (e) {
       console.log(`CertificateService -> checkPendingCertificationsWithPayment -> ERROR: `, e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public certificatePayment = async ({ certificateQueueId, currencyType }: ICertificatePaymentParams) => {
+    try {
+      const certificate = await CertificateQueue
+        .findOne({ _id: certificateQueueId })
+        .populate({ path: 'courseId', populate: {
+          path: 'program'
+        } })
+      if (!certificate) return responseUtility.buildResponseFailed('json', null, {
+        code: 404,
+        message: 'Certificado no encontrado'
+      })
+
+      const program = certificate?.courseId?.program
+      if (!program) return responseUtility.buildResponseFailed('json', null, {
+        code: 404,
+        message: 'Programa no encontrado'
+      })
+      const course = await Course.findOne<ICourse>({ program: program._id })
+
+      const { price } = await erpService.getCertificatePrice({
+        programName: program.name,
+        programCode: program.code,
+        duration: course.duration
+      })
+      const minutesLimit = efipaySetup.payment_limit_minutes
+      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-MM')
+      const pictureUrl = courseService.coverUrl(course as any)
+      const campusUrl = customs.campus_virtual
+      const transactionResponse: any = await transactionService.insertOrUpdate({})
+      if (transactionResponse.status === 'error') return responseUtility.buildResponseFailed('json', null, {
+        code: 500,
+        message: 'Error al generar la transacción'
+      })
+      const transaction: ITransaction = transactionResponse.transaction
+
+      const paymentResponse = await efipayService.generatePayment({
+        payment: {
+          amount: price[currencyType],
+          checkout_type: EfipayCheckoutType.REDIRECT,
+          currency_type: currencyType,
+          description: program.name
+        },
+        advanced_options: {
+          has_comments: false,
+          limit_date: limitDate,
+          picture: pictureUrl,
+          references: [certificate._id],
+          result_urls: {
+            approved: `${campusUrl}/payment-status/${transaction._id}`,
+            pending: `${campusUrl}/payment-status/${transaction._id}`,
+            rejected: `${campusUrl}/payment-status/${transaction._id}`,
+            // TODO: Replace webhook URL
+            webhook: 'https://testfunction-6d4wmyy6ja-uc.a.run.app'
+          }
+        },
+        office: efipaySetup.office_number
+      })
+
+      transaction.id = transaction._id
+      transaction.certificateQueue = certificateQueueId
+      transaction.paymentId = paymentResponse.payment_id
+      transaction.redirectUrl = paymentResponse.url
+      transaction.status = EfipayTransactionStatus.IN_PROCESS
+      const updateResponse = await transactionService.insertOrUpdate(transaction)
+      if (updateResponse.status === 'error') responseUtility.buildResponseFailed('json', null, {
+        code: 500,
+        message: 'Error al generar la transacción'
+      })
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          redirectUrl: paymentResponse.url
+        }
+      })
+
+    } catch (e) {
+      console.log(`CertificateQueueService -> certificatePayment -> ERROR: ${e}`)
       return responseUtility.buildResponseFailed('json')
     }
   }

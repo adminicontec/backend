@@ -17,8 +17,10 @@ export const TRANSACTION_STATUSES = [
 export interface ITransaction {
   _id?: string
   id?: string
-  status: TransactionStatus
+  status?: TransactionStatus
   certificateQueue?: string
+  paymentId?: string
+  redirectUrl?: string
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

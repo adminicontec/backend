@@ -15,6 +15,12 @@ const TransactionSchema = new Schema({
   certificateQueue: {
     type: Schema.Types.ObjectId,
     ref: 'CertificateQueue'
+  },
+  paymentId: {
+    type: Schema.Types.String,
+  },
+  redirectUrl: {
+    type: Schema.Types.String,
   }
   // @end
 }, {

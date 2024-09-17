@@ -38,6 +38,7 @@ export interface ICourse {
   methodology?: string
   generalities?: string
   content?: Array<{ category?: string, data: string }>,   // Contenido del curso
+  duration?: number
   // benefits?        : Array<string>,   // Beneficios
 }
 

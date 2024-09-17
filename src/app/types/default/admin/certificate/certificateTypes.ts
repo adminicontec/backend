@@ -1,6 +1,8 @@
 // @import types
 // @end
 
+import { EfipayCurrency } from "@scnode_app/types/default/efipay/efipayTypes";
+
 // @add your types
 export enum CertificateQueueStatus {
   NEW = 'New',
@@ -219,5 +221,18 @@ export interface IProcessCertificateQueue {
   status?: string,
   output?: 'process' | 'query'
   force?: boolean
+}
+
+export interface ICertificatePaymentParams {
+  certificateQueueId: string
+  currencyType: EfipayCurrency
+  certificateInfo: {
+    name: string
+    docId: string
+  }
+  paymentInfo: {
+    email: string
+    phoneNumber: string
+  }
 }
 //@end
