@@ -23,9 +23,9 @@ import { transactionService } from "@scnode_app/services/default/admin/transacti
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { erpService } from "@scnode_app/services/default/erp/erpService";
 import { ICourse } from "app/types/default/admin/course/courseTypes";
-import { EfipayCheckoutType, EfipayTransactionStatus } from "@scnode_app/types/default/efipay/efipayTypes";
+import { EfipayCheckoutType, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
 import { courseService } from "@scnode_app/services/default/admin/course/courseService";
-import { ITransaction } from "@scnode_app/types/default/admin/transaction/transactionTypes";
+import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -397,7 +397,7 @@ class CertificateQueueService {
 
   public processCertificateQueue = async (params: IProcessCertificateQueue) => {
     try {
-      const output = params.output || 'process'
+      const output = params.output || 'process'
       const force = params.force || false
 
       const where = {}
@@ -602,23 +602,43 @@ class CertificateQueueService {
   }
 
   public certificatePayment = async ({ certificateQueueId, currencyType }: ICertificatePaymentParams) => {
+    const transactionResponse: any = await transactionService.insertOrUpdate({})
+    if (transactionResponse.status === 'error') return responseUtility.buildResponseFailed('json', null, {
+      code: 500,
+      message: 'Error al generar la transacción'
+    })
+    const transaction: ITransaction = transactionResponse.transaction
     try {
       const certificate = await CertificateQueue
         .findOne({ _id: certificateQueueId })
         .populate({ path: 'courseId', populate: {
           path: 'program'
         } })
-      if (!certificate) return responseUtility.buildResponseFailed('json', null, {
-        code: 404,
-        message: 'Certificado no encontrado'
-      })
+      if (!certificate) {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Certificado no encontrado'
+        })
+      }
 
       const program = certificate?.courseId?.program
-      if (!program) return responseUtility.buildResponseFailed('json', null, {
-        code: 404,
-        message: 'Programa no encontrado'
-      })
+      if (!program) {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Programa no encontrado'
+        })
+      }
+
       const course = await Course.findOne<ICourse>({ program: program._id })
+      if (!course) {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Curso no encontrado'
+        })
+      }
 
       const { price } = await erpService.getCertificatePrice({
         programName: program.name,
@@ -626,17 +646,11 @@ class CertificateQueueService {
         duration: course.duration
       })
       const minutesLimit = efipaySetup.payment_limit_minutes
-      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-MM')
+      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
       const pictureUrl = courseService.coverUrl(course as any)
       const campusUrl = customs.campus_virtual
-      const transactionResponse: any = await transactionService.insertOrUpdate({})
-      if (transactionResponse.status === 'error') return responseUtility.buildResponseFailed('json', null, {
-        code: 500,
-        message: 'Error al generar la transacción'
-      })
-      const transaction: ITransaction = transactionResponse.transaction
 
-      const paymentResponse = await efipayService.generatePayment({
+      const paymentParams: IGeneratePaymentParams = {
         payment: {
           amount: price[currencyType],
           checkout_type: EfipayCheckoutType.REDIRECT,
@@ -657,18 +671,31 @@ class CertificateQueueService {
           }
         },
         office: efipaySetup.office_number
-      })
+      }
+
+      const paymentResponse = await efipayService.generatePayment(paymentParams)
+
+      if (!paymentResponse?.payment_id) {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Error al generar la transacción'
+        })
+      }
 
       transaction.id = transaction._id
       transaction.certificateQueue = certificateQueueId
       transaction.paymentId = paymentResponse.payment_id
       transaction.redirectUrl = paymentResponse.url
-      transaction.status = EfipayTransactionStatus.IN_PROCESS
+      transaction.status = TransactionStatus.IN_PROCESS
       const updateResponse = await transactionService.insertOrUpdate(transaction)
-      if (updateResponse.status === 'error') responseUtility.buildResponseFailed('json', null, {
-        code: 500,
-        message: 'Error al generar la transacción'
-      })
+      if (updateResponse.status === 'error') {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Error al crear la transacción'
+        })
+      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
@@ -678,6 +705,7 @@ class CertificateQueueService {
 
     } catch (e) {
       console.log(`CertificateQueueService -> certificatePayment -> ERROR: ${e}`)
+      await transactionService.delete(transaction._id)
       return responseUtility.buildResponseFailed('json')
     }
   }

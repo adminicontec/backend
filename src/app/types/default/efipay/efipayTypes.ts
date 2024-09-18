@@ -8,9 +8,9 @@ export enum EfipayCheckoutType {
 }
 
 export enum EfipayTransactionStatus {
-    APPROVED = 'Aprobada',
+    SUCCESS = 'Aprobada',
     REJECTED = 'Rechazada',
-    FAILED = 'Fallida',
+    ERROR = 'Fallida',
     IN_PROCESS = 'Por Pagar',
     CANCELLED = 'Anulada',
     REVERSED = 'Reversada',
@@ -63,6 +63,33 @@ export interface IGetTransactionStatusResponse {
     url_response: string
     approved_at: string
     production: boolean
+    created_at: string
+  }
+}
+
+export interface IOnTransactionSuccessParams {
+  checkout: {
+    payment_gateway_id: string
+    paid_at: string
+    payment_gateway: {
+      created_at: string
+    }
+  }
+  transaction: {
+    amount: number
+    transaction_details: {
+      name: string
+      country: string
+      identification_number: string
+      franchise: string
+      status_message: string
+      email: string
+      identification_type: string
+      phone: string
+    }
+    status: EfipayTransactionStatus
+    approved_at: string
+    value_cop: number
     created_at: string
   }
 }

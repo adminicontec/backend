@@ -3,15 +3,21 @@
 
 // @add your types
 export enum TransactionStatus {
-  SUCCESS = 'success',
-  IN_PROCESS = 'in-process',
-  ERROR = 'error',
+  SUCCESS = 'Aprobada',
+  REJECTED = 'Rechazada',
+  ERROR = 'Fallida',
+  IN_PROCESS = 'Por Pagar',
+  CANCELLED = 'Anulada',
+  REVERSED = 'Reversada',
 }
 
 export const TRANSACTION_STATUSES = [
   TransactionStatus.SUCCESS,
-  TransactionStatus.IN_PROCESS,
+  TransactionStatus.REJECTED,
   TransactionStatus.ERROR,
+  TransactionStatus.IN_PROCESS,
+  TransactionStatus.CANCELLED,
+  TransactionStatus.REVERSED,
 ]
 
 export interface ITransaction {

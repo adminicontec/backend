@@ -8,6 +8,9 @@
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { Transaction } from '@scnode_app/models';
 import { ITransaction, IUpdateTransactionWithNewCertificateQueueIdParams, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
+import { efipayService } from '@scnode_app/services/default/efipay/efipayService';
+import { IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
 // @end
 
 // @import models
@@ -119,6 +122,95 @@ class TransactionService {
     if (transactionsUpdated?.modifiedCount === transactions?.length) return true
 
     return false
+  }
+
+  public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string) => {
+    try {
+      if (!signature) {
+        customLogService.create({
+          label: 'efps - nsf - no signature found',
+          description: "No signature found",
+          content: {
+            params,
+          },
+        })
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 400,
+          message: 'No signature found'
+        })
+      }
+      const transaction: ITransaction = await Transaction.findOne({ paymentId: params.checkout.payment_gateway_id })
+      if (!transaction) {
+        customLogService.create({
+          label: 'efps - tnf - transaction not found',
+          description: "Transaction not found",
+          content: {
+            params,
+          },
+        })
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Transaction not found'
+        })
+      }
+
+      const signatureIsValid = efipayService.validateSignature('', params)
+      if (!signatureIsValid) {
+        customLogService.create({
+          label: 'efps - esnv - error signature is not valid',
+          description: "Error signature is not valid",
+          content: {
+            params,
+            transaction: {
+              id: transaction._id,
+              status: params.transaction.status
+            },
+            signature,
+          },
+        })
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 400,
+          message: 'The signature is not valid'
+        })
+      }
+
+      const result = await transactionService.insertOrUpdate({
+        id: transaction._id,
+        status: params.transaction.status as unknown as TransactionStatus
+      })
+      if (result.status === 'error') {
+        customLogService.create({
+          label: 'efps - euts - error updating transaction status',
+          description: "Error updating transaction status",
+          content: {
+            params,
+            transaction: {
+              id: transaction._id,
+              status: params.transaction.status,
+            },
+            updateResult: result
+          },
+        })
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'An error occurred while saving the transaction status'
+        })
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: "Ok"
+      })
+
+    } catch (e) {
+      customLogService.create({
+        label: 'efps - otse - on transaction success error',
+        description: "On transaction success error",
+        content: {
+          errorMessage: e.message,
+          params,
+        },
+      })
+    }
   }
 
 }
