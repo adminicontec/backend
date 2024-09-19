@@ -23,7 +23,7 @@ import { transactionService } from "@scnode_app/services/default/admin/transacti
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { erpService } from "@scnode_app/services/default/erp/erpService";
 import { ICourse } from "app/types/default/admin/course/courseTypes";
-import { EfipayCheckoutType, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
+import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
 import { courseService } from "@scnode_app/services/default/admin/course/courseService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 // @end
@@ -427,7 +427,7 @@ class CertificateQueueService {
       const certificateQueues = []
       for (const certificate of certificateQueuesResponse) {
         if (certificate?.needPayment) {
-          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id)
+          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
           if (!certificateWasPaid) continue;
         }
         certificateQueues.push(certificate)
@@ -601,7 +601,7 @@ class CertificateQueueService {
     }
   }
 
-  public certificatePayment = async ({ certificateQueueId, currencyType }: ICertificatePaymentParams) => {
+  public certificatePayment = async ({ certificateQueueId, currencyType, certificateInfo }: ICertificatePaymentParams) => {
     const transactionResponse: any = await transactionService.insertOrUpdate({})
     if (transactionResponse.status === 'error') return responseUtility.buildResponseFailed('json', null, {
       code: 500,
@@ -650,12 +650,16 @@ class CertificateQueueService {
       const pictureUrl = courseService.coverUrl(course as any)
       const campusUrl = customs.campus_virtual
 
+      const iva = price[currencyType] * 0.19
+      const totalPrice = Math.trunc(iva + price[currencyType])
+
       const paymentParams: IGeneratePaymentParams = {
         payment: {
-          amount: price[currencyType],
+          amount: totalPrice,
           checkout_type: EfipayCheckoutType.REDIRECT,
           currency_type: currencyType,
-          description: program.name
+          description: program.name,
+          selected_taxes: [EfipayTaxes.IVA_19]
         },
         advanced_options: {
           has_comments: false,
@@ -688,6 +692,7 @@ class CertificateQueueService {
       transaction.paymentId = paymentResponse.payment_id
       transaction.redirectUrl = paymentResponse.url
       transaction.status = TransactionStatus.IN_PROCESS
+      transaction.certificateInfo = certificateInfo
       const updateResponse = await transactionService.insertOrUpdate(transaction)
       if (updateResponse.status === 'error') {
         await transactionService.delete(transaction._id)

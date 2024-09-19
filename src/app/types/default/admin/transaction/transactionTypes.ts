@@ -27,6 +27,10 @@ export interface ITransaction {
   certificateQueue?: string
   paymentId?: string
   redirectUrl?: string
+  certificateInfo?: {
+    fullName: string
+    docNumber: string
+  }
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

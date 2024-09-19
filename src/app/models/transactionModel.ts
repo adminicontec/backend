@@ -21,6 +21,14 @@ const TransactionSchema = new Schema({
   },
   redirectUrl: {
     type: Schema.Types.String,
+  },
+  certificateInfo: {
+    fullName: {
+      type: Schema.Types.String
+    },
+    docNumber: {
+      type: Schema.Types.String
+    },
   }
   // @end
 }, {

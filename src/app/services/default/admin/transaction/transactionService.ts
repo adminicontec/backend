@@ -11,6 +11,7 @@ import { ITransaction, IUpdateTransactionWithNewCertificateQueueIdParams, Transa
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { efipayService } from '@scnode_app/services/default/efipay/efipayService';
 import { IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
+import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 // @import models
@@ -57,6 +58,38 @@ class TransactionService {
 
     } catch (e) {
       console.log(`TransactionService -> insertOrUpdate -> ERROR: `, e);
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public findBy = async (params: IQueryFind) => {
+
+    try {
+      let where = {}
+      if (params.where && Array.isArray(params.where)) {
+        params.where.map((p) => where[p.field] = p.value)
+      }
+
+
+      let select = 'id status'
+      if (params.query === QueryValues.ALL) {
+        const registers = await Transaction.find(where).select(select)
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          transactions: registers
+        }})
+      } else if (params.query === QueryValues.ONE) {
+        const register = await Transaction.findOne(where).select(select)
+        if (!register) return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Transaction not found'
+        })
+        return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+          transaction: register
+        }})
+      }
+
+      return responseUtility.buildResponseFailed('json')
+    } catch (e) {
       return responseUtility.buildResponseFailed('json')
     }
   }
@@ -196,6 +229,8 @@ class TransactionService {
           message: 'An error occurred while saving the transaction status'
         })
       }
+
+      // TODO: Cambiar el nombre del usuario del certificado
 
       return responseUtility.buildResponseSuccess('json', null, {
         message: "Ok"

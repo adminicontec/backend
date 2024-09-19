@@ -110,7 +110,7 @@ class UserDataService {
 
       for (const certificate of certifications) {
         if (certificate?.needPayment) {
-          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id)
+          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
           certificate.wasPaid = certificateWasPaid
         }
       }

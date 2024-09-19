@@ -11,7 +11,7 @@ import { routerUtility } from "@scnode_core/utilities/routerUtility";
 
 class TransactionRoute {
 
-  private router_prefix: string = '/'; //Ej: /user
+  private router_prefix: string = '/admin/transaction'; //Ej: /user
 
   // @instance_controller
   public instanceController: Controller = new Controller();
@@ -24,12 +24,13 @@ class TransactionRoute {
   * @param app Objeto de clase Express Aplication
   * @param [prefix] Prefijo para el enrutamiento
   */
-  public routes(app,prefix: string = '/admin/transaction'): void {
+  public routes(app,prefix: string = '/'): void {
 
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app, _route, '/on-transaction-success', this.instanceController.onTransactionSuccess, [], [])
+    routerUtility.get(app, _route, '/:id', this.instanceController.get, [], [])
     // @end
   }
 }

@@ -12,6 +12,7 @@ import { Request, Response } from 'express';
 import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
+import { QueryValues } from 'app/types/default/global/queryTypes';
 // @end
 
 // @import_types Import types
@@ -34,6 +35,12 @@ class TransactionController {
     const response = await transactionService.onTransactionSuccess(params, signature as string)
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public get = async (req: Request, res: Response) => {
+    const {id} = req.getParameters.all()
+		const response = await transactionService.findBy({query: QueryValues.ONE, where: [{field: '_id', value: id}]})
+		return responseUtility.sendResponseFromObject(res, response)
+	}
 
 }
 

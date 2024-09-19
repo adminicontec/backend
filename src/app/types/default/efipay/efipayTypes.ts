@@ -21,12 +21,18 @@ export enum EfipayCurrency {
   USD = 'USD'
 }
 
+export enum EfipayTaxes {
+  IVA_19 = 1,
+  IVA_10 = 2
+}
+
 export interface IGeneratePaymentParams {
   payment: {
     description: string
     amount: number
     currency_type: EfipayCurrency
     checkout_type: EfipayCheckoutType
+    selected_taxes: EfipayTaxes[]
   }
   advanced_options: {
     picture: string

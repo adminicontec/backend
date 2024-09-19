@@ -227,8 +227,8 @@ export interface ICertificatePaymentParams {
   certificateQueueId: string
   currencyType: EfipayCurrency
   certificateInfo: {
-    name: string
-    docId: string
+    fullName: string
+    docNumber: string
   }
   paymentInfo: {
     email: string

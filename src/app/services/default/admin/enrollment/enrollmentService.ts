@@ -1009,7 +1009,7 @@ class EnrollmentService {
         !userCertificates?.some((userCertificate) => userCertificate?.certificateSetting?.toString() === setting._id?.toString())
       )
 
-      const allCertifiedWerePaid = await transactionService.certificateWasPaid(userCertificates?.map(({ _id }) => _id))
+      const allCertifiedWerePaid = await transactionService.certificateWasPaid(userCertificates?.map(({ _id }) => _id?.toString()))
 
       const currentStatus = !doesExistProgress ? EnrollmentStatus.REGISTERED :
         doesExistProgress && !allCertificatesGenerated ? EnrollmentStatus.IN_PROGRESS :

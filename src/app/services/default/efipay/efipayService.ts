@@ -34,6 +34,7 @@ class EfipayService {
       const headers = {
         'Authorization': `Bearer ${efipaySetup.token}`
       }
+      params.payment.description = params.payment.description.slice(0, 190)
       const response: IGeneratePaymentResponse = await queryUtility.query({
         method: 'post',
         url: '/api/v1/payment/generate-payment',
@@ -66,7 +67,6 @@ class EfipayService {
         api: 'efipay',
         headers
       });
-      console.log({ response })
       return response
     } catch (e) {
       customLogService.create({

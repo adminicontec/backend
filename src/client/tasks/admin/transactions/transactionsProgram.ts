@@ -14,7 +14,7 @@ import { Transaction } from "@scnode_app/models";
 import { customLogService } from "@scnode_app/services/default/admin/customLog/customLogService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
-import { transactionService } from "app/services/default/admin/transaction/transactionService";
+import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 // @end
 
 class TransactionsProgram extends DefaultPluginsTaskTaskService {
@@ -25,7 +25,7 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
    */
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
-    this.updateTransactionStatus()
+    await this.updateTransactionStatus()
     // @end
 
     return true; // Always return true | false
@@ -36,8 +36,7 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
     try {
       const pendingTransactions: ITransaction[] = await Transaction.find({
         status: TransactionStatus.IN_PROCESS,
-        paymentId: { $exists: true },
-        deleted: false
+        paymentId: { $exists: true }
       })
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
