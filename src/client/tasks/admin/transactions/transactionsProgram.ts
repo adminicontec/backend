@@ -15,6 +15,8 @@ import { customLogService } from "@scnode_app/services/default/admin/customLog/c
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
+import { EfipayTransactionStatus } from "@scnode_app/types/default/efipay/efipayTypes";
+import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
 // @end
 
 class TransactionsProgram extends DefaultPluginsTaskTaskService {
@@ -34,19 +36,25 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
   // @add_more_methods
   private updateTransactionStatus = async () => {
     try {
+      const fifteenMinutesBefore = new Date(Date.now() - 15 * 60 * 1000)
       const pendingTransactions: ITransaction[] = await Transaction.find({
         status: TransactionStatus.IN_PROCESS,
-        paymentId: { $exists: true }
+        paymentId: { $exists: true },
+        created_at: { $lte: fifteenMinutesBefore }
       })
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
         if (efipayStatus) {
           const updateResponse = await transactionService.insertOrUpdate({
             id: transaction._id,
-            status:efipayStatus.data.status as unknown as TransactionStatus
+            status: efipayStatus.data.status as unknown as TransactionStatus
           })
-          if (updateResponse.status === 'success') {
-            // TODO: Trigger certificate generation
+          if (updateResponse.status === 'success' && efipayStatus.data.status === EfipayTransactionStatus.SUCCESS) {
+            const response = await certificateQueueService.processCertificateQueue({
+              certificateQueueId: transaction.certificateQueue,
+              output: 'process'
+            })
+            console.log({ response })
           }
         }
       }

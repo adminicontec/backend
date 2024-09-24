@@ -64,7 +64,7 @@ class UserDataService {
         userId: user._id,
         $or: [
           { status: {$in: ['Complete']} },
-          { needPayment: true, status: { $ne: CertificateQueueStatus.ERROR } }
+          { needPayment: true }
         ]
       })
       .select('id userId courseId certificate status needPayment')
@@ -112,6 +112,10 @@ class UserDataService {
         if (certificate?.needPayment) {
           const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
           certificate.wasPaid = certificateWasPaid
+          if (!certificateWasPaid) {
+            const transactionIsPending = await transactionService.certificateHasPendingTransaction(certificate?._id?.toString())
+            certificate.transactionIsPending = transactionIsPending
+          }
         }
       }
 

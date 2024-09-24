@@ -36,6 +36,7 @@ class CertificateQueueRoute {
 		routerUtility.post(app, _route, '/fetch-certificate-generated-by-month', this.instanceController.certificateGeneratedByMonth, [], ['auth'])
     routerUtility.delete(app, _route, '/delete/:id', this.instanceController.delete, [], ['auth'])
     routerUtility.post(app, _route, '/process-certificate', this.instanceController.processCertificate, [], ['auth'])
+    routerUtility.post(app, _route, '/process-certificate-program', this.instanceController.processCertificate, [], [])
     routerUtility.post(app, _route, '/check-pending-certifications-with-payment', this.instanceController.checkPendingCertificationsWithPayment, [], ['auth'])
     routerUtility.post(app, _route, '/certificate-payment', this.instanceController.certificatePayment,[],['auth']);
 

@@ -31,6 +31,9 @@ export interface ITransaction {
     fullName: string
     docNumber: string
   }
+  baseAmount?: number
+  totalAmount?: number
+  taxesAmount?: number
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

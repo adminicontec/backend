@@ -29,7 +29,16 @@ const TransactionSchema = new Schema({
     docNumber: {
       type: Schema.Types.String
     },
-  }
+  },
+  baseAmount: {
+    type: Schema.Types.Number
+  },
+  totalAmount: {
+    type: Schema.Types.Number
+  },
+  taxesAmount: {
+    type: Schema.Types.Number
+  },
   // @end
 }, {
   collection: 'transactions' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

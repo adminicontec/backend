@@ -12,6 +12,7 @@ import { customLogService } from '@scnode_app/services/default/admin/customLog/c
 import { efipayService } from '@scnode_app/services/default/efipay/efipayService';
 import { IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
+import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 // @end
 
 // @import models
@@ -71,14 +72,18 @@ class TransactionService {
       }
 
 
-      let select = 'id status'
+      let select = 'id status certificateQueue certificateInfo baseAmount taxesAmount totalAmount'
       if (params.query === QueryValues.ALL) {
         const registers = await Transaction.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
           transactions: registers
         }})
       } else if (params.query === QueryValues.ONE) {
-        const register = await Transaction.findOne(where).select(select)
+        const register = await Transaction.findOne(where)
+          .select(select)
+          .populate({ path: 'certificateQueue', select: 'certificate certificateSetting', populate: {
+            path: 'certificateSetting', select: 'certificateName'
+          }})
         if (!register) return responseUtility.buildResponseFailed('json', null, {
           code: 404,
           message: 'Transaction not found'
@@ -127,6 +132,23 @@ class TransactionService {
       const transaction = await Transaction.findOne({
         certificateQueue: certificateQueueId,
         status: TransactionStatus.SUCCESS,
+      })
+      if (!transaction) {
+        return false
+      }
+    }
+    return true
+  }
+
+  public certificateHasPendingTransaction = async (certificateQueueIds: string | string[]) => {
+    if (!certificateQueueIds?.length) return false
+    if (typeof certificateQueueIds === 'string') {
+      certificateQueueIds = [certificateQueueIds]
+    }
+    for (const certificateQueueId of certificateQueueIds) {
+      const transaction = await Transaction.findOne({
+        certificateQueue: certificateQueueId,
+        status: TransactionStatus.IN_PROCESS,
       })
       if (!transaction) {
         return false
@@ -230,7 +252,9 @@ class TransactionService {
         })
       }
 
-      // TODO: Cambiar el nombre del usuario del certificado
+      // TODO: Transactions - Generate certificate
+      certificateQueueService.sendToProcess([ transaction.certificateQueue ])
+      // TODO: Transactions - Send data to ERP
 
       return responseUtility.buildResponseSuccess('json', null, {
         message: "Ok"

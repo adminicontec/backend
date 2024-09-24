@@ -401,6 +401,7 @@ class CertificateQueueService {
       const force = params.force || false
 
       const where = {}
+      console.log({ params })
       if (params?.certificateQueueId) {
         where['_id'] = params.certificateQueueId
       } else if (params?.certificateQueueIds) {
@@ -421,7 +422,7 @@ class CertificateQueueService {
 
       if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {message: `Se deben proporcionar filtros para la busqueda`, code: 400})
 
-      const certificateQueuesResponse = await CertificateQueue.find(where).select()
+      const certificateQueuesResponse = await CertificateQueue.find(where)
 
       // Filtrar los certificados que no han sido pagados
       const certificateQueues = []
@@ -432,6 +433,7 @@ class CertificateQueueService {
         }
         certificateQueues.push(certificate)
       }
+      console.log({ certificateQueues })
 
       if (output === 'query') {
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -609,42 +611,12 @@ class CertificateQueueService {
     })
     const transaction: ITransaction = transactionResponse.transaction
     try {
-      const certificate = await CertificateQueue
-        .findOne({ _id: certificateQueueId })
-        .populate({ path: 'courseId', populate: {
-          path: 'program'
-        } })
-      if (!certificate) {
+      const erpResponse: any = await erpService.getCertificatePriceFromCertificateQueue({ certificateQueueId }, true)
+      if (erpResponse?.status === 'error') {
         await transactionService.delete(transaction._id)
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 404,
-          message: 'Certificado no encontrado'
-        })
+        return erpResponse
       }
-
-      const program = certificate?.courseId?.program
-      if (!program) {
-        await transactionService.delete(transaction._id)
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 404,
-          message: 'Programa no encontrado'
-        })
-      }
-
-      const course = await Course.findOne<ICourse>({ program: program._id })
-      if (!course) {
-        await transactionService.delete(transaction._id)
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 404,
-          message: 'Curso no encontrado'
-        })
-      }
-
-      const { price } = await erpService.getCertificatePrice({
-        programName: program.name,
-        programCode: program.code,
-        duration: course.duration
-      })
+      const { price, course, program } = erpResponse
       const minutesLimit = efipaySetup.payment_limit_minutes
       const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
       const pictureUrl = courseService.coverUrl(course as any)
@@ -665,12 +637,12 @@ class CertificateQueueService {
           has_comments: false,
           limit_date: limitDate,
           picture: pictureUrl,
-          references: [certificate._id],
+          references: [certificateQueueId],
           result_urls: {
             approved: `${campusUrl}/payment-status/${transaction._id}`,
             pending: `${campusUrl}/payment-status/${transaction._id}`,
             rejected: `${campusUrl}/payment-status/${transaction._id}`,
-            // TODO: Replace webhook URL
+            // TODO: Transactions - Replace webhook URL
             webhook: 'https://testfunction-6d4wmyy6ja-uc.a.run.app'
           }
         },
@@ -693,6 +665,9 @@ class CertificateQueueService {
       transaction.redirectUrl = paymentResponse.url
       transaction.status = TransactionStatus.IN_PROCESS
       transaction.certificateInfo = certificateInfo
+      transaction.baseAmount = price[currencyType]
+      transaction.taxesAmount = iva
+      transaction.totalAmount = totalPrice
       const updateResponse = await transactionService.insertOrUpdate(transaction)
       if (updateResponse.status === 'error') {
         await transactionService.delete(transaction._id)

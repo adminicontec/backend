@@ -29,7 +29,9 @@ import { BuildStudentsMoodleDataException } from './buildStudentsError';
 import { courseSchedulingService } from '../course/courseSchedulingService';
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
-import { certificateQueueService } from '../certificateQueue/certificateQueueService';
+import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
+import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
+import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 // @end
 
 class CertificateMultipleService {
@@ -828,7 +830,29 @@ class CertificateMultipleService {
 
       const approvedDate = maxDate ? new Date(maxDate) : courseScheduling.endDate
 
-      const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
+      let studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
+      if (certificateQueue?.needPayment) {
+        const wasPaid = await transactionService.certificateWasPaid(certificateQueue._id?.toString())
+        if (wasPaid) {
+          const responseTransaction: any = await transactionService.findBy({
+            query: QueryValues.ONE,
+            where: [{
+              field: 'certificateQueue',
+              value: certificateQueue._id
+            },{
+              field: 'status',
+              value: TransactionStatus.SUCCESS
+            }]
+          })
+          if (responseTransaction?.status === 'error') {
+            return responseTransaction
+          }
+          const transaction: ITransaction = responseTransaction.transaction
+          if (transaction?.certificateInfo?.fullName) {
+            studentFullName = transaction.certificateInfo.fullName
+          }
+        }
+      }
 
       let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
       let modulo = mapping_template;
