@@ -113,8 +113,9 @@ class UserDataService {
           const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
           certificate.wasPaid = certificateWasPaid
           if (!certificateWasPaid) {
-            const transactionIsPending = await transactionService.certificateHasPendingTransaction(certificate?._id?.toString())
-            certificate.transactionIsPending = transactionIsPending
+            const { status, url } = await transactionService.certificateHasPendingTransaction(certificate?._id?.toString())
+            certificate.transactionIsPending = status
+            certificate.transactionURL = url
           }
         }
       }

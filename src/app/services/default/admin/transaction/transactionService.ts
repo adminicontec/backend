@@ -10,7 +10,7 @@ import { Transaction } from '@scnode_app/models';
 import { ITransaction, IUpdateTransactionWithNewCertificateQueueIdParams, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { efipayService } from '@scnode_app/services/default/efipay/efipayService';
-import { IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
+import { EfipayTransactionStatus, IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 // @end
@@ -140,21 +140,28 @@ class TransactionService {
     return true
   }
 
-  public certificateHasPendingTransaction = async (certificateQueueIds: string | string[]) => {
-    if (!certificateQueueIds?.length) return false
+  public certificateHasPendingTransaction = async (certificateQueueIds: string | string[]): Promise<{ status: boolean, url?: string }> => {
+    if (!certificateQueueIds?.length) return {
+      status: false
+    }
     if (typeof certificateQueueIds === 'string') {
       certificateQueueIds = [certificateQueueIds]
     }
     for (const certificateQueueId of certificateQueueIds) {
-      const transaction = await Transaction.findOne({
+      const transaction: ITransaction = await Transaction.findOne({
         certificateQueue: certificateQueueId,
         status: TransactionStatus.IN_PROCESS,
       })
-      if (!transaction) {
-        return false
+      if (transaction) {
+        return {
+          status: true,
+          url: transaction?.redirectUrl
+        }
       }
     }
-    return true
+    return {
+      status: false,
+    }
   }
 
   public updateTransactionWithNewCertificateQueueId = async ({
@@ -231,7 +238,16 @@ class TransactionService {
 
       const result = await transactionService.insertOrUpdate({
         id: transaction._id,
-        status: params.transaction.status as unknown as TransactionStatus
+        status: params.transaction.status as unknown as TransactionStatus,
+        ...(params?.transaction?.transaction_details ? {
+          paymentInfo: {
+            name: params.transaction.transaction_details.name,
+            identification_number: params.transaction.transaction_details.identification_number,
+            identification_type: params.transaction.transaction_details.identification_type,
+            email: params.transaction.transaction_details.email,
+            phone: params.transaction.transaction_details.phone,
+          }
+        } : {})
       })
       if (result.status === 'error') {
         customLogService.create({
@@ -253,7 +269,9 @@ class TransactionService {
       }
 
       // TODO: Transactions - Generate certificate
-      certificateQueueService.sendToProcess([ transaction.certificateQueue ])
+      if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
+        certificateQueueService.sendToProcess([ transaction.certificateQueue ])
+      }
       // TODO: Transactions - Send data to ERP
 
       return responseUtility.buildResponseSuccess('json', null, {

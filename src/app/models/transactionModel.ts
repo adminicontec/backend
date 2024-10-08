@@ -39,6 +39,13 @@ const TransactionSchema = new Schema({
   taxesAmount: {
     type: Schema.Types.Number
   },
+  paymentInfo: {
+    name: { type: Schema.Types.String },
+    identification_number: { type: Schema.Types.String },
+    email: { type: Schema.Types.String },
+    identification_type: { type: Schema.Types.String },
+    phone: { type: Schema.Types.String },
+  }
   // @end
 }, {
   collection: 'transactions' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

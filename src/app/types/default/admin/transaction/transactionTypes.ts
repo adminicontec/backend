@@ -34,6 +34,13 @@ export interface ITransaction {
   baseAmount?: number
   totalAmount?: number
   taxesAmount?: number
+  paymentInfo?: {
+    name: string
+    identification_number: string
+    email: string
+    identification_type: string
+    phone: string
+  }
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

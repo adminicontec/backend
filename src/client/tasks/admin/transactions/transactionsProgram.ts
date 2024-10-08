@@ -28,6 +28,8 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
   public run = async (taskParams: TaskParams) => {
     // @task_logic Add task logic
     await this.updateTransactionStatus()
+
+    await this.cleanPendingTransactions()
     // @end
 
     return true; // Always return true | false
@@ -47,7 +49,16 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
         if (efipayStatus) {
           const updateResponse = await transactionService.insertOrUpdate({
             id: transaction._id,
-            status: efipayStatus.data.status as unknown as TransactionStatus
+            status: efipayStatus.data.status as unknown as TransactionStatus,
+            ...(efipayStatus.data?.transaction_details ? {
+              paymentInfo: {
+                name: efipayStatus.data.transaction_details.name,
+                identification_number: efipayStatus.data.transaction_details.identification_number,
+                identification_type: efipayStatus.data.transaction_details.identification_type,
+                email: efipayStatus.data.transaction_details.email,
+                phone: efipayStatus.data.transaction_details.phone,
+              }
+            } : {})
           })
           if (updateResponse.status === 'success' && efipayStatus.data.status === EfipayTransactionStatus.SUCCESS) {
             const response = await certificateQueueService.processCertificateQueue({
@@ -67,6 +78,37 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
         }
       })
       console.log(`Transactions program -> UpdateTransactionStatus -> ERROR: ${e}`)
+    }
+  }
+
+  private cleanPendingTransactions = async () => {
+    try {
+      const oneDayBefore = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      const pendingTransactions: ITransaction[] = await Transaction.find({
+        status: TransactionStatus.IN_PROCESS,
+        paymentId: { $exists: true },
+        created_at: { $lte: oneDayBefore }
+      })
+      for (const transaction of pendingTransactions) {
+        const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
+        if (efipayStatus) {
+          if (efipayStatus.data.status === EfipayTransactionStatus.IN_PROCESS) {
+            await transactionService.insertOrUpdate({
+              id: transaction._id,
+              status: TransactionStatus.CANCELLED
+            })
+          }
+        }
+      }
+    } catch (e) {
+      customLogService.create({
+        label: 'tp - ctpe - clean transaction pending error',
+        description: 'Clean pending transactions error',
+        content: {
+          errorMessage: e.message
+        }
+      })
+      console.log(`Transactions program -> cleanPendingTransactions -> ERROR: ${e}`)
     }
   }
   // @end

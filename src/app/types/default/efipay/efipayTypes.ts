@@ -70,6 +70,16 @@ export interface IGetTransactionStatusResponse {
     approved_at: string
     production: boolean
     created_at: string
+    transaction_details: {
+      name: string
+      country: string
+      identification_number: string
+      franchise: string
+      status_message: string
+      email: string
+      identification_type: string
+      phone: string
+    }
   }
 }
 
