@@ -24,8 +24,14 @@ enum Notification {
   ENROLLMENT_USER = 'user/enrollmentUser',
   ENROLLMENT_USER_QUICK_LEARNING = 'user/enrollmentUserQuickLearning',
   WELCOME_PLATFORM = 'user/welcomeUser',
-  EXAM_TO_PARTICIPANT = 'course/schedulingExamToParticipant'
+  EXAM_TO_PARTICIPANT = 'course/schedulingExamToParticipant',
+  TRANSACTION_CREATED = 'payment/transactionCreated',
+  TRANSACTION_STATUS = 'payment/transactionStatus',
+  CERTIFICATE_ERROR = 'certificate/errorGeneration',
+  ADMIN_CERTIFICATE_ERROR = 'certificate/adminErrorGeneration',
 }
+
+//campus_virtual_icontec --program task --task test-notifications
 
 const SUBJECTS = {
   [Notification.WELCOME_PLATFORM]: '¡Bienvenid@ al Campus Digital Icontec!',
@@ -49,12 +55,14 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
     // @task_logic Add task logic
     // @end
     await this.executeNotification({
-      template: Notification.ENROLLMENT_USER,
+      template: Notification.ADMIN_CERTIFICATE_ERROR,
       withRealSubject: true
     })
 
     return true; // Always return true | false
   }
+
+
 
   private executeNotification = async ({
     template,
