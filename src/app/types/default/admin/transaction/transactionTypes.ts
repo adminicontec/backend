@@ -47,4 +47,25 @@ export interface IUpdateTransactionWithNewCertificateQueueIdParams {
   transactions: string | string[]
   certificateQueueId: string
 }
+
+export interface ISendTransactionCreatedParams {
+  users: {
+    name: string
+    email: string
+  }[]
+  paymentUrl: string
+  transactionId: string
+  certificateName: string
+  courseName: string
+}
+
+export interface ISendTransactionStatusParams {
+  users: {
+    name: string
+    email: string
+  }[]
+  transactionId: string
+  status: TransactionStatus
+  certificateName: string
+}
 //@end

@@ -10,13 +10,14 @@ import { DefaultPluginsTaskTaskService } from "@scnode_core/services/default/plu
 
 // @import types
 import {TaskParams} from '@scnode_core/types/default/task/taskTypes'
-import { Transaction } from "@scnode_app/models";
+import { CertificateQueue, Transaction } from "@scnode_app/models";
 import { customLogService } from "@scnode_app/services/default/admin/customLog/customLogService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 import { EfipayTransactionStatus } from "@scnode_app/types/default/efipay/efipayTypes";
 import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
+import { transactionNotificationsService } from "@scnode_app/services/default/admin/transaction/transactionNotificationsService";
 // @end
 
 class TransactionsProgram extends DefaultPluginsTaskTaskService {
@@ -46,7 +47,7 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
       })
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
-        if (efipayStatus) {
+        if (efipayStatus && efipayStatus?.data?.status !== EfipayTransactionStatus.IN_PROCESS) {
           const updateResponse = await transactionService.insertOrUpdate({
             id: transaction._id,
             status: efipayStatus.data.status as unknown as TransactionStatus,
@@ -66,6 +67,22 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
               output: 'process'
             })
             console.log({ response })
+          }
+          const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
+            .populate({ path: 'userId', select: 'profile email' })
+            .populate({ path: 'certificateSetting', select: 'certificateName' })
+          if (certificateQueue) {
+            await transactionNotificationsService.sendTransactionStatus({
+              certificateName: certificateQueue?.certificateSetting?.certificateName,
+              status: efipayStatus.data.status as unknown as TransactionStatus,
+              transactionId: transaction._id,
+              users: [
+                {
+                  name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+                  email: certificateQueue?.userId?.email
+                }
+              ]
+            })
           }
         }
       }

@@ -106,6 +106,8 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
       goToCertifications: 'https://campus.icontecvirtual.edu.co',
       serviceValidity:'20 días',
       footerText: 'pilla',
+      paymentUrl: 'https://google.com',
+      certificateName: 'Certificate test 1',
       certifications: [
         {
           certificateName: 'Certificate test 1'
@@ -119,8 +121,9 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
         moduleName: 'Módulo prueba',
         endDate: 'YYYY-MM-DD 23:59:59',
         serviceId: '5TR202404164587',
-
-      }
+      },
+      status: 'Aceptada',
+      statusText: '¡Gracias! Tu pago ha sido procesado correctamente.'
     }
   }
 

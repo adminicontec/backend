@@ -1,4 +1,4 @@
-{{> partials/page/title title='transacción creada'}}
+{{> partials/page/title title='Transacción creada'}}
 {{> partials/page/image image=params.mailer.mailer_image}}
 <tr>
   <td valign="top" class="container">
@@ -10,8 +10,8 @@
               <tbody>
                 <tr>
                   <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
-                    <p>Estimado usuario,</p>
-                    <p>Has iniciado el proceso de pago para obtener el certificado XXXX. Para completarlo, haz clic aquí.</p>
+                    <p>Estimado (a) {{params.studentName}},</p>
+                    <p>Has iniciado el proceso de pago para obtener el certificado {{params.certificateName}} del {{params.courseName}}. Para completarlo, haz clic <a href="{{params.paymentUrl}}">aquí</a>.</p>
                     <p>Este enlace estará disponible por las próximas 24 horas. Si no completas el proceso dentro de ese tiempo, tendrás que generar un nuevo enlace.</p>
                     <p>Si tienes alguna pregunta o necesitas asistencia, no dudes en contactarnos.</p>
                   </td>

@@ -10,11 +10,9 @@
               <tbody>
                 <tr>
                   <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
-                    <p>Estimado usuario, </p>
-                    <p>Queremos informarte que el estado actual de tu pago es:  XXXX.</p>
-                    <p>En proceso: Tu pago está siendo revisado. Te notificaremos tan pronto como se complete.</p>
-                    <p>Rechazado: Tu pago no ha sido aceptado. Te sugerimos revisar tu información de pago y volver a intentarlo.</p>
-                    <p>Aprobado: ¡Gracias! Tu pago ha sido procesado correctamente.</p>
+                    <p>Estimado (a) {{params.studentName}}, </p>
+                    <p>Queremos informarte que el estado actual de tu pago para el certificado {{params.certificateName}} es:  {{params.status}}.</p>
+                    <p>{{params.statusText}}</p>
                     <p>Para cualquier consulta o asistencia adicional, estamos a tu disposición.</p>
                   </td>
                 </tr>

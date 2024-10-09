@@ -26,6 +26,7 @@ import { ICourse } from "app/types/default/admin/course/courseTypes";
 import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
 import { courseService } from "@scnode_app/services/default/admin/course/courseService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
+import { transactionNotificationsService } from "@scnode_app/services/default/admin/transaction/transactionNotificationsService";
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -676,6 +677,26 @@ class CertificateQueueService {
           message: 'Error al crear la transacción'
         })
       }
+
+      // Send transaction created email to user
+      const certificateQueue = await CertificateQueue.findOne({ _id: certificateQueueId })
+        .populate({ path: 'userId', select: 'profile email' })
+        .populate({ path: 'certificateSetting', select: 'certificateName' })
+      if (certificateQueue) {
+        await transactionNotificationsService.sendTransactionCreated({
+          paymentUrl: paymentResponse.url,
+          transactionId: transaction._id,
+          users: [
+            {
+              name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+              email: certificateQueue?.userId?.email
+            }
+          ],
+          courseName: program.name,
+          certificateName: certificateQueue?.certificateSetting?.certificateName
+        })
+      }
+
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
