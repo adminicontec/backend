@@ -166,6 +166,7 @@ export interface ICertificateReGenerate {
   status?: string
   auxiliar?: string;
   isMultiple?: boolean;
+  currentAttempt?: number
 }
 
 export interface IGenerateCertificatePdf {

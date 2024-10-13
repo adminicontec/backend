@@ -74,6 +74,10 @@ export interface ICertificateMultipleGenerate {
   students: ICertificateMultipleGenerateStudent[];
   user: string;
   needPayment?: boolean;
+  retryConfig?: {
+    maxRetries: number,
+    currentAttempt?: number
+  }
 }
 
 export interface ICertificateQueueMultiple {
@@ -88,6 +92,10 @@ export interface ICertificateQueueMultiple {
   isPartial: boolean
   needPayment?: boolean
   userNotified?: boolean
+  retryConfig?: {
+    currentAttempt: number
+    maxRetries: number
+  }
 }
 
 export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}

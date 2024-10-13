@@ -2633,6 +2633,14 @@ class CertificateService {
             certificateConsecutive: certificate.certificateConsecutive,
             status: 'New',
             isPartial: certificate.isPartial,
+            ...(certificate?.retryConfig ? {
+              retryConfig: {
+                ...certificate.retryConfig,
+                ...(params.currentAttempt ? {
+                  currentAttempt: params.currentAttempt,
+                } : {})
+              }
+            } : {}),
             ...(certificate?.needPayment ? { needPayment: certificate.needPayment } : {}),
             ...(certificate?.userNotified ? { userNotified: certificate.userNotified } : {}),
           }

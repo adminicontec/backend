@@ -112,8 +112,12 @@ class CertificateQueueService {
           console.log('update dowload date >>>' + register.downloadDate);
         }
 
+        const lastStatus = register?.status
+
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+
+        this.checkRetryCertificate({ certificateQueueId: params.id, lastStatus })
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -434,7 +438,6 @@ class CertificateQueueService {
         }
         certificateQueues.push(certificate)
       }
-      console.log({ certificateQueues })
 
       if (output === 'query') {
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -708,6 +711,27 @@ class CertificateQueueService {
       console.log(`CertificateQueueService -> certificatePayment -> ERROR: ${e}`)
       await transactionService.delete(transaction._id)
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private checkRetryCertificate = async ({ certificateQueueId, lastStatus }) => {
+    const certificateQueue = CertificateQueue.findOne({ _id: certificateQueueId })
+    const maxRetries = certificateQueue?.retryConfig?.maxRetries
+    const currentAttempt = certificateQueue?.retryConfig?.currentAttempt ? certificateQueue?.retryConfig?.currentAttempt : 0
+    const hasChangedToError = lastStatus !== 'Error' && certificateQueue?.status === 'Error'
+    if (hasChangedToError && maxRetries && maxRetries > currentAttempt) {
+      const baseToRetry = 10
+      const newAttempt = currentAttempt + 1
+      const timeToWait = (baseToRetry ** newAttempt) * 1000
+      setTimeout(() => {
+        certificateService.reGenerateCertification({
+          certificateQueueId,
+          courseId: certificateQueue?.courseId,
+          userId: certificateQueue?.userId,
+          isMultiple: certificateQueue?.certificateSetting ? true : false,
+          currentAttempt: newAttempt,
+        })
+      }, timeToWait)
     }
   }
 

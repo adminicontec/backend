@@ -158,6 +158,9 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
           }],
           user: systemUser?._id,
           needPayment: true,
+          retryConfig: {
+            maxRetries: 3
+          }
         })
         if (response?.status === 'error') {
           console.log('FreeCoursesProgram -> verifyStudentQualifications -> GenerateCertificates -> ERROR: ', response)
