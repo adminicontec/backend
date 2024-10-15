@@ -89,6 +89,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
     return {
       mailer: customs['mailer'],
       studentName: 'Demo Test',
+      adminName: 'Demo Test',
       courseName: 'Course name test',
       first_name: 'Demo',
       last_name: 'Test',
@@ -123,7 +124,10 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
         serviceId: '5TR202404164587',
       },
       status: 'Aceptada',
-      statusText: '¡Gracias! Tu pago ha sido procesado correctamente.'
+      statusText: '¡Gracias! Tu pago ha sido procesado correctamente.',
+      errorMessage: 'Ha ocurrido un error.',
+      queryErrorMessage: 'Esta es una prueba de error',
+      docNumber: '123456789',
     }
   }
 

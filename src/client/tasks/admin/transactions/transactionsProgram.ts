@@ -39,11 +39,11 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
   // @add_more_methods
   private updateTransactionStatus = async () => {
     try {
-      const fifteenMinutesBefore = new Date(Date.now() - 15 * 60 * 1000)
+      // const fifteenMinutesBefore = new Date(Date.now() - 15 * 60 * 1000)
       const pendingTransactions: ITransaction[] = await Transaction.find({
         status: TransactionStatus.IN_PROCESS,
         paymentId: { $exists: true },
-        created_at: { $lte: fifteenMinutesBefore }
+        // created_at: { $lte: fifteenMinutesBefore }
       })
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })

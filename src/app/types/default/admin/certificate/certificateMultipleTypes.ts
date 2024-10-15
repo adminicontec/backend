@@ -93,7 +93,7 @@ export interface ICertificateQueueMultiple {
   needPayment?: boolean
   userNotified?: boolean
   retryConfig?: {
-    currentAttempt: number
+    currentAttempt?: number
     maxRetries: number
   }
 }

@@ -473,7 +473,7 @@ class CertificateMultipleService {
   public generateCertificate = async (params: ICertificateMultipleGenerate) => {
     try {
       const status = 'New'
-      const { user, courseSchedulingId, students, needPayment } = params
+      const { user, courseSchedulingId, students, needPayment, retryConfig } = params
 
       const responseValidate: any = await this.validateAccessToCertificateMultiple(courseSchedulingId)
       if (responseValidate.status === 'error') return responseValidate;
@@ -561,6 +561,7 @@ class CertificateMultipleService {
                 status,
                 isPartial,
                 needPayment,
+                retryConfig,
               }
               itemsToCreate.push(item)
             }

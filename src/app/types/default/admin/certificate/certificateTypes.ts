@@ -167,6 +167,7 @@ export interface ICertificateReGenerate {
   auxiliar?: string;
   isMultiple?: boolean;
   currentAttempt?: number
+  shouldAwait?: boolean
 }
 
 export interface IGenerateCertificatePdf {
@@ -235,5 +236,23 @@ export interface ICertificatePaymentParams {
     email: string
     phoneNumber: string
   }
+}
+
+export interface ISendAdminErrorCertificateParams {
+  errorMessage: string
+  queryErrorMessage: string
+  certificateQueueId: string
+  courseName: string
+  studentName: string
+  docNumber: string
+}
+
+export interface ISendErrorCertificateParams {
+  users: {
+    name: string
+    email: string
+  }[]
+  certificateQueueId: string
+  courseName: string
 }
 //@end

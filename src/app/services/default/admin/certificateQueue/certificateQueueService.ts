@@ -11,7 +11,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue, Course } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, Course, CertificateLogs } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -27,6 +27,7 @@ import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from "@scnode
 import { courseService } from "@scnode_app/services/default/admin/course/courseService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
 import { transactionNotificationsService } from "@scnode_app/services/default/admin/transaction/transactionNotificationsService";
+import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -117,7 +118,7 @@ class CertificateQueueService {
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
 
-        this.checkRetryCertificate({ certificateQueueId: params.id, lastStatus })
+        await this.checkRetryCertificate({ certificateQueueId: params.id, lastStatus, shouldNotify: true })
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -714,24 +715,75 @@ class CertificateQueueService {
     }
   }
 
-  private checkRetryCertificate = async ({ certificateQueueId, lastStatus }) => {
-    const certificateQueue = CertificateQueue.findOne({ _id: certificateQueueId })
+  private checkRetryCertificate = async ({ certificateQueueId, lastStatus, shouldNotify = false }) => {
+    const certificateQueue = await CertificateQueue.findOne({ _id: certificateQueueId })
+      .populate({ path: 'userId', select: 'profile email username' })
+      .populate({ path: 'certificateSetting', select: 'certificateName' })
+      .populate({ path: 'courseId', populate: {
+        path: 'program'
+      } })
     const maxRetries = certificateQueue?.retryConfig?.maxRetries
     const currentAttempt = certificateQueue?.retryConfig?.currentAttempt ? certificateQueue?.retryConfig?.currentAttempt : 0
     const hasChangedToError = lastStatus !== 'Error' && certificateQueue?.status === 'Error'
+    console.log('Retry function ======', {
+      certificateQueueId,
+      lastStatus,
+      shouldNotify,
+      maxRetries,
+      currentAttempt,
+      hasChangedToError,
+      currentStatus: certificateQueue?.status
+    })
+
+    if (shouldNotify && hasChangedToError && maxRetries && maxRetries === currentAttempt) {
+      console.log('Enter to notify')
+      const logs = await CertificateLogs.find({ idCertificateQueue: certificateQueue._id })
+        .sort({ created_at: -1 })
+      const logWithError = logs?.find(
+        (log) => log?.responseService?.status === 'error' || log?.serviceResponse === 'error'
+      )
+      const errorMessage = logWithError?.responseService?.message ? logWithError?.responseService?.message : 'Error desconocido'
+      const queryErrorMessage = logWithError?.responseService?.queryErrors ? logWithError?.responseService?.queryErrors : 'Query error desconocido'
+      const program = certificateQueue?.courseId?.program
+      await certificateNotifiactionsService.sendAdminErrorCertificate({
+        errorMessage,
+        queryErrorMessage,
+        certificateQueueId: certificateQueue?._id?.toString(),
+        courseName: program?.name,
+        docNumber: certificateQueue?.userId?.username,
+        studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+      })
+      await certificateNotifiactionsService.sendErrorCertificate({
+        certificateQueueId: certificateQueue?._id?.toString(),
+        users: [
+          {
+            name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+            email: certificateQueue?.userId?.email
+          }
+        ],
+        courseName: program?.name
+      })
+    }
     if (hasChangedToError && maxRetries && maxRetries > currentAttempt) {
-      const baseToRetry = 10
+      const baseToRetry = 4
       const newAttempt = currentAttempt + 1
       const timeToWait = (baseToRetry ** newAttempt) * 1000
-      setTimeout(() => {
-        certificateService.reGenerateCertification({
-          certificateQueueId,
-          courseId: certificateQueue?.courseId,
-          userId: certificateQueue?.userId,
-          isMultiple: certificateQueue?.certificateSetting ? true : false,
-          currentAttempt: newAttempt,
-        })
-      }, timeToWait)
+      console.log('Enter to regenerate: ', { timeToWait, newAttempt })
+      await (new Promise((resolve) => {
+        setTimeout(async () => {
+          console.log('Dentro del timeout')
+          const responseRegenerate = await certificateService.reGenerateCertification({
+            certificateQueueId,
+            courseId: certificateQueue?.courseId,
+            userId: certificateQueue?.userId,
+            isMultiple: certificateQueue?.certificateSetting ? true : false,
+            currentAttempt: newAttempt,
+            shouldAwait: true
+          })
+          console.log({ responseRegenerate })
+          resolve(true)
+        }, timeToWait)
+      }))
     }
   }
 

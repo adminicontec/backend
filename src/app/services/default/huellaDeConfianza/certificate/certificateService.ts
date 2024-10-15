@@ -2669,10 +2669,17 @@ class CertificateService {
           mongooseSession.endSession()
 
           if (responseCertificateQueue?._id) {
-            certificateQueueService.processCertificateQueue({
-              certificateQueueId: responseCertificateQueue?._id,
-              output: 'process'
-            })
+            if (params.shouldAwait) {
+              await certificateQueueService.processCertificateQueue({
+                certificateQueueId: responseCertificateQueue?._id,
+                output: 'process'
+              })
+            } else {
+              certificateQueueService.processCertificateQueue({
+                certificateQueueId: responseCertificateQueue?._id,
+                output: 'process'
+              })
+            }
           }
 
           return responseUtility.buildResponseSuccess('json', null)
