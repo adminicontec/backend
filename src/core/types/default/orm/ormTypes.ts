@@ -32,6 +32,7 @@ export interface OrmParameters {
 export interface MongoConnectionData {
   host  : string,
   dbname: string,
+  uri?: string
   cert?: string,
   options?: string
 }
