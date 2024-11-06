@@ -662,11 +662,11 @@ class CourseService {
 
   public validateSlug = async ({ courseId, slug }: IValidateSlugParams) => {
     try {
-      const courses = await Course.find({
+      const course = await Course.findOne({
         _id: { $ne: courseId },
         slug,
       })
-      if (courses?.length) return responseUtility.buildResponseFailed('json')
+      if (course) return responseUtility.buildResponseFailed('json')
       return responseUtility.buildResponseSuccess('json', null, {
     additional_parameters: {
       message: 'ok'

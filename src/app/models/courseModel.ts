@@ -1,7 +1,7 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
-import { COURSE_FORMATION_TYPE } from "app/types/default/admin/course/courseTypes";
+import { COURSE_FORMATION_TYPE } from "@scnode_app/types/default/admin/course/courseTypes";
 const { Schema } = mongoose;
 // @end
 

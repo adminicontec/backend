@@ -6,7 +6,7 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { IContactEmailParams } from 'app/types/default/data/contact/contactTypes';
+import { IContactEmailParams } from '@scnode_app/types/default/data/contact/contactTypes';
 import { customs } from '@scnode_core/config/globals';
 import moment from 'moment';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
