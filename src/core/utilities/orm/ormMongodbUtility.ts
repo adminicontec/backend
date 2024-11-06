@@ -49,9 +49,8 @@ class OrmMongodbUtility {
         if (connection_data.hasOwnProperty('cert')) {
             options.sslCA = fs.readFileSync(connection_data.cert);
         }
-        // TODO: Fix the connection
-        const mongoUrl = `mongodb://${connection_data['host']}/${connection_data['dbname']}${(connection_data.options) ? connection_data.options : ''}`;
-        // const mongoUrl = `mongodb+srv://mongodbicontec:GaLD8hHJymfKdiktoT9u@adminmongodbicontec1.mongocluster.cosmos.azure.com/campusicontec?tls=true&authMechanism=SCRAM-SHA-256`
+        const defaultUrl = `mongodb://${connection_data['host']}/${connection_data['dbname']}${(connection_data.options) ? connection_data.options : ''}`;
+        const mongoUrl = connection_data?.uri?.length ? connection_data?.uri : defaultUrl
         mongoose_global.Promise = global.Promise;
 
         await mongoose_global.connect(mongoUrl, options);

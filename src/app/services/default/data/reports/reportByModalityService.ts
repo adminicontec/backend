@@ -1051,7 +1051,11 @@ class ReportByModalityService {
 
           // @INFO Se agrega al workbook
         const newTitle = reportData.title.length > 31 ? reportData.title.substring(0, 31) : reportData.title
-        XLSX.utils.book_append_sheet(wb, wsSheet, newTitle)
+        try {
+          XLSX.utils.book_append_sheet(wb, wsSheet, newTitle)
+        } catch(err) {
+          console.log('Error al agregar la pagina del reporte')
+        }
       }
 
       return wb

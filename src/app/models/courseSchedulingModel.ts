@@ -85,6 +85,10 @@ const CourseSchedulingSchema = new Schema({
   confirmed_date: {
     type: Schema.Types.Date
   },
+  confirmed_user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
   startDate: {
     type: Schema.Types.Date,
     required: true,

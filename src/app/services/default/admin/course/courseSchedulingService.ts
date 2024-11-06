@@ -393,6 +393,7 @@ class CourseSchedulingService {
         if (paramsStatus && paramsStatus.name === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
           confirmed_date = new Date();
           params.confirmed_date = confirmed_date;
+          params.confirmed_user = params.user
         }
 
         if (paramsStatus && paramsStatus.name === 'Cancelado') {
@@ -2017,7 +2018,8 @@ class CourseSchedulingService {
               { path: 'schedulingAssociation.parent', select: 'id metadata.service_id'},
               { path: 'schedulingAssociation.personWhoGeneratedAssociation', select: 'id profile.first_name profile.last_name'},
               { path: 'cancelationTracking.personWhoCancels', select: 'id profile.first_name profile.last_name'},
-              { path: 'reactivateTracking.personWhoReactivates', select: 'id profile.first_name profile.last_name'}
+              { path: 'reactivateTracking.personWhoReactivates', select: 'id profile.first_name profile.last_name'},
+              { path: 'confirmed_user', select: 'id profile.first_name profile.last_name'}
             ]
           })
           .populate({ path: 'course', select: 'id name code moodle_id' })
@@ -2128,7 +2130,8 @@ class CourseSchedulingService {
               cancelationPerson: (course?.course_scheduling?.cancelationTracking?.personWhoCancels) ? `${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.first_name} ${course?.course_scheduling?.cancelationTracking?.personWhoCancels.profile.last_name}` : 'N/A',
               reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
               reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
-              service_type: serviceTypeLabel
+              service_type: serviceTypeLabel,
+              confirmed_user: (course?.course_scheduling?.confirmed_user?.profile) ? `${course?.course_scheduling?.confirmed_user?.profile?.first_name} ${course?.course_scheduling?.confirmed_user?.profile?.last_name}` : '-'
             }
 
             courses.push(item)
@@ -2265,6 +2268,7 @@ class CourseSchedulingService {
         'Persona que reactivo el servicio': element.reactivatePerson,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo
         'Programador': element.service_user,
+        'Usuario que confirma el servicio': element.confirmed_user,
       })
       cols.push({ width: 20 })
       return accum
