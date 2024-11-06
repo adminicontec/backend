@@ -536,10 +536,21 @@ class CourseSchedulingDetailsService {
           //     sessionId: moodle_id,
           //   }
           // })
+          if (removedResponse?.status === 'error') {
+            customLogService.create({
+              label: this.getCustomLogLabel('2'),
+              description: 'Remove Session ERROR - if',
+              schedulingMoodleId: courseMoodleID,
+              content: {
+                sessionId: moodle_id,
+                removedResponse,
+              }
+            })
+          }
         } catch (err) {
           customLogService.create({
             label: this.getCustomLogLabel('2'),
-            description: 'Remove Session ERROR',
+            description: 'Remove Session ERROR - catch',
             schedulingMoodleId: courseMoodleID,
             content: {
               sessionId: moodle_id,
@@ -582,11 +593,26 @@ class CourseSchedulingDetailsService {
             if (attendanceResponse?.sessionId) {
               session.moodle_id = attendanceResponse?.sessionId;
             }
+            if (attendanceResponse?.status === 'error') {
+              customLogService.create({
+                label: this.getCustomLogLabel('4'),
+                description: 'Add session ERROR - if',
+                schedulingMoodleId: courseMoodleID,
+                content: {
+                  params: {
+                    attendanceId: attendanceByModule?.instance,
+                    sessionTime: generalUtility.unixTime(moment(session.startDate).format('YYYY-MM-DD HH:mm:ss')).toString(),
+                    duration: session.duration,
+                  },
+                  attendanceResponse,
+                }
+              })
+            }
           }
         } catch (err) {
           customLogService.create({
             label: this.getCustomLogLabel('4'),
-            description: 'Add session ERROR',
+            description: 'Add session ERROR - catch',
             schedulingMoodleId: courseMoodleID,
             content: {
               params: {
