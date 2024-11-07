@@ -43,6 +43,9 @@ export interface IFetchCourses {
   new?: boolean
   publish?: boolean
   notSendNotification?: boolean
+  filterCategories?: string[]
+  moreViewed?: boolean
+  program?: string
 }
 
 export type ISlugType = 'course_scheduling' | 'program'
@@ -52,6 +55,16 @@ export interface IFetchCourse {
   slug?: string
   generate_pdf?: boolean
   slug_type?: ISlugType
+}
+
+export enum FetchCourseSlug {
+  COURSE_SCHEDULING = 'course_scheduling',
+  PROGRAM = 'program',
+  COURSE_SLUG = 'course_slug'
+}
+
+export interface IFetchCoursesByCourseSlug {
+  slug: string
 }
 
 export interface IGenerateCourseFile {
@@ -122,5 +135,13 @@ export interface ICourse {
       url?: string
     }
   }
+}
+
+export interface IFilterItem {
+  name: string
+  value: string
+  type?: string
+  typeRelated?: string
+  childs?: IFilterItem[]
 }
 //@end

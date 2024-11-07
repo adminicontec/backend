@@ -1,6 +1,7 @@
 // @import_dependencies_node Import libraries
 import mongoose_delete from "mongoose-delete";
 import mongoose from 'mongoose';
+import { COURSE_FORMATION_TYPE } from "@scnode_app/types/default/admin/course/courseTypes";
 const { Schema } = mongoose;
 // @end
 
@@ -153,12 +154,21 @@ const CourseSchema = new Schema({
   },
   new_end_date: {
     type: Schema.Types.Date
+  },
+  filterCategories: [{
+    type: Schema.Types.ObjectId,
+    ref: "Term"
+  }],
+  slug: {
+    type: Schema.Types.String,
+    unique: true,
+    required: true
+  },
+  formationType: {
+    type: Schema.Types.String,
+    required: true,
+    enum: COURSE_FORMATION_TYPE
   }
-  // benefits: {
-  //   type: Schema.Types.Mixed,
-  //   required: false,
-  // },
-  // @end
 }, {
   collection: 'courses' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
