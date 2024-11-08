@@ -31,6 +31,7 @@ import { utils } from 'xlsx/types';
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { mapUtility } from '@scnode_core/utilities/mapUtility';
 // @end
 
 class CourseService {
@@ -110,9 +111,253 @@ class CourseService {
    * @param [filters] Estructura de filtros para la consulta
    * @returns
    */
+  // public list = async (params: IFetchCourses = {}) => {
+
+  //   try {
+  //     console.time('Backend::Method::List')
+  //     let listOfCourses = []
+  //     const logContentToSave = []
+  //     const paging = (params.pageNumber && params.nPerPage) ? true : false
+
+  //     const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
+  //     const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
+
+  //     const schedulingTypes = await CourseSchedulingType.find({ name: { $in: ['Abierto'] } })
+  //     if (schedulingTypes.length === 0) {
+  //       return responseUtility.buildResponseSuccess('json', null, {
+  //         additional_parameters: {
+  //           courses: [],
+  //           total_register: 0,
+  //           pageNumber: pageNumber,
+  //           nPerPage: nPerPage
+  //         }
+  //       })
+  //     }
+
+  //     const schedulingTypesIds = schedulingTypes.reduce((accum, element) => {
+  //       accum.push(element._id.toString())
+  //       return accum
+  //     }, [])
+
+  //     let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+  //     if (params.select) {
+  //       select = params.select
+  //     }
+
+  //     let where: any = {
+  //       schedulingType: { $in: schedulingTypesIds },
+  //     }
+
+  //     if (params.search) {
+  //       const search = params.search
+  //       const programs = await Program.find({
+  //         name: { $regex: '.*' + search + '.*', $options: 'i' }
+  //       }).select('id')
+  //       const program_ids = programs.reduce((accum, element) => {
+  //         accum.push(element._id)
+  //         return accum
+  //       }, [])
+  //       where['program'] = { $in: program_ids }
+  //     }
+
+  //     if (params.mode) {
+  //       where['schedulingMode'] = params.mode
+  //     }
+
+  //     if (params.price) {
+  //       if (params.price === 'free') {
+  //         where['hasCost'] = false
+  //       } else if (params.price === 'pay') {
+  //         where['hasCost'] = true
+  //       }
+  //     }
+
+  //     let sort = null
+  //     if (params.sort) {
+  //       sort = {}
+  //       sort[params.sort.field] = params.sort.direction
+  //     }
+
+  //     let registers = []
+
+  //     try {
+  //       console.log('where', where)
+  //       console.time('Backend::Method::CourseSchedulingFind')
+  //       registers = await CourseScheduling.find(where)
+  //         .populate({ path: 'program', select: 'id name moodle_id code' })
+  //         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+  //         .populate({ path: 'modular', select: 'id name' })
+  //         .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
+  //         .limit(paging ? nPerPage : null)
+  //         .sort(sort)
+  //         .lean()
+  //       console.timeEnd('Backend::Method::CourseSchedulingFind')
+  //       // console.log('registers', registers)
+
+  //       console.time('Backend::Method::publishedSchedules')
+  //       const publishedSchedules = await CourseScheduling.find({
+  //           ...where,
+  //           endPublicationDate: { [`$gte`]: moment().format('YYYY-MM-DD') },
+  //           startPublicationDate: { [`$lte`]: moment().format('YYYY-MM-DD') },
+  //           publish: true,
+  //         })
+  //         .select('_id')
+  //         .lean()
+  //       console.timeEnd('Backend::Method::publishedSchedules')
+  //       const publishedSchedulingIds = publishedSchedules?.map((scheduling) => scheduling._id.toString())
+
+  //       console.time('Backend::Method::iteration')
+  //       for await (const register of registers) {
+  //         let isActive = false;
+  //         let courseType = ''
+  //         let courseObjectives = [];
+  //         let courseContent = [];
+  //         let generalities = [];
+  //         let description = ''
+  //         let shortDescription = ''
+
+  //         // TODO: Optimizar esta partez ---- Start
+
+  //         const schedulingExtraInfo: any = await Course.findOne({
+  //           program: register.program._id
+  //         }).lean();
+
+  //         if (schedulingExtraInfo) {
+  //           let extra_info = schedulingExtraInfo;
+  //           courseType = extra_info.courseType;
+
+  //           // Objectives
+  //           extra_info.objectives.blocks.forEach(element => {
+  //             if (element.data.items) {
+  //               courseObjectives.push(element.data.items[0]);
+  //             }
+  //             if (element.data.text?.length) {
+  //               courseObjectives.push(element.data.text);
+  //             }
+  //           });;
+
+  //           // Course content
+  //           extra_info.content.forEach(element => {
+  //             let blockText = [];
+  //             element.data.blocks.forEach(element => {
+  //               blockText.push(element.data.text);
+  //             });
+
+  //             let item = {
+  //               header: element.name,
+  //               modules: blockText
+  //             };
+  //             courseContent.push(item);
+  //           });
+
+  //           // Generalities
+  //           extra_info.generalities.blocks.forEach(element => {
+  //             generalities.push(element.data.text);
+  //           });
+
+  //           description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
+  //           shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
+  //         }
+
+  //         // TODO: Optimizar esta partez ----END
+
+  //         if (register.hasCost) {
+  //           if (publishedSchedulingIds?.includes(register?._id?.toString())) {
+  //             if ([CourseSchedulingModes.VIRTUAL, CourseSchedulingModes.ON_LINE].includes(register.schedulingMode.name))
+  //               isActive = true;
+  //             else
+  //               isActive = false;
+  //           }
+  //           else
+  //             isActive = false;
+  //         }
+  //         else {
+  //           isActive = false;
+  //         }
+
+  //         const {serviceTypeLabel} = courseSchedulingService.getServiceType(register)
+
+  //         let courseToExport: IStoreCourse = {
+  //           id: register._id,
+  //           moodleID: register.moodle_id,
+  //           name: register.program.name,
+  //           fullname: register.program.name,
+  //           displayname: register.program.name,
+  //           courseType: courseType,
+  //           mode: register.schedulingMode.name,
+  //           startDate: register.startDate,
+  //           endDate: register.endDate,
+  //           startPublicationDate: register.startPublicationDate,
+  //           endPublicationDate: register.endPublicationDate,
+  //           maxEnrollmentDate: register.enrollmentDeadline,
+  //           hasCost: register.hasCost,
+  //           priceCOP: register.priceCOP == null ? 0 : register.priceCOP,
+  //           priceUSD: register.priceUSD == null ? 0 : register.priceUSD,
+  //           discount: register.discount == null ? 0 : register.discount,
+  //           endDiscountDate: register.endDiscountDate == null ? null : register.endDiscountDate,
+  //           quota: register.amountParticipants,
+  //           lang: 'ES',
+  //           duration: generalUtility.getDurationFormatedForVirtualStore(register.duration),
+  //           isActive,
+  //           objectives: courseObjectives,
+  //           content: courseContent,
+  //           generalities: generalities,
+  //           schedule: register.schedule,
+  //           description,
+  //           shortDescription,
+  //           modular: register?.modular?.name ? register?.modular?.name : '',
+  //           withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
+  //           quickLearning: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.quickLearning : false,
+  //           serviceType: serviceTypeLabel
+  //         }
+  //         listOfCourses.push(courseToExport);
+  //         if (courseToExport?.isActive) {
+  //           logContentToSave.push({
+  //             name: register.program.name,
+  //             mode: register.schedulingMode.name,
+  //             serviceId: register?.metadata?.service_id,
+  //             startDate: moment.utc(register.startDate).format('YYYY-MM-DD'),
+  //             modality: register.schedulingMode.name,
+  //           })
+  //         }
+  //       }
+  //       console.timeEnd('Backend::Method::iteration')
+  //     } catch (e) {
+  //       console.log('Error: ' + e);
+  //       return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
+  //     }
+
+  //     if (!params.notSendNotification) {
+  //       await this.saveLogAndSendHipertextoEmail(logContentToSave)
+  //     }
+
+  //     console.timeEnd('Backend::Method::List')
+
+  //     return responseUtility.buildResponseSuccess('json', null, {
+  //       additional_parameters: {
+  //         courses: [
+  //           ...listOfCourses
+  //         ],
+  //         total_register: listOfCourses.length,
+  //         pageNumber: pageNumber,
+  //         nPerPage: nPerPage
+  //       }
+  //     })
+  //   }
+  //   catch (e) {
+  //     console.log('Error: ' + e);
+  //     return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
+  //   }
+
+
+  // }
+
+
+
   public list = async (params: IFetchCourses = {}) => {
 
     try {
+      console.time('Backend::Method::List')
       let listOfCourses = []
       const logContentToSave = []
       const paging = (params.pageNumber && params.nPerPage) ? true : false
@@ -179,15 +424,38 @@ class CourseService {
       let registers = []
 
       try {
+        console.log('where', where)
+        console.time('Backend::Method::CourseSchedulingFind')
         registers = await CourseScheduling.find(where)
           .populate({ path: 'program', select: 'id name moodle_id code' })
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
           .populate({ path: 'modular', select: 'id name' })
+          .select('id moodle_id program startDate endDate startPublicationDate endPublicationDate enrollmentDeadline hasCost priceCOP priceUSD discount endDiscountDate amountParticipants duration schedule withoutTutor quickLearning schedulingMode metadata') // TODO: Filtrar el select con los campos necesarios
           .skip(paging ? (pageNumber > 0 ? ((pageNumber - 1) * nPerPage) : 0) : null)
           .limit(paging ? nPerPage : null)
           .sort(sort)
           .lean()
+        console.timeEnd('Backend::Method::CourseSchedulingFind')
+        // console.log('registers', registers)
 
+        const programIds = mapUtility.removeDuplicated(registers.map((r) => r.program._id.toString()))
+        // console.log('programIds', programIds)
+        console.time('Backend::Method::CourseFind')
+        const schedulingExtraInfoObject: any = await Course.find({
+          program: {$in: programIds}
+        })
+        .select('courseType objectives content generalities description short_description program')
+        .lean();
+        console.timeEnd('Backend::Method::CourseFind')
+        const schedulingExtraInfo = schedulingExtraInfoObject.reduce((accum, element) => {
+          if (!accum[element.program.toString()]) {
+            accum[element.program.toString()] = element
+          }
+          return accum;
+        }, {})
+        // console.log('schedulingExtraInfo', schedulingExtraInfo)
+
+        console.time('Backend::Method::publishedSchedules')
         const publishedSchedules = await CourseScheduling.find({
             ...where,
             endPublicationDate: { [`$gte`]: moment().format('YYYY-MM-DD') },
@@ -196,8 +464,10 @@ class CourseService {
           })
           .select('_id')
           .lean()
+        console.timeEnd('Backend::Method::publishedSchedules')
         const publishedSchedulingIds = publishedSchedules?.map((scheduling) => scheduling._id.toString())
 
+        console.time('Backend::Method::iteration')
         for await (const register of registers) {
           let isActive = false;
           let courseType = ''
@@ -207,12 +477,14 @@ class CourseService {
           let description = ''
           let shortDescription = ''
 
-          const schedulingExtraInfo: any = await Course.findOne({
-            program: register.program._id
-          }).lean();
+          // TODO: Optimizar esta partez ---- Start
 
-          if (schedulingExtraInfo) {
-            let extra_info = schedulingExtraInfo;
+          // const schedulingExtraInfo: any = await Course.findOne({
+          //   program: register.program._id
+          // }).lean();
+
+          if (schedulingExtraInfo[register.program._id.toString()]) {
+            let extra_info = schedulingExtraInfo[register.program._id.toString()];
             courseType = extra_info.courseType;
 
             // Objectives
@@ -247,6 +519,8 @@ class CourseService {
             description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
             shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
           }
+
+          // TODO: Optimizar esta partez ----END
 
           if (register.hasCost) {
             if (publishedSchedulingIds?.includes(register?._id?.toString())) {
@@ -308,14 +582,19 @@ class CourseService {
             })
           }
         }
+        console.timeEnd('Backend::Method::iteration')
       } catch (e) {
         console.log('Error: ' + e);
         return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
       }
 
+      console.time('Backend::Method::saveLogAndSendHipertextoEmail')
       if (!params.notSendNotification) {
         await this.saveLogAndSendHipertextoEmail(logContentToSave)
       }
+      console.timeEnd('Backend::Method::saveLogAndSendHipertextoEmail')
+
+      console.timeEnd('Backend::Method::List')
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
@@ -332,8 +611,6 @@ class CourseService {
       console.log('Error: ' + e);
       return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'program.general_error', params: { error: e } } });
     }
-
-
   }
 
   private saveLogAndSendHipertextoEmail = async (logContentToSave) => {
