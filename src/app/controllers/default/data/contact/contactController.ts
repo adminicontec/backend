@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 // @import_utilities Import utilities
 import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility } from "@scnode_core/utilities/requestUtility";
-import { contactService } from 'app/services/default/data/contact/contactService';
+import { contactService } from '@scnode_app/services/default/data/contact/contactService';
 // @end
 
 // @import_types Import types
