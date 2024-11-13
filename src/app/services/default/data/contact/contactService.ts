@@ -56,7 +56,7 @@ class ContactService {
               path_template: path_template,
               params: { ...paramsTemplate }
             },
-            amount_notifications: 2
+            amount_notifications: 3
           },
           notification_source: paramsTemplate.notification_source
         })
