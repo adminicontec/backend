@@ -42,7 +42,7 @@ class ContactService {
       for (const email of emailsToNotify) {
         const paramsTemplate = {
           ...params,
-          notification_source: `contact_email_${params.emailFrom}_${currentDateFormatted}_${email.email}`,
+          notification_source: `contact_email_${params.emailFrom}_${currentDateFormatted}_to_${email.email}`,
           mailer: customs['mailer'],
           nameTo: email.name
         }
@@ -56,7 +56,7 @@ class ContactService {
               path_template: path_template,
               params: { ...paramsTemplate }
             },
-            amount_notifications: 3
+            amount_notifications: 2
           },
           notification_source: paramsTemplate.notification_source
         })
