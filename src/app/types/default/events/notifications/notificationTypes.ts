@@ -28,3 +28,20 @@ export interface ISendNotificationAssistantCertificateGeneration {
   programName: string
   certifications: IParticipantData[]
 }
+
+export interface ISendNotificationEnrollmentTrackingEmailData {
+  studentName: string;
+  error: string;
+  studentFullName: string;
+  studentEmail: string;
+  studentDocumentId: string;
+  studentPhoneNumber: string;
+  courseSchedulingServiceId: string;
+  origin: string;
+  mailer?: any
+}
+export interface ISendNotificationEnrollmentTracking {
+  recipients: string[],
+  recipientsCC?: string[],
+  emailData: ISendNotificationEnrollmentTrackingEmailData
+}
