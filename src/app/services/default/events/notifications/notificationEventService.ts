@@ -45,7 +45,7 @@ class NotificationEventService {
         emails: recipients,
         mailOptions: {
           cc: recipientsCC || [],
-          subject: `${i18nUtility.__('mailer.enrollment_tracking.subject')}`,
+          subject: `${i18nUtility.__('mailer.enrollment_tracking.subject')} - ${paramsTemplate.studentDocumentId} - ${paramsTemplate.courseSchedulingServiceId}`,
           html_template: {
             path_layout: 'icontec',
             path_template: path_template,
