@@ -42,6 +42,8 @@ import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
 import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
+import { enrollmentTrackingService } from './enrollmentTrackingService';
+import { notificationEventService } from '../../events/notifications/notificationEventService';
 // @end
 
 class EnrollmentService {
@@ -476,6 +478,57 @@ class EnrollmentService {
 
             const respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
             if (respMoodle3?.status === 'error') {
+              if (
+                respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
+                params.origin === 'Tienda Virtual'
+              ) {
+                try {
+                  await enrollmentTrackingService.insertOrUpdate({
+                    requestData: params,
+                    errorLog: respMoodle3,
+                    origin: params.origin
+                  })
+
+                  const recipients = []
+                  const recipientsCC = []
+                  const email_enrollment_tracking = customs['mailer']['email_enrollment_tracking'] || {}
+                  if (courseScheduling?.schedulingMode?.name === 'Virtual') {
+                    if (email_enrollment_tracking['virtual']?.length > 0) {
+                      recipients.push(...email_enrollment_tracking['virtual']?.map((e) => e.email))
+                    }
+                  } else {
+                    const material_assistant = courseScheduling?.material_assistant || {}
+                    if (material_assistant?.email) {
+                      recipients.push(material_assistant?.email)
+                    }
+                    if (email_enrollment_tracking['presencialEnlinea']?.length > 0) {
+                      recipients.push(...email_enrollment_tracking['presencialEnlinea']?.map((e) => e.email))
+                    }
+                  }
+                  if (email_enrollment_tracking['always']?.length > 0) {
+                    recipientsCC.push(...email_enrollment_tracking['always']?.map((e) => e.email))
+                  }
+
+                  if (recipients.length > 0) {
+                    await notificationEventService.sendNotificationEnrollmentTracking({
+                      recipients,
+                      recipientsCC,
+                      emailData: {
+                        studentName: params.firstname,
+                        error: `Funcionalidad de matriculación manual deshabilitada para el servicio: ${courseScheduling?.metadata?.service_id}`,
+                        studentFullName: `${params.firstname} ${params.lastname}`,
+                        studentEmail: params.email,
+                        studentDocumentId: params.documentID,
+                        studentPhoneNumber: params.phoneNumber,
+                        courseSchedulingServiceId: courseScheduling?.metadata?.service_id,
+                        origin: params.origin
+                      }
+                    })
+                  }
+                } catch (err) {
+                  console.log('EnrollmentService::InsertOrUpdate::MoodleEnrollmentFailed', err)
+                }
+              }
               const find: any = await Enrollment.findOne({ _id })
               if (find) await find.delete()
 
