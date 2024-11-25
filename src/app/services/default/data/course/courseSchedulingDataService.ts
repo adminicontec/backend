@@ -52,6 +52,10 @@ class CourseSchedulingDataService {
         moodle_id: params.moodle_id
       }
 
+      if (params.courseSchedulingId) {
+        where['_id'] = params.courseSchedulingId
+      }
+
       const register: any = await CourseScheduling.findOne(where)
         .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
         .populate({ path: 'schedulingMode', select: 'id name moodle_id' })

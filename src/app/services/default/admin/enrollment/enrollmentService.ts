@@ -78,6 +78,9 @@ class EnrollmentService {
     if (filters.courseID) {
       where['courseID'] = filters.courseID;
     }
+    if (filters.course_scheduling) {
+      where['course_scheduling'] = filters.course_scheduling;
+    }
     if (filters.origin) {
       where['origin'] = filters.origin;
     }

@@ -10,6 +10,7 @@ export interface IFetchCourseSchedulingByProgram {
     date: 'today' | string
     direction: 'gt' | 'gte' | 'lt' | 'lte' | 'eq'
   } // Fecha de busqueda
+  courseSchedulingId?: string
 }
 
 export interface IFetchCourseSchedulingExtend {
