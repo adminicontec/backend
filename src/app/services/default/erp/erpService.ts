@@ -9,6 +9,9 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { IGetCertificatePriceParams, IGetCertificatePriceResponse } from '@scnode_app/types/default/erp/erpTypes';
 import { CertificateQueue, Course } from '@scnode_app/models';
 import { ICourse } from '@scnode_app/types/default/admin/course/courseTypes';
+import { erpSetup } from '@scnode_core/config/globals';
+import { btoa } from 'js-base64';
+import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @end
 
 // @import models
@@ -30,6 +33,16 @@ class ErpService {
 
   public getCertificatePrice = async ({ duration, programCode, programName }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
     try {
+      const basicHeader = btoa(`${erpSetup?.username}:${erpSetup?.password}`)
+      const headers = {
+        'Authorization': `Basic ${basicHeader}`
+      }
+      const response = await queryUtility.query({
+        method: 'get',
+        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}`,
+        api: 'erp',
+        headers
+      })
       return {
         price: {
           COP: 250000,
@@ -72,7 +85,7 @@ class ErpService {
         })
       }
 
-      const { price } = await erpService.getCertificatePrice({
+      const { price } = await this.getCertificatePrice({
         programName: program.name,
         programCode: program.code,
         duration: course.duration
