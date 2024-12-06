@@ -44,7 +44,7 @@ class BannerDataService {
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
-      let select = 'id title content coverUrl isActive action location start_date end_date locations registerUrl'
+      let select = 'id title content coverUrl isActive action location start_date end_date locations registerUrl actionText positionOnScreen'
       if (params.select) {
         select = params.select
       }

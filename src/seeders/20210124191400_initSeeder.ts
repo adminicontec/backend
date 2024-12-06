@@ -634,6 +634,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         {name: 'permission:landings_alliances_items_delete', description: 'Eliminar alianza'},
 
         {name: 'permission:landings_tutorials', description: 'Landing de tutoriales'},
+        {name: 'permission:landings_home', description: 'Landing principal - Home'},
 
         // {name: 'permission:survey_update', description: 'Actualizar contenido'},
         // {name: 'permission:survey_delete', description: 'Eliminar contenido'},

@@ -150,7 +150,11 @@ class CalendarEventsService {
       };
 
       const courseScheduling = await CourseScheduling.findOne({
-        moodle_id: params.courseID
+        ...(params.courseSchedulingId?.length ? {
+          _id: params.courseSchedulingId
+        } : {
+          moodle_id: params.courseID
+        })
       }).select('id startDate')
       .lean()
 
@@ -203,7 +207,7 @@ class CalendarEventsService {
       // 4. group the events by Instance
       if (respMoodleCourseModules.status == 'success') {
         // Group by Instance
-        for await (const module of respMoodleCourseModules.courseModules as IMoodleCourseContent[]) {
+        for (const module of respMoodleCourseModules.courseModules as IMoodleCourseContent[]) {
           let eventTimeStart;
           let eventTimeEnd;
           let customStatus = false;

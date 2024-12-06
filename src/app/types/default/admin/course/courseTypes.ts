@@ -2,6 +2,24 @@
 // @end
 
 // @add your types
+export enum CourseFormationType {
+  COURSE = 'course',
+  PROGRAM = 'program',
+  DIPLOMA = 'diploma'
+}
+
+export const COURSE_FORMATION_TYPE_TRANSLATIONS = {
+  [CourseFormationType.COURSE]: "Curso",
+  [CourseFormationType.PROGRAM]: "Programa",
+  [CourseFormationType.DIPLOMA]: "Diplomado",
+}
+
+export const COURSE_FORMATION_TYPE = [
+  CourseFormationType.COURSE,
+  CourseFormationType.PROGRAM,
+  CourseFormationType.DIPLOMA
+]
+
 export interface ICourse {
   schedulingMode: { value: number, label: string } | string // Identificador del modo de programación
   program: { value: number, label: string } | string // Identificador del programa
@@ -38,6 +56,9 @@ export interface ICourse {
   methodology?: string
   generalities?: string
   content?: Array<{ category?: string, data: string }>,   // Contenido del curso
+  filterCategories?: string[]
+  slug: string
+  formationType?: CourseFormationType
   // benefits?        : Array<string>,   // Beneficios
 }
 
@@ -73,6 +94,9 @@ export interface IStoreCourse {
   withoutTutor?: boolean
   quickLearning?: boolean
   serviceType?: string
+  formationType?: string
+  serviceOffer?: string
+  serviceOfferLong?: string
 }
 
 export interface ICourseQuery {
@@ -90,5 +114,10 @@ export interface ICourseQuery {
 
 export interface ICourseDelete {
   id: string // Identificador del pais
+}
+
+export interface IValidateSlugParams {
+  courseId: string
+  slug: string
 }
 //@end
