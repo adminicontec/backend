@@ -1,6 +1,7 @@
 // @import_models
 import { TransactionModel } from "@scnode_app/models/transactionModel";
 import { CertificateCriteriaByModalityModel } from "@scnode_app/models/certificateCriteriaByModalityModel";
+import { EnrollmentTrackingModel } from "@scnode_app/models/enrollmentTrackingModel";
 import { CustomLogModel } from "@scnode_app/models/customLogModel";
 import { CertificateSettingsModel } from "@scnode_app/models/certificateSettingsModel";
 import { TermModel } from "@scnode_app/models/termModel";
@@ -67,6 +68,7 @@ import { UserModel } from "@scnode_app/models/userModel";
 // @export_models
 export const Transaction = TransactionModel
 export const CertificateCriteriaByModality = CertificateCriteriaByModalityModel
+export const EnrollmentTracking = EnrollmentTrackingModel
 export const CustomLog = CustomLogModel
 export const CertificateSettings = CertificateSettingsModel
 export const Term = TermModel

@@ -13,6 +13,7 @@ export enum MoodleEventName {
 
 export interface IMoodleCalendarEventsQuery {
   courseID?: string,      // ID de curso (listado de cursos en Moodle)
+  courseSchedulingId?: string
   userID?:string, // ID de estudiante en Moodle
   timeStart?: string,     // fecha inicial
   timeEnd?: string,        // fecha final

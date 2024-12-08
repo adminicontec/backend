@@ -553,6 +553,9 @@
     "service_sending" : {
       "fail_request": "Fallo en el envío de correo"
     },
+    "enrollment_tracking": {
+      "subject": "[Notificación Automática] Error en la matrícula del estudiante"
+    },
     "participant_certificated_completed_notification": {
       "subject": "Emisión de Certificados completa - Servicio "
     },

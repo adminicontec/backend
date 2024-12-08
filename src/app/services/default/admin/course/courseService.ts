@@ -23,7 +23,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, Program, StoreCourse, C
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse } from '@scnode_app/types/default/admin/course/courseTypes'
+import { ICourse, ICourseQuery, ICourseDelete, IStoreCourse, IValidateSlugParams, COURSE_FORMATION_TYPE_TRANSLATIONS } from '@scnode_app/types/default/admin/course/courseTypes'
 import { IMoodleCourse } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
 import { moodleCourseService } from '@scnode_app/services/default/moodle/course/moodleCourseService'
 import { IFetchCourses, IFetchCourse } from '@scnode_app/types/default/data/course/courseDataTypes'
@@ -31,6 +31,7 @@ import { utils } from 'xlsx/types';
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { mailService } from '@scnode_app/services/default/general/mail/mailService';
+import { CourseSchedulingTypesNames } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseService {
@@ -59,7 +60,7 @@ class CourseService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration'
+      let select = 'id schedulingMode program courseType short_description alternative_title is_alternative_title_active platform_video url_video description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date duration filterCategories slug formationType'
       if (params.query === QueryValues.ALL) {
         const registers: any = await Course.find(where)
           .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
@@ -137,7 +138,7 @@ class CourseService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline'
+      let select = 'id schedulingMode program courseType objectives generalities content schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline slug formationType'
       if (params.select) {
         select = params.select
       }
@@ -206,6 +207,7 @@ class CourseService {
           let generalities = [];
           let description = ''
           let shortDescription = ''
+          let formationType = null
 
           const schedulingExtraInfo: any = await Course.findOne({
             program: register.program._id
@@ -246,6 +248,13 @@ class CourseService {
 
             description = extra_info.description.blocks?.map((block) => block?.data?.text)?.join(' ')
             shortDescription = extra_info.short_description.blocks?.map((block) => block?.data?.text)?.join(' ')
+            if (register?.withoutTutor) {
+              formationType = CourseSchedulingTypesNames.WITHOUT_TUTOR
+            } else if (register?.quickLearning) {
+              formationType = CourseSchedulingTypesNames.QUICK_LEARNING
+            } else if (extra_info.formationType?.length) {
+              formationType = COURSE_FORMATION_TYPE_TRANSLATIONS[extra_info.formationType]
+            }
           }
 
           if (register.hasCost) {
@@ -295,7 +304,10 @@ class CourseService {
             modular: register?.modular?.name ? register?.modular?.name : '',
             withoutTutor: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.withoutTutor : false,
             quickLearning: register.schedulingMode.name === CourseSchedulingModes.VIRTUAL ? register?.quickLearning : false,
-            serviceType: serviceTypeLabel
+            serviceType: serviceTypeLabel,
+            formationType,
+            serviceOffer: register?.serviceInformation?.length ? register?.serviceInformation : null,
+            serviceOfferLong: register?.longServiceInformation?.length ? register?.longServiceInformation : null,
           }
           listOfCourses.push(courseToExport);
           if (courseToExport?.isActive) {
@@ -403,8 +415,7 @@ class CourseService {
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
     let where = {}
-    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date'
-    // let select = 'id moodleID name fullname displayname description courseType mode startDate endDate maxEnrollmentDate hasCost priceCOP priceUSD discount quota lang duration coverUrl content '
+    let select = 'id schedulingMode program courseType description coverUrl competencies objectives content focus materials important_info methodology generalities highlighted new_start_date new_end_date filterCategories slug formationType'
     if (filters.select) {
       select = filters.select
     }
@@ -504,6 +515,10 @@ class CourseService {
         const response_upload: any = await uploadService.uploadFile(params.coverFile, defaulPath)
         if (response_upload.status === 'error') return response_upload
         if (response_upload.hasOwnProperty('name')) params.coverUrl = response_upload.name
+      }
+
+      if (params.filterCategories) {
+        params.filterCategories = typeof params.filterCategories === 'string' ? JSON.parse(params.filterCategories) : params.filterCategories
       }
 
       if (params.id) {
@@ -643,6 +658,23 @@ class CourseService {
     return coverUrl && coverUrl !== ''
       ? `${base}/${this.default_cover_path}/${coverUrl}`
       : `${base}/${this.default_cover_path}/default.jpg`
+  }
+
+  public validateSlug = async ({ courseId, slug }: IValidateSlugParams) => {
+    try {
+      const course = await Course.findOne({
+        _id: { $ne: courseId },
+        slug,
+      })
+      if (course) return responseUtility.buildResponseFailed('json')
+      return responseUtility.buildResponseSuccess('json', null, {
+    additional_parameters: {
+      message: 'ok'
+    }})
+    } catch (e) {
+      console.log(`CourseService -> validateSlug -> Error: `, e)
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
 }

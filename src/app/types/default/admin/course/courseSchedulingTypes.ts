@@ -125,6 +125,7 @@ export interface ICourseScheduling {
   schedulingType?: string // Identificador del tipo de programación
   schedulingStatus?: string //Identificador del estado de programación
   confirmed_date?: Date | null;
+  confirmed_user?: string;
   startDate?: string // Fecha de inicio de la programación
   endDate?: any  // Fecha de finalización de la programación
   regional?: string // Regional de la programación
@@ -339,5 +340,10 @@ export interface IGetServiceTypeResponse {
   serviceTypeLabel?: CourseSchedulingTypesNames
   serviceTypeStatus?: boolean
   serviceTypeKey?: CourseSchedulingTypesKeys
+}
+
+export enum CourseSchedulingServiceTypeMap {
+  WITHOUT_TUTOR = 'withoutTutor',
+  QUICK_LEARNING = 'quickLearning'
 }
 //@end

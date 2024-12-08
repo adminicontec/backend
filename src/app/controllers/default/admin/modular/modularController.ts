@@ -36,7 +36,11 @@ class ModularController {
 	 * @returns
 	 */
 	public create = async (req: Request, res: Response) => {
-    const response = await modularService.insertOrUpdate(req.getParameters.all())
+    const params = req.getParameters.all()
+    if (params.filterCategories && typeof params.filterCategories === 'string') {
+      params.filterCategories = JSON.parse(params.filterCategories)
+    }
+    const response = await modularService.insertOrUpdate(params, req.files)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
@@ -47,7 +51,11 @@ class ModularController {
 	 * @returns
 	 */
 	public update = async (req: Request, res: Response) => {
-		const response = await modularService.insertOrUpdate(req.getParameters.all())
+    const params = req.getParameters.all()
+    if (params.filterCategories && typeof params.filterCategories === 'string') {
+      params.filterCategories = JSON.parse(params.filterCategories)
+    }
+		const response = await modularService.insertOrUpdate(params, req.files)
 		return responseUtility.sendResponseFromObject(res, response)
   }
 

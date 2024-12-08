@@ -85,6 +85,10 @@ const CourseSchedulingSchema = new Schema({
   confirmed_date: {
     type: Schema.Types.Date
   },
+  confirmed_user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+  },
   startDate: {
     type: Schema.Types.Date,
     required: true,
@@ -421,6 +425,12 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.Boolean,
     default: false,
   },
+  serviceInformation: {
+    type: Schema.Types.String
+  },
+  longServiceInformation: {
+    type: Schema.Types.String
+  }
   // @end
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

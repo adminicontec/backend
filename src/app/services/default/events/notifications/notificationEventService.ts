@@ -17,7 +17,14 @@ import { User, CourseScheduling } from "@scnode_app/models";
 // @end
 
 // @import types
-import { ISendNotificationParticipantCertificated, ISendNotificationAssistantCertificateGeneration, ISendNotificationConfirmEmail, ISendNotification2FA } from "@scnode_app/types/default/events/notifications/notificationTypes";
+import {
+  ISendNotificationParticipantCertificated,
+  ISendNotificationAssistantCertificateGeneration,
+  ISendNotificationConfirmEmail,
+  ISendNotification2FA,
+  ISendNotificationEnrollmentTracking,
+  ISendNotificationEnrollmentTrackingEmailData,
+} from "@scnode_app/types/default/events/notifications/notificationTypes";
 // @end
 
 class NotificationEventService {
@@ -30,6 +37,36 @@ class NotificationEventService {
   /*======  End of Estructura de un metodo  =====*/
 
   constructor() { }
+
+  public sendNotificationEnrollmentTracking = async (params: ISendNotificationEnrollmentTracking) => {
+    try {
+      const {recipients, recipientsCC, emailData} = params;
+      const path_template = 'user/enrollmentTracking'
+
+      const paramsTemplate: ISendNotificationEnrollmentTrackingEmailData = {
+        ...emailData,
+        mailer: customs['mailer'],
+      }
+
+      const mail = await mailService.sendMail({
+        emails: recipients,
+        mailOptions: {
+          cc: recipientsCC || [],
+          subject: `${i18nUtility.__('mailer.enrollment_tracking.subject')} - ${paramsTemplate.studentDocumentId} - ${paramsTemplate.courseSchedulingServiceId}`,
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params: { ...paramsTemplate }
+          },
+          amount_notifications: null
+        },
+        notification_source: `notification_enrollment_tracking`
+      })
+      return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
 
   public sendNotificationParticipantCertificated = async (params: ISendNotificationParticipantCertificated) => {
     try {

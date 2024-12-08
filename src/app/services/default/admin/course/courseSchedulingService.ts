@@ -111,7 +111,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id serviceValidity withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle schedule'
+      let select = 'id serviceValidity withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -127,7 +127,7 @@ class CourseSchedulingService {
           .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
           .populate({ path: 'client', select: 'id name' })
           .populate({ path: 'contact', select: 'id profile email' })
-          .populate({ path: 'material_assistant', select: 'id profile' })
+          .populate({ path: 'material_assistant', select: 'id profile email' })
           .populate({ path: 'auditor_modules', select: 'id course duration', populate: { path: 'course', select: 'id name ' } })
           .select(select)
           .lean()
@@ -152,7 +152,7 @@ class CourseSchedulingService {
           .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name' })
           .populate({ path: 'client', select: 'id name' })
           .populate({ path: 'contact', select: 'id profile email' })
-          .populate({ path: 'material_assistant', select: 'id profile' })
+          .populate({ path: 'material_assistant', select: 'id profile email' })
           .populate({ path: 'auditor_modules', select: 'id course duration', populate: { path: 'course', select: 'id name moodle_id ' } })
           .select(select)
           .lean()
@@ -398,6 +398,7 @@ class CourseSchedulingService {
         if (paramsStatus && paramsStatus.name === 'Confirmado' && prevSchedulingStatus !== 'Confirmado') {
           confirmed_date = new Date();
           params.confirmed_date = confirmed_date;
+          params.confirmed_user = params.user
         }
 
         if (paramsStatus && paramsStatus.name === 'Cancelado') {
@@ -1676,7 +1677,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle schedule'
+    let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
     if (filters.select) {
       select = filters.select
     }
@@ -2116,7 +2117,8 @@ class CourseSchedulingService {
               { path: 'schedulingAssociation.parent', select: 'id metadata.service_id'},
               { path: 'schedulingAssociation.personWhoGeneratedAssociation', select: 'id profile.first_name profile.last_name'},
               { path: 'cancelationTracking.personWhoCancels', select: 'id profile.first_name profile.last_name'},
-              { path: 'reactivateTracking.personWhoReactivates', select: 'id profile.first_name profile.last_name'}
+              { path: 'reactivateTracking.personWhoReactivates', select: 'id profile.first_name profile.last_name'},
+              { path: 'confirmed_user', select: 'id profile.first_name profile.last_name'}
             ]
           })
           .populate({ path: 'course', select: 'id name code moodle_id' })
@@ -2228,6 +2230,7 @@ class CourseSchedulingService {
               reactivateDate: (course?.course_scheduling?.reactivateTracking?.date) ? moment.utc(course?.course_scheduling?.reactivateTracking?.date).format('DD/MM/YYYY') : 'N/A',
               reactivatePerson: (course?.course_scheduling?.reactivateTracking?.personWhoReactivates) ? `${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.first_name} ${course?.course_scheduling?.reactivateTracking?.personWhoReactivates.profile.last_name}` : 'N/A',
               service_type: serviceTypeLabel,
+              confirmed_user: (course?.course_scheduling?.confirmed_user?.profile) ? `${course?.course_scheduling?.confirmed_user?.profile?.first_name} ${course?.course_scheduling?.confirmed_user?.profile?.last_name}` : '-',
             }
 
             courses.push(item)
@@ -2364,6 +2367,7 @@ class CourseSchedulingService {
         'Persona que reactivo el servicio': element.reactivatePerson,
         // 'Modalidad horario': '', // TODO: Ver donde esta este campo
         'Programador': element.service_user,
+        'Usuario que confirma el servicio': element.confirmed_user,
       })
       cols.push({ width: 20 })
       return accum
