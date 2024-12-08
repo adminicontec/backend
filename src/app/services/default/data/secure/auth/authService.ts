@@ -219,7 +219,6 @@ class AuthService {
 					screen_mode: user.profile.screen_mode,
           show_profile_interaction: user.show_profile_interaction,
           roles: user.roles,
-          email: user.email,
           home,
           moodle: {
             ...tokenCustom,
