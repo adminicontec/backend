@@ -1,10 +1,4 @@
 // @import types
-export enum CourseSchedulingStatusName {
-  CONFIRMED = 'Confirmado',
-  PROGRAMMED = 'Programado',
-  EXECUTED = 'Ejecutado',
-  CANCELED = 'Cancelado'
-}
 // @end
 
 // @add your types
