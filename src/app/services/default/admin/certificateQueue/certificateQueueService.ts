@@ -22,7 +22,7 @@ import { customs, efipaySetup } from '@scnode_core/config/globals';
 import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { erpService } from "@scnode_app/services/default/erp/erpService";
-import { ICourse } from "app/types/default/admin/course/courseTypes";
+import { ICourse } from "@scnode_app/types/default/admin/course/courseTypes";
 import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
 import { courseService } from "@scnode_app/services/default/admin/course/courseService";
 import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";

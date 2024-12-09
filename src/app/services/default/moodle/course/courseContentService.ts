@@ -16,7 +16,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { IMoodleCourse, IMoodleCourseQuery, IMoodleCourseModuleQuery } from '@scnode_app/types/default/moodle/course/moodleCourseTypes'
-import { modularMiddleware } from 'app/middlewares/admin/modular/modularMiddleware';
+import { modularMiddleware } from '@scnode_app/middlewares/admin/modular/modularMiddleware';
 import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
 // @end
 

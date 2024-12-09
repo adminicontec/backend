@@ -12,7 +12,7 @@ import { Request, Response } from 'express';
 import { responseUtility } from "@scnode_core/utilities/responseUtility";
 import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
-import { QueryValues } from 'app/types/default/global/queryTypes';
+import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 // @end
 
 // @import_types Import types
