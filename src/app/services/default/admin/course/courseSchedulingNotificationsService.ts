@@ -581,6 +581,111 @@ class CourseSchedulingNotificationsService {
     return completeAssistance;
   }
 
+  public sendReminderEmailForFreeOrMooc = async (courseSchedulingId: string, userId: string) => {
+    try {
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      let path_template = 'course/schedulingFreeMoocReminder';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_free_mock_reminder_${courseScheduling._id}_${userId}`,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        courseName: courseScheduling.program.name,
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: 'Recordatorio finalización de curso',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendReminderEmailForFreeOrMooc Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public sendFreeMoocCourseFinished = async (courseSchedulingId: string, userId: string) => {
+    try {
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      let path_template = 'course/schedulingFreeMoocFinished';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_free_mock_finished_${courseScheduling._id}_${userId}`,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        courseName: courseScheduling.program.name,
+        goToCertifications: `${customs.campus_virtual}/login?redirect=/app?section=certifications`
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: 'Finalización de curso gratuito',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendFreeMoocCourseFinished Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public sendFreeMoocCertificationsReminder = async ({
+    user,
+    certifications,
+  }) => {
+    try {
+      if (!user || !certifications?.length) return
+      let path_template = 'user/freeMoocCertificationsReminder';
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source: `scheduling_free_mock_certifications_reminder_${user._id}`,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        certifications,
+        goToCertifications: `${customs.campus_virtual}/login?redirect=/app?section=certifications`
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: 'Recordatorio de certificados disponibles',
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: null,
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendFreeMoocCertificationsReminder Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
   /**
    * @INFO Obtener los módulos del servicio
    * @param courseScheduling
@@ -666,9 +771,6 @@ class CourseSchedulingNotificationsService {
 
       let auditorQuizModule = exams.courseModules.find(field => field.isauditorquiz == true);
 
-      // console.log('::::::::::::::');
-      // console.log(auditorQuizModule);
-      // console.log('::::::::::::::');
       if (auditorQuizModule) {
         let quizModuleData: IQuizModuleData = {
           sectionid: auditorQuizModule.sectionid,

@@ -64,6 +64,16 @@ class AuthController {
     return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite a un usuario loguearse
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public confirm2FA = async (req: Request, res: Response) => {
+		const response = await authService.confirm2FA(req, req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+	}
 }
 
 export const authController = new AuthController();

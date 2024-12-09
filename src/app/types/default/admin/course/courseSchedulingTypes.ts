@@ -5,6 +5,32 @@ import { ICourseSchedulingDetailsModification, TCourseSchedulingDetailsModificat
 
 // @add your types
 
+export enum TypeCourse {
+  MOOC = 'mooc',
+  FREE = 'free'
+}
+
+export enum CourseSchedulingTypesKeys {
+  WITHOUT_TUTOR = 'withoutTutor',
+  QUICK_LEARNING = 'quickLearning',
+  MOOC = 'mooc',
+  FREE = 'free',
+}
+
+export enum CourseSchedulingTypesNames {
+  WITHOUT_TUTOR = 'Virtual sin tutor',
+  QUICK_LEARNING = 'Quick learning',
+  MOOC = 'Mooc',
+  FREE = 'Gratuito',
+}
+
+export const COURSE_SCHEDULING_TYPE_TRANSLATIONS = {
+  [CourseSchedulingTypesKeys.FREE]: CourseSchedulingTypesNames.FREE,
+  [CourseSchedulingTypesKeys.MOOC]: CourseSchedulingTypesNames.MOOC,
+  [CourseSchedulingTypesKeys.WITHOUT_TUTOR]: CourseSchedulingTypesNames.WITHOUT_TUTOR,
+  [CourseSchedulingTypesKeys.QUICK_LEARNING]: CourseSchedulingTypesNames.QUICK_LEARNING,
+}
+
 export enum CourseSchedulingModification {
   SCHEDULING_OBSERVATIONS = 'observations',
   MODALITY = 'modality',
@@ -190,16 +216,6 @@ export interface ICourseSchedulingReportData {
   scheduling_free: number
 }
 
-export enum CourseSchedulingTypesKeys {
-  WITHOUT_TUTOR = 'without_tutor',
-  QUICK_LEARNING = 'quick_learning',
-}
-
-export enum CourseSchedulingTypesNames {
-  WITHOUT_TUTOR = 'Virtual sin tutor',
-  QUICK_LEARNING = 'Quick learning',
-}
-
 export enum ReprogramingLabels {
   client = 'Solicitud del cliente',
   account_executive = 'Ejecutivo de cuenta',
@@ -284,6 +300,29 @@ export interface IProcessedTeacher {
   moodle_id: string
 }
 
+export interface ISendEnrollmentUserParams {
+  mailer: unknown
+  first_name?: string
+  course_name?: string
+  username?: string
+  service_id?: string
+  course_start?: string
+  course_end?: string
+  notification_source: string
+  type: string
+  amount_notifications?: number
+  observations?: string
+  subject?: string
+  courseType?: string
+  teacher?: unknown
+  program?: unknown
+  service?: unknown
+  courses?: unknown
+  has_sessions?: unknown
+  serviceValidity?: string
+  customTemplate?: string
+}
+
 export enum CourseSchedulingNotificationEvents {
   SCHEDULE_UPDATED = 'schedule_updated',
   ENROLLMENT = 'enrollment',
@@ -295,6 +334,12 @@ export enum CourseSchedulingNotificationEvents {
 
 export enum CourseSchedulingNotificationRules {
   SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning'
+}
+
+export interface IGetServiceTypeResponse {
+  serviceTypeLabel?: CourseSchedulingTypesNames
+  serviceTypeStatus?: boolean
+  serviceTypeKey?: CourseSchedulingTypesKeys
 }
 
 export enum CourseSchedulingServiceTypeMap {

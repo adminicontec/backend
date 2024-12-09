@@ -8,6 +8,13 @@ export enum CourseSchedulingStatusName {
 // @end
 
 // @add your types
+export enum CourseSchedulingStatusName {
+  CONFIRMED = 'Confirmado',
+  PROGRAMMED = 'Programado',
+  EXECUTED = 'Ejecutado',
+  CANCELED = 'Cancelado'
+}
+
 export interface ICourseSchedulingStatus {
   name: string, // Nombre del estado
   description: string // Descripción del estado

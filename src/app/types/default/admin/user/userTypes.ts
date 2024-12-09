@@ -165,4 +165,21 @@ export interface SendRegisterUserEmailParams{
   resend?: boolean
   isCompanyUser?: boolean
 }
+
+export interface ISelfRegistration {
+  firstName: string,
+  lastName: string,
+  documentType: string;
+  documentNumber: string;
+  email: string;
+  password: string;
+}
+
+export interface IConfirmEmail {
+  token: string;
+}
+
+export interface ISendEmailConfirmationToUser {
+  username: string
+}
 //@end

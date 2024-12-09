@@ -17,6 +17,8 @@ import { CertificateQueue, User } from '@scnode_app/models';
 
 // @import types
 import {IFetchUserInfo} from '@scnode_app/types/default/data/user/userDataTypes'
+import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
+import { CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
 // @end
 
 class UserDataService {
@@ -60,16 +62,28 @@ class UserDataService {
 
       const _certifications = await CertificateQueue.find({
         userId: user._id,
-        status: {$in: ['Complete']}
+        $or: [
+          { status: {$in: ['Complete']} },
+          { needPayment: true }
+        ]
       })
-      .select('id userId courseId certificate status')
-      .populate({path: 'courseId', select: 'id program certificate_students', populate: [{
+      .select('id userId courseId certificate status needPayment')
+      .populate({path: 'courseId', select: 'id program certificate_students certificatePriceCOP', populate: [{
         path: 'program', select: 'id name'
       }]})
       .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
+      console.log(_certifications)
+
+      const formatCOP = new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0,
+        minimumFractionDigits: 0
+      })
 
       const certifications = _certifications.reduce((accum, element) => {
-        if (element?.courseId?.certificate_students) {
+        if (element?.courseId?.certificate_students || element?.needPayment) {
+          const certificatePrice = element?.courseId?.certificatePriceCOP
           accum.push({
             key: element?._id,
             _id: element?._id,
@@ -83,11 +97,28 @@ class UserDataService {
             certificateSetting: element?.certificateSetting,
             certificate: element?.certificate,
             urlDownload: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate) : null,
-            urlCredencial: element?.certificate?.urlCredencial || null
+            urlCredencial: element?.certificate?.urlCredencial || null,
+            needPayment: element?.needPayment,
+            ...(certificatePrice ? {
+              priceCOP: Number(certificatePrice),
+              priceCOPFormatted: formatCOP.format(Number(certificatePrice))
+            }: {})
           })
         }
         return accum
       }, [])
+
+      for (const certificate of certifications) {
+        if (certificate?.needPayment) {
+          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
+          certificate.wasPaid = certificateWasPaid
+          if (!certificateWasPaid) {
+            const { status, url } = await transactionService.certificateHasPendingTransaction(certificate?._id?.toString())
+            certificate.transactionIsPending = status
+            certificate.transactionURL = url
+          }
+        }
+      }
 
       const userInfo = {
         avatar: userService.avatarUrl(user),
@@ -98,7 +129,8 @@ class UserDataService {
         roles: (roles.length > 0) ? roles.join(',') : null,
         lastLogin: (user.last_login) ? moment(user.last_login).format('DD/MM/YYYY') : null,
         hasCertifications: certifications.length > 0 ? true : false,
-        certifications: certifications
+        certifications: certifications,
+        docNumber: user?.profile?.doc_number
       }
 
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {

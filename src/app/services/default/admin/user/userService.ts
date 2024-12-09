@@ -10,6 +10,7 @@ import { uploadService } from '@scnode_core/services/default/global/uploadServic
 import { moodleUserService } from '@scnode_app/services/default/moodle/user/moodleUserService'
 import { IMailMessageData, mailService } from '@scnode_app/services/default/general/mail/mailService';
 import { countryService } from '@scnode_app/services/default/admin/country/countryService'
+import { ExceptionsService } from "@scnode_app/helpers/errors";
 // @end
 
 // @import config
@@ -28,10 +29,12 @@ import { Country, Role, User, AppModulePermission } from '@scnode_app/models'
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete } from '@scnode_app/types/default/admin/user/userTypes'
+import { IUser, IUserDelete, IUserQuery, IUserDateTimezone, IUserManyDelete, ISelfRegistration, IConfirmEmail, ISendEmailConfirmationToUser } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser, IMoodleUserQuery } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { SendRegisterUserEmailParams } from '@scnode_app/types/default/admin/user/userTypes';
 import { utils } from "xlsx/types";
+import { notificationEventService } from "../../events/notifications/notificationEventService";
+import { authService } from "../../data/secure/auth/authService";
 // @end
 class UserService {
 
@@ -302,7 +305,7 @@ class UserService {
       }
       else {
         const exist = await User.findOne({ username: params.username })
-        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username}|${params.email}` } } })
+        if (exist) return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'user.insertOrUpdate.already_exists', params: { data: `${params.username} | ${params.email}` } } })
 
         if (!params.password) return responseUtility.buildResponseFailed("json", null, { error_key: "user.insertOrUpdate.password_required" });
 
@@ -348,24 +351,24 @@ class UserService {
             if (respMoodleSearch.status == "success") {
               if (respMoodleSearch.user == null) {
                 const paramsMoodleUser: IMoodleUser = {
-                  city: params.profile.city,
+                  city: params?.profile?.city || undefined,
                   country: countryCode,
                   documentNumber: params.profile.doc_number,
                   email: params.email,
                   username: params.username,
                   password: params.password,
-                  phonenumber: params.phoneNumber,
+                  phonenumber: params?.phoneNumber || '',
                   firstname: params.profile.first_name,
                   lastname: params.profile.last_name,
-                  fecha_nacimiento: params.profile.birthDate,
-                  genero: params.profile.genre,
-                  email_2: params.profile.alternativeEmail,
-                  origen: params.profile.origen,
-                  regional: params.profile.regional,
-                  cargo: params.profile.currentPosition,
-                  profesion: params.profile.carreer,
-                  nivel_educativo: params.profile.educationalLevel,
-                  empresa: params.profile.company,
+                  fecha_nacimiento: params?.profile?.birthDate ||'',
+                  genero: params?.profile?.genre || '',
+                  email_2: params?.profile?.alternativeEmail ||'',
+                  origen: params?.profile?.origen || '',
+                  regional: params?.profile?.regional ||'',
+                  cargo: params?.profile?.currentPosition ||'',
+                  profesion: params?.profile?.carreer ||'',
+                  nivel_educativo: params?.profile?.educationalLevel ||'',
+                  empresa: params?.profile?.company ||'',
                 }
 
                 const respMoodleInsert: any = await moodleUserService.insert(paramsMoodleUser);
@@ -959,6 +962,134 @@ class UserService {
       return responseUtility.buildResponseFailed("json");
     }
 
+  }
+
+  /**
+   * Metodo que permite generar autoregistro
+   * @param params Elementos a registrar
+   * @returns
+   */
+  public selfRegistration = async (params: ISelfRegistration) => {
+    const defaultCountry = 'Colombia'
+    try {
+      // TODO: Pendiente confirmar con David si vamos a agregar algun campo adicional por defecto
+      const roleStudent = await Role.findOne({name: 'student'}).select('id')
+      const userData: IUser = {
+        sendEmail: true,
+        roles: [roleStudent._id],
+        username: params.documentNumber,
+        password: params.password,
+        email: params.email,
+        moodle: 'on',
+        profile: {
+          country: defaultCountry,
+          first_name: params.firstName,
+          last_name: params.lastName,
+          doc_number: params.documentNumber,
+          doc_type: params.documentType,
+          origen: 'self-registration'
+        },
+      }
+      const userInserted = await this.insertOrUpdate(userData)
+      if (userInserted?.status === 'error') throw new ExceptionsService({message: userInserted.message, code: userInserted.code})
+
+      const sendEmailResponse = await this.sendEmailConfirmationToUser({
+        username: params.documentNumber
+      })
+      if (sendEmailResponse?.status === 'error') return sendEmailResponse
+
+      return responseUtility.buildResponseSuccess('json')
+
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
+  }
+
+  /**
+   * Enviar email de confirmación al usuario
+   * @param param0
+   * @returns
+   */
+  public sendEmailConfirmationToUser = async ({ username }: ISendEmailConfirmationToUser) => {
+    try {
+      const duration = 15
+
+      const user: IUser = await User.findOne({ username })
+      if (!user) return responseUtility.buildResponseFailed('json', null, { error_key: 'user.not_found' })
+      const firstName = user?.profile?.first_name
+      const email = user?.email
+
+      const {token} = await authService.buildLoginToken(
+        user,
+        {
+          token_type: 'confirm_email',
+          numbers: 1,
+          lowercase: 1
+        },
+        15,
+        20
+      )
+
+      await notificationEventService.sendNotificationConfirmEmail({
+        user: {
+          firstName: firstName,
+          _id: user._id,
+          email: email,
+          username: user?.username
+        },
+        token,
+        duration
+      })
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          ok: true
+        }
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
+  }
+
+
+  /**
+   * Metodo que permite generar el cambio de contraseña
+   * @param req
+   * @param params
+   * @returns
+   */
+  public confirmEmail = async (params: IConfirmEmail) => {
+    try {
+      // @INFO: Validar token
+      const tokenResponse: any = await authService.validateTokenGenerated({ token: params.token }, false)
+      if (tokenResponse.status === 'error') throw new ExceptionsService({message: tokenResponse.message, code: tokenResponse.code})
+
+      const {user} = tokenResponse
+      await User.findByIdAndUpdate(
+        user._id,
+        {
+          emailConfirmed: true,
+          twoFactorEnabled: true
+        },
+        {
+          useFindAndModify: false,
+          new: true,
+          lean: true,
+        }
+      )
+      return responseUtility.buildResponseSuccess('json')
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json', null, {
+        message: e?.message || 'Se ha presentado un error inesperado',
+        code: e?.code || 500,
+      })
+    }
   }
 
 }

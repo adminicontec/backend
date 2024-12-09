@@ -79,7 +79,7 @@ class CourseDataService {
 
   private fetchCourseByCourseScheduling = async (params: IFetchCourse) => {
     try {
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration typeCourse serviceValidity schedule'
 
       let where = {}
 
@@ -361,7 +361,7 @@ class CourseDataService {
         return accum
       }, [])
 
-      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule withoutTutor quickLearning'
+      let select = 'id schedulingMode city program schedulingType schedulingStatus startDate endDate moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate duration schedule withoutTutor quickLearning serviceValidity'
       if (params.select) {
         select = params.select
       }
@@ -447,12 +447,14 @@ class CourseDataService {
             const priceOrParam = []
             params.price?.forEach((priceItem) => {
               if (priceItem === 'free') {
-                priceOrParam.push({ hasCost: false })
+                priceOrParam.push({ typeCourse: 'free' })
               } else if (priceItem === 'pay') {
                 priceOrParam.push({ hasCost: true })
               } else if (priceItem === 'discount') {
                 let date = moment()
                 priceOrParam.push({ discount: { $gt: 0 }, endDiscountDate: { $gte: date.format('YYYY-MM-DD') } })
+              } else if (priceItem === 'mooc') {
+                priceOrParam.push({ typeCourse: 'mooc' })
               }
             })
             where['$or'] = priceOrParam
@@ -541,6 +543,13 @@ class CourseDataService {
       if (typeof params.publish === 'boolean') {
         where['publish'] = params.publish
       }
+
+      const whereWithouMoocs = {...where, typeCourse: {$nin: ['mooc', 'free']}}
+      const whereWithMoocs = {...where, typeCourse: {$in: ['mooc', 'free']}}
+
+      const totalWithouMoocs = await CourseScheduling.find(whereWithouMoocs).count()
+      const totalMoocs = await CourseScheduling.find(whereWithMoocs).count()
+      const total = totalWithouMoocs + totalMoocs
 
       let sort = null
       if (params.sort) {
@@ -644,7 +653,7 @@ class CourseDataService {
           courses: [
             ...registers
           ],
-          total_register: (paging) ? await CourseScheduling.find(where).count() : 0,
+          total_register: (paging) ? total : 0,
           pageNumber: pageNumber,
           nPerPage: nPerPage
         }

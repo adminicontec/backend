@@ -148,6 +148,42 @@ class UserController {
 		return responseUtility.sendResponseFromObject(res, response)
   }
 
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public selfRegistration = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await userService.selfRegistration(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite enviar un correo de confirmación a un usuario
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public sendEmailConfirmationToUser = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await userService.sendEmailConfirmationToUser(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite crear un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public confirmEmail = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await userService.confirmEmail(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
 }
 
 export const userController = new UserController();

@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -99,6 +100,13 @@ class AcademicResourceConfigService {
       if (!params.hasOwnProperty('config')) params.config = {}
       if (params.config && params.config.hasOwnProperty('course_modes') && params.config.course_modes === "") {
         delete params.config.course_modes
+      }
+
+      if (params.config?.course_modes === 'characterization-survey') {
+        params.config.is_characterization_survey = true
+      } else if (params.config?.course_modes) {
+        params.config.is_characterization_survey = false
+        params.config.course_modes = ObjectID(params.config.course_modes)
       }
 
       // @INFO: Validando el recurso

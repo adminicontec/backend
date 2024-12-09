@@ -17,8 +17,10 @@ import { AcademicResourceAttempt, CourseSchedulingDetails, Enrollment, Survey } 
 // @end
 
 // @import types
-import {ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
+import {ICheckCharacterizationSurveyAvailable, ICheckSurveyAvailable, IGetAvailableSurveysParams} from '@scnode_app/types/default/events/academicContent/survey/surveyEventTypes'
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
+import { CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 const SCHEDULING_MODES = ['Presencial - En linea', 'Presencial', 'En linea', 'En Línea']
@@ -43,6 +45,8 @@ class SurveyEventService {
     try {
       const today = moment()
 
+      // TODO: Estimar: Agregar un limite de 6 meses, para que cumplido este tiempo no salga la encuesta
+
       // @INFO: Validando el usuario
       const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
       if (userResponse.status === 'error') return userResponse
@@ -50,7 +54,7 @@ class SurveyEventService {
       // @INFO: Validando el programa
       const enrollments = await Enrollment.find({user: params.user})
       .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate', populate: [
+      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate typeCourse', populate: [
         {
           path: 'schedulingMode', select: 'id name'
         },
@@ -59,11 +63,10 @@ class SurveyEventService {
         }
       ]})
       .lean()
-      // console.log('enrollment', enrollment)
 
       if (enrollments.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
 
-      // if (!enrollment) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
+      console.log({ enrollments, user: params.user })
 
       const surveyAnswered = await AcademicResourceAttempt.find({
         user: params.user,
@@ -73,7 +76,9 @@ class SurveyEventService {
       .lean()
 
       const survey_related = surveyAnswered.reduce((accum, element) => {
-        accum.push(element.results.surveyRelated.toString())
+        if (element.results.surveyRelated) {
+          accum.push(element.results.surveyRelated.toString())
+        }
         return accum
       }, [])
 
@@ -88,6 +93,7 @@ class SurveyEventService {
       let course_scheduling: string | undefined = undefined;
       let course_scheduling_details: string | undefined = undefined;
       let endDateService: Date | undefined = undefined;
+      let courseType: string | undefined = undefined;
 
       for (const enrollment of enrollments) {
         if (!surveyAvailable) {
@@ -174,6 +180,8 @@ class SurveyEventService {
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
                 endDateService = enrollment.course_scheduling.endDate;
+                const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
+                courseType = serviceTypeKey;
               } else {
                 console.log('entro a virtual false')
                 // return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
@@ -202,7 +210,8 @@ class SurveyEventService {
           $match: {
             'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
             'deleted': false,
-            'status': 'enabled'
+            'status': 'enabled',
+            'config.content.config.course_type': courseType ? courseType : { $nin: Object.values(CourseSchedulingTypesKeys) }
           }
         },
         {
@@ -233,8 +242,94 @@ class SurveyEventService {
         academic_resource_config: data[0].academic_resource_config,
       }})
     } catch (error) {
-      console.log(error)
+      console.log(`SurveyEventService -> checkSurveyAvailable -> ERROR -> ${error}`)
       return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   *
+   * @param params ICheckCharacterizationSurveyAvailable
+   * @returns
+   */
+  public checkCharacterizationSurveyAvailable = async (params: ICheckCharacterizationSurveyAvailable) => {
+    try {
+      // @INFO: Validando el usuario
+      const userResponse: any = await userService.findBy({query: QueryValues.ONE, where: [{'field': '_id', 'value': params.user}]})
+      if (userResponse.status === 'error') return userResponse
+
+      const attemptsAggregation = [
+        {
+          $match: {
+            user: ObjectID(params.user),
+            'results.status': 'ended'
+          }
+        },
+        {
+          $lookup: {
+            from: 'academic_resource_configs',
+            localField: 'academic_resource_config',
+            foreignField: '_id',
+            as: 'academicResourceConfig'
+          }
+        },
+        {
+          $unwind: "$academicResourceConfig"
+        },
+        {
+          $match: {
+            'academicResourceConfig.config.is_characterization_survey': true
+          }
+        },
+        {
+          $project: {
+            'results.status': true,
+            user: true,
+            academic_resource_config: true
+          }
+        }
+      ]
+      const userAttempts = await AcademicResourceAttempt.aggregate(attemptsAggregation)
+
+      const userHasAnswer = userAttempts?.length > 0
+      if (userHasAnswer) return responseUtility.buildResponseFailed('json')
+
+      const aggregateQuery = [
+        {
+          $lookup: {
+            from: 'academic_resource_configs',
+            localField: 'config.content',
+            foreignField: '_id',
+            as: 'config.content'
+          }
+        },
+        { $unwind: '$config.content' },
+        {
+          $match: {
+            'config.content.config.is_characterization_survey': true,
+            'deleted': false,
+            'status': 'enabled'
+          }
+        },
+        {
+          $group: {
+            _id: '$_id',
+            survey: { "$first": '$_id'},
+            academic_resource_config: {$first: '$config.content._id'}
+          }
+        }
+      ]
+
+      const data = await Survey.aggregate(aggregateQuery)
+      if (data.length === 0) return responseUtility.buildResponseFailed('json')
+
+      return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
+        survey: data[0].survey,
+        academic_resource_config: data[0].academic_resource_config,
+        isCharacterizationSurvey: true
+      }})
+    } catch(e) {
+      console.log(`SurveyEventService => checkCharacterizationSurveyAvailable => ERROR: ${e}`)
     }
   }
 
@@ -249,7 +344,9 @@ class SurveyEventService {
 
       const surveysAnswered = await this.getSurveysAnsweredByUser(params.user)
       const surveysRelated = surveysAnswered.reduce((accum, element) => {
-        accum.push(element.results.surveyRelated.toString())
+        if (element.results.surveyRelated) {
+          accum.push(element.results.surveyRelated.toString())
+        }
         return accum
       }, [])
 
@@ -294,7 +391,12 @@ class SurveyEventService {
       if (!surveysRelated.includes(enrollment.course_scheduling._id.toString())) {
         if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
           const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
-          const dbSurvey = dbSurveys?.find((s) => s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString())
+          const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
+          const schedulingCourseType = serviceTypeKey
+          const dbSurvey = dbSurveys?.find((s) =>
+            s.modeId?.toString() === enrollment?.course_scheduling?.schedulingMode?._id?.toString() &&
+            ((!schedulingCourseType?.length && !s.courseType?.length) || (schedulingCourseType === s.courseType))
+          )
           if (!!dbSurvey) {
             surveys.push({
               surveyRelated: enrollment.course_scheduling._id,
@@ -371,7 +473,8 @@ class SurveyEventService {
           _id: '$_id',
           survey: { "$first": '$_id'},
           academic_resource_config: {$first: '$config.content._id'},
-          modeId: {$first: '$config.content.config.course_modes'}
+          modeId: {$first: '$config.content.config.course_modes'},
+          courseType: {$first: '$config.content.config.course_type'}
         }
       }
     ]
@@ -442,7 +545,7 @@ class SurveyEventService {
     }
     const enrollments = await Enrollment.find(where)
       .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher', populate: [
+      .populate({path: 'course_scheduling', select: 'id course program schedulingMode startDate endDate sessions teacher typeCourse', populate: [
         { path: 'schedulingMode', select: 'id name' },
         { path: 'program', select: 'id name code' },
       ]})

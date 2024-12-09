@@ -1,0 +1,27 @@
+{{> partials/page/title title='¡Bienvenid@ al Campus Digital Icontec!'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado(a) {{params.firstName}}</b></p>&nbsp;
+                    <p> Gracias por registrarte con nosotros. Te damos la bienvenida a nuestra comunidad.</p>
+                    <p>Para completar el proceso de registro, necesitamos confirmar la validez de tu dirección de correo electrónico. Por favor, haz clic en el siguiente enlace para verificarlo y activar tu cuenta (el enlace es válido durante {{params.duration}} minutos).</p>
+                    <a href="{{params.goToConfirm}}" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; font-size: 16px; border-radius: 5px;">Confirmar</a>
+                    <p class="mcSpecialText">Recuerda que, para cualquier solicitud, puedes acceder al <a href="{{params.mailer.campus_virtual}}/login">Campus Digital</a> de ICONTEC y utilizar la asistente virtual "Daniela". Selecciona la opción 2, "mesa de ayuda estudiante" y abre un ticket (para saber como hacerlo, <a href="{{params.mailer.help_desk}}">haz clic aquí.</a>)</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

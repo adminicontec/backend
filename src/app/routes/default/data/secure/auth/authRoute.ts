@@ -32,6 +32,8 @@ class AuthRoute {
     routerUtility.post(app,_route,'/login',this.instanceController.login,[{middleware: 'auth', method: 'login', dir: 'data/secure/auth'}],[]);
     routerUtility.get(app, _route, '/password-recovery', this.instanceController.passwordRecovery, [], [])
     routerUtility.post(app, _route, '/change-recovered-password', this.instanceController.changeRecoveredPassword, [{middleware: 'auth', method: 'change-recovered-password', dir: 'data/secure/auth'}], [])
+
+    routerUtility.get(app, _route, '/confirm-2fa/:token', this.instanceController.confirm2FA, [], [])
     // @end
   }
 }

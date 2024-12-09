@@ -61,8 +61,9 @@ export interface IReportPage {
     downloadDate: string;
     auxiliar: string;
     createdAt: string;
-  },
-  serviceType: string;
+  }
+  typeCourse?: string
+  serviceType?: string;
 }
 
 
@@ -93,7 +94,7 @@ class ReportByGeneralStudentCertificatesService {
       .select('_id courseId userId auxiliar created_at certificateType message downloadDate certificate.hash certificate.date certificate.title')
       .populate({
         path: 'courseId',
-        select: 'id withoutTutor quickLearning metadata schedulingMode regional city account_executive client program startDate endDate',
+        select: 'id withoutTutor quickLearning metadata schedulingMode regional city account_executive client program startDate endDate typeCourse',
         populate: [
           {path: 'schedulingMode', select: 'id name'},
           {path: 'regional', select: 'id name'},

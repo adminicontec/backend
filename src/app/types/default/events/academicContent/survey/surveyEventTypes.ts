@@ -7,6 +7,10 @@ export interface ICheckSurveyAvailable {
   moodle_id: string // Identificador del curso de moodle
 }
 
+export interface ICheckCharacterizationSurveyAvailable {
+  user: string
+}
+
 export interface IGetAvailableSurveysParams {
   user: string
   moodle_id: string

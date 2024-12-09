@@ -3,6 +3,17 @@ import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 // @add your types
+export enum EnrollmentOrigin {
+  AUTOREGISTRO='autoregistro'
+}
+
+export enum EnrollmentStatus {
+  REGISTERED = 'registered',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  CERTIFIED = 'certified',
+}
+
 export interface IAddCourseSchedulingEnrollment {
   enrollmentIds: string[]
   force?: boolean
@@ -35,6 +46,8 @@ export interface IEnrollment{
   enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
   timezone?: TimeZone
+  created_at?: string
+  updated_at?: string
 }
 
 export interface IEnrollmentQuery {
@@ -84,5 +97,9 @@ export interface ILogEnrollment {
   status: 'ERROR' | 'OK'
   message?: string
   row: number
+}
+
+export interface IGetCurrentEnrollmentStatusParams {
+  enrollmentId: string
 }
 //@end

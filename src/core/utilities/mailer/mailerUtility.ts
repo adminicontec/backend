@@ -196,7 +196,11 @@ class MailerUtility {
     }
 
     if (mail_options_default[recipient].length == 0) {
-      return responseUtility.buildResponseFailed('json',null,{error_key: `mailer.mail_${recipient}_invalid`});
+      if (is_required === true) {
+        return responseUtility.buildResponseFailed('json',null,{error_key: `mailer.mail_${recipient}_invalid`});
+      } else {
+        return responseUtility.buildResponseSuccess('json', null)
+      }
     }
 
     let format_email_valid = true;

@@ -104,7 +104,23 @@ const CertificateQueueSchema = new Schema({
   errorMessage: {
     type: Schema.Types.String,
     required: false
-  }
+  },
+  needPayment: {
+    type: Schema.Types.Boolean,
+    default: false,
+  },
+  userNotified: {
+    type: Schema.Types.Boolean,
+    default: false
+  },
+  retryConfig: {
+    maxRetries: {
+      type: Schema.Types.Number
+    },
+    currentAttempt: {
+      type: Schema.Types.Number
+    }
+  },
   // @end
 }, {
   collection: 'certificate_queues', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

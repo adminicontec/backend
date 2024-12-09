@@ -30,18 +30,23 @@ import { eventEmitterUtility } from "@scnode_core/utilities/eventEmitterUtility"
 // @end
 
 // @import models
-import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue, Program } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue, Program, CertificateSettings } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
+import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService';
+import { CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
 import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
+import { enrollmentTrackingService } from './enrollmentTrackingService';
+import { notificationEventService } from '../../events/notifications/notificationEventService';
 // @end
 
 class EnrollmentService {
@@ -479,6 +484,57 @@ class EnrollmentService {
 
             const respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
             if (respMoodle3?.status === 'error') {
+              if (
+                respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
+                params.origin === 'Tienda Virtual'
+              ) {
+                try {
+                  await enrollmentTrackingService.insertOrUpdate({
+                    requestData: params,
+                    errorLog: respMoodle3,
+                    origin: params.origin
+                  })
+
+                  const recipients = []
+                  const recipientsCC = []
+                  const email_enrollment_tracking = customs['mailer']['email_enrollment_tracking'] || {}
+                  if (courseScheduling?.schedulingMode?.name === 'Virtual') {
+                    if (email_enrollment_tracking['virtual']?.length > 0) {
+                      recipients.push(...email_enrollment_tracking['virtual']?.map((e) => e.email))
+                    }
+                  } else {
+                    const material_assistant = courseScheduling?.material_assistant || {}
+                    if (material_assistant?.email) {
+                      recipients.push(material_assistant?.email)
+                    }
+                    if (email_enrollment_tracking['presencialEnlinea']?.length > 0) {
+                      recipients.push(...email_enrollment_tracking['presencialEnlinea']?.map((e) => e.email))
+                    }
+                  }
+                  if (email_enrollment_tracking['always']?.length > 0) {
+                    recipientsCC.push(...email_enrollment_tracking['always']?.map((e) => e.email))
+                  }
+
+                  if (recipients.length > 0) {
+                    await notificationEventService.sendNotificationEnrollmentTracking({
+                      recipients,
+                      recipientsCC,
+                      emailData: {
+                        studentName: params.firstname,
+                        error: `Funcionalidad de matriculación manual deshabilitada para el servicio: ${courseScheduling?.metadata?.service_id}`,
+                        studentFullName: `${params.firstname} ${params.lastname}`,
+                        studentEmail: params.email,
+                        studentDocumentId: params.documentID,
+                        studentPhoneNumber: params.phoneNumber,
+                        courseSchedulingServiceId: courseScheduling?.metadata?.service_id,
+                        origin: params.origin
+                      }
+                    })
+                  }
+                } catch (err) {
+                  console.log('EnrollmentService::InsertOrUpdate::MoodleEnrollmentFailed', err)
+                }
+              }
               const find: any = await Enrollment.findOne({ _id })
               if (find) await find.delete()
 
@@ -949,6 +1005,84 @@ class EnrollmentService {
       .select('enrollmentCode')
       .sort({ enrollmentCode: -1 })
     return lastEnrollmentcode;
+  }
+
+  /**
+   * Este método solo funciona para servicios con certificación multiple
+   * @param param0
+   * @returns
+   */
+  public getCurrentEnrollmentStatus = async ({
+    enrollmentId,
+  }: IGetCurrentEnrollmentStatusParams) => {
+    try {
+      if (!enrollmentId) return responseUtility.buildResponseFailed('json')
+
+      const enrollment = await Enrollment
+        .findOne({ _id: enrollmentId })
+        .select('_id user course_scheduling')
+        .populate([
+          {
+            path: 'user',
+            select: '_id moodle_id'
+          },
+          {
+            path: 'course_scheduling',
+            select: '_id moodle_id'
+          }
+        ])
+      if (!enrollment) return responseUtility.buildResponseFailed('json')
+
+      const userMoodleId = enrollment.user.moodle_id
+      const courseSchedulingMoodleId = enrollment.course_scheduling.moodle_id
+      if (!userMoodleId || !courseSchedulingMoodleId) return responseUtility.buildResponseFailed('json')
+
+      const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
+
+      const [certificateSettings, userCertificates, moodleProgress] = await Promise.all([
+        CertificateSettings
+          .find({ courseScheduling: enrollment.course_scheduling._id })
+          .select('_id'),
+        CertificateQueue
+          .find({ userId: enrollment.user._id, courseId: enrollment.course_scheduling._id, status: { $ne: CertificateQueueStatus.ERROR } })
+          .select('_id certificateSetting'),
+        gradesService.fetchGradesByFilter({
+            courseID: courseSchedulingMoodleId,
+            userID: userMoodleId,
+            filter: moodleItemsToSearch
+          })
+      ])
+
+      const grades = (moodleProgress as any).grades
+      const doesExistProgress = grades?.some((grade) => {
+        const itemTypes = grade?.itemType ? grade?.itemType : {}
+        return Object.values(itemTypes).some((itemsProgress: Array<any>) =>
+          itemsProgress?.some((itemProgress) => itemProgress?.graderaw > 0)
+        )
+      })
+
+      const allCertificatesGenerated = !!userCertificates?.length && !certificateSettings?.some((setting) =>
+        !userCertificates?.some((userCertificate) => userCertificate?.certificateSetting?.toString() === setting._id?.toString())
+      )
+
+      const allCertifiedWerePaid = await transactionService.certificateWasPaid(userCertificates?.map(({ _id }) => _id?.toString()))
+
+      const currentStatus = !doesExistProgress ? EnrollmentStatus.REGISTERED :
+        doesExistProgress && !allCertificatesGenerated ? EnrollmentStatus.IN_PROGRESS :
+        doesExistProgress && allCertificatesGenerated && !allCertifiedWerePaid ? EnrollmentStatus.COMPLETED :
+        doesExistProgress && allCertificatesGenerated && allCertifiedWerePaid ? EnrollmentStatus.CERTIFIED :
+        null
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          currentStatus,
+        }
+      })
+
+    } catch (e) {
+      console.log('EnrollmentService -> getCurrentEnrollmentStatus -> ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
+    }
   }
 
 }
