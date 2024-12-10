@@ -189,6 +189,14 @@ class TransactionService {
   public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string) => {
     try {
       console.log({ params })
+      await customLogService.create({
+        label: 'efps - ots - on transaction success',
+        description: "On transaction success Efipay",
+        content: {
+          params,
+          signature,
+        },
+      })
       if (!signature) {
         customLogService.create({
           label: 'efps - nsf - no signature found',

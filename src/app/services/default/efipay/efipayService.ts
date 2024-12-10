@@ -31,6 +31,13 @@ class EfipayService {
 
   public generatePayment = async (params: IGeneratePaymentParams): Promise<IGeneratePaymentResponse> => {
     try {
+      await customLogService.create({
+        label: 'efps - gp - generate new payment',
+        description: "Generate new payment for Efipay",
+        content: {
+          params,
+        },
+      })
       const headers = {
         'Authorization': `Bearer ${efipaySetup.token}`
       }
