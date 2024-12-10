@@ -45,7 +45,16 @@ const TransactionSchema = new Schema({
     email: { type: Schema.Types.String },
     identification_type: { type: Schema.Types.String },
     phone: { type: Schema.Types.String },
-  }
+    address1: { type: Schema.Types.String },
+    address2: { type: Schema.Types.String },
+    country: { type: Schema.Types.String },
+    zipCode: { type: Schema.Types.String },
+    state: { type: Schema.Types.String },
+    city: { type: Schema.Types.String },
+  },
+  erpCode: {
+    type: Schema.Types.String
+  },
   // @end
 }, {
   collection: 'transactions' ,timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

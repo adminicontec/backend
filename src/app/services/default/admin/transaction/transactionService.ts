@@ -188,6 +188,7 @@ class TransactionService {
 
   public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string) => {
     try {
+      console.log({ params })
       if (!signature) {
         customLogService.create({
           label: 'efps - nsf - no signature found',
@@ -246,6 +247,12 @@ class TransactionService {
             identification_type: params.transaction.transaction_details.identification_type,
             email: params.transaction.transaction_details.email,
             phone: params.transaction.transaction_details.phone,
+            address1: params.transaction.customer_payer.address_1,
+            address2: params.transaction.customer_payer.address_2,
+            city: params.transaction.customer_payer.city,
+            country: params.transaction.customer_payer.country,
+            state: params.transaction.customer_payer.state,
+            zipCode: params.transaction.customer_payer.zip_code
           }
         } : {})
       })

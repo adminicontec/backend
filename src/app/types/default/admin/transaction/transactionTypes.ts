@@ -25,6 +25,7 @@ export interface ITransaction {
   id?: string
   status?: TransactionStatus
   certificateQueue?: string
+  erpCode?: string
   paymentId?: string
   redirectUrl?: string
   certificateInfo?: {
@@ -40,6 +41,12 @@ export interface ITransaction {
     email: string
     identification_type: string
     phone: string
+    address1: string
+    address2: string
+    country: string
+    zipCode: string
+    state: string
+    city: string
   }
 }
 

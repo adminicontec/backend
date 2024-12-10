@@ -58,6 +58,12 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
                 identification_type: efipayStatus.data.transaction_details.identification_type,
                 email: efipayStatus.data.transaction_details.email,
                 phone: efipayStatus.data.transaction_details.phone,
+                address1: efipayStatus.data.customer_payer.address_1,
+                address2: efipayStatus.data.customer_payer.address_2,
+                city: efipayStatus.data.customer_payer.city,
+                country: efipayStatus.data.customer_payer.country,
+                state: efipayStatus.data.customer_payer.state,
+                zipCode: efipayStatus.data.customer_payer.zip_code
               }
             } : {})
           })

@@ -18,7 +18,7 @@ import { Enrollment, CertificateQueue, Course, CertificateLogs } from '@scnode_a
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
 import { ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus, ICertificatePaymentParams } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
-import { customs, efipaySetup } from '@scnode_core/config/globals';
+import { customs, efipaySetup, host } from '@scnode_core/config/globals';
 import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
 import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
 import { erpService } from "@scnode_app/services/default/erp/erpService";
@@ -621,7 +621,7 @@ class CertificateQueueService {
         await transactionService.delete(transaction._id)
         return erpResponse
       }
-      const { price, course, program } = erpResponse
+      const { price, course, program, erpCode } = erpResponse
       const minutesLimit = efipaySetup.payment_limit_minutes
       const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
       const pictureUrl = courseService.coverUrl(course as any)
@@ -647,8 +647,7 @@ class CertificateQueueService {
             approved: `${campusUrl}/payment-status/${transaction._id}`,
             pending: `${campusUrl}/payment-status/${transaction._id}`,
             rejected: `${campusUrl}/payment-status/${transaction._id}`,
-            // TODO: Transactions - Replace webhook URL
-            webhook: 'https://testfunction-6d4wmyy6ja-uc.a.run.app'
+            webhook: `${host}/admin/transaction/on-transaction-success`,
           }
         },
         office: efipaySetup.office_number
@@ -673,6 +672,7 @@ class CertificateQueueService {
       transaction.baseAmount = price[currencyType]
       transaction.taxesAmount = iva
       transaction.totalAmount = totalPrice
+      transaction.erpCode = erpCode
       const updateResponse = await transactionService.insertOrUpdate(transaction)
       if (updateResponse.status === 'error') {
         await transactionService.delete(transaction._id)

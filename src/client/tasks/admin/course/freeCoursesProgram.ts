@@ -53,8 +53,10 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
         schedulingStatus: { $in: courseSchedulingStatus?.map(({ _id }) => _id) },
-        typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] },
-        quickLearning: true
+        $or: [
+          { typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] } },
+          { quickLearning: true }
+        ],
       }).select('_id metadata serviceValidity')
 
       for (const courseScheduling of courseSchedulings) {

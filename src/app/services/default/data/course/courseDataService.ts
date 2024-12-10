@@ -23,7 +23,7 @@ import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, P
 // @import types
 import { IFetchCourses, IFetchCourse, IGenerateCourseFile, ICourse, ISlugType, IFilterItem, IFetchCoursesByCourseSlug, FetchCourseSlug } from '@scnode_app/types/default/data/course/courseDataTypes'
 import { CourseSchedulingModes } from '@scnode_app/types/default/admin/course/courseSchedulingModeTypes';
-import { CourseSchedulingServiceTypeMap } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { CourseSchedulingServiceTypeMap, TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CourseDataService {
@@ -425,14 +425,23 @@ class CourseDataService {
         if (Array.isArray(params.mode)) {
           if (params.mode.length) {
             const modalitiesToSearch = params.mode?.filter(
-              (mode) => ![CourseSchedulingServiceTypeMap.QUICK_LEARNING, CourseSchedulingServiceTypeMap.WITHOUT_TUTOR].includes(mode)
+              (mode) => ![
+                CourseSchedulingServiceTypeMap.QUICK_LEARNING,
+                CourseSchedulingServiceTypeMap.WITHOUT_TUTOR,
+                TypeCourse.FREE,
+                TypeCourse.MOOC
+              ].includes(mode)
             )
             const searchQuickLearning = params.mode?.some((mode) => mode === CourseSchedulingServiceTypeMap.QUICK_LEARNING)
             const searchWithoutTutor = params.mode?.some((mode) => mode === CourseSchedulingServiceTypeMap.WITHOUT_TUTOR)
+            const searchMooc = params.mode?.some((mode) => mode === TypeCourse.MOOC)
+            const searchFree = params.mode?.some((mode) => mode === TypeCourse.FREE)
             where['$or'] = [
               ...(modalitiesToSearch?.length ? [{ schedulingMode: { $in: modalitiesToSearch } }] : []),
               ...(searchQuickLearning ? [{ quickLearning: true }] : []),
               ...(searchWithoutTutor ? [{ withoutTutor: true }] : []),
+              ...(searchMooc ? [{ typeCourse: TypeCourse.MOOC }] : []),
+              ...(searchFree ? [{ typeCourse: TypeCourse.FREE }] : []),
             ]
           }
         } else {
@@ -687,6 +696,16 @@ class CourseDataService {
               return {
                 name: 'Quick Learning',
                 _id: 'quickLearning'
+              }
+            } else if (course?.typeCourse === TypeCourse.MOOC) {
+              return {
+                name: "Mooc",
+                _id: 'mooc'
+              }
+            } else if (course?.typeCourse === TypeCourse.FREE) {
+              return {
+                name: 'Gratuito',
+                _id: 'free'
               }
             }
           }

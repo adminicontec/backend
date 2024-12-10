@@ -80,6 +80,19 @@ export interface IGetTransactionStatusResponse {
       identification_type: string
       phone: string
     }
+    customer_payer: {
+      id: string
+      name: string
+      email: string
+      country: string
+      zip_code: string
+      state: string
+      city: string
+      address_2: string
+      address_1: string
+      created_at: string
+      updated_at: string
+    }
   }
 }
 
@@ -102,6 +115,19 @@ export interface IOnTransactionSuccessParams {
       email: string
       identification_type: string
       phone: string
+    }
+    customer_payer: {
+      id: string
+      name: string
+      email: string
+      country: string
+      zip_code: string
+      state: string
+      city: string
+      address_2: string
+      address_1: string
+      created_at: string
+      updated_at: string
     }
     status: EfipayTransactionStatus
     approved_at: string
