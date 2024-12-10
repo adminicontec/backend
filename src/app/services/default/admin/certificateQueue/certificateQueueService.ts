@@ -647,7 +647,7 @@ class CertificateQueueService {
             approved: `${campusUrl}/payment-status/${transaction._id}`,
             pending: `${campusUrl}/payment-status/${transaction._id}`,
             rejected: `${campusUrl}/payment-status/${transaction._id}`,
-            webhook: `${host}/admin/transaction/on-transaction-success`,
+            webhook: `${host}/api/admin/transaction/on-transaction-success`,
           }
         },
         office: efipaySetup.office_number
