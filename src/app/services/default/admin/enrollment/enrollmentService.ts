@@ -288,6 +288,14 @@ class EnrollmentService {
         // @INFO: Validando matrícula única: email y courseID
         if (params.documentID && params.email && params.courseID) {
 
+          const emailAlreadyExist = await Enrollment.findOne({
+            email: params.email,
+            course_scheduling: courseScheduling._id
+          }).select('id enrollmentCode')
+          if (emailAlreadyExist) {
+            return responseUtility.buildResponseFailed('json', null, { message: `La matricula con código ${emailAlreadyExist.enrollmentCode} tiene asociado el mismo correo electrónico. No es posible tener dos matriculas con el mismo correo electrónico.` })
+          }
+
           // If the usename (document ID) has uppercase letters or spaces, must be replace to avoid mooodle's username wrong format
           const newUserID = params.documentID.toLowerCase().replace(/ /g, "_");
 
