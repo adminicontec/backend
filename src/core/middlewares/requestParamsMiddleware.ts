@@ -64,6 +64,23 @@ class RequestParams {
     return field_res;
   }
 
+  getRawBody = () => {
+    return new Promise((resolve, reject) => {
+      let data = '';
+      this.req.on('data', (chunk) => {
+        data += chunk
+      })
+
+      this.req.on('end', () => {
+        resolve(data)
+      })
+
+      this.req.on('error', (err) => {
+        reject(err)
+      })
+    })
+  }
+
   private transformDate = (field) => {
     if (typeof field === 'object') {
       for (const key in field) {
