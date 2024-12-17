@@ -39,6 +39,7 @@ class TransactionController {
       content: {
         params: req.getParameters.all() ? req.getParameters.all() : {},
         headers: req.headers,
+        body: req.body,
       },
     })
     const response = await transactionService.onTransactionSuccess(params, signature as string)
