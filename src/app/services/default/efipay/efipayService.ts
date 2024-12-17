@@ -87,9 +87,8 @@ class EfipayService {
     }
   }
 
-  public validateSignature = (signature: string, payload: IOnTransactionSuccessParams) => {
+  public validateSignature = (signature: string, payloadString: string) => {
     const webhookToken = efipaySetup.webhook_token
-    const payloadString = JSON.stringify(payload)
     const hmac = CryptoJS.HmacSHA256(payloadString, webhookToken)
     const generatedSignature = hmac.toString(CryptoJS.enc.Hex)
     customLogService.create({

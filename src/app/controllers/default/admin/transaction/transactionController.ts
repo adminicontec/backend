@@ -33,18 +33,17 @@ class TransactionController {
   public onTransactionSuccess = async (req: Request, res: Response) => {
     const params = req.getParameters.all()
     const signature = req.headers.signature
-    const rawBody = await req.getParameters.getRawBody()
+    const bodyString = req.body.toString()
     await customLogService.create({
       label: 'efpc - ots - on transaction success',
       description: "On transaction success Efipay",
       content: {
         params: req.getParameters.all() ? req.getParameters.all() : {},
         headers: req.headers,
-        body: req.body,
-        rawBody,
+        bodyString,
       },
     })
-    const response = await transactionService.onTransactionSuccess(params, signature as string)
+    const response = await transactionService.onTransactionSuccess(params, signature as string, bodyString)
     return responseUtility.sendResponseFromObject(res, response)
   }
 
