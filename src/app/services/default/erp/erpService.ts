@@ -32,14 +32,12 @@ class ErpService {
 
   constructor () {}
 
-  public getCertificatePrice = async ({ duration, programCode, programName }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
+  public getCertificatePrice = async ({ programCode }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
     try {
       const basicHeader = btoa(`${erpSetup?.username}:${erpSetup?.password}`)
       const headers = {
         'Authorization': `Basic ${basicHeader}`
       }
-      // TODO: Transactions - Use the real program code from the service
-      programCode = "8930"
       const response = await queryUtility.query({
         method: 'get',
         url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}`,
@@ -116,7 +114,7 @@ class ErpService {
       const response = await this.createInvoice({
         AccountNumber: identification_number,
         AddressLine1: `${address1} ${address2}`,
-        ATRIBUTO_1: '5',
+        ATRIBUTO_1: '1',  // Amount of items that were bought
         City: city,
         Classifications: '10_NO RESPONSABLE',
         CodigoArticuloEcommerce: transaction.erpCode,
