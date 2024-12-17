@@ -225,7 +225,7 @@ class TransactionService {
         })
       }
 
-      const signatureIsValid = efipayService.validateSignature('', params)
+      const signatureIsValid = efipayService.validateSignature(signature, params)
       if (!signatureIsValid) {
         customLogService.create({
           label: 'efps - esnv - error signature is not valid',
