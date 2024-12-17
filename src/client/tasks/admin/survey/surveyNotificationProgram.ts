@@ -9,7 +9,7 @@ import { SurveyLog, CourseScheduling, CourseSchedulingStatus, MailMessageLog, Co
 // @end
 
 // @import_utilitites Import utilities
-import moment from 'moment';
+import moment from 'moment-timezone';
 // @end
 
 // @import types
@@ -64,9 +64,10 @@ class SurveyNotificationProgram extends DefaultPluginsTaskTaskService {
   }
 
   private sendSchedulingExamNotification = async () => {
+    moment.tz.setDefault('America/Bogota');
     const status = await CourseSchedulingStatus.find({ name: { $in: ['Confirmado'] } });
     const today = moment.utc();
-    // const ids = ['6525b1deddf7dd0287019504']
+    // const ids = ['67069115dcff6e28ab583b2e']
 
     const schedulings = await CourseScheduling.find({
       schedulingStatus: { $in: status.map(s => s._id) },
