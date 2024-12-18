@@ -186,7 +186,7 @@ class TransactionService {
     return false
   }
 
-  public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string, bodyString: string) => {
+  public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string, bodyBuffer: Buffer) => {
     try {
       await customLogService.create({
         label: 'efps - ots - on transaction success',
@@ -224,7 +224,7 @@ class TransactionService {
         })
       }
 
-      const signatureIsValid = efipayService.validateSignature(signature, bodyString)
+      const signatureIsValid = efipayService.validateSignature(signature, bodyBuffer)
       if (!signatureIsValid) {
         customLogService.create({
           label: 'efps - esnv - error signature is not valid',

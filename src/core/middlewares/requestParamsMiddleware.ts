@@ -22,7 +22,7 @@ class RequestParams {
     } else if (this.req.method === "POST" || this.req.method === "PUT") {
       let body = {}
       try {
-        body = JSON.parse(this.req.body.toString())
+        body = Buffer.isBuffer(this.req.body) ? JSON.parse(this.req.body.toString()) : this.req.body
       } catch (e) {
         console.log('ERROR parsing request body: ', e)
       }
@@ -54,7 +54,7 @@ class RequestParams {
     } else if (this.req.method === "POST" || this.req.method === "PUT") {
       let body = {}
       try {
-        body = JSON.parse(this.req.body.toString())
+        body = Buffer.isBuffer(this.req.body) ? JSON.parse(this.req.body.toString()) : this.req.body
       } catch (e) {
         console.log('ERROR parsing request body: ', e)
       }
