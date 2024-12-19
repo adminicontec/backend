@@ -90,7 +90,7 @@ class EfipayService {
   public validateSignature = (signature: string, payloadBuffer: Buffer) => {
     const webhookToken = efipaySetup.webhook_token
     const payloadStringified = JSON.stringify(JSON.parse(payloadBuffer.toString()))
-    const hmac = CryptoJS.HmacSHA256(payloadStringified, webhookToken)
+    const hmac = CryptoJS.HmacSHA256(payloadBuffer.toString(), webhookToken)
     const generatedSignature = hmac.toString(CryptoJS.enc.Hex)
     customLogService.create({
       label: 'efps - vs - validate signature',
