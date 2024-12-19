@@ -78,8 +78,14 @@ class ErpService {
         headers,
         params: JSON.stringify(params)
       })
-      return {
-
+      if (response?.code === 200) {
+        return {
+          error: false
+        }
+      } else {
+        return {
+          error: true
+        }
       }
     } catch (e) {
       console.log(`erpService -> createInvoice -> ERROR: ${e}`)
@@ -98,6 +104,13 @@ class ErpService {
           message: 'Transacción no encontrada'
         })
       }
+      if (transaction?.invoiceCreated) {
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            message: 'Factura creada anteriormente'
+          }
+        })
+      }
       const {
         identification_number,
         address1,
@@ -108,25 +121,37 @@ class ErpService {
         name,
         state,
         phone,
-        identification_type
+        identification_type,
       } = transaction?.paymentInfo
-      // TODO: Transactions - Replace with real classifications and Naturaleza
       const response = await this.createInvoice({
         AccountNumber: identification_number,
         AddressLine1: `${address1} ${address2}`,
         ATRIBUTO_1: '1',  // Amount of items that were bought
         City: city,
-        Classifications: '10_NO RESPONSABLE',
+        Classifications: transaction.certificateInfo?.classification,
         CodigoArticuloEcommerce: transaction.erpCode,
         CorreoElectrónico: email,
         Country: country,
         CustomerName: name,
         Department: state,
-        Naturaleza: 'Natural',
+        Naturaleza: transaction.certificateInfo?.nature,
         PrecioArticulo: String(transaction.baseAmount),
         Telefono: phone,
         TipoDeDocumento: identification_type,
       })
+      if (response?.error) {
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Ha ocurrido un error creando la factura'
+        })
+      } else {
+        await Transaction.findByIdAndUpdate(transactionId, { invoiceCreated: true }, { useFindAndModify: false, new: true })
+        return responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: {
+            message: 'Factura creada correctamente'
+          }
+        })
+      }
     } catch (e) {
       console.log(`erpService -> createInvoiceFromTransaction -> ERROR: ${e}`)
       return responseUtility.buildResponseFailed('json', null, {

@@ -31,10 +31,13 @@ export interface ITransaction {
   certificateInfo?: {
     fullName: string
     docNumber: string
+    nature: string
+    classification: string
   }
   baseAmount?: number
   totalAmount?: number
   taxesAmount?: number
+  invoiceCreated?: boolean
   paymentInfo?: {
     name: string
     identification_number: string

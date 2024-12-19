@@ -29,6 +29,12 @@ const TransactionSchema = new Schema({
     docNumber: {
       type: Schema.Types.String
     },
+    nature: {
+      type: Schema.Types.String
+    },
+    classification: {
+      type: Schema.Types.String
+    },
   },
   baseAmount: {
     type: Schema.Types.Number
@@ -38,6 +44,9 @@ const TransactionSchema = new Schema({
   },
   taxesAmount: {
     type: Schema.Types.Number
+  },
+  invoiceCreated: {
+    type: Schema.Types.Boolean
   },
   paymentInfo: {
     name: { type: Schema.Types.String },

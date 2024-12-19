@@ -13,6 +13,7 @@ import { efipayService } from '@scnode_app/services/default/efipay/efipayService
 import { EfipayTransactionStatus, IOnTransactionSuccessParams } from '@scnode_app/types/default/efipay/efipayTypes';
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
+import { erpService } from '@scnode_app/services/default/erp/erpService';
 // @end
 
 // @import models
@@ -282,12 +283,14 @@ class TransactionService {
         })
       }
 
+      // TODO: Transactions - Send data to ERP
+      const invoiceResponse = await erpService.createInvoiceFromTransaction(transaction._id)
+      if (invoiceResponse?.status === 'error') return invoiceResponse
+
       // TODO: Transactions - Generate certificate
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
         certificateQueueService.sendToProcess([ transaction.certificateQueue ])
       }
-      // TODO: Transactions - Send data to ERP
-
       return responseUtility.buildResponseSuccess('json', null, {
         message: "Ok"
       })

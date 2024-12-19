@@ -231,6 +231,8 @@ export interface ICertificatePaymentParams {
   certificateInfo: {
     fullName: string
     docNumber: string
+    nature: string
+    classification: string
   }
   paymentInfo: {
     email: string
