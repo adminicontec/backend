@@ -6,7 +6,7 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { Transaction } from '@scnode_app/models';
+import { CertificateQueue, Transaction } from '@scnode_app/models';
 import { ITransaction, IUpdateTransactionWithNewCertificateQueueIdParams, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { efipayService } from '@scnode_app/services/default/efipay/efipayService';
@@ -14,6 +14,7 @@ import { EfipayTransactionStatus, IOnTransactionSuccessParams } from '@scnode_ap
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 import { erpService } from '@scnode_app/services/default/erp/erpService';
+import { transactionNotificationsService } from '@scnode_app/services/default/admin/transaction/transactionNotificationsService';
 // @end
 
 // @import models
@@ -287,10 +288,28 @@ class TransactionService {
       const invoiceResponse = await erpService.createInvoiceFromTransaction(transaction._id)
       if (invoiceResponse?.status === 'error') return invoiceResponse
 
+      const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
+        .populate({ path: 'userId', select: 'profile email' })
+        .populate({ path: 'certificateSetting', select: 'certificateName' })
+      if (certificateQueue) {
+        await transactionNotificationsService.sendTransactionStatus({
+          certificateName: certificateQueue?.certificateSetting?.certificateName,
+          status: params.transaction.status as unknown as TransactionStatus,
+          transactionId: transaction._id,
+          users: [
+            {
+              name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+              email: certificateQueue?.userId?.email
+            }
+          ]
+        })
+      }
+
       // TODO: Transactions - Generate certificate
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
         certificateQueueService.sendToProcess([ transaction.certificateQueue ])
       }
+
       return responseUtility.buildResponseSuccess('json', null, {
         message: "Ok",
         code: 200,
