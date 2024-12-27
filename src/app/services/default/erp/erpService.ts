@@ -84,6 +84,7 @@ class ErpService {
         description: "Create invoice response",
         content: {
           params,
+          response,
         },
       })
       if (response?.code === 200) {
@@ -170,6 +171,13 @@ class ErpService {
         TipoDeDocumento: identification_type,
       })
       if (response?.error) {
+        await customLogService.create({
+          label: 'erps - eci - error creating invoice',
+          description: "Error creating invoice",
+          content: {
+            transaction: transaction._id,
+          },
+        })
         return responseUtility.buildResponseFailed('json', null, {
           code: 500,
           message: 'Ha ocurrido un error creando la factura'
