@@ -292,7 +292,8 @@ class TransactionService {
         certificateQueueService.sendToProcess([ transaction.certificateQueue ])
       }
       return responseUtility.buildResponseSuccess('json', null, {
-        message: "Ok"
+        message: "Ok",
+        code: 200,
       })
 
     } catch (e) {

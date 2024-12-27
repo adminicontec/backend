@@ -10,10 +10,8 @@ import { Request, Response } from 'express';
 
 // @import_utilities Import utilities
 import { responseUtility } from "@scnode_core/utilities/responseUtility";
-import { requestUtility } from "@scnode_core/utilities/requestUtility";
 import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
-import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 // @import_types Import types
@@ -34,14 +32,6 @@ class TransactionController {
     const params = req.getParameters.all()
     const signature = req.headers.signature
     const bodyBuffer = req.body
-    await customLogService.create({
-      label: 'efpc - ots - on transaction success',
-      description: "On transaction success Efipay",
-      content: {
-        params: req.getParameters.all() ? req.getParameters.all() : {},
-        headers: req.headers,
-      },
-    })
     const response = await transactionService.onTransactionSuccess(params, signature as string, bodyBuffer)
     return responseUtility.sendResponseFromObject(res, response)
   }

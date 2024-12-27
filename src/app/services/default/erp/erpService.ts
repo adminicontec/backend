@@ -13,6 +13,7 @@ import { erpSetup } from '@scnode_core/config/globals';
 import { btoa } from 'js-base64';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { ITransaction } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 // @import models
@@ -78,6 +79,13 @@ class ErpService {
         headers,
         params: JSON.stringify(params)
       })
+      await customLogService.create({
+        label: 'erps - cir - create invoice response',
+        description: "Create invoice response",
+        content: {
+          params,
+        },
+      })
       if (response?.code === 200) {
         return {
           error: false
@@ -88,6 +96,14 @@ class ErpService {
         }
       }
     } catch (e) {
+      await customLogService.create({
+        label: 'erps - cica - create invoice catch',
+        description: "Create invoice catch",
+        content: {
+          params,
+          e,
+        },
+      })
       console.log(`erpService -> createInvoice -> ERROR: ${e}`)
       return {
         error: true
@@ -99,12 +115,26 @@ class ErpService {
     try {
       const transaction: ITransaction = await Transaction.findOne({ _id: transactionId })
       if (!transaction) {
+        await customLogService.create({
+          label: 'erps - ciftnf - transaction not found',
+          description: "Transaction not found",
+          content: {
+            transaction: transaction._id,
+          },
+        })
         return responseUtility.buildResponseFailed('json', null, {
           code: 404,
           message: 'Transacción no encontrada'
         })
       }
       if (transaction?.invoiceCreated) {
+        await customLogService.create({
+          label: 'erps - ciftac - invoice already created',
+          description: "Invoice already created",
+          content: {
+            transaction: transaction._id,
+          },
+        })
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             message: 'Factura creada anteriormente'
@@ -146,6 +176,13 @@ class ErpService {
         })
       } else {
         await Transaction.findByIdAndUpdate(transactionId, { invoiceCreated: true }, { useFindAndModify: false, new: true })
+        await customLogService.create({
+          label: 'erps - ics - invoice created successfully',
+          description: "Invoice created successfully",
+          content: {
+            transaction: transaction._id,
+          },
+        })
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             message: 'Factura creada correctamente'
