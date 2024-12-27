@@ -33,6 +33,9 @@ export interface ITransaction {
     docNumber: string
     nature: string
     classification: string
+    country: string
+    department: string
+    city: string
   }
   baseAmount?: number
   totalAmount?: number

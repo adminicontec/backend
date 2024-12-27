@@ -35,6 +35,15 @@ const TransactionSchema = new Schema({
     classification: {
       type: Schema.Types.String
     },
+    country: {
+      type: Schema.Types.String
+    },
+    department: {
+      type: Schema.Types.String
+    },
+    city: {
+      type: Schema.Types.String
+    },
   },
   baseAmount: {
     type: Schema.Types.Number
