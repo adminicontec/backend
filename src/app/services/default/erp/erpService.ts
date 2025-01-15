@@ -197,7 +197,7 @@ class ErpService {
           response,
         },
       })
-      if (response?.code === 200) {
+      if (!response) {
         return {
           error: false
         }
