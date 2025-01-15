@@ -628,7 +628,7 @@ class CertificateQueueService {
       const campusUrl = customs.campus_virtual
 
       const iva = price[currencyType] * 0.19
-      const totalPrice = Math.trunc(iva + price[currencyType])
+      const totalPrice = (iva + price[currencyType]).toFixed(2)
 
       const paymentParams: IGeneratePaymentParams = {
         payment: {
@@ -668,7 +668,10 @@ class CertificateQueueService {
       transaction.paymentId = paymentResponse.payment_id
       transaction.redirectUrl = paymentResponse.url
       transaction.status = TransactionStatus.IN_PROCESS
-      transaction.certificateInfo = certificateInfo
+      transaction.certificateInfo = {
+        ...certificateInfo,
+        currency: currencyType,
+      }
       transaction.baseAmount = price[currencyType]
       transaction.taxesAmount = iva
       transaction.totalAmount = totalPrice

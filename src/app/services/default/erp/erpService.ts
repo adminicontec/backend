@@ -140,18 +140,26 @@ class ErpService {
       const headers = {
         'Authorization': `Basic ${basicHeader}`
       }
-      const response = await queryUtility.query({
+      const USDRequest = queryUtility.query({
         method: 'get',
-        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}`,
+        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=USD`,
         api: 'erp',
         headers
       })
-      const priceCOP = Number(response?.ITEM?.[0]?.ItemPrice)
-      const erpCode = response?.ITEM?.[0]?.ItemCode
+      const COPRequest = queryUtility.query({
+        method: 'get',
+        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=COP`,
+        api: 'erp',
+        headers
+      })
+      const [usdResponse, copResponse] = await Promise.all([USDRequest, COPRequest])
+      const priceCOP = Number(copResponse?.ITEM?.[0]?.ItemPrice)
+      const priceUSD = Number(usdResponse?.ITEM?.[0]?.ItemPrice)
+      const erpCode = copResponse?.ITEM?.[0]?.ItemCode
       return {
         price: {
           COP: priceCOP,
-          USD: 0
+          USD: priceUSD,
         },
         erpCode,
       }
@@ -230,6 +238,18 @@ class ErpService {
           message: 'Transacción no encontrada'
         })
       }
+      const certificateQueue = await CertificateQueue
+        .findOne({ _id: transaction.certificateQueue })
+        .populate({ path: 'courseId', populate: {
+          path: 'program'
+        } })
+      const program = certificateQueue?.courseId?.program
+      if (!program) {
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 404,
+          message: 'Programa no encontrado'
+        })
+      }
       if (transaction?.invoiceCreated) {
         await customLogService.create({
           label: 'erps - ciftac - invoice already created',
@@ -270,9 +290,10 @@ class ErpService {
           {
             ATRIBUTO_1: '1',  // Amount of items that were bought
             PrecioArticulo: String(transaction.baseAmount),
-            CodigoArticuloEcommerce: transaction.erpCode,
+            CodigoArticuloEcommerce: program.code,
           }
-        ]
+        ],
+        ATRIBUTO_2: transaction?.certificateInfo?.currency
       })
       if (response?.error) {
         await customLogService.create({
