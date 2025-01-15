@@ -186,8 +186,8 @@ class ErpService {
         url: `/ic/api/integration/v1/flows/rest/ICO_CO_CREAT_UPDAT_CUSTO_TV/1.0/create-update/customer`,
         api: 'erp',
         headers,
-        // sendBy: 'body',
-        params: JSON.stringify(params)
+        sendBy: 'body',
+        params,
       })
       await customLogService.create({
         label: 'erps - cir - create invoice response',
