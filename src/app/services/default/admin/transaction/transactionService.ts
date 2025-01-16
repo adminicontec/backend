@@ -285,8 +285,10 @@ class TransactionService {
       }
 
       // TODO: Transactions - Send data to ERP
-      const invoiceResponse = await erpService.createInvoiceFromTransaction(transaction._id)
-      if (invoiceResponse?.status === 'error') return invoiceResponse
+      if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
+        const invoiceResponse = await erpService.createInvoiceFromTransaction(transaction._id)
+        if (invoiceResponse?.status === 'error') return invoiceResponse
+      }
 
       const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
         .populate({ path: 'userId', select: 'profile email' })
