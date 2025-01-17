@@ -15,6 +15,7 @@ import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryT
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 import { erpService } from '@scnode_app/services/default/erp/erpService';
 import { transactionNotificationsService } from '@scnode_app/services/default/admin/transaction/transactionNotificationsService';
+import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
 // @end
 
 // @import models
@@ -284,15 +285,39 @@ class TransactionService {
         })
       }
 
-      // TODO: Transactions - Send data to ERP
+      const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
+        .populate({ path: 'userId', select: 'profile email username' })
+        .populate({ path: 'certificateSetting', select: 'certificateName' })
+        .populate({ path: 'courseId', populate: {
+          path: 'program'
+        } })
+      const program = certificateQueue?.courseId?.program
+
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
-        const invoiceResponse = await erpService.createInvoiceFromTransaction(transaction._id)
-        if (invoiceResponse?.status === 'error') return invoiceResponse
+        const invoiceResponse: any = await erpService.createInvoiceFromTransaction(transaction._id)
+        if (invoiceResponse?.status === 'error') {
+          certificateNotifiactionsService.sendAdminErrorCertificate({
+            errorMessage: 'Error al generar la factura',
+            queryErrorMessage: typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
+            certificateQueueId: certificateQueue?._id?.toString(),
+            courseName: program?.name,
+            docNumber: certificateQueue?.userId?.username,
+            studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+          })
+          certificateNotifiactionsService.sendErrorCertificate({
+            certificateQueueId: certificateQueue?._id?.toString(),
+            users: [
+              {
+                name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+                email: certificateQueue?.userId?.email
+              }
+            ],
+            courseName: program?.name
+          })
+          return invoiceResponse
+        }
       }
 
-      const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
-        .populate({ path: 'userId', select: 'profile email' })
-        .populate({ path: 'certificateSetting', select: 'certificateName' })
       if (certificateQueue) {
         await transactionNotificationsService.sendTransactionStatus({
           certificateName: certificateQueue?.certificateSetting?.certificateName,
@@ -307,7 +332,6 @@ class TransactionService {
         })
       }
 
-      // TODO: Transactions - Generate certificate
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
         certificateQueueService.sendToProcess([ transaction.certificateQueue ])
       }

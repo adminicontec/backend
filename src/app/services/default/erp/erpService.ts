@@ -203,7 +203,8 @@ class ErpService {
         }
       } else {
         return {
-          error: true
+          error: true,
+          errorContent: response
         }
       }
     } catch (e) {
@@ -305,7 +306,10 @@ class ErpService {
         })
         return responseUtility.buildResponseFailed('json', null, {
           code: 500,
-          message: 'Ha ocurrido un error creando la factura'
+          message: 'Ha ocurrido un error creando la factura',
+          additional_parameters: {
+            errorContent: response?.errorContent
+          }
         })
       } else {
         await Transaction.findByIdAndUpdate(transactionId, { invoiceCreated: true }, { useFindAndModify: false, new: true })

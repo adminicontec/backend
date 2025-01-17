@@ -138,5 +138,6 @@ export interface ICreateInvoiceERP extends Partial<IAttributesERP> {
 
 export interface ICreateInvoiceERPResponse {
   error?: boolean
+  errorContent?: any
 }
 //@end

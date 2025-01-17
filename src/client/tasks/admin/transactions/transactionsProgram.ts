@@ -18,6 +18,8 @@ import { transactionService } from "@scnode_app/services/default/admin/transacti
 import { EfipayTransactionStatus } from "@scnode_app/types/default/efipay/efipayTypes";
 import { certificateQueueService } from "@scnode_app/services/default/admin/certificateQueue/certificateQueueService";
 import { transactionNotificationsService } from "@scnode_app/services/default/admin/transaction/transactionNotificationsService";
+import { erpService } from '@scnode_app/services/default/erp/erpService';
+import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
 // @end
 
 class TransactionsProgram extends DefaultPluginsTaskTaskService {
@@ -39,11 +41,11 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
   // @add_more_methods
   private updateTransactionStatus = async () => {
     try {
-      // const fifteenMinutesBefore = new Date(Date.now() - 15 * 60 * 1000)
+      const fifteenMinutesBefore = new Date(Date.now() - 15 * 60 * 1000)
       const pendingTransactions: ITransaction[] = await Transaction.find({
         status: TransactionStatus.IN_PROCESS,
         paymentId: { $exists: true },
-        // created_at: { $lte: fifteenMinutesBefore }
+        created_at: { $lte: fifteenMinutesBefore }
       })
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
@@ -67,16 +69,45 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
               }
             } : {})
           })
+
+          const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
+            .populate({ path: 'userId', select: 'profile email' })
+            .populate({ path: 'certificateSetting', select: 'certificateName' })
+            .populate({ path: 'courseId', populate: {
+              path: 'program'
+            } })
+          const program = certificateQueue?.courseId?.program
+
           if (updateResponse.status === 'success' && efipayStatus.data.status === EfipayTransactionStatus.SUCCESS) {
             const response = await certificateQueueService.processCertificateQueue({
               certificateQueueId: transaction.certificateQueue,
               output: 'process'
             })
-            console.log({ response })
+            const invoiceResponse: any = await erpService.createInvoiceFromTransaction(transaction._id)
+            if (invoiceResponse?.status === 'error') {
+              // TODO: Transactions - send error email
+              await certificateNotifiactionsService.sendAdminErrorCertificate({
+                errorMessage: 'Error al generar la factura',
+                queryErrorMessage: typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
+                certificateQueueId: certificateQueue?._id?.toString(),
+                courseName: program?.name,
+                docNumber: certificateQueue?.userId?.username,
+                studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+              })
+              await certificateNotifiactionsService.sendErrorCertificate({
+                certificateQueueId: certificateQueue?._id?.toString(),
+                users: [
+                  {
+                    name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+                    email: certificateQueue?.userId?.email
+                  }
+                ],
+                courseName: program?.name
+              })
+              continue
+            }
           }
-          const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
-            .populate({ path: 'userId', select: 'profile email' })
-            .populate({ path: 'certificateSetting', select: 'certificateName' })
+
           if (certificateQueue) {
             await transactionNotificationsService.sendTransactionStatus({
               certificateName: certificateQueue?.certificateSetting?.certificateName,
