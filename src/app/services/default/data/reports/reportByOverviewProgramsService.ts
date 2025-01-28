@@ -308,35 +308,35 @@ class ReportByOverviewProgramsService {
               const participantInfo = participantsInformationByProgram[courseScheduling._id.toString()][participant?.user._id.toString()]
               // @INFO: Cargando información de participantes con certificado
               if (!itemBase.isVirtual) {
-                if (participantInfo?.certificateStats?.isAttendanceComplete === true) {
+                if (participantInfo?.generalData?.certificateStats?.isAttendanceComplete === true) {
                   itemBase.certification.standar.participantsWithAttendanceProgressComplete += 1;
                 }
               } else {
-                if (participantInfo?.certificateStats?.isProgressComplete === true) {
+                if (participantInfo?.generalData?.certificateStats?.isProgressComplete === true) {
                   itemBase.certification.standar.participantsWithAttendanceProgressComplete += 1;
                 }
               }
 
-              if (participantInfo?.certificateStats?.isCertificate === true) {
+              if (participantInfo?.generalData?.certificateStats?.isCertificate === true) {
                 itemBase.certification.standar.participantsWithCertificate += 1;
               }
 
-              if (participantInfo?.certificateStats?.isDownloadCertificate === true) {
+              if (participantInfo?.generalData?.certificateStats?.isDownloadCertificate === true) {
                 itemBase.certification.standar.participantsWithCertificateDownload += 1;
               }
 
               // @INFO: Cargando información de participantes con certificado auditor
-              if (participantInfo?.auditCertificateStats?.isAttendanceComplete === true) {
+              if (participantInfo?.generalData?.auditCertificateStats?.isAttendanceComplete === true) {
                 itemBase.certification.auditor.participantsWithAttendance += 1;
               }
-              if (participantInfo?.auditCertificateStats?.isExamApprove === true) {
+              if (participantInfo?.generalData?.auditCertificateStats?.isExamApprove === true) {
                 itemBase.certification.auditor.participantsWithExamenApproved += 1;
               }
-              if (participantInfo?.auditCertificateStats?.isCertificate === true) {
+              if (participantInfo?.generalData?.auditCertificateStats?.isCertificate === true) {
                 itemBase.certification.auditor.amountCertificatesWithAttendanceAndAproved += 1;
 
               }
-              if (participantInfo?.auditCertificateStats?.isDownloadCertificate === true) {
+              if (participantInfo?.generalData?.auditCertificateStats?.isDownloadCertificate === true) {
                 itemBase.certification.auditor.participantsWithCertificateDownload += 1;
               }
             }
