@@ -28,6 +28,7 @@ import { TCourseSchedulingDetailsModificationFn } from '@scnode_app/types/defaul
 import { TIME_ZONES_WITH_OFFSET } from '@scnode_app/types/default/admin/user/userTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { courseSchedulingService } from './courseSchedulingService';
+import { attachedService } from '@scnode_app/services/default/admin/attached/attachedService';
 // @end
 
 const DATE_FORMAT = 'YYYY-MM-DD'
@@ -248,8 +249,17 @@ class CourseSchedulingNotificationsService {
           accountExecutive: `${courseScheduling.account_executive.profile.first_name} ${courseScheduling.account_executive.profile.last_name}`,
           client: courseScheduling.client?.name,
           regional: courseScheduling.regional.name,
-          material_address
+          material_address,
+          hasTechnicalGuideline: !!courseScheduling?.technical_guideline ? 'SI' : 'NO',
         };
+
+        const technicalGuidelineUrl = courseScheduling?.technical_guideline?.files?.[0]?.url
+        const urlParts = (technicalGuidelineUrl ? technicalGuidelineUrl : '').split('.')
+        const extension = urlParts?.length ? urlParts[urlParts.length - 1] : ''
+        const attachments = technicalGuidelineUrl && type === 'started' ? [{
+          filename: `Lineamiento_técnico.${extension}`,
+          path: attachedService.getFileUrl(technicalGuidelineUrl)
+        }] : undefined
 
         // @ts-ignore
         const path_template = type === 'started' || type === 'modify' ? 'course/startedServiceToAssistant' : 'course/cancelServiceToAssistant'
@@ -272,9 +282,10 @@ class CourseSchedulingNotificationsService {
                   assistant_name: emailNotificate.name
                 }
               },
-              amount_notifications: type === 'modify' ? null : 10
+              amount_notifications: type === 'modify' ? null : 10,
+              attachments,
             },
-            notification_source: params.notification_source
+            notification_source: params.notification_source,
           })
           if (mail?.status === 'error') {
             await customLogService.create({
@@ -617,6 +628,7 @@ class CourseSchedulingNotificationsService {
       .populate({ path: 'country', select: 'id name' })
       .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name profile.timezone email' })
       .populate({ path: 'client', select: 'id name' })
+      .populate({ path: 'technical_guideline', select: 'id files' })
       .lean();
 
     return courseScheduling;
