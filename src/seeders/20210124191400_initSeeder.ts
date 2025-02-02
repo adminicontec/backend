@@ -1495,7 +1495,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         description: "Lineamiento tecnico del servicio",
         config: {
           limit_files: 1,
-          formats: ['xlsx', 'pdf', 'ppt', 'docx'],
+          formats: ['xlsx', 'pdf', 'ppt', 'docx', 'zip'],
           limit_size_KB: 1000
         }
       },
