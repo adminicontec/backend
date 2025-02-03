@@ -550,11 +550,14 @@ class EnrollmentService {
                 errorMessage: respMoodle3.message || 'Se ha presentado un error al matricular en moodle'
               }}})
             }
+            const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
+            if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
+              params.sendEmail = 'true'
+            }
             // @INFO: Se envia email de bienvenida
             if ((params.sendEmail === true || params.sendEmail === 'true') && courseScheduling.schedulingStatus.name === 'Confirmado') {
               const sendMailsStudents = await courseSchedulingNotificationsService.checkIfNotificationsCanSendToStudents(courseScheduling._id,CourseSchedulingNotificationEvents.ENROLLMENT)
               if (sendMailsStudents) {
-                const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
                 let customTemplate = undefined
                 let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
                 let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
