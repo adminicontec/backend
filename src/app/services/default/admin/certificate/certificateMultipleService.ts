@@ -32,6 +32,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
 import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
 import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CertificateMultipleService {
@@ -560,8 +561,8 @@ class CertificateMultipleService {
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
                 status,
                 isPartial,
-                needPayment,
-                retryConfig,
+                needPayment: needPayment ? needPayment : courseScheduling?.needPayment,
+                retryConfig: retryConfig ? retryConfig : courseScheduling?.retryConfig,
               }
               itemsToCreate.push(item)
             }
@@ -596,11 +597,13 @@ class CertificateMultipleService {
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({ path: 'program', select: 'id name moodle_id code' })
-      .select('id moodle_id metadata program')
+      .select('id moodle_id metadata program typeCourse quickLearning')
 
       if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {
         error_key: 'course_scheduling.not_found'
       })
+
+      const needPayment = [TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse) || courseScheduling.quickLearning === true
 
       // @INFO: Restringir consulta de certificados solo cuando se encuentra en estados permitidos
       if (['Programado', 'Cancelado'].includes(courseScheduling?.schedulingStatus?.name)) {
@@ -609,7 +612,11 @@ class CertificateMultipleService {
       }
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          courseScheduling
+          courseScheduling,
+          needPayment,
+          retryConfig: needPayment ? {
+            maxRetries: 3
+          } : undefined,
         }
       })
     } catch (err) {
