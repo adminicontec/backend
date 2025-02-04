@@ -561,8 +561,8 @@ class CertificateMultipleService {
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
                 status,
                 isPartial,
-                needPayment: needPayment ? needPayment : courseScheduling?.needPayment,
-                retryConfig: retryConfig ? retryConfig : courseScheduling?.retryConfig,
+                needPayment: needPayment ? needPayment : responseValidate?.needPayment,
+                retryConfig: retryConfig ? retryConfig : responseValidate?.retryConfig,
               }
               itemsToCreate.push(item)
             }
