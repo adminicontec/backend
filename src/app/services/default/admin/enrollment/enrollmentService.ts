@@ -35,7 +35,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -1094,6 +1094,19 @@ class EnrollmentService {
       console.log('EnrollmentService -> getCurrentEnrollmentStatus -> ERROR: ', e)
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+
+  public buyCoursesByShoppingCart = (request: IBuyCoursesByShoppingCart) => {
+    // TODO: Logica de compra en tienda
+
+    // TODO: Validar si el estudiante ya tomo el servicio y aprobo, esto no debe permitir seguir el flujo
+    // TODO: Configurar variable para forzar la inscripción
+
+
+    // TODO: Mientras NO tengamos un servicio de Tienda para inscribir debo realizar el proceso de matricula directo en campus
+    console.log('request', request)
+    return responseUtility.buildResponseSuccess('json', null, {message: 'Compra exitosa'})
   }
 
 }

@@ -102,4 +102,20 @@ export interface ILogEnrollment {
 export interface IGetCurrentEnrollmentStatusParams {
   enrollmentId: string
 }
+
+export interface IBuyCoursesByShoppingCart {
+  itemsToBuy: IShoppingCarItem[]
+}
+
+
+export interface IShoppingCarItem {
+  identifier: string,
+  image: string,
+  description: string,
+  price: string,
+  startDate: string,
+  modality: string,
+  priceWithDiscount?: string | null,
+}
+
 //@end

@@ -34,6 +34,9 @@ const AcademicResourceConfigSchema = new Schema({
     },
     course_type: {
       type: Schema.Types.String
+    },
+    course_modes_mixed: {
+      type: Schema.Types.String,
     }
   },
   // @end

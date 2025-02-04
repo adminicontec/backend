@@ -126,6 +126,11 @@ class EnrollmentController {
     const response = await enrollmentService.getCurrentEnrollmentStatus(req.getParameters.all())
     return responseUtility.sendResponseFromObject(res, response)
   }
+
+  public buyCoursesByShoppingCart = async (req: Request, res: Response) => {
+    const response = await enrollmentService.buyCoursesByShoppingCart(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res, response)
+  }
 }
 
 export const enrollmentController = new EnrollmentController();
