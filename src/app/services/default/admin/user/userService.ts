@@ -994,7 +994,8 @@ class UserService {
       if (userInserted?.status === 'error') throw new ExceptionsService({message: userInserted.message, code: userInserted.code})
 
       const sendEmailResponse = await this.sendEmailConfirmationToUser({
-        username: params.documentNumber
+        username: params.documentNumber,
+        redirect: params.redirect,
       })
       if (sendEmailResponse?.status === 'error') return sendEmailResponse
 
@@ -1013,7 +1014,7 @@ class UserService {
    * @param param0
    * @returns
    */
-  public sendEmailConfirmationToUser = async ({ username }: ISendEmailConfirmationToUser) => {
+  public sendEmailConfirmationToUser = async ({ username, redirect }: ISendEmailConfirmationToUser) => {
     try {
       const duration = 15
 
@@ -1041,7 +1042,8 @@ class UserService {
           username: user?.username
         },
         token,
-        duration
+        duration,
+        redirect,
       })
 
       return responseUtility.buildResponseSuccess('json', null, {

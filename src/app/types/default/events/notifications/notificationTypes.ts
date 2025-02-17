@@ -49,6 +49,7 @@ export interface ISendNotificationConfirmEmail {
   },
   duration: number,
   token: string;
+  redirect?: string
 }
 
 export interface ISendNotificationEnrollmentTrackingEmailData {

@@ -173,6 +173,7 @@ export interface ISelfRegistration {
   documentNumber: string;
   email: string;
   password: string;
+  redirect?: string;
 }
 
 export interface IConfirmEmail {
@@ -181,5 +182,6 @@ export interface IConfirmEmail {
 
 export interface ISendEmailConfirmationToUser {
   username: string
+  redirect?: string
 }
 //@end

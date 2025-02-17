@@ -214,9 +214,11 @@ class NotificationEventService {
 
       const {user} = params
 
+      const redirectParam = params.redirect?.length ? `&redirect=${params.redirect}` : ''
+
       const paramsTemplate = {
         firstName: user.firstName,
-        goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}&username=${user?.username}`,
+        goToConfirm: `${customs['campus_virtual']}/confirm-email?token=${params.token}&username=${user?.username}${redirectParam}`,
         duration: params.duration,
         amount_notifications: null,
         notification_source: `user_confirm_email_${user.email}_${user._id}`,
