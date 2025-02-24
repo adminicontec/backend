@@ -56,6 +56,7 @@ export interface ITransaction {
     zipCode: string
     state: string
     city: string
+    authorization_code: string
   }
 }
 

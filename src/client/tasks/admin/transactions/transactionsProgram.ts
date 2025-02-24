@@ -65,7 +65,8 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
                 city: efipayStatus.data.customer_payer.city,
                 country: efipayStatus.data.customer_payer.country,
                 state: efipayStatus.data.customer_payer.state,
-                zipCode: efipayStatus.data.customer_payer.zip_code
+                zipCode: efipayStatus.data.customer_payer.zip_code,
+                authorization_code: efipayStatus.data.authorization_code,
               }
             } : {})
           })

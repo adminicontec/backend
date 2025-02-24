@@ -70,6 +70,7 @@ export interface IGetTransactionStatusResponse {
     approved_at: string
     production: boolean
     created_at: string
+    authorization_code: string
     transaction_details: {
       name: string
       country: string
@@ -106,6 +107,7 @@ export interface IOnTransactionSuccessParams {
   }
   transaction: {
     amount: number
+    authorization_code: string
     transaction_details: {
       name: string
       country: string
