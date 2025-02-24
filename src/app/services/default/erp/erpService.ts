@@ -273,6 +273,7 @@ class ErpService {
         name,
         phone,
         identification_type,
+        authorization_code,
       } = transaction?.paymentInfo
       const response = await this.createInvoice({
         ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
@@ -294,7 +295,8 @@ class ErpService {
             CodigoArticuloEcommerce: program.code,
           }
         ],
-        ATRIBUTO_2: transaction?.certificateInfo?.currency
+        ATRIBUTO_2: transaction?.certificateInfo?.currency,
+        ATRIBUTO_3: String(authorization_code || '')
       })
       if (response?.error) {
         await customLogService.create({

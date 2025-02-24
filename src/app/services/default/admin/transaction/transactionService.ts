@@ -262,7 +262,8 @@ class TransactionService {
             city: params.transaction.customer_payer.city,
             country: params.transaction.customer_payer.country,
             state: params.transaction.customer_payer.state,
-            zipCode: params.transaction.customer_payer.zip_code
+            zipCode: params.transaction.customer_payer.zip_code,
+            authorization_code: params.transaction.authorization_code,
           }
         } : {})
       })

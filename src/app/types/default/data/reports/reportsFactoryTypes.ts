@@ -8,6 +8,7 @@ export enum FactoryReportType {
   GENERAL_STUDENT_CERTIFICATES = 'general_student_certificates',
   PROVISION_OF_PROFESSIONALS = 'provision_of_professionals',
   USERS_CHARACTERIZATION = 'users_characterization',
+  TRANSACTIONS = 'transactions',
 }
 export interface IFactoryGenerateReport {
   user: string;

@@ -72,6 +72,7 @@ const TransactionSchema = new Schema({
     zipCode: { type: Schema.Types.String },
     state: { type: Schema.Types.String },
     city: { type: Schema.Types.String },
+    authorization_code: { type: Schema.Types.String },
   },
   erpCode: {
     type: Schema.Types.String
