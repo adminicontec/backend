@@ -104,12 +104,16 @@ export interface IGetCurrentEnrollmentStatusParams {
 }
 
 export interface IBuyCoursesByShoppingCart {
-  itemsToBuy: IShoppingCarItem[]
+  buyerId: string,
+  itemsToBuy: IShoppingCarItem[],
+  force?: boolean
 }
 
 
 export interface IShoppingCarItem {
   identifier: string,
+  externalId: string,
+  programCode: string,
   image: string,
   description: string,
   price: string,
@@ -118,4 +122,20 @@ export interface IShoppingCarItem {
   priceWithDiscount?: string | null,
 }
 
+export enum PROCESS_PURCHASE {
+  AVAILABLE = 'available',
+  WARNING = 'warning',
+  RESTRICTED = 'restricted'
+}
+
+export type ObjectsToBuy = Record<string, IObjectToBuy>;
+
+export interface IObjectToBuy {
+  processPurchase: PROCESS_PURCHASE
+  reason: string,
+  programCode: string,
+  programName: string,
+  externalId: string,
+  identifier: string
+}
 //@end

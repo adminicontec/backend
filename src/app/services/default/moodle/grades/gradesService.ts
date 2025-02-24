@@ -128,7 +128,6 @@ class GradesService {
    */
   public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
     try {
-
       //var select = ['assign', 'quiz', 'forum'];
       var select = params.filter;
       let userGradesData = [];

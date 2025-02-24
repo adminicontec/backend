@@ -51,6 +51,7 @@ class CourseSchedulingNotificationsService {
       case CourseSchedulingNotificationEvents.UNENROLLMENT:
       case CourseSchedulingNotificationEvents.SERVICE_CANCEL:
       case CourseSchedulingNotificationEvents.SURVEY_NOTIFICATION:
+        return this.checkRulesToNotificate(courseScheduling, [CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING, CourseSchedulingNotificationRules.SERVICE_IS_NOT_WITHOUT_TUTOR])
       case CourseSchedulingNotificationEvents.CERTIFICATE_GENERATED:
         return this.checkRulesToNotificate(courseScheduling, [CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING])
       case CourseSchedulingNotificationEvents.ENROLLMENT:
@@ -71,6 +72,13 @@ class CourseSchedulingNotificationsService {
             rulesValidation.push(false)
           }
           break
+        case CourseSchedulingNotificationRules.SERVICE_IS_NOT_WITHOUT_TUTOR:
+          if (courseScheduling?.withoutTutor) {
+            rulesValidation.push(false)
+          } else {
+            rulesValidation.push(true)
+          }
+          break;
       }
     }
     if (rulesValidation.length === 0) return true
@@ -611,6 +619,52 @@ class CourseSchedulingNotificationsService {
       return mail
     } catch (error) {
       console.log('sendReminderEmailForFreeOrMooc Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public sendReminderEmailForWithoutTutor = async (courseSchedulingId: string, userId: string, options: {stage: 'first' | 'ending_soon' | 'finished', customData?: Record<string, any>}) => {
+    try {
+      const {stage, customData} = options;
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      let path_template = 'course/schedulingWithoutTutorFirstReminder';
+      let notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}`
+      let title = 'Recordatorio de progreso de curso'
+      if (stage === 'ending_soon') {
+        path_template = 'course/schedulingWithoutTutorEndingSoonReminder';
+        notification_source = `scheduling_without_tutor_ending_soon_reminder_${courseScheduling._id}_${userId}`
+      } else if (stage === 'finished') {
+        title = 'Finalización de curso'
+        path_template = 'course/schedulingWithoutTutorFinishedReminder';
+        notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}`
+      }
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        courseName: courseScheduling.program.name,
+        ...(customData) ? customData : {}
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: title,
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendReminderEmailForWithoutTutor Error: ', error);
       return responseUtility.buildResponseFailed('json');
     }
   }

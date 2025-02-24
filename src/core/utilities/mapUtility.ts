@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 // @end
+type GenericObject = Record<string, any>;
 
 class MapUtility {
 
@@ -52,6 +53,58 @@ class MapUtility {
   public cleanDuplicated = (array: Array<any>) => {
     return array.filter((valor, indice) => array.indexOf(valor) === indice);
   }
+
+  public findDuplicates<T extends GenericObject>(
+    items: T[],
+    key: keyof T
+  ): T[] {
+    const seen = new Map<string | number, number>();
+    const duplicates: T[] = [];
+
+    for (const item of items) {
+      const value = item[key];
+
+      if (seen.has(value)) {
+        if (seen.get(value) === 1) {
+          duplicates.push(items[seen.get(value)!]);
+        }
+        duplicates.push(item);
+        seen.set(value, (seen.get(value) || 0) + 1);
+      } else {
+        seen.set(value, 1);
+      }
+    }
+
+    return duplicates;
+  }
+
+  public handleDuplicates<T extends GenericObject>(
+    items: T[],
+    key: keyof T,
+    action: "find" | "remove"
+  ): T[] {
+    const seen = new Map<string | number, number>();
+    const duplicates: T[] = [];
+    const uniqueItems: T[] = [];
+
+    for (const item of items) {
+      const value = item[key];
+
+      if (seen.has(value)) {
+        if (seen.get(value) === 1) {
+          duplicates.push(items[seen.get(value)!]);
+        }
+        duplicates.push(item);
+        seen.set(value, (seen.get(value) || 0) + 1);
+      } else {
+        seen.set(value, uniqueItems.length);
+        uniqueItems.push(item);
+      }
+    }
+
+    return action === "find" ? duplicates : uniqueItems;
+  }
+
 }
 
 export const mapUtility = new MapUtility();

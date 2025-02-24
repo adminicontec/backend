@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment';
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -35,7 +36,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -47,6 +48,7 @@ import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@
 import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
 import { enrollmentTrackingService } from './enrollmentTrackingService';
 import { notificationEventService } from '../../events/notifications/notificationEventService';
+import { mapUtility } from '@scnode_core/utilities/mapUtility';
 // @end
 
 class EnrollmentService {
@@ -1097,18 +1099,207 @@ class EnrollmentService {
   }
 
 
-  public buyCoursesByShoppingCart = (request: IBuyCoursesByShoppingCart) => {
-    // TODO: Logica de compra en tienda
+  public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
+    const enrolledPrograms = []
 
-    // TODO: Validar si el estudiante ya tomo el servicio y aprobo, esto no debe permitir seguir el flujo
-    // TODO: Configurar variable para forzar la inscripción
+    const {buyerId, itemsToBuy, force} = request
+    const buyer = await User.findOne({_id: buyerId})
+    if (!buyer) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
+    }
 
+    // @INFO: Validación para que el participante NO pueda matricularse en el mismo servicio
+    const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
+    const itemsByProgramDuplicated = mapUtility.findDuplicates(itemsToBuyClean ?? [], 'programCode')
+    const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
+      if (!accum[element.programCode]) {
+        accum[element.programCode] = []
+      }
+      accum[element.programCode].push(element)
+      return accum;
+    }, {})
+
+    const {serviceIds, programCodes, objectsToBuy} = itemsToBuyClean.reduce((accum, element) => {
+      accum.serviceIds.push(element.identifier);
+      accum.programCodes.push(element.programCode);
+      accum.objectsToBuy[element.identifier] = {
+        processPurchase: groupProgramDuplicated[element.programCode] ? PROCESS_PURCHASE.WARNING : PROCESS_PURCHASE.AVAILABLE,
+        reason: groupProgramDuplicated[element.programCode] ?
+          `Ya has seleccionado este programa (${element.description}) en otro servicio. ¿Estás seguro de que deseas inscribirte nuevamente?` :
+          `${element.description} está listo para la compra.`,
+        programCode: element.programCode,
+        programName: element.description,
+        externalId: element.externalId,
+        identifier: element.identifier,
+      }
+      return accum;
+    }, {serviceIds: [],programCodes: [], objectsToBuy: {}})
+
+    if (serviceIds.length === 0) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'No hay cursos por comprar'})
+    }
+
+    // @INFO: Consultar todas las matriculas del estudiante
+    const enrollments = await Enrollment.aggregate([
+      {
+        $match:
+          {
+            user: ObjectID(buyerId),
+            deleted: false,
+            // course_scheduling: {$in: serviceIds.map((s) => ObjectID(s))}
+          }
+      },
+      {
+        $lookup:
+          {
+            from: "course_schedulings",
+            localField: "course_scheduling",
+            foreignField: "_id",
+            as: "service"
+          }
+      },
+      {
+        $unwind: { path: "$service", "preserveNullAndEmptyArrays": true }
+      },
+
+      {
+        "$lookup": {
+          "from": "course_scheduling_statuses",
+          "localField": "service.schedulingStatus",
+          "foreignField": "_id",
+          "as": "status"
+        }
+      },
+      {
+        "$unwind": { "path": "$status", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        "$lookup": {
+          "from": "programs",
+          "localField": "service.program",
+          "foreignField": "_id",
+          "as": "program"
+        }
+      },
+      {
+        "$unwind": { "path": "$program", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        $project:
+          {
+            _id: "$_id",
+            courseID: "$courseID",
+            origin: "$origin",
+            created_at: "$created_at",
+            "serviceId": "$service._id",
+            "serviceCode": "$service.metadata.service_id",
+            "serviceStatusName": "$status.name",
+            "serviceProgramName": "$program.name",
+            "serviceProgramCode": "$program.code"
+          }
+      }
+    ])
+
+    enrollments.forEach(element => {
+      enrolledPrograms.push(element.serviceProgramCode)
+      if (objectsToBuy[element.serviceId]) {
+        // @INFO: Si el participante ya esta matriculado en el servicio NO puedo dejarlo matricular
+        objectsToBuy[element.serviceId].processPurchase = PROCESS_PURCHASE.RESTRICTED;
+        switch (element.serviceStatusName) {
+          case 'Ejecutado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) ya ha finalizado, por lo que no es posible inscribirse nuevamente.`;
+            break;
+          case 'Confirmado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y tu matrícula está en proceso.`;
+            break;
+          case 'Programado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y está próximo a iniciar.`;
+            break;
+          default:
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
+            break;
+        }
+
+      }
+    })
+
+    programCodes.forEach(element => {
+      // @INFO: Validación que permite establecer si el participante ya curso el mismo programa en otro servicio
+      if (enrolledPrograms.includes(element)) {
+        Object.keys(objectsToBuy)
+          .filter((o) => objectsToBuy[o].programCode === element)
+          .map((o) => {
+            if (objectsToBuy[o].processPurchase === PROCESS_PURCHASE.AVAILABLE) {
+              objectsToBuy[o].processPurchase = 'warning'
+              objectsToBuy[o].reason = `Ya te has inscrito en ${objectsToBuy[o].programName} anteriormente en otro servicio. ¿Deseas continuar con esta nueva inscripción?`;
+            }
+          })
+      }
+    });
+
+    if (force) {
+      Object.keys(objectsToBuy).map((i) => {
+        if (objectsToBuy[i].processPurchase === PROCESS_PURCHASE.WARNING) {
+          objectsToBuy[i].processPurchase = PROCESS_PURCHASE.AVAILABLE
+        }
+      })
+    }
 
     // TODO: Mientras NO tengamos un servicio de Tienda para inscribir debo realizar el proceso de matricula directo en campus
-    console.log('request', request)
-    return responseUtility.buildResponseSuccess('json', null, {message: 'Compra exitosa'})
+    const canEnrollment = Object.keys(objectsToBuy).every((i) => objectsToBuy[i].processPurchase === PROCESS_PURCHASE.AVAILABLE)
+    if (!canEnrollment) {
+      return responseUtility.buildResponseSuccess('json', null, {message: 'Verificar compra', additional_parameters: {
+        processPurchase: 'verify_purchase',
+        review: objectsToBuy
+      }})
+    }
+    await this.completePurchaseAndRegister(objectsToBuy, buyer)
+
+    return responseUtility.buildResponseSuccess('json', null, {message: 'Compra finalizada', additional_parameters: {
+      processPurchase: 'success'
+    }})
   }
 
+  private completePurchaseAndRegister = async (objectsToBuy: ObjectsToBuy, buyer: IUser) => {
+    try {
+      const enrollments = []
+      Object.keys(objectsToBuy).forEach((i) => {
+        const item = objectsToBuy[i]
+        const enrollmentObj = {
+          "email": buyer.email,
+          "user": buyer.username,
+          "password": buyer.username,
+          "documentType": buyer.profile?.doc_type,
+          "documentID": buyer.profile?.doc_number ?? buyer.username,
+          "firstname": buyer.profile?.first_name,
+          "lastname": buyer.profile?.last_name,
+          "phoneNumber": buyer.phoneNumber,
+          "courseID": item.externalId,
+          "origin": "ShoppingCart"
+        }
+        enrollments.push(enrollmentObj)
+      })
+      if (enrollments.length > 0) {
+        const response = await Promise.all(enrollments.map((e) => this.insertOrUpdate(e)))
+      }
+    } catch (err) {
+      console.log(`EnrollmentService -> completePurchaseAndRegister -> ERROR: ${err}`)
+    }
+  }
+
+  public getEndingServiceWithDateValidity = (enrollmentDate: string, validityTime: number) => {
+    try {
+      const startDate = moment(enrollmentDate) //enrollment.created_at
+      const days = this.getDays(validityTime)
+      return startDate.add(days, 'days').format('YYYY-MM-DDT23:59:59')
+    } catch (e) {
+      return false
+    }
+  }
+
+  private getDays(seconds) {
+    return Math.floor(seconds / (24 * 60 * 60));
+  }
 }
 
 export const enrollmentService = new EnrollmentService();

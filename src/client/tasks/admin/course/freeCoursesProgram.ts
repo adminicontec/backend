@@ -50,14 +50,17 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         .find({ name: { $in: [CourseSchedulingStatusName.CONFIRMED] } })
         .select('_id')
       const courseSchedulings = await CourseScheduling.find({
+        // _id: '67bcde30d2884794704e1e78',
         startDate: { $lte: new Date() },
         endDate: { $gte: new Date() },
         schedulingStatus: { $in: courseSchedulingStatus?.map(({ _id }) => _id) },
         $or: [
           { typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] } },
-          { quickLearning: true }
+          { quickLearning: true },
+          { withoutTutor: true}
         ],
-      }).select('_id metadata serviceValidity')
+      }).select('_id metadata serviceValidity withoutTutor quickLearning program')
+      .populate({path: 'program', select: 'id name'})
 
       for (const courseScheduling of courseSchedulings) {
         const validityTime = courseScheduling?.serviceValidity ? courseScheduling.serviceValidity : 0
@@ -69,19 +72,45 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         if (!enrollments?.length) continue
         for (const enrollment of enrollments) {
           let currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
+          console.log('enrollment', enrollment)
+          // TODO: PReguntar si para esta funcionalidad debe eliminar al finalziar, ¿aplicar validaciones de estado?
+          // const userWasRemoved = await this.validateConditionsToRemoveUser(enrollment, validityTime, courseScheduling)
+          // if (userWasRemoved) continue;
 
-          const userWasRemoved = await this.validateConditionsToRemoveUser(enrollment, validityTime)
-          console.log({ userWasRemoved, currentStatus })
-          if (userWasRemoved) continue;
-
+          console.log('InitialCurrentStatus', { currentStatus })
           if (currentStatus === EnrollmentStatus.IN_PROGRESS) {
-            await this.verifyStudentQualifications(enrollment, courseScheduling._id)
-            currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
-            console.log({ currentStatus })
-          }
+            // TODO: Notificación de certificación lista para descarga (Historia IX)
 
+            await this.verifyStudentQualifications(enrollment, courseScheduling, courseScheduling?.withoutTutor ? false : true)
+            currentStatus = await this.getCurrentEnrollmentStatus(enrollment._id)
+            // console.log({ currentStatus })
+          }
+          console.log('AfterCurrentStatus', { currentStatus })
           if ([EnrollmentStatus.REGISTERED, EnrollmentStatus.IN_PROGRESS].includes(currentStatus)) {
-            await this.sendReminderBeforeFinishCourse(enrollment, validityTime, courseScheduling._id)
+
+            if (courseScheduling?.withoutTutor && this.shouldTriggerFirstThirdAction(enrollment.created_at, Number(courseScheduling.serviceValidity))) {
+              // TODO: Pendiente el texto y data del email
+              await courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, {stage: 'first'})
+            }
+            let daysBeforeEnd = 8;
+            if (courseScheduling?.withoutTutor) daysBeforeEnd = 2
+            const {hasEnded, isEndingSoon, daysSinceEnd} = this.getCourseEndStatus(enrollment.created_at, Number(courseScheduling.serviceValidity), daysBeforeEnd)
+            console.log({hasEnded, isEndingSoon})
+            if (hasEnded || isEndingSoon) {
+              if (courseScheduling?.withoutTutor) {
+                let customData = {
+                  primaryMessage: `Queremos recordarte que restan ${daysBeforeEnd} dias para la finalización de tu curso ${courseScheduling?.program?.name}`,
+                }
+                if (hasEnded) customData.primaryMessage = `Queremos informarte que tu programa ${courseScheduling?.program?.name} ha finalizado.`
+                // TODO: Pendiente el texto y data del email
+                console.log('')
+                await courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, {stage: 'ending_soon', customData})
+              } else if ([TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)) {
+                await courseSchedulingNotificationsService.sendReminderEmailForFreeOrMooc(courseScheduling._id, enrollment.user)
+              }
+              console.log('Esta priximo a finalizar', daysBeforeEnd)
+            }
+            // await this.sendReminderBeforeFinishCourse(enrollment, validityTime, courseScheduling)
           }
         }
       }
@@ -90,13 +119,67 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
     }
   }
 
-  private validateConditionsToRemoveUser = async (enrollment: IEnrollment, validityTime: number): Promise<boolean> => {
+  private shouldTriggerFirstThirdAction(enrollmentDate: string, durationSeconds: number): boolean {
+    // Convert enrollmentDate to a moment object
+    const startDate = moment(enrollmentDate);
+
+    if (!startDate.isValid()) {
+      throw new Error('Invalid enrollment date');
+    }
+
+    // Calculate the first third of the duration in seconds
+    const firstThirdSeconds = Math.floor(durationSeconds / 3);
+
+    // Calculate the end date of the first third part
+    const firstThirdEndDate = startDate.clone().add(firstThirdSeconds, 'seconds');
+
+    // Check if the current date is past the first third end date
+    return moment().isAfter(firstThirdEndDate);
+  }
+
+  private getCourseEndStatus(
+    enrollmentDate: string,
+    durationSeconds: number,
+    daysBeforeEnd: number
+  ): {hasEnded: boolean;isEndingSoon: boolean;daysSinceEnd: number;} {
+    // Convert enrollmentDate to a moment object
+    const startDate = moment(enrollmentDate);
+
+    if (!startDate.isValid()) {
+      throw new Error('Invalid enrollment date');
+    }
+
+    // Calculate the course end date
+    const courseEndDate = startDate.clone().add(durationSeconds, 'seconds');
+
+    // Calculate the trigger date (courseEndDate - daysBeforeEnd)
+    const triggerDate = courseEndDate.clone().subtract(daysBeforeEnd, 'days');
+
+    // Determine if the course has ended
+    const hasEnded = moment().isAfter(courseEndDate);
+
+    // Determine if the course is ending soon
+    const isEndingSoon = moment().isSameOrAfter(triggerDate) && !hasEnded;
+
+    // Calculate days since the course ended (0 if not ended)
+    const daysSinceEnd = hasEnded
+      ? moment().diff(courseEndDate, 'days')
+      : 0;
+
+    return {
+      hasEnded,
+      isEndingSoon,
+      daysSinceEnd,
+    };
+  }
+
+  private validateConditionsToRemoveUser = async (enrollment: IEnrollment, validityTime: number, courseScheduling: any): Promise<boolean> => {
     try {
       const startDate = moment(enrollment.created_at)
       const today = moment()
       const seconds = today.diff(startDate, 'seconds')
       const days = this.getDays(validityTime - seconds)
-      console.log({ days, seconds, validityTime, enrollment: enrollment?._id })
+      // console.log({ days, seconds, validityTime, enrollment: enrollment?._id })
       if (days <= -1) {
         console.log(`${days} dia(s) despues de vencer el plazo del curso`)
         if (seconds > validityTime) {
@@ -107,8 +190,10 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
           }
         }
       } else if (days === 5) {
-        console.log('5 Dias antes, enviando notificación...')
-        await courseSchedulingNotificationsService.sendReminderEmailForQuickLearning(enrollment.course_scheduling, enrollment.user)
+        if (courseScheduling?.quickLearning) {
+          console.log('5 Dias antes, enviando notificación...')
+          await courseSchedulingNotificationsService.sendReminderEmailForQuickLearning(enrollment.course_scheduling, enrollment.user)
+        }
       }
       return false
     } catch (e) {
@@ -117,40 +202,42 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
     }
   }
 
-  private sendReminderBeforeFinishCourse = async (enrollment: IEnrollment, validityTime: number, courseSchedulingId: string): Promise<boolean> => {
-    try {
-      const startDate = moment(enrollment.created_at)
-      const expectedFinishDate = moment(enrollment.created_at).add(validityTime, 'second')
-      const validityTimeInDays = expectedFinishDate.diff(startDate, 'days')
-      const today = moment()
-      const daysRemaining = expectedFinishDate.diff(today, 'days')
-      console.log({ daysRemaining, validityTimeInDays })
-      if (validityTimeInDays > 8 && daysRemaining === 8) {
-        await courseSchedulingNotificationsService.sendReminderEmailForFreeOrMooc(courseSchedulingId, enrollment.user)
-        return true
-      }
-      return false
-    } catch (e) {
-      console.log('FreeCoursesProgram -> sendReminderBeforeFinishCourse -> ERROR: ', e)
-      return false
-    }
-  }
+  // private sendReminderBeforeFinishCourse = async (enrollment: IEnrollment, validityTime: number, courseScheduling: any): Promise<boolean> => {
+  //   try {
+  //     const startDate = moment(enrollment.created_at)
+  //     const expectedFinishDate = moment(enrollment.created_at).add(validityTime, 'second')
+  //     const validityTimeInDays = expectedFinishDate.diff(startDate, 'days')
+  //     const today = moment()
+  //     const daysRemaining = expectedFinishDate.diff(today, 'days')
+  //     // console.log({ daysRemaining, validityTimeInDays })
+  //     if ([TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)) {
+  //       if (validityTimeInDays > 8 && daysRemaining === 8) {
 
-  private verifyStudentQualifications = async (enrollment: IEnrollment, courseSchedulingId: string): Promise<Boolean> => {
+  //         return true
+  //       }
+  //     }
+  //     return false
+  //   } catch (e) {
+  //     console.log('FreeCoursesProgram -> sendReminderBeforeFinishCourse -> ERROR: ', e)
+  //     return false
+  //   }
+  // }
+
+  private verifyStudentQualifications = async (enrollment: IEnrollment, courseScheduling: any, needPayment: boolean): Promise<Boolean> => {
     try {
       const certifications = await certificateMultipleService.certificateData({
-        course_scheduling: courseSchedulingId,
+        course_scheduling: courseScheduling._id,
         studentId: enrollment.user,
         without_certification: true,
       })
       const allCertifications: ICertificateMultipleDataCertification[] = certifications?.student?.certifications || []
       const approvedCertifications = allCertifications?.filter((certification) => certification.approved)
       const courseHasFinished = allCertifications?.length > 0 && allCertifications?.length === approvedCertifications?.length
-      console.log({ approvedCertifications, certifications, courseHasFinished, allCertifications })
+      // console.log({ approvedCertifications, certifications, courseHasFinished, allCertifications })
       if (approvedCertifications?.length) {
         const systemUser = await User.findOne({ username: system_user }).select('_id')
         const response = await certificateMultipleService.generateCertificate({
-          courseSchedulingId: courseSchedulingId,
+          courseSchedulingId: courseScheduling._id,
           students: [{
             userId: enrollment.user,
             certificateSettings: approvedCertifications?.map((certificate) => ({
@@ -159,7 +246,7 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
             }))
           }],
           user: systemUser?._id,
-          needPayment: true,
+          needPayment,
           retryConfig: {
             maxRetries: 3
           }
@@ -170,7 +257,14 @@ class FreeCoursesProgram extends DefaultPluginsTaskTaskService {
         }
       }
       if (courseHasFinished) {
-        await courseSchedulingNotificationsService.sendFreeMoocCourseFinished(courseSchedulingId, enrollment.user)
+        // TODO: MOdificar este correo electronico para cursos autogestionados
+        const withoutTutor = courseScheduling?.withoutTutor ?? false
+        console.log('withoutTutor', withoutTutor)
+        if (withoutTutor) {
+          await courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, {stage: 'finished'})
+        } else if ([TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse)) {
+          await courseSchedulingNotificationsService.sendFreeMoocCourseFinished(courseScheduling._id, enrollment.user)
+        }
         return true
       }
       return false
