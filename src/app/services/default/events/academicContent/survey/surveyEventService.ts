@@ -153,14 +153,16 @@ class SurveyEventService {
               }
             })
           } else if (schedulingMode === 'Virtual') {
-            let endDate;
-            if (withoutTutor) {
-              const enrollmentEndDate = enrollmentService.getEndingServiceWithDateValidity(enrollment.created_at, Number(enrollment.course_scheduling.serviceValidity))
-              if (!enrollmentEndDate) break;
-              endDate = moment.utc(enrollmentEndDate)
-            } else {
-              endDate = moment.utc(enrollment.course_scheduling.endDate)
-            }
+            const {courseEndDate} = enrollmentService.getCourseEndStatus(
+              enrollment.created_at,
+              {
+                serviceStartDate:enrollment.course_scheduling.startDate,
+                serviceEndDate: enrollment.course_scheduling.endDate
+              },
+              enrollment.course_scheduling.serviceValidity ? Number(enrollment.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            const endDate = moment.utc(courseEndDate);
             // console.log('endDate', endDate)
             // console.log('today', today)
             // console.log('compare', today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD'))
@@ -186,7 +188,7 @@ class SurveyEventService {
                 // Para el log de encuestas
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
-                endDateService = endDate;
+                endDateService = new Date(endDate.format('YYYY-MM-DD'));
                 const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
                 courseType = serviceTypeKey;
               } else {

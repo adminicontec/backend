@@ -71,12 +71,18 @@ class EnrolledCourseService {
             const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
             const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
               e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
-            let startDate = e.course_scheduling.startDate;
-            let endDate = e.course_scheduling.endDate;
-            if (e?.course_scheduling?.withoutTutor) {
-              startDate = e.created_at
-              endDate = enrollmentService.getEndingServiceWithDateValidity(startDate, Number(e.course_scheduling.serviceValidity))
-            }
+
+            const {hasEnded, courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+              e.created_at,
+              {
+                serviceStartDate: e.course_scheduling.startDate,
+                serviceEndDate: e.course_scheduling.endDate
+              },
+              e?.course_scheduling?.serviceValidity ? Number(e.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            let endDate = courseEndDate;
+            let startDate = courseStartDate;
             let item = {
               _id: e.course_scheduling.moodle_id,
               enrollmentId: e._id,
@@ -98,7 +104,7 @@ class EnrolledCourseService {
                 attachedService.getFileUrl(e.course_scheduling?.specialServiceConditions?.files[0]?.url) : null,
               withoutTutor: e?.course_scheduling?.withoutTutor ?? false
             }
-            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name) || hasEnded) {
               history.push(item)
             } else {
               registers.push(item)
@@ -130,12 +136,17 @@ class EnrolledCourseService {
             const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
             const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
               e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
-            let startDate = e.course_scheduling.startDate;
-            let endDate = e.course_scheduling.endDate;
-            if (e?.course_scheduling?.withoutTutor) {
-              startDate = e.created_at
-              endDate = enrollmentService.getEndingServiceWithDateValidity(startDate, Number(e.course_scheduling.serviceValidity))
-            }
+            const {hasEnded, courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+              e.created_at,
+              {
+                serviceStartDate: e.course_scheduling.startDate,
+                serviceEndDate: e.course_scheduling.endDate
+              },
+              e?.course_scheduling?.serviceValidity ? Number(e.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            let endDate = courseEndDate;
+            let startDate = courseStartDate;
             let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
@@ -156,7 +167,7 @@ class EnrolledCourseService {
               withoutTutor: e?.course_scheduling?.withoutTutor ?? false
             }
 
-            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name) || hasEnded) {
               history.push(item)
             } else {
               registers.push(item)

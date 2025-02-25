@@ -183,7 +183,7 @@ class CourseSchedulingDetailsService {
         })
 
         await CourseScheduling.populate(response, {
-          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming address contact classroom', populate: [
+          path: 'course_scheduling', select: 'id metadata program startDate endDate schedulingStatus moodle_id client city schedulingMode duration schedulingType amountParticipants regional account_executive logReprograming address contact classroom serviceValidity', populate: [
             { path: 'city', select: 'id name' },
             { path: 'schedulingStatus', select: 'id name' },
             { path: 'schedulingMode', select: 'id name' },

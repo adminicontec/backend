@@ -13,6 +13,7 @@ import { courseSchedulingDetailsService } from '@scnode_app/services/default/adm
 import { i18nUtility } from '@scnode_core/utilities/i18nUtility';
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { customs } from '@scnode_core/config/globals';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
@@ -249,6 +250,7 @@ class CourseSchedulingNotificationsService {
           duration: this.formatSecondsToHours(courseScheduling.duration),
           startDate: moment.utc(courseScheduling.startDate).format(DATE_FORMAT),
           endDate: moment.utc(courseScheduling.endDate).format(DATE_FORMAT),
+          serviceValidity: courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined,
           observations: courseScheduling.observations,
           exam: exam?.hasExam ? 'SI' : 'NO',
           changes: undefined,
@@ -633,6 +635,7 @@ class CourseSchedulingNotificationsService {
       let notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}`
       let title = 'Recordatorio de progreso de curso'
       if (stage === 'ending_soon') {
+        title = 'Recordatorio de finalización de curso'
         path_template = 'course/schedulingWithoutTutorEndingSoonReminder';
         notification_source = `scheduling_without_tutor_ending_soon_reminder_${courseScheduling._id}_${userId}`
       } else if (stage === 'finished') {

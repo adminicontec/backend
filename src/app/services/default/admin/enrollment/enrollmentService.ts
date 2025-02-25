@@ -414,6 +414,7 @@ class EnrollmentService {
             cvUserParams['reviewData'] = {
               status: 'pending'
             }
+            if (cvUserParams.password) delete cvUserParams.password
 
             try {
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
@@ -553,7 +554,11 @@ class EnrollmentService {
               }}})
             }
             const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
-            if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
+            const withoutTutor = courseScheduling?.withoutTutor ?? false
+            if (
+              (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) ||
+              withoutTutor
+            ) {
               params.sendEmail = 'true'
             }
             // @INFO: Se envia email de bienvenida
@@ -563,14 +568,23 @@ class EnrollmentService {
                 let customTemplate = undefined
                 let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
                 let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
-                let serviceValidity = courseScheduling.serviceValidity || undefined
+                let serviceValidity = courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined
 
                 if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
                   customTemplate = 'user/enrollmentUserQuickLearning'
-                  course_start = moment.utc().format('YYYY-MM-DD')
-                  course_end = moment.utc().add(courseScheduling.serviceValidity, 'seconds').format('YYYY-MM-DD')
-                  serviceValidity = generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true)
                 }
+                const {courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+                  moment.utc().format('YYYY-MM-DD'),
+                  {
+                    serviceStartDate: courseScheduling.startDate,
+                    serviceEndDate: courseScheduling.endDate
+                  },
+                  courseScheduling?.serviceValidity ? Number(courseScheduling?.serviceValidity) : undefined,
+                  0
+                )
+                course_start = courseStartDate
+                course_end = courseEndDate
+
                 await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
                   first_name: userEnrollment.profile.first_name,
@@ -1299,6 +1313,47 @@ class EnrollmentService {
 
   private getDays(seconds) {
     return Math.floor(seconds / (24 * 60 * 60));
+  }
+
+  public getCourseEndStatus(
+    enrollmentDate: string,
+    serviceData: {serviceEndDate: string, serviceStartDate: string},
+    durationSeconds: number,
+    daysBeforeEnd: number
+  ): {hasEnded: boolean;isEndingSoon: boolean;daysSinceEnd: number; courseEndDate: string, courseStartDate: string} {
+    const today = moment().set('hours', 23).set('minutes', 59)
+    const calculateByUserEnrollmentDate = durationSeconds ? true : false
+    // Convert enrollmentDate to a moment object
+    const startDate = calculateByUserEnrollmentDate ? moment(enrollmentDate).set('hours', 0).set('minutes', 0) : moment(serviceData.serviceStartDate).set('hours', 0).set('minutes', 0);
+
+    if (!startDate.isValid()) {
+      throw new Error('Invalid enrollment date');
+    }
+
+    // Calculate the course end date
+    const courseEndDate = calculateByUserEnrollmentDate ? startDate.clone().add(durationSeconds, 'seconds').set('hours', 23).set('minutes', 59) : moment(serviceData.serviceEndDate).set('hours', 23).set('minutes', 59);
+
+    // Calculate the trigger date (courseEndDate - daysBeforeEnd)
+    const triggerDate = courseEndDate.clone().subtract(daysBeforeEnd, 'days');
+
+    // Determine if the course has ended
+    const hasEnded = today.isAfter(courseEndDate);
+
+    // Determine if the course is ending soon
+    const isEndingSoon = today.isSameOrAfter(triggerDate) && !hasEnded;
+
+    // Calculate days since the course ended (0 if not ended)
+    const daysSinceEnd = hasEnded || isEndingSoon
+      ? today.diff(courseEndDate, 'days')
+      : 0;
+
+    return {
+      hasEnded,
+      isEndingSoon,
+      daysSinceEnd,
+      courseEndDate: courseEndDate.format('YYYY-MM-DD'),
+      courseStartDate: startDate.format('YYYY-MM-DD')
+    };
   }
 }
 

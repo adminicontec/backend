@@ -25,8 +25,12 @@
                     <p><b>Código del programa: </b>{{params.program_code}}</p>
                     <p><b>Modalidad: </b>{{params.modality}}</p>
                     <p><b>Duración: </b>{{params.duration}}</p>
-                    <p><b>Fecha Inicio: </b>{{params.startDate}}</p>
-                    <p><b>Fecha Fin: </b>{{params.endDate}}</p>
+                    {{#if params.serviceValidity}}
+                      <p><b>Vigencia: </b>{{params.serviceValidity}}</p>
+                    {{else}}
+                      <p><b>Fecha Inicio: </b>{{params.startDate}}</p>
+                      <p><b>Fecha Fin: </b>{{params.endDate}}</p>
+                    {{/if}}
                     <p><b>Observaciones: </b>{{params.observations}}</p>
                     <p><b>Aplica examen: </b>{{params.exam}}</p>
                     <p><b>Nombre del ejecutivo comercial: </b>{{params.accountExecutive}}</p>
