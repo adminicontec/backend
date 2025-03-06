@@ -630,7 +630,7 @@ class CourseSchedulingNotificationsService {
     }
   }
 
-  public sendReminderEmailForWithoutTutor = async (courseSchedulingId: string, userId: string, options: {stage: NOTIFICATION_WITHOUT_TUTOR_STAGE, customData?: Record<string, any>}) => {
+  public sendReminderEmailForWithoutTutor = async (courseSchedulingId: string, enrollmentId: string, userId: string, options: {stage: NOTIFICATION_WITHOUT_TUTOR_STAGE, customData?: Record<string, any>}) => {
     try {
       const {stage, customData} = options;
       const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
@@ -644,29 +644,29 @@ class CourseSchedulingNotificationsService {
       switch (stage) {
         case 'first_success':
           path_template = `course/schedulingWithoutTutorFirstReminder`
-          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           title = `🎯 ¡Vas por buen camino! Sigue avanzando en tu curso`
           custom.conditionSuccess = true
           break;
         case 'first_failed':
           path_template = `course/schedulingWithoutTutorFirstReminder`
-          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           title = `🔔 ¡Aún no has iniciado tu curso!`
           break;
         case 'second_success':
           path_template = `course/schedulingWithoutTutorSecondReminder`
-          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           title = `🎯 Vas por buen camino, estás a punto de finalizar tu curso.`
           custom.conditionSuccess = true
           break;
         case 'second_failed':
           path_template = `course/schedulingWithoutTutorSecondReminder`
-          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           title = `🚨 ¡El tiempo se acaba y aún no has iniciado el curso!`
           break;
         case 'finished_success':
           path_template = `course/schedulingWithoutTutorFinishedReminder`
-          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           custom.conditionSuccess = true
           if (customData?.additionalDaysAfterCompletionToDeregister && customData?.additionalDaysAfterCompletionToDeregister > 0) {
             title = `¡Felicidades! Te damos ${customData.additionalDaysAfterCompletionToDeregister} días más para reforzar tu aprendizaje`
@@ -676,7 +676,7 @@ class CourseSchedulingNotificationsService {
           break;
         case 'finished_failed':
           path_template = `course/schedulingWithoutTutorFinishedReminder`
-          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}`
+          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
           if (customData?.additionalDaysAfterCompletionToDeregister && customData?.additionalDaysAfterCompletionToDeregister > 0) {
             title = `🚨 ¡Última oportunidad! Accede a tu curso por ${customData?.additionalDaysAfterCompletionToDeregister} días más`
           } else {

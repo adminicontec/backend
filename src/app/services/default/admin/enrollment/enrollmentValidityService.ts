@@ -140,7 +140,7 @@ class EnrollmentValidityService {
 
           if (hasEnded && unenrolment) {
             if (daysSinceEnd > additionalDaysAfterCompletionToDeregister) {
-              console.log('Desmatricular estudiante')
+              console.log('Unenrollment student')
               const result = await enrollmentService.delete({ id: enrollment._id })
               if (result.status === 'error') {
                 console.log('FreeCoursesProgram -> validateConditionsToRemoveUser -> removeEnrollmentError: ', result)
@@ -184,7 +184,7 @@ class EnrollmentValidityService {
       if (this.shouldTriggerAction(enrollment.created_at, phaseDuration) && !userCertificated) {
         const stage = generalProgress > 0 || userStatus !== EnrollmentStatus.REGISTERED ? 'first_success' : 'first_failed'
         console.log(`withoutTutor - First Notification launched`,{stage, customData})
-        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, { stage, customData }))
+        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment._id, enrollment.user, { stage, customData }))
       }
       // @INFO: Segunda tercera parte
       if (this.shouldTriggerAction(enrollment.created_at, phaseDuration * 2) && !userCertificated) {
@@ -192,13 +192,13 @@ class EnrollmentValidityService {
         customData.generalProgress = generalProgress
         const stage = generalProgress > 0 || userStatus !== EnrollmentStatus.REGISTERED ? 'second_success' : 'second_failed'
         console.log(`withoutTutor - Second Notification launched`, {stage, customData})
-        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, { stage, customData }))
+        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment._id, enrollment.user, { stage, customData }))
       }
       // @Info: Fin del curso
       if (this.shouldTriggerAction(enrollment.created_at, Number(courseScheduling.serviceValidity))) {
         const stage = userCertificated ? 'finished_success' : 'finished_failed'
         console.log(`withoutTutor - Finished Notification launched`, {stage, customData})
-        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment.user, {stage, customData}))
+        notifications.push(courseSchedulingNotificationsService.sendReminderEmailForWithoutTutor(courseScheduling._id, enrollment._id, enrollment.user, {stage, customData}))
       }
     } else if (quickLearning) {
       if (isEndingSoon && daysToEnding > 0) {
