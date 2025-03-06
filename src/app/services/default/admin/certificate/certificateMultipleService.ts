@@ -561,7 +561,7 @@ class CertificateMultipleService {
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
                 status,
                 isPartial,
-                needPayment: needPayment ? needPayment : responseValidate?.needPayment,
+                needPayment: needPayment !== undefined ? needPayment : responseValidate?.needPayment,
                 retryConfig: retryConfig ? retryConfig : responseValidate?.retryConfig,
               }
               itemsToCreate.push(item)

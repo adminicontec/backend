@@ -12,14 +12,13 @@
                   <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
                     <p><b>Hola, {{params.studentName}}</b></p>&nbsp;
                     {{#if params.conditionSuccess}}
-                      <p>Queremos felicitarte por tu compromiso y avance en el curso <b>{{params.courseName}}</b>. Sigue así y aprovecha al máximo esta oportunidad de aprender.</p>
-                      <p><b>Recuerda que la fecha máxima para finalizarlo es: {{params.courseEndDate}}.</b></p>
-                      <p>Sigue avanzando. ¡No pierdas la oportunidad de seguir aprendiendo con ICONTEC!</p>
+                      <p>Tu progreso en el curso <b>{{params.courseName}}</b> es del {{params.generalProgress}}%. ¡Estás cada vez más cerca de completarlo!</p>
+                      <p>Sigue así, estás a punto de culminar esta experiencia de aprendizaje y adquirir nuevas herramientas que potenciarán tu día a día.</p>
+                      <p><b>No te detengas, accede ahora y completa tu curso:</b> <a href="{{params.customs.mailer.campus_virtual}}/login">{{params.customs.mailer.campus_virtual}}</a></p>
+                      <p>¡Tú puedes! Sigue avanzando.</p>
                     {{else}}
-                      <p>Hemos notado que aún no has iniciado tu curso, y no queremos que pierdas esta valiosa oportunidad de aprender y fortalecer tus conocimientos. ¡Aprovecha tu inversión y empieza ahora!</p>
-                      <p>Si has tenido alguna dificultad con el ingreso, <a href="{{params.mailer.help_desk}}">haz clic aquí</a> y contacta nuestra mesa de ayuda para solucionarlo de inmediato. </p>
-                      <p>Recuerda que el curso estará disponible hasta el: {{params.courseEndDate}}</p>
-                      <p>¡No lo dejes para después! Inicia hoy mismo y empieza esta nueva experiencia de aprendizaje.</p>&nbsp;
+                      <p>Hemos notado que aún no has iniciado tu curso <b>{{params.courseName}}</b>, y <b>solo te quedan {{params.daysToEnding}} días</b> para completarlo. ¡Pero aún estás a tiempo de aprovechar esta oportunidad!</p>
+                      <p>Si has tenido alguna dificultad con el ingreso, no esperes más. <a href="{{params.mailer.help_desk}}">Haz clic aquí</a> y contacta nuestra <b>mesa de ayuda</b> para solucionarlo de inmediato. </p>
                       <p><b>Accede ahora:</b> <a href="{{params.customs.mailer.campus_virtual}}/login">{{params.customs.mailer.campus_virtual}}</a></p>
                     {{/if}}
                   </td>

@@ -49,6 +49,7 @@ import { courseSchedulingNotificationsService } from '../course/courseScheduling
 import { enrollmentTrackingService } from './enrollmentTrackingService';
 import { notificationEventService } from '../../events/notifications/notificationEventService';
 import { mapUtility } from '@scnode_core/utilities/mapUtility';
+import { completionstatusService } from '../completionStatus/completionstatusService';
 // @end
 
 class EnrollmentService {
@@ -1066,7 +1067,7 @@ class EnrollmentService {
 
       const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
 
-      const [certificateSettings, userCertificates, moodleProgress] = await Promise.all([
+      const [certificateSettings, userCertificates, moodleActivities, moodleCompletion] = await Promise.all([
         CertificateSettings
           .find({ courseScheduling: enrollment.course_scheduling._id })
           .select('_id'),
@@ -1077,16 +1078,28 @@ class EnrollmentService {
             courseID: courseSchedulingMoodleId,
             userID: userMoodleId,
             filter: moodleItemsToSearch
-          })
+          }),
+        completionstatusService.activitiesCompletion({
+          courseID: courseSchedulingMoodleId, //register.courseID,
+          userID: userMoodleId, //register.user.moodle_id
+        })
       ])
 
-      const grades = (moodleProgress as any).grades
+      const grades = (moodleActivities as any).grades
+      const completion = (moodleCompletion as any)?.completion ?? []
       const doesExistProgress = grades?.some((grade) => {
         const itemTypes = grade?.itemType ? grade?.itemType : {}
         return Object.values(itemTypes).some((itemsProgress: Array<any>) =>
           itemsProgress?.some((itemProgress) => itemProgress?.graderaw > 0)
         )
       })
+
+      const totalActivities = completion.length
+      const activitiesCompleted = completion.filter((c) => c.state === 1).length
+      let generalProgress = 0;
+      if (totalActivities > 0) {
+        generalProgress = Math.trunc((activitiesCompleted / totalActivities) * 100);
+      }
 
       const allCertificatesGenerated = !!userCertificates?.length && !certificateSettings?.some((setting) =>
         !userCertificates?.some((userCertificate) => userCertificate?.certificateSetting?.toString() === setting._id?.toString())
@@ -1103,6 +1116,7 @@ class EnrollmentService {
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           currentStatus,
+          generalProgress
         }
       })
 
@@ -1115,6 +1129,7 @@ class EnrollmentService {
 
   public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
     const enrolledPrograms = []
+    const certifiedPrograms = []
 
     const {buyerId, itemsToBuy, force} = request
     const buyer = await User.findOne({_id: buyerId})
@@ -1237,15 +1252,42 @@ class EnrollmentService {
       }
     })
 
+
+    // @INFO: Consultar los certificados del estudiante
+    const certificates = await CertificateQueue.find({
+      userId: buyerId
+    }).populate([
+      {path: 'courseId', select: 'program', populate: [
+        {path: 'program', select: 'code'}
+      ]}
+    ]).select('courseId status')
+
+    certificates.forEach(element => {
+      if (element?.courseId?.program?.code) {
+        certifiedPrograms.push(element?.courseId?.program?.code)
+      }
+    });
     programCodes.forEach(element => {
+      let process = false
+      let processPurchase = PROCESS_PURCHASE.RESTRICTED
+      let reason = ``;
+      if (certifiedPrograms.includes(element)) {
+        // @INFO: Validación que permite establecer si el participante ya se certifico en el programa
+        process = true
+        reason = `No puedes comprar :programName porque ya estás certificado.`
+
+      } else if (enrolledPrograms.includes(element)) {
       // @INFO: Validación que permite establecer si el participante ya curso el mismo programa en otro servicio
-      if (enrolledPrograms.includes(element)) {
+        process = true
+        reason = `No puedes comprar :programName porque ya estás inscrito.`;
+      }
+      if (process) {
         Object.keys(objectsToBuy)
           .filter((o) => objectsToBuy[o].programCode === element)
           .map((o) => {
             if (objectsToBuy[o].processPurchase === PROCESS_PURCHASE.AVAILABLE) {
-              objectsToBuy[o].processPurchase = 'warning'
-              objectsToBuy[o].reason = `Ya te has inscrito en ${objectsToBuy[o].programName} anteriormente en otro servicio. ¿Deseas continuar con esta nueva inscripción?`;
+              objectsToBuy[o].processPurchase = processPurchase
+              objectsToBuy[o].reason = reason.replace(':programName', objectsToBuy[o].programName);
             }
           })
       }
@@ -1320,8 +1362,8 @@ class EnrollmentService {
     serviceData: {serviceEndDate: string, serviceStartDate: string},
     durationSeconds: number,
     daysBeforeEnd: number
-  ): {hasEnded: boolean;isEndingSoon: boolean;daysSinceEnd: number; courseEndDate: string, courseStartDate: string} {
-    const today = moment().set('hours', 23).set('minutes', 59)
+  ): {hasEnded: boolean;isEndingSoon: boolean;daysToEnding: number; daysSinceEnd: number; courseEndDate: string, courseStartDate: string} {
+    const today = moment()
     const calculateByUserEnrollmentDate = durationSeconds ? true : false
     // Convert enrollmentDate to a moment object
     const startDate = calculateByUserEnrollmentDate ? moment(enrollmentDate).set('hours', 0).set('minutes', 0) : moment(serviceData.serviceStartDate).set('hours', 0).set('minutes', 0);
@@ -1337,19 +1379,22 @@ class EnrollmentService {
     const triggerDate = courseEndDate.clone().subtract(daysBeforeEnd, 'days');
 
     // Determine if the course has ended
-    const hasEnded = today.isAfter(courseEndDate);
+    const hasEnded = today.startOf('day').isSameOrAfter(courseEndDate.startOf('day'));
 
     // Determine if the course is ending soon
-    const isEndingSoon = today.isSameOrAfter(triggerDate) && !hasEnded;
+    const isEndingSoon = today.startOf('day').isSameOrAfter(triggerDate.startOf('day')) && !hasEnded;
 
     // Calculate days since the course ended (0 if not ended)
-    const daysSinceEnd = hasEnded || isEndingSoon
+    const daysSinceEnd = hasEnded
       ? today.diff(courseEndDate, 'days')
       : 0;
+
+    const daysToEnding = courseEndDate.diff(today, 'days')
 
     return {
       hasEnded,
       isEndingSoon,
+      daysToEnding,
       daysSinceEnd,
       courseEndDate: courseEndDate.format('YYYY-MM-DD'),
       courseStartDate: startDate.format('YYYY-MM-DD')

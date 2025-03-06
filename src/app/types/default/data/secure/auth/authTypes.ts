@@ -5,6 +5,7 @@
 export interface LoginFields {
 	username: string // Nombre de usuario que lo identifica dentro del sistema
 	password: string // Contraseña del usuario
+  getToken?: boolean
 }
 
 export interface UserFields {
