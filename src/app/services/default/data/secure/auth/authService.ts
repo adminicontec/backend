@@ -74,9 +74,10 @@ class AuthService {
 	 * @returns
 	 */
 	public login = async (req, loginFields: LoginFields) => {
+    const {getToken} = loginFields
 		const user_response: any = await this.validateLogin(loginFields)
 		if (user_response.status === 'error') return user_response
-    if (user_response?.check2fa) {
+    if (user_response?.check2fa && !getToken) {
       return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {check2fa: true}})
     }
 

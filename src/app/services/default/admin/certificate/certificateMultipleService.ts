@@ -474,7 +474,7 @@ class CertificateMultipleService {
   public generateCertificate = async (params: ICertificateMultipleGenerate) => {
     try {
       const status = 'New'
-      const { user, courseSchedulingId, students, needPayment, retryConfig } = params
+      const { user, courseSchedulingId, students, needPayment, retryConfig, synchronousProcedure } = params
 
       const responseValidate: any = await this.validateAccessToCertificateMultiple(courseSchedulingId)
       if (responseValidate.status === 'error') return responseValidate;
@@ -561,7 +561,7 @@ class CertificateMultipleService {
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
                 status,
                 isPartial,
-                needPayment: needPayment ? needPayment : responseValidate?.needPayment,
+                needPayment: needPayment !== undefined ? needPayment : responseValidate?.needPayment,
                 retryConfig: retryConfig ? retryConfig : responseValidate?.retryConfig,
               }
               itemsToCreate.push(item)
@@ -575,7 +575,18 @@ class CertificateMultipleService {
 
       const certificatesSendToProcess = responseInsertMany?.filter((item) => item.status === 'New').map((item) => item._id)
       if (certificatesSendToProcess?.length > 0) {
-        certificateQueueService.sendToProcess(certificatesSendToProcess)
+        if (synchronousProcedure) {
+          await Promise.all(
+            certificatesSendToProcess.map(certificateQueue =>
+              certificateQueueService.processCertificateQueue({
+                certificateQueueId: certificateQueue,
+                output: 'process'
+              })
+            )
+          )
+        } else {
+          certificateQueueService.sendToProcess(certificatesSendToProcess)
+        }
       }
 
       await CourseScheduling.findByIdAndUpdate(courseScheduling._id, {

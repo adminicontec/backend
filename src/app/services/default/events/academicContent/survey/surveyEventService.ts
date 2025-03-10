@@ -21,6 +21,7 @@ import {ICheckCharacterizationSurveyAvailable, ICheckSurveyAvailable, IGetAvaila
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
 import { CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { enrollmentService } from '@scnode_app/services/default/admin/enrollment/enrollmentService';
 // @end
 
 const SCHEDULING_MODES = ['Presencial - En linea', 'Presencial', 'En linea', 'En Línea']
@@ -53,8 +54,8 @@ class SurveyEventService {
 
       // @INFO: Validando el programa
       const enrollments = await Enrollment.find({user: params.user})
-      .select('id course_scheduling')
-      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate typeCourse', populate: [
+      .select('id course_scheduling created_at')
+      .populate({path: 'course_scheduling', select: 'id program schedulingMode startDate endDate typeCourse withoutTutor serviceValidity', populate: [
         {
           path: 'schedulingMode', select: 'id name'
         },
@@ -65,8 +66,6 @@ class SurveyEventService {
       .lean()
 
       if (enrollments.length === 0) return responseUtility.buildResponseFailed('json', null, {error_key: ''})
-
-      console.log({ enrollments, user: params.user })
 
       const surveyAnswered = await AcademicResourceAttempt.find({
         user: params.user,
@@ -82,9 +81,6 @@ class SurveyEventService {
         return accum
       }, [])
 
-      console.log('survey_related', survey_related)
-
-      console.log('today', today)
       let surveyAvailable = false
       let surveyRelated = null
       let surveyRelatedContent = null
@@ -99,7 +95,7 @@ class SurveyEventService {
         if (!surveyAvailable) {
           // En virtual va dirigido al programa y en online y presencial a cada curso
           const schedulingMode = enrollment.course_scheduling.schedulingMode.name
-          console.log('schedulingMode', schedulingMode)
+          const withoutTutor = enrollment.course_scheduling.withoutTutor
           if (['Presencial - En linea', 'Presencial', 'En linea', 'En Línea'].includes(schedulingMode)) {
             // TODO: Fechas de los cursos
             let whereDetailScheduling = {
@@ -115,8 +111,6 @@ class SurveyEventService {
             .populate({path: 'teacher', select: 'id email profile'})
             .lean()
             .sort({startDate: 1})
-
-            console.log('detailScheduling', detailScheduling)
 
             // if (detailScheduling.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
 
@@ -159,12 +153,20 @@ class SurveyEventService {
               }
             })
           } else if (schedulingMode === 'Virtual') {
-            // TODO: Fechas del programa
-            const endDate = moment.utc(enrollment.course_scheduling.endDate)
-            console.log('endDate', endDate)
-            console.log('today', today)
-            console.log('compare', today.format('YYYY-MM-DD') <= endDate.format('YYYY-MM-DD'))
-            console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
+            const {courseEndDate} = enrollmentService.getCourseEndStatus(
+              enrollment.created_at,
+              {
+                serviceStartDate:enrollment.course_scheduling.startDate,
+                serviceEndDate: enrollment.course_scheduling.endDate
+              },
+              enrollment.course_scheduling.serviceValidity ? Number(enrollment.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            const endDate = moment.utc(courseEndDate);
+            // console.log('endDate', endDate)
+            // console.log('today', today)
+            // console.log('compare', today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD'))
+            // console.log('enrollment.course_scheduling._id', enrollment.course_scheduling._id)
             if (!survey_related.includes(enrollment.course_scheduling._id.toString())) {
               if (today.format('YYYY-MM-DD') >= endDate.format('YYYY-MM-DD')) {
                 const teacher = await this.getTeacherInfoFromCourseScheduling(enrollment.course_scheduling._id)
@@ -172,14 +174,21 @@ class SurveyEventService {
                 surveyRelated = enrollment.course_scheduling._id
                 surveyRelatedContent = {
                   name: enrollment.course_scheduling.program.name,
-                  endDate: enrollment.course_scheduling.endDate,
-                  mode_id: enrollment.course_scheduling.schedulingMode._id,
+                  endDate: endDate,
+                  mode_id: undefined,
+                  course_modes_mixed: undefined,
                   teacher,
                 }
+                if (withoutTutor) {
+                  surveyRelatedContent.course_modes_mixed = 'withoutTutor-survey'
+                } else {
+                  surveyRelatedContent.mode_id = enrollment.course_scheduling.schedulingMode._id
+                }
+
                 // Para el log de encuestas
                 course_scheduling = enrollment.course_scheduling._id;
                 course_scheduling_details = undefined;
-                endDateService = enrollment.course_scheduling.endDate;
+                endDateService = new Date(endDate.format('YYYY-MM-DD'));
                 const { serviceTypeKey } = courseSchedulingService.getServiceType(enrollment?.course_scheduling)
                 courseType = serviceTypeKey;
               } else {
@@ -191,10 +200,21 @@ class SurveyEventService {
           }
         }
       }
-
-      console.log('surveyAvailable', surveyAvailable)
-
       if (surveyAvailable === false) return responseUtility.buildResponseFailed('json') // TODO: Pendiente validacion
+
+      const match = {
+        'deleted': false,
+        'status': 'enabled',
+      }
+
+      if (surveyRelatedContent.mode_id) {
+        match['config.content.config.course_modes'] = ObjectID(surveyRelatedContent.mode_id)
+        match['config.content.config.course_type'] = courseType ? courseType : { $nin: Object.values(CourseSchedulingTypesKeys) }
+      }
+
+      if (surveyRelatedContent?.course_modes_mixed) {
+        match['config.content.config.course_modes_mixed'] = surveyRelatedContent.course_modes_mixed
+      }
 
       const aggregateQuery = [
         {
@@ -207,12 +227,7 @@ class SurveyEventService {
         },
         { $unwind: '$config.content' },
         {
-          $match: {
-            'config.content.config.course_modes': ObjectID(surveyRelatedContent.mode_id),
-            'deleted': false,
-            'status': 'enabled',
-            'config.content.config.course_type': courseType ? courseType : { $nin: Object.values(CourseSchedulingTypesKeys) }
-          }
+          $match: match
         },
         {
           $group: {
@@ -224,7 +239,6 @@ class SurveyEventService {
       ]
 
       const data = await Survey.aggregate(aggregateQuery)
-      console.log('data', data)
 
       if (data.length === 0) return responseUtility.buildResponseFailed('json') // TODO: Pendiente
 

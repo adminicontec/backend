@@ -333,7 +333,8 @@ export enum CourseSchedulingNotificationEvents {
 }
 
 export enum CourseSchedulingNotificationRules {
-  SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning'
+  SERVICE_TYPE_IS_NOT_QUICK_LEARNING = 'service_type_is_not_quick_learning',
+  SERVICE_IS_NOT_WITHOUT_TUTOR = 'service_is_not_without_tutor'
 }
 
 export interface IGetServiceTypeResponse {

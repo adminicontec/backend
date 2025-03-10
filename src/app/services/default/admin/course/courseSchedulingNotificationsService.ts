@@ -13,6 +13,7 @@ import { courseSchedulingDetailsService } from '@scnode_app/services/default/adm
 import { i18nUtility } from '@scnode_core/utilities/i18nUtility';
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
 import { customs } from '@scnode_core/config/globals';
+import { generalUtility } from '@scnode_core/utilities/generalUtility';
 // @end
 
 // @import models
@@ -31,6 +32,7 @@ import { courseSchedulingService } from './courseSchedulingService';
 // @end
 
 const DATE_FORMAT = 'YYYY-MM-DD'
+type NOTIFICATION_WITHOUT_TUTOR_STAGE = 'first_success' | 'first_failed' | 'second_success' | 'second_failed' | 'finished_success' | 'finished_failed'
 
 class CourseSchedulingNotificationsService {
 
@@ -51,6 +53,7 @@ class CourseSchedulingNotificationsService {
       case CourseSchedulingNotificationEvents.UNENROLLMENT:
       case CourseSchedulingNotificationEvents.SERVICE_CANCEL:
       case CourseSchedulingNotificationEvents.SURVEY_NOTIFICATION:
+        return this.checkRulesToNotificate(courseScheduling, [CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING, CourseSchedulingNotificationRules.SERVICE_IS_NOT_WITHOUT_TUTOR])
       case CourseSchedulingNotificationEvents.CERTIFICATE_GENERATED:
         return this.checkRulesToNotificate(courseScheduling, [CourseSchedulingNotificationRules.SERVICE_TYPE_IS_NOT_QUICK_LEARNING])
       case CourseSchedulingNotificationEvents.ENROLLMENT:
@@ -71,6 +74,13 @@ class CourseSchedulingNotificationsService {
             rulesValidation.push(false)
           }
           break
+        case CourseSchedulingNotificationRules.SERVICE_IS_NOT_WITHOUT_TUTOR:
+          if (courseScheduling?.withoutTutor) {
+            rulesValidation.push(false)
+          } else {
+            rulesValidation.push(true)
+          }
+          break;
       }
     }
     if (rulesValidation.length === 0) return true
@@ -78,8 +88,9 @@ class CourseSchedulingNotificationsService {
     return true
   }
 
-  public sendReminderEmailForQuickLearning = async (courseSchedulingId: string, userId: string) => {
+  public sendReminderEmailForQuickLearning = async (courseSchedulingId: string, userId: string, options: {customData?: Record<string, any>} = {}) => {
     try {
+      const {customData} = options;
       const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
       if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
 
@@ -92,6 +103,7 @@ class CourseSchedulingNotificationsService {
         notification_source: `scheduling_quick_learning_reminder_${courseScheduling._id}_${userId}`,
         studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
         courseName: courseScheduling.program.name,
+        ...(customData) ? customData : {}
       };
       const emails: string[] = [user.email];
       const mail = await mailService.sendMail({
@@ -241,6 +253,7 @@ class CourseSchedulingNotificationsService {
           duration: this.formatSecondsToHours(courseScheduling.duration),
           startDate: moment.utc(courseScheduling.startDate).format(DATE_FORMAT),
           endDate: moment.utc(courseScheduling.endDate).format(DATE_FORMAT),
+          serviceValidity: courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined,
           observations: courseScheduling.observations,
           exam: exam?.hasExam ? 'SI' : 'NO',
           changes: undefined,
@@ -581,8 +594,9 @@ class CourseSchedulingNotificationsService {
     return completeAssistance;
   }
 
-  public sendReminderEmailForFreeOrMooc = async (courseSchedulingId: string, userId: string) => {
+  public sendReminderEmailForFreeOrMooc = async (courseSchedulingId: string, userId: string, options: {customData?: Record<string, any>} = {}) => {
     try {
+      const {customData} = options;
       const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
       if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
       const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
@@ -593,6 +607,7 @@ class CourseSchedulingNotificationsService {
         notification_source: `scheduling_free_mock_reminder_${courseScheduling._id}_${userId}`,
         studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
         courseName: courseScheduling.program.name,
+        ...(customData) ? customData : {}
       };
       const emails: string[] = [user.email];
       const mail = await mailService.sendMail({
@@ -611,6 +626,91 @@ class CourseSchedulingNotificationsService {
       return mail
     } catch (error) {
       console.log('sendReminderEmailForFreeOrMooc Error: ', error);
+      return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public sendReminderEmailForWithoutTutor = async (courseSchedulingId: string, enrollmentId: string, userId: string, options: {stage: NOTIFICATION_WITHOUT_TUTOR_STAGE, customData?: Record<string, any>}) => {
+    try {
+      const {stage, customData} = options;
+      const user: IUser = await User.findOne({ _id: userId }).select('_id email profile.first_name profile.last_name')
+      if (!user || !user?.email?.length) return responseUtility.buildResponseFailed('json')
+      const courseScheduling = await this.getCourseSchedulingFromId(courseSchedulingId);
+      let path_template = '';
+      let notification_source = ``
+      let title = ''
+      const custom = customData ? {...customData} : {}
+
+      switch (stage) {
+        case 'first_success':
+          path_template = `course/schedulingWithoutTutorFirstReminder`
+          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          title = `🎯 ¡Vas por buen camino! Sigue avanzando en tu curso`
+          custom.conditionSuccess = true
+          break;
+        case 'first_failed':
+          path_template = `course/schedulingWithoutTutorFirstReminder`
+          notification_source = `scheduling_without_tutor_first_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          title = `🔔 ¡Aún no has iniciado tu curso!`
+          break;
+        case 'second_success':
+          path_template = `course/schedulingWithoutTutorSecondReminder`
+          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          title = `🎯 Vas por buen camino, estás a punto de finalizar tu curso.`
+          custom.conditionSuccess = true
+          break;
+        case 'second_failed':
+          path_template = `course/schedulingWithoutTutorSecondReminder`
+          notification_source = `scheduling_without_tutor_second_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          title = `🚨 ¡El tiempo se acaba y aún no has iniciado el curso!`
+          break;
+        case 'finished_success':
+          path_template = `course/schedulingWithoutTutorFinishedReminder`
+          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          custom.conditionSuccess = true
+          if (customData?.additionalDaysAfterCompletionToDeregister && customData?.additionalDaysAfterCompletionToDeregister > 0) {
+            title = `¡Felicidades! Te damos ${customData.additionalDaysAfterCompletionToDeregister} días más para reforzar tu aprendizaje`
+          } else {
+            title = `¡Felicidades por completar tu curso!`
+          }
+          break;
+        case 'finished_failed':
+          path_template = `course/schedulingWithoutTutorFinishedReminder`
+          notification_source = `scheduling_without_tutor_finished_reminder_${courseScheduling._id}_${userId}_${enrollmentId}`
+          if (customData?.additionalDaysAfterCompletionToDeregister && customData?.additionalDaysAfterCompletionToDeregister > 0) {
+            title = `🚨 ¡Última oportunidad! Accede a tu curso por ${customData?.additionalDaysAfterCompletionToDeregister} días más`
+          } else {
+            title = `🚨 ¡Tu curso ha finalizado!`
+          }
+          break;
+      }
+
+      const params = {
+        mailer: customs['mailer'],
+        today: moment.utc().format('YYYY-MM-DD'),
+        notification_source,
+        studentName: `${user?.profile?.first_name ? user?.profile?.first_name : ''} ${user?.profile?.last_name ? user?.profile?.last_name : ''}`,
+        courseName: courseScheduling.program.name,
+        ...(custom) ? custom : {},
+        title,
+      };
+      const emails: string[] = [user.email];
+      const mail = await mailService.sendMail({
+        emails,
+        mailOptions: {
+          subject: title,
+          html_template: {
+            path_layout: 'icontec',
+            path_template: path_template,
+            params
+          },
+          amount_notifications: 1
+        },
+        notification_source: params.notification_source
+      });
+      return mail
+    } catch (error) {
+      console.log('sendReminderEmailForWithoutTutor Error: ', error);
       return responseUtility.buildResponseFailed('json');
     }
   }

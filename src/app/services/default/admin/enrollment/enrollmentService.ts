@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment';
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -35,7 +36,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -47,6 +48,8 @@ import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@
 import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
 import { enrollmentTrackingService } from './enrollmentTrackingService';
 import { notificationEventService } from '../../events/notifications/notificationEventService';
+import { mapUtility } from '@scnode_core/utilities/mapUtility';
+import { completionstatusService } from '../completionStatus/completionstatusService';
 // @end
 
 class EnrollmentService {
@@ -412,6 +415,7 @@ class EnrollmentService {
             cvUserParams['reviewData'] = {
               status: 'pending'
             }
+            if (cvUserParams.password) delete cvUserParams.password
 
             try {
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
@@ -551,7 +555,11 @@ class EnrollmentService {
               }}})
             }
             const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
-            if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
+            const withoutTutor = courseScheduling?.withoutTutor ?? false
+            if (
+              (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) ||
+              withoutTutor
+            ) {
               params.sendEmail = 'true'
             }
             // @INFO: Se envia email de bienvenida
@@ -561,14 +569,23 @@ class EnrollmentService {
                 let customTemplate = undefined
                 let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
                 let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
-                let serviceValidity = courseScheduling.serviceValidity || undefined
+                let serviceValidity = courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined
 
                 if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
                   customTemplate = 'user/enrollmentUserQuickLearning'
-                  course_start = moment.utc().format('YYYY-MM-DD')
-                  course_end = moment.utc().add(courseScheduling.serviceValidity, 'seconds').format('YYYY-MM-DD')
-                  serviceValidity = generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true)
                 }
+                const {courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+                  moment.utc().format('YYYY-MM-DD'),
+                  {
+                    serviceStartDate: courseScheduling.startDate,
+                    serviceEndDate: courseScheduling.endDate
+                  },
+                  courseScheduling?.serviceValidity ? Number(courseScheduling?.serviceValidity) : undefined,
+                  0
+                )
+                course_start = courseStartDate
+                course_end = courseEndDate
+
                 await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
                   first_name: userEnrollment.profile.first_name,
@@ -1050,7 +1067,7 @@ class EnrollmentService {
 
       const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
 
-      const [certificateSettings, userCertificates, moodleProgress] = await Promise.all([
+      const [certificateSettings, userCertificates, moodleActivities, moodleCompletion] = await Promise.all([
         CertificateSettings
           .find({ courseScheduling: enrollment.course_scheduling._id })
           .select('_id'),
@@ -1061,16 +1078,28 @@ class EnrollmentService {
             courseID: courseSchedulingMoodleId,
             userID: userMoodleId,
             filter: moodleItemsToSearch
-          })
+          }),
+        completionstatusService.activitiesCompletion({
+          courseID: courseSchedulingMoodleId, //register.courseID,
+          userID: userMoodleId, //register.user.moodle_id
+        })
       ])
 
-      const grades = (moodleProgress as any).grades
+      const grades = (moodleActivities as any).grades
+      const completion = (moodleCompletion as any)?.completion ?? []
       const doesExistProgress = grades?.some((grade) => {
         const itemTypes = grade?.itemType ? grade?.itemType : {}
         return Object.values(itemTypes).some((itemsProgress: Array<any>) =>
           itemsProgress?.some((itemProgress) => itemProgress?.graderaw > 0)
         )
       })
+
+      const totalActivities = completion.length
+      const activitiesCompleted = completion.filter((c) => c.state === 1).length
+      let generalProgress = 0;
+      if (totalActivities > 0) {
+        generalProgress = Math.trunc((activitiesCompleted / totalActivities) * 100);
+      }
 
       const allCertificatesGenerated = !!userCertificates?.length && !certificateSettings?.some((setting) =>
         !userCertificates?.some((userCertificate) => userCertificate?.certificateSetting?.toString() === setting._id?.toString())
@@ -1087,6 +1116,7 @@ class EnrollmentService {
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           currentStatus,
+          generalProgress
         }
       })
 
@@ -1096,6 +1126,280 @@ class EnrollmentService {
     }
   }
 
+
+  public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
+    const enrolledPrograms = []
+    const certifiedPrograms = []
+
+    const {buyerId, itemsToBuy, force} = request
+    const buyer = await User.findOne({_id: buyerId})
+    if (!buyer) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
+    }
+
+    // @INFO: Validación para que el participante NO pueda matricularse en el mismo servicio
+    const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
+    const itemsByProgramDuplicated = mapUtility.findDuplicates(itemsToBuyClean ?? [], 'programCode')
+    const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
+      if (!accum[element.programCode]) {
+        accum[element.programCode] = []
+      }
+      accum[element.programCode].push(element)
+      return accum;
+    }, {})
+
+    const {serviceIds, programCodes, objectsToBuy} = itemsToBuyClean.reduce((accum, element) => {
+      accum.serviceIds.push(element.identifier);
+      accum.programCodes.push(element.programCode);
+      accum.objectsToBuy[element.identifier] = {
+        processPurchase: groupProgramDuplicated[element.programCode] ? PROCESS_PURCHASE.WARNING : PROCESS_PURCHASE.AVAILABLE,
+        reason: groupProgramDuplicated[element.programCode] ?
+          `Ya has seleccionado este programa (${element.description}) en otro servicio. ¿Estás seguro de que deseas inscribirte nuevamente?` :
+          `${element.description} está listo para la compra.`,
+        programCode: element.programCode,
+        programName: element.description,
+        externalId: element.externalId,
+        identifier: element.identifier,
+      }
+      return accum;
+    }, {serviceIds: [],programCodes: [], objectsToBuy: {}})
+
+    if (serviceIds.length === 0) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'No hay cursos por comprar'})
+    }
+
+    // @INFO: Consultar todas las matriculas del estudiante
+    const enrollments = await Enrollment.aggregate([
+      {
+        $match:
+          {
+            user: ObjectID(buyerId),
+            deleted: false,
+            // course_scheduling: {$in: serviceIds.map((s) => ObjectID(s))}
+          }
+      },
+      {
+        $lookup:
+          {
+            from: "course_schedulings",
+            localField: "course_scheduling",
+            foreignField: "_id",
+            as: "service"
+          }
+      },
+      {
+        $unwind: { path: "$service", "preserveNullAndEmptyArrays": true }
+      },
+
+      {
+        "$lookup": {
+          "from": "course_scheduling_statuses",
+          "localField": "service.schedulingStatus",
+          "foreignField": "_id",
+          "as": "status"
+        }
+      },
+      {
+        "$unwind": { "path": "$status", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        "$lookup": {
+          "from": "programs",
+          "localField": "service.program",
+          "foreignField": "_id",
+          "as": "program"
+        }
+      },
+      {
+        "$unwind": { "path": "$program", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        $project:
+          {
+            _id: "$_id",
+            courseID: "$courseID",
+            origin: "$origin",
+            created_at: "$created_at",
+            "serviceId": "$service._id",
+            "serviceCode": "$service.metadata.service_id",
+            "serviceStatusName": "$status.name",
+            "serviceProgramName": "$program.name",
+            "serviceProgramCode": "$program.code"
+          }
+      }
+    ])
+
+    enrollments.forEach(element => {
+      enrolledPrograms.push(element.serviceProgramCode)
+      if (objectsToBuy[element.serviceId]) {
+        // @INFO: Si el participante ya esta matriculado en el servicio NO puedo dejarlo matricular
+        objectsToBuy[element.serviceId].processPurchase = PROCESS_PURCHASE.RESTRICTED;
+        switch (element.serviceStatusName) {
+          case 'Ejecutado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) ya ha finalizado, por lo que no es posible inscribirse nuevamente.`;
+            break;
+          case 'Confirmado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y tu matrícula está en proceso.`;
+            break;
+          case 'Programado':
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y está próximo a iniciar.`;
+            break;
+          default:
+            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
+            break;
+        }
+
+      }
+    })
+
+
+    // @INFO: Consultar los certificados del estudiante
+    const certificates = await CertificateQueue.find({
+      userId: buyerId
+    }).populate([
+      {path: 'courseId', select: 'program', populate: [
+        {path: 'program', select: 'code'}
+      ]}
+    ]).select('courseId status')
+
+    certificates.forEach(element => {
+      if (element?.courseId?.program?.code) {
+        certifiedPrograms.push(element?.courseId?.program?.code)
+      }
+    });
+    programCodes.forEach(element => {
+      let process = false
+      let processPurchase = PROCESS_PURCHASE.RESTRICTED
+      let reason = ``;
+      if (certifiedPrograms.includes(element)) {
+        // @INFO: Validación que permite establecer si el participante ya se certifico en el programa
+        process = true
+        reason = `No puedes comprar :programName porque ya estás certificado.`
+
+      } else if (enrolledPrograms.includes(element)) {
+      // @INFO: Validación que permite establecer si el participante ya curso el mismo programa en otro servicio
+        process = true
+        reason = `No puedes comprar :programName porque ya estás inscrito.`;
+      }
+      if (process) {
+        Object.keys(objectsToBuy)
+          .filter((o) => objectsToBuy[o].programCode === element)
+          .map((o) => {
+            if (objectsToBuy[o].processPurchase === PROCESS_PURCHASE.AVAILABLE) {
+              objectsToBuy[o].processPurchase = processPurchase
+              objectsToBuy[o].reason = reason.replace(':programName', objectsToBuy[o].programName);
+            }
+          })
+      }
+    });
+
+    if (force) {
+      Object.keys(objectsToBuy).map((i) => {
+        if (objectsToBuy[i].processPurchase === PROCESS_PURCHASE.WARNING) {
+          objectsToBuy[i].processPurchase = PROCESS_PURCHASE.AVAILABLE
+        }
+      })
+    }
+
+    // TODO: Mientras NO tengamos un servicio de Tienda para inscribir debo realizar el proceso de matricula directo en campus
+    const canEnrollment = Object.keys(objectsToBuy).every((i) => objectsToBuy[i].processPurchase === PROCESS_PURCHASE.AVAILABLE)
+    if (!canEnrollment) {
+      return responseUtility.buildResponseSuccess('json', null, {message: 'Verificar compra', additional_parameters: {
+        processPurchase: 'verify_purchase',
+        review: objectsToBuy
+      }})
+    }
+    await this.completePurchaseAndRegister(objectsToBuy, buyer)
+
+    return responseUtility.buildResponseSuccess('json', null, {message: 'Compra finalizada', additional_parameters: {
+      processPurchase: 'success'
+    }})
+  }
+
+  private completePurchaseAndRegister = async (objectsToBuy: ObjectsToBuy, buyer: IUser) => {
+    try {
+      const enrollments = []
+      Object.keys(objectsToBuy).forEach((i) => {
+        const item = objectsToBuy[i]
+        const enrollmentObj = {
+          "email": buyer.email,
+          "user": buyer.username,
+          "password": buyer.username,
+          "documentType": buyer.profile?.doc_type,
+          "documentID": buyer.profile?.doc_number ?? buyer.username,
+          "firstname": buyer.profile?.first_name,
+          "lastname": buyer.profile?.last_name,
+          "phoneNumber": buyer.phoneNumber,
+          "courseID": item.externalId,
+          "origin": "ShoppingCart"
+        }
+        enrollments.push(enrollmentObj)
+      })
+      if (enrollments.length > 0) {
+        const response = await Promise.all(enrollments.map((e) => this.insertOrUpdate(e)))
+      }
+    } catch (err) {
+      console.log(`EnrollmentService -> completePurchaseAndRegister -> ERROR: ${err}`)
+    }
+  }
+
+  public getEndingServiceWithDateValidity = (enrollmentDate: string, validityTime: number) => {
+    try {
+      const startDate = moment(enrollmentDate) //enrollment.created_at
+      const days = this.getDays(validityTime)
+      return startDate.add(days, 'days').format('YYYY-MM-DDT23:59:59')
+    } catch (e) {
+      return false
+    }
+  }
+
+  private getDays(seconds) {
+    return Math.floor(seconds / (24 * 60 * 60));
+  }
+
+  public getCourseEndStatus(
+    enrollmentDate: string,
+    serviceData: {serviceEndDate: string, serviceStartDate: string},
+    durationSeconds: number,
+    daysBeforeEnd: number
+  ): {hasEnded: boolean;isEndingSoon: boolean;daysToEnding: number; daysSinceEnd: number; courseEndDate: string, courseStartDate: string} {
+    const today = moment()
+    const calculateByUserEnrollmentDate = durationSeconds ? true : false
+    // Convert enrollmentDate to a moment object
+    const startDate = calculateByUserEnrollmentDate ? moment(enrollmentDate).set('hours', 0).set('minutes', 0) : moment(serviceData.serviceStartDate).set('hours', 0).set('minutes', 0);
+
+    if (!startDate.isValid()) {
+      throw new Error('Invalid enrollment date');
+    }
+
+    // Calculate the course end date
+    const courseEndDate = calculateByUserEnrollmentDate ? startDate.clone().add(durationSeconds, 'seconds').set('hours', 23).set('minutes', 59) : moment(serviceData.serviceEndDate).set('hours', 23).set('minutes', 59);
+
+    // Calculate the trigger date (courseEndDate - daysBeforeEnd)
+    const triggerDate = courseEndDate.clone().subtract(daysBeforeEnd, 'days');
+
+    // Determine if the course has ended
+    const hasEnded = today.startOf('day').isSameOrAfter(courseEndDate.startOf('day'));
+
+    // Determine if the course is ending soon
+    const isEndingSoon = today.startOf('day').isSameOrAfter(triggerDate.startOf('day')) && !hasEnded;
+
+    // Calculate days since the course ended (0 if not ended)
+    const daysSinceEnd = hasEnded
+      ? today.diff(courseEndDate, 'days')
+      : 0;
+
+    const daysToEnding = courseEndDate.diff(today, 'days')
+
+    return {
+      hasEnded,
+      isEndingSoon,
+      daysToEnding,
+      daysSinceEnd,
+      courseEndDate: courseEndDate.format('YYYY-MM-DD'),
+      courseStartDate: startDate.format('YYYY-MM-DD')
+    };
+  }
 }
 
 export const enrollmentService = new EnrollmentService();

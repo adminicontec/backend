@@ -1,0 +1,34 @@
+{{> partials/page/title title=params.title}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Hola, {{params.studentName}}</b></p>&nbsp;
+                    {{#if params.conditionSuccess}}
+                      <p>¡Enhorabuena!</p>&nbsp;
+                      <p>Queremos felicitarte por haber finalizado el curso <b>{{params.courseName}}</b>. Como reconocimiento a tu esfuerzo, hemos decidido otorgarte {{params.additionalDaysAfterCompletionToDeregister}} días adicionales para que puedas seguir consultando el material del curso y repasar los contenidos que más te llamaron la atención. </p>
+                      <p><b>Aprovecha esta oportunidad para fortalecer tus aprendizajes y afianzar tus conocimientos. </b></p>
+                      <p><b>Haz clic aquí y accede al curso:</b> <a href="{{params.customs.mailer.campus_virtual}}/login">{{params.customs.mailer.campus_virtual}}</a></p>
+                    {{else}}
+                      <p>Hoy es el último día del curso <b>{{params.courseName}}</b>, pero entendemos que quizás hayas tenido algunas dificultades para completarlo. Por ello, hemos decidido otorgarte {{params.additionalDaysAfterCompletionToDeregister}} días adicionales a partir de hoy para que puedas finalizarlo. </p>
+                      <p><b>Aprovecha esta extensión y finaliza tu formación antes de que expire el acceso. </b></p>
+                      <p>Si después de estos {{params.additionalDaysAfterCompletionToDeregister}} días no has finalizado el curso, será necesario realizar nuevamente el proceso de inscripción para acceder al contenido. </p>
+                      <p><b>No dejes pasar esta oportunidad, accede ahora:</b> <a href="{{params.customs.mailer.campus_virtual}}/login">{{params.customs.mailer.campus_virtual}}</a></p>
+                    {{/if}}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

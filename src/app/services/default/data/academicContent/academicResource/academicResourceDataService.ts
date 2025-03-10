@@ -120,6 +120,10 @@ class AcademicResourceDataService {
 
       let launch_config = {...academicResourceConfig.config}
 
+      if (launch_config?.course_modes_mixed) {
+        launch_config.course_modes = launch_config.course_modes_mixed
+      }
+
       // @INFO: Construyendo información para el cliente
       let academicResourceData = {
         academic_resource: academicResource._id,

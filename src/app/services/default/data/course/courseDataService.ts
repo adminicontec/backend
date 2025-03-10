@@ -781,7 +781,7 @@ class CourseDataService {
           }
         }
         if (register.endDiscountDate) {
-          register.endDiscountDate = register.endDiscountDate.toISOString().replace('T00:00:00.000Z', '')
+          register.endDiscountDate = register.endDiscountDate.replace('T00:00:00.000Z', '')
         }
       }
 

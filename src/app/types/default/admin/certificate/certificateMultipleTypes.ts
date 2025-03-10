@@ -77,7 +77,8 @@ export interface ICertificateMultipleGenerate {
   retryConfig?: {
     maxRetries: number,
     currentAttempt?: number
-  }
+  },
+  synchronousProcedure?: boolean
 }
 
 export interface ICertificateQueueMultiple {
