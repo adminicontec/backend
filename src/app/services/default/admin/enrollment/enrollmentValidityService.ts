@@ -103,7 +103,7 @@ class EnrollmentValidityService {
             daysBeforeEnd
           )
 
-          if (generalProgress > 0 || currentStatus === EnrollmentStatus.IN_PROGRESS) {
+          if (currentStatus !== EnrollmentStatus.COMPLETED && (generalProgress > 0 || currentStatus === EnrollmentStatus.IN_PROGRESS)) {
           // if (currentStatus === EnrollmentStatus.IN_PROGRESS) {
             // @INFO: Verificar estado academico y de certificaciones del estudiante
             userCertificated = await this.verifyStudentQualifications(enrollment, courseScheduling, courseScheduling?.withoutTutor ? false : true)
