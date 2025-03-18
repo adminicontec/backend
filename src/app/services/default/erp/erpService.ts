@@ -14,6 +14,8 @@ import { btoa } from 'js-base64';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
 import { ITransaction } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
+import { userDataService } from '../data/user/userDataService';
+import { userService } from '../admin/user/userService';
 // @end
 
 // @import models
@@ -123,6 +125,11 @@ const PLACEHOLDER_CREATE_INVOICE_PARAMS = {
   "ATRIBUTO_100": "",
 }
 
+enum Currency {
+  USD = "USD",
+  COP = "COP",
+}
+
 class ErpService {
 
   /*===============================================
@@ -134,53 +141,86 @@ class ErpService {
 
   constructor () {}
 
-  public getCertificatePrice = async ({ programCode }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
+  private getAuthHeaders(): { Authorization: string } {
+    const basicHeader = btoa(`${erpSetup?.username}:${erpSetup?.password}`);
+    return { Authorization: `Basic ${basicHeader}` };
+  }
+
+  private buildErpUrl(programCode: string, currency: string, userDocNumber: string): string {
+    return `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=${currency}&NUMERO_IDENTIFICACION=${userDocNumber}`;
+  }
+
+
+  public getCertificatePrice = async ({
+    programCode,
+    userDocNumber,
+  }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
     try {
-      const basicHeader = btoa(`${erpSetup?.username}:${erpSetup?.password}`)
-      const headers = {
-        'Authorization': `Basic ${basicHeader}`
-      }
+      const headers = this.getAuthHeaders();
+
       const USDRequest = queryUtility.query({
-        method: 'get',
-        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=USD`,
-        api: 'erp',
-        headers
-      })
+        method: "get",
+        url: this.buildErpUrl(programCode, Currency.USD, userDocNumber),
+        api: "erp",
+        headers,
+      });
+
       const COPRequest = queryUtility.query({
-        method: 'get',
-        url: `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=COP`,
-        api: 'erp',
-        headers
-      })
-      const [usdResponse, copResponse] = await Promise.all([USDRequest, COPRequest])
-      const priceCOP = Number(copResponse?.ITEM?.[0]?.ItemPrice)
-      const priceUSD = Number(usdResponse?.ITEM?.[0]?.ItemPrice)
-      const erpCode = copResponse?.ITEM?.[0]?.ItemCode
+        method: "get",
+        url: this.buildErpUrl(programCode, Currency.COP, userDocNumber),
+        api: "erp",
+        headers,
+      });
+
+      const [usdResponse, copResponse] = await Promise.all([
+        USDRequest.catch((err) => {
+          customLogService.create({
+            label: "erpService - getCertificatePrice",
+            description: "Error fetching USD price",
+            content: { error: err.message },
+          });
+          return null;
+        }),
+        COPRequest.catch((err) => {
+          customLogService.create({
+            label: "erpService - getCertificatePrice",
+            description: "Error fetching COP price",
+            content: { error: err.message },
+          });
+          return null;
+        }),
+      ]);
+
+      const copItem = copResponse?.ITEM?.[0] || {};
+      const usdItem = usdResponse?.ITEM?.[0] || {};
+
+      const priceCOP = Number(copItem.ItemPrice) || 0;
+      const priceUSD = Number(usdItem.ItemPrice) || 0;
+      const erpCode = copItem.ItemCode ?? null;
+
       return {
-        price: {
-          COP: priceCOP,
-          USD: priceUSD,
-        },
+        price: { COP: priceCOP, USD: priceUSD },
         erpCode,
-      }
-    } catch (e) {
-      console.log(`erpService -> getCertificatePrice -> ERROR: ${e}`)
+      };
+    } catch (error) {
+      await customLogService.create({
+        label: "erps - gcp - error fetching certificate price",
+        description: "Error fetching certificate price",
+        content: { error },
+      });
+
       return {
         error: true,
-        price: {
-          COP: 0,
-          USD: 0,
-        }
-      }
+        price: { COP: 0, USD: 0 },
+      };
     }
-  }
+  };
 
   public createInvoice = async (params: ICreateInvoiceERP): Promise<ICreateInvoiceERPResponse> => {
     try {
-      const basicHeader = btoa(`${erpSetup?.username}:${erpSetup?.password}`)
-      const headers = {
-        'Authorization': `Basic ${basicHeader}`
-      }
+
+      const headers = this.getAuthHeaders();
+
       const response = await queryUtility.query({
         method: 'post',
         url: `/ic/api/integration/v1/flows/rest/ICO_CO_CREAT_UPDAT_CUSTO_TV/1.0/create-update/customer`,
@@ -352,6 +392,19 @@ class ErpService {
         })
       }
 
+      let userDocNumber = ''
+
+      try {
+        const fetchUserData: any = await userDataService.fetchUserInfo({ user_id: certificate.userId });
+
+        if(fetchUserData) {
+          userDocNumber = fetchUserData.user.docNumber;
+        }
+
+      } catch (error) {
+        console.log('error obteniendo documento del usuario', error)
+      }
+
       const program = certificate?.courseId?.program
       if (!program) {
         return responseUtility.buildResponseFailed('json', null, {
@@ -371,7 +424,8 @@ class ErpService {
       const { price, erpCode, error: erpError } = await this.getCertificatePrice({
         programName: program.name,
         programCode: program.code,
-        duration: course.duration
+        duration: course.duration,
+        userDocNumber
       })
       if (erpError) {
         return responseUtility.buildResponseFailed('json', null, {

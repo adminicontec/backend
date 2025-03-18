@@ -8,6 +8,7 @@ export interface IGetCertificatePriceParams {
   programName: string
   programCode: string
   duration: number
+  userDocNumber: string
 }
 
 export interface IGetCertificatePriceResponse {
