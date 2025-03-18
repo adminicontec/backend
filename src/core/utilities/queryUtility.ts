@@ -79,7 +79,12 @@ class QueryUtility {
   private getApi(api: string) {
 
     let _api: any = null;
-    if (external_api.hasOwnProperty(api) && external_api[api].hasOwnProperty('url') && external_api[api]['url'] !== "") _api = external_api[api]['url'];
+    if (
+      external_api.hasOwnProperty(api) &&
+      external_api[api].hasOwnProperty("url") &&
+      external_api[api]["url"] !== ""
+    )
+      _api = external_api[api]["url"];
 
     return _api;
   }
