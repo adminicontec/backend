@@ -295,32 +295,44 @@ class TransactionService {
       const program = certificateQueue?.courseId?.program
 
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
-        const invoiceResponse: any = await erpService.createInvoiceFromTransaction(transaction._id)
-        if (invoiceResponse?.status === 'error') {
-          certificateNotifiactionsService.sendAdminErrorCertificate({
-            errorMessage: 'Error al generar la factura',
-            queryErrorMessage: typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
-            certificateQueueId: certificateQueue?._id?.toString(),
-            courseName: program?.name,
-            docNumber: certificateQueue?.userId?.username,
-            studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+        erpService.createInvoiceFromTransaction(transaction._id)
+          .then((invoiceResponse: any) => {
+            if (invoiceResponse?.status === 'error') {
+              certificateNotifiactionsService.sendAdminErrorCertificate({
+                errorMessage: 'Error al generar la factura',
+                queryErrorMessage: typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
+                certificateQueueId: certificateQueue?._id?.toString(),
+                courseName: program?.name,
+                docNumber: certificateQueue?.userId?.username,
+                studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+              })
+              certificateNotifiactionsService.sendErrorCertificate({
+                certificateQueueId: certificateQueue?._id?.toString(),
+                users: [
+                  {
+                    name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+                    email: certificateQueue?.userId?.email
+                  }
+                ],
+                courseName: program?.name
+              })
+              return invoiceResponse
+            }
           })
-          certificateNotifiactionsService.sendErrorCertificate({
-            certificateQueueId: certificateQueue?._id?.toString(),
-            users: [
-              {
-                name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
-                email: certificateQueue?.userId?.email
-              }
-            ],
-            courseName: program?.name
+          .catch((e: any) => {
+            customLogService.create({
+              label: 'efps - otse - error creating invoice',
+              description: 'Error al crear la factura con ERP',
+              content: {
+                errorMessage: e.message,
+                transactionId: transaction._id,
+              },
+            })
           })
-          return invoiceResponse
-        }
       }
 
       if (certificateQueue) {
-        await transactionNotificationsService.sendTransactionStatus({
+        transactionNotificationsService.sendTransactionStatus({
           certificateName: certificateQueue?.certificateSetting?.certificateName,
           status: params.transaction.status as unknown as TransactionStatus,
           transactionId: transaction._id,
@@ -330,6 +342,24 @@ class TransactionService {
               email: certificateQueue?.userId?.email
             }
           ]
+        }).then((response: any) => {
+          customLogService.create({
+            label: 'efps - otse - notification sent',
+            description: 'Notificación de estado de transacción enviada exitosamente',
+            content: {
+              response,
+              transactionId: transaction._id,
+            },
+          })
+        }).catch((e: any) => {
+          customLogService.create({
+            label: 'efps - otse - error sending notification',
+            description: 'Error al enviar el correo de notificación de transacción',
+            content: {
+              errorMessage: e.message,
+              transactionId: transaction._id,
+            },
+          })
         })
       }
 
