@@ -42,8 +42,33 @@ class TransactionService {
         const register = await Transaction.findOne({_id: params.id})
         if (!register) return responseUtility.buildResponseFailed('json')
 
-        const response: any = await Transaction.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
+          const filteredParams = Object.entries(params).reduce((acc, [key, value]) => {
+            if (value !== undefined) acc[key] = value;
+            return acc;
+          }, {} as any);
 
+        const merged = {
+          ...register.toObject(),
+          ...filteredParams
+        }
+
+        delete merged._id;
+
+        const response: any = await Transaction.findByIdAndUpdate(params.id, { $set: merged }, {
+          useFindAndModify: false,
+          new: true,
+        })
+
+        await customLogService.create({
+          label: 'transactions - update after merge',
+          description: 'Transacción actualizada con merge seguro',
+          content: {
+            transactionId: params.id,
+            merged,
+            register,
+            filteredParams
+          }
+        })
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
             transaction: response
