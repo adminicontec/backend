@@ -305,39 +305,22 @@ class ErpService {
           }
         })
       }
-      const {
-        identification_number,
-        address1,
-        address2,
-        email,
-        name,
-        phone,
-        identification_type,
-        authorization_code,
-      } = transaction?.paymentInfo
-      const response = await this.createInvoice({
-        ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
-        AccountNumber: identification_number,
-        AddressLine1: `${address1} ${address2}`,
-        City: transaction?.certificateInfo?.city,
-        Classifications: transaction.certificateInfo?.classification,
-        CorreoElectrónico: email,
-        Country: transaction?.certificateInfo?.country,
-        CustomerName: name,
-        Department: transaction?.certificateInfo?.department,
-        Naturaleza: transaction.certificateInfo?.nature,
-        Telefono: phone,
-        TipoDeDocumento: identification_type,
-        Articulos: [
-          {
-            ATRIBUTO_1: '1',  // Amount of items that were bought
-            PrecioArticulo: String(transaction.baseAmount),
-            CodigoArticuloEcommerce: program.code,
-          }
-        ],
-        ATRIBUTO_2: transaction?.certificateInfo?.currency,
-        ATRIBUTO_3: String(authorization_code || '')
-      })
+      if (!transaction?.paymentInfo || !transaction.paymentInfo.identification_number || !transaction.paymentInfo.name) {
+        await customLogService.create({
+          label: 'erps - missing-payment-info',
+          description: 'Faltan datos de paymentInfo para generar la factura',
+          content: { transactionId: transaction._id, paymentInfo: transaction.paymentInfo }
+        });
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 400,
+          message: 'Faltan datos de pago para generar la factura'
+        });
+      }
+
+      const invoiceParams = this.buildInvoiceParams(transaction, program.code);
+
+      const response = await this.createInvoice(invoiceParams)
+
       if (response?.error) {
         await customLogService.create({
           label: 'erps - eci - error creating invoice',
@@ -376,6 +359,47 @@ class ErpService {
       })
     }
   }
+
+  private buildInvoiceParams = (transaction: ITransaction, programCode: string): ICreateInvoiceERP => {
+    const {
+      identification_number,
+      address1,
+      address2,
+      email,
+      name,
+      phone,
+      identification_type,
+      authorization_code,
+      city,
+      state,
+      country
+    } = transaction.paymentInfo;
+
+    return {
+      ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
+      AccountNumber: identification_number,
+      AddressLine1: `${address1 || ''} ${address2 || ''}`.trim(),
+      City: city,
+      Classifications: transaction.certificateInfo?.classification,
+      CorreoElectrónico: email,
+      Country: country,
+      CustomerName: name,
+      Department: state,
+      Naturaleza: transaction.certificateInfo?.nature,
+      Telefono: phone,
+      TipoDeDocumento: identification_type,
+      Articulos: [
+        {
+          ATRIBUTO_1: '1',
+          PrecioArticulo: String(transaction.baseAmount),
+          CodigoArticuloEcommerce: programCode,
+        }
+      ],
+      ATRIBUTO_2: transaction?.certificateInfo?.currency,
+      ATRIBUTO_3: String(authorization_code || '')
+    };
+  };
+
 
   public getCertificatePriceFromCertificateQueue = async ({ certificateQueueId }, exposeCollections?: boolean) => {
     try {
