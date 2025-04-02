@@ -379,7 +379,7 @@ class ErpService {
 
     if(countryValidated === 'COL') {
       countryValidated =  'CO'
-    }
+     }
 
     return {
       ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
