@@ -375,6 +375,12 @@ class ErpService {
       country
     } = transaction.paymentInfo;
 
+    let countryValidated = country?.toUpperCase();
+
+    if(countryValidated === 'COL') {
+      countryValidated =  'CO'
+    }
+
     return {
       ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
       AccountNumber: identification_number,
@@ -382,7 +388,7 @@ class ErpService {
       City: city,
       Classifications: transaction.certificateInfo?.classification,
       CorreoElectrónico: email,
-      Country: country,
+      Country: countryValidated,
       CustomerName: name,
       Department: state,
       Naturaleza: transaction.certificateInfo?.nature,
