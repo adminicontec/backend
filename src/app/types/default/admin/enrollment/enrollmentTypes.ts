@@ -48,6 +48,7 @@ export interface IEnrollment{
   timezone?: TimeZone
   created_at?: string
   updated_at?: string
+  trackingEnrollment?: boolean
 }
 
 export interface IEnrollmentQuery {

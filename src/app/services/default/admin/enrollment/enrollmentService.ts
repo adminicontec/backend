@@ -50,6 +50,7 @@ import { enrollmentTrackingService } from './enrollmentTrackingService';
 import { notificationEventService } from '../../events/notifications/notificationEventService';
 import { mapUtility } from '@scnode_core/utilities/mapUtility';
 import { completionstatusService } from '../completionStatus/completionstatusService';
+import { IEnrollmentData } from '@scnode_app/types/default/admin/enrollment/enrollmentTrackingTypes';
 // @end
 
 class EnrollmentService {
@@ -497,15 +498,22 @@ class EnrollmentService {
             const respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
             if (respMoodle3?.status === 'error') {
               if (
-                respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
+                // respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
                 params.origin === 'Tienda Virtual'
               ) {
                 try {
-                  await enrollmentTrackingService.insertOrUpdate({
-                    requestData: params,
-                    errorLog: respMoodle3,
-                    origin: params.origin
-                  })
+                  await enrollmentTrackingService.trackEnrollmentError(
+                    respMoodle3,
+                    {
+                      email: params.email,
+                      documentId: params.documentID,
+                      courseId: params.courseID,
+                      course_scheduling: params.courseScheduling,
+                      origin: params.origin,
+                    },
+                    enrollmentTrackingService.getTrackingSource(params.origin),
+                    {...params}
+                  );
 
                   const recipients = []
                   const recipientsCC = []
@@ -533,7 +541,7 @@ class EnrollmentService {
                       recipientsCC,
                       emailData: {
                         studentName: params.firstname,
-                        error: `Funcionalidad de matriculación manual deshabilitada para el servicio: ${courseScheduling?.metadata?.service_id}`,
+                        error: `Error de matriculación en el servicio: ${courseScheduling?.metadata?.service_id}`,
                         studentFullName: `${params.firstname} ${params.lastname}`,
                         studentEmail: params.email,
                         studentDocumentId: params.documentID,
@@ -554,6 +562,30 @@ class EnrollmentService {
                 errorMessage: respMoodle3.message || 'Se ha presentado un error al matricular en moodle'
               }}})
             }
+
+            try {
+              if (params?.trackingEnrollment) {
+                // Caso de éxito en la matrícula
+                const enrollmentData: IEnrollmentData = {
+                  userId: params.user,
+                  email: params.email,
+                  documentId: params.documentID,
+                  courseId: params.courseID,
+                  course_scheduling: params.courseScheduling,
+                  enrollmentId: _id,
+                  enrollmentCode: enrollmentCode,
+                  status: EnrollmentStatus.REGISTERED,
+                  origin: params.origin,
+                };
+                await enrollmentTrackingService.trackEnrollmentSuccess(
+                  enrollmentData,
+                  enrollmentTrackingService.getTrackingSource(params.origin),
+                  {...params}
+                );
+              }
+            } catch (err) {}
+
+
             const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
             const withoutTutor = courseScheduling?.withoutTutor ?? false
             if (
@@ -1331,7 +1363,8 @@ class EnrollmentService {
           "lastname": buyer.profile?.last_name,
           "phoneNumber": buyer.phoneNumber,
           "courseID": item.externalId,
-          "origin": "ShoppingCart"
+          "origin": "ShoppingCart",
+          "trackingEnrollment": true,
         }
         enrollments.push(enrollmentObj)
       })
