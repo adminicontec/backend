@@ -283,11 +283,197 @@ class CertificateMultipleService {
     }
   }
 
+  // private buildStudentsMoodleData = async (params: IBuildStudentsMoodleData) => {
+  //   try {
+  //     const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
+  //     const { moodleId, studentMoodleId, students } = params
+
+  //     let modulesListByInstance = {}
+  //     const [modulesForProgress, moodleUserStats] = await Promise.all([
+  //       courseContentService.moduleList({
+  //         courseID: moodleId,
+  //         moduleType: [...moodleItemsToSearch, 'scorm']
+  //       }) as any,
+  //       gradesService.fetchGradesByFilter({
+  //         courseID: moodleId,
+  //         userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
+  //         filter: moodleItemsToSearch
+  //       }) as any
+  //     ])
+
+  //     if (modulesForProgress?.courseModules) {
+  //       modulesListByInstance = modulesForProgress.courseModules.reduce((accum, element) => {
+  //         if (element?.instance) {
+  //           if (!accum[element?.instance]) {
+  //             accum[element?.instance] = element;
+  //           }
+  //         }
+  //         return accum;
+  //       }, {});
+  //     }
+
+  //     if (moodleUserStats?.status === 'error') {
+  //       throw new BuildStudentsMoodleDataException({
+  //         errorKey: 'grades.moodle_exception'
+  //       })
+  //     }
+
+  //     const { grades: userStats } = moodleUserStats
+
+  //     const statsGroupedByUser: Record<string, Record<string, Record<string, IStudentStats>>> = {}
+  //     for (const student of students) {
+  //       if (!statsGroupedByUser[student]) {
+  //         statsGroupedByUser[student] = {}
+  //       }
+  //       for (const module of modulesForProgress?.courseModules) {
+  //         if (module?.instance && module?.sectionid) {
+  //           if (!statsGroupedByUser[student][module?.sectionid.toString()]) statsGroupedByUser[student][module?.sectionid] = {}
+  //           if (!statsGroupedByUser[student][module?.sectionid.toString()][module?.instance.toString()]) {
+  //             statsGroupedByUser[student][module?.sectionid.toString()][module?.instance.toString()] = {
+  //               attendance: [],
+  //               exam: [],
+  //               course: [],
+  //               progress: [],
+  //               assign: [],
+  //               forum: [],
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+
+
+  //     for (const stats of userStats) {
+  //       if (stats?.userData?.userid) {
+  //         if (statsGroupedByUser[stats?.userData?.userid.toString()]) {
+  //           const userModuleStats = statsGroupedByUser[stats?.userData?.userid.toString()];
+  //           if (stats?.itemType?.attendance && Array.isArray(stats?.itemType?.attendance)) {
+  //             for (const attedance of stats?.itemType?.attendance) {
+  //               if (attedance?.iteminstance && modulesListByInstance[attedance?.iteminstance]) {
+  //                 const instance = modulesListByInstance[attedance?.iteminstance] || undefined
+  //                 if (
+  //                   instance &&
+  //                   userModuleStats[instance?.sectionid.toString()] &&
+  //                   userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()]
+  //                 ) {
+  //                   const attedanceItem: IStudentStatsAttendance = {
+  //                     graderaw: attedance?.graderaw || 0
+  //                   }
+  //                   userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()].attendance.push(attedanceItem)
+  //                 }
+  //               }
+  //             }
+  //           }
+
+  //           if (stats?.itemType?.quiz && Array.isArray(stats?.itemType?.quiz)) {
+  //             for (const quiz of stats?.itemType?.quiz) {
+  //               if (quiz?.iteminstance && modulesListByInstance[quiz?.iteminstance]) {
+  //                 const instance = modulesListByInstance[quiz?.iteminstance] || undefined
+  //                 if (
+  //                   instance &&
+  //                   userModuleStats[instance?.sectionid.toString()] &&
+  //                   userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()]
+  //                 ) {
+  //                   const examItem: IStudentStatsExam = {
+  //                     graderaw: quiz?.graderaw || 0,
+  //                     isAuditor: AUDITOR_EXAM_REGEXP.test(quiz?.idnumber) ? true : false
+  //                   }
+  //                   userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
+  //                 }
+  //               }
+  //             }
+  //           }
+
+  //           // if (stats?.itemType?.course && Array.isArray(stats?.itemType?.course)) {
+  //           //   for (const course of stats?.itemType?.course) {
+  //           //     if (course?.iteminstance && modulesListByInstance[course?.iteminstance.toString()]) {
+  //           //       const instance = modulesListByInstance[course?.iteminstance.toString()] || undefined
+  //           //       if (
+  //           //         instance &&
+  //           //         userModuleStats[instance?.sectionid.toString()] &&
+  //           //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()]
+  //           //       ) {
+  //           //         const courseItem: IStudentStatsCourse = {
+  //           //           graderaw: course?.graderaw || 0,
+  //           //         }
+  //           //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()].course.push(courseItem)
+  //           //       }
+  //           //     }
+  //           //   }
+  //           // }
+
+  //           if (stats?.itemType?.assign && Array.isArray(stats?.itemType?.assign)) {
+  //             for (const assign of stats?.itemType?.assign) {
+  //               if (assign?.iteminstance && modulesListByInstance[assign?.iteminstance.toString()]) {
+  //                 const instance = modulesListByInstance[assign?.iteminstance.toString()] || undefined
+  //                 if (
+  //                   instance &&
+  //                   userModuleStats[instance?.sectionid.toString()] &&
+  //                   userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()]
+  //                 ) {
+  //                   const assignItem: IStudentStatsAssign = {
+  //                     graderaw: assign?.graderaw || 0,
+  //                   }
+  //                   userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()].assign.push(assignItem)
+  //                 }
+  //               }
+  //             }
+  //           }
+
+  //           if (stats?.itemType?.forum && Array.isArray(stats?.itemType?.forum)) {
+  //             for (const forum of stats?.itemType?.forum) {
+  //               if (forum?.iteminstance && modulesListByInstance[forum?.iteminstance.toString()]) {
+  //                 const instance = modulesListByInstance[forum?.iteminstance.toString()] || undefined
+  //                 if (
+  //                   instance &&
+  //                   userModuleStats[instance?.sectionid.toString()] &&
+  //                   userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()]
+  //                 ) {
+  //                   const forumItem: IStudentStatsForum = {
+  //                     graderaw: forum?.graderaw || 0,
+  //                   }
+  //                   userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()].forum.push(forumItem)
+  //                 }
+  //               }
+  //             }
+  //           }
+  //           const respCompletionStatus: any = await completionstatusService.activitiesCompletion({
+  //             courseID: moodleId,
+  //             userID: stats?.userData?.userid
+  //           });
+
+  //           if (respCompletionStatus?.completion && Array.isArray(respCompletionStatus?.completion)) {
+  //             for (const completion of respCompletionStatus?.completion) {
+  //               if (completion?.instance && modulesListByInstance[completion?.instance.toString()]) {
+  //                 const instance = modulesListByInstance[completion?.instance.toString()] || undefined
+  //                 if (
+  //                   instance &&
+  //                   userModuleStats[instance?.sectionid.toString()] &&
+  //                   userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()]
+  //                 ) {
+  //                   const progressItem: IStudentStatsProgress = {
+  //                     state: completion?.state || 0,
+  //                   }
+  //                   userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()].progress.push(progressItem)
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //     return statsGroupedByUser;
+  //   } catch (err) {
+  //     throw err;
+  //   }
+  // }
   private buildStudentsMoodleData = async (params: IBuildStudentsMoodleData) => {
     try {
       const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
       const { moodleId, studentMoodleId, students } = params
 
+      const statsGroupedByUser: Record<string, Record<string, Record<string, IStudentStats>>> = {}
+      console.time('buildStudentsMoodleData::SearchMoodleData')
       let modulesListByInstance = {}
       const [modulesForProgress, moodleUserStats] = await Promise.all([
         courseContentService.moduleList({
@@ -296,10 +482,12 @@ class CertificateMultipleService {
         }) as any,
         gradesService.fetchGradesByFilter({
           courseID: moodleId,
-          userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
+          // userID: (studentMoodleId) ? studentMoodleId.toString() : '0',
+          userIDs: students,
           filter: moodleItemsToSearch
         }) as any
       ])
+      console.timeEnd('buildStudentsMoodleData::SearchMoodleData')
 
       if (modulesForProgress?.courseModules) {
         modulesListByInstance = modulesForProgress.courseModules.reduce((accum, element) => {
@@ -320,7 +508,7 @@ class CertificateMultipleService {
 
       const { grades: userStats } = moodleUserStats
 
-      const statsGroupedByUser: Record<string, Record<string, Record<string, IStudentStats>>> = {}
+
       for (const student of students) {
         if (!statsGroupedByUser[student]) {
           statsGroupedByUser[student] = {}
@@ -342,131 +530,104 @@ class CertificateMultipleService {
         }
       }
 
+      // 1. Primero, procesar todas las estadísticas básicas
+      const processBasicStats = (stats: any, userModuleStats: any, modulesListByInstance: any) => {
+        const processItems = (items: any[], type: string) => {
+            items?.forEach(item => {
+                if (item?.iteminstance && modulesListByInstance[item.iteminstance]) {
+                    const instance = modulesListByInstance[item.iteminstance];
+                    if (instance &&
+                        userModuleStats[instance.sectionid.toString()] &&
+                        userModuleStats[instance.sectionid.toString()][item.iteminstance.toString()]) {
 
-      for (const stats of userStats) {
-        if (stats?.userData?.userid) {
-          if (statsGroupedByUser[stats?.userData?.userid.toString()]) {
-            const userModuleStats = statsGroupedByUser[stats?.userData?.userid.toString()];
-            if (stats?.itemType?.attendance && Array.isArray(stats?.itemType?.attendance)) {
-              for (const attedance of stats?.itemType?.attendance) {
-                if (attedance?.iteminstance && modulesListByInstance[attedance?.iteminstance]) {
-                  const instance = modulesListByInstance[attedance?.iteminstance] || undefined
-                  if (
-                    instance &&
-                    userModuleStats[instance?.sectionid.toString()] &&
-                    userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()]
-                  ) {
-                    const attedanceItem: IStudentStatsAttendance = {
-                      graderaw: attedance?.graderaw || 0
+                        const statsItem = {
+                            graderaw: item.graderaw || 0,
+                            ...(type === 'exam' && { isAuditor: AUDITOR_EXAM_REGEXP.test(item.idnumber) })
+                        };
+
+                        userModuleStats[instance.sectionid.toString()][item.iteminstance.toString()][type].push(statsItem);
                     }
-                    userModuleStats[instance?.sectionid.toString()][attedance?.iteminstance.toString()].attendance.push(attedanceItem)
-                  }
                 }
-              }
-            }
+            });
+        };
 
-            if (stats?.itemType?.quiz && Array.isArray(stats?.itemType?.quiz)) {
-              for (const quiz of stats?.itemType?.quiz) {
-                if (quiz?.iteminstance && modulesListByInstance[quiz?.iteminstance]) {
-                  const instance = modulesListByInstance[quiz?.iteminstance] || undefined
-                  if (
-                    instance &&
-                    userModuleStats[instance?.sectionid.toString()] &&
-                    userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()]
-                  ) {
-                    const examItem: IStudentStatsExam = {
-                      graderaw: quiz?.graderaw || 0,
-                      isAuditor: AUDITOR_EXAM_REGEXP.test(quiz?.idnumber) ? true : false
-                    }
-                    userModuleStats[instance?.sectionid.toString()][quiz?.iteminstance.toString()].exam.push(examItem)
-                  }
+        if (stats?.itemType) {
+            if (stats.itemType.attendance) processItems(stats.itemType.attendance, 'attendance');
+            if (stats.itemType.quiz) processItems(stats.itemType.quiz, 'exam');
+            if (stats.itemType.assign) processItems(stats.itemType.assign, 'assign');
+            if (stats.itemType.forum) processItems(stats.itemType.forum, 'forum');
+        }
+      };
+
+      // 2. Procesar completionStatus en lotes
+      const processCompletionStatus = async (userStats: any[], moodleId: string, modulesListByInstance: any, statsGroupedByUser: any) => {
+        const COMPLETION_BATCH_SIZE = 10;
+
+        for (let i = 0; i < userStats.length; i += COMPLETION_BATCH_SIZE) {
+            const batch = userStats.slice(i, i + COMPLETION_BATCH_SIZE);
+
+            // Realizar llamadas en paralelo para el lote actual
+            const completionPromises = batch.map(stats =>
+                completionstatusService.activitiesCompletion({
+                    courseID: moodleId,
+                    userID: stats.userData.userid
+                })
+            );
+
+            const completionResults = await Promise.all(completionPromises);
+
+            // Procesar resultados del lote
+            batch.forEach((stats, index) => {
+                const completionData: any = completionResults[index];
+                if (completionData?.completion && Array.isArray(completionData.completion)) {
+                    const userModuleStats = statsGroupedByUser[stats.userData.userid.toString()];
+
+                    completionData.completion.forEach(completion => {
+                        if (completion?.instance && modulesListByInstance[completion.instance.toString()]) {
+                            const instance = modulesListByInstance[completion.instance.toString()];
+                            if (instance &&
+                                userModuleStats &&
+                                userModuleStats[instance.sectionid.toString()] &&
+                                userModuleStats[instance.sectionid.toString()][completion.instance.toString()]) {
+
+                                userModuleStats[instance.sectionid.toString()][completion.instance.toString()].progress.push({
+                                    state: completion.state || 0
+                                });
+                            }
+                        }
+                    });
                 }
-              }
-            }
-
-            // if (stats?.itemType?.course && Array.isArray(stats?.itemType?.course)) {
-            //   for (const course of stats?.itemType?.course) {
-            //     if (course?.iteminstance && modulesListByInstance[course?.iteminstance.toString()]) {
-            //       const instance = modulesListByInstance[course?.iteminstance.toString()] || undefined
-            //       if (
-            //         instance &&
-            //         userModuleStats[instance?.sectionid.toString()] &&
-            //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()]
-            //       ) {
-            //         const courseItem: IStudentStatsCourse = {
-            //           graderaw: course?.graderaw || 0,
-            //         }
-            //         userModuleStats[instance?.sectionid.toString()][course?.iteminstance.toString()].course.push(courseItem)
-            //       }
-            //     }
-            //   }
-            // }
-
-            if (stats?.itemType?.assign && Array.isArray(stats?.itemType?.assign)) {
-              for (const assign of stats?.itemType?.assign) {
-                if (assign?.iteminstance && modulesListByInstance[assign?.iteminstance.toString()]) {
-                  const instance = modulesListByInstance[assign?.iteminstance.toString()] || undefined
-                  if (
-                    instance &&
-                    userModuleStats[instance?.sectionid.toString()] &&
-                    userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()]
-                  ) {
-                    const assignItem: IStudentStatsAssign = {
-                      graderaw: assign?.graderaw || 0,
-                    }
-                    userModuleStats[instance?.sectionid.toString()][assign?.iteminstance.toString()].assign.push(assignItem)
-                  }
-                }
-              }
-            }
-
-            if (stats?.itemType?.forum && Array.isArray(stats?.itemType?.forum)) {
-              for (const forum of stats?.itemType?.forum) {
-                if (forum?.iteminstance && modulesListByInstance[forum?.iteminstance.toString()]) {
-                  const instance = modulesListByInstance[forum?.iteminstance.toString()] || undefined
-                  if (
-                    instance &&
-                    userModuleStats[instance?.sectionid.toString()] &&
-                    userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()]
-                  ) {
-                    const forumItem: IStudentStatsForum = {
-                      graderaw: forum?.graderaw || 0,
-                    }
-                    userModuleStats[instance?.sectionid.toString()][forum?.iteminstance.toString()].forum.push(forumItem)
-                  }
-                }
-              }
-            }
-            const respCompletionStatus: any = await completionstatusService.activitiesCompletion({
-              courseID: moodleId,
-              userID: stats?.userData?.userid
             });
 
-            if (respCompletionStatus?.completion && Array.isArray(respCompletionStatus?.completion)) {
-              for (const completion of respCompletionStatus?.completion) {
-                if (completion?.instance && modulesListByInstance[completion?.instance.toString()]) {
-                  const instance = modulesListByInstance[completion?.instance.toString()] || undefined
-                  if (
-                    instance &&
-                    userModuleStats[instance?.sectionid.toString()] &&
-                    userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()]
-                  ) {
-                    const progressItem: IStudentStatsProgress = {
-                      state: completion?.state || 0,
-                    }
-                    userModuleStats[instance?.sectionid.toString()][completion?.instance.toString()].progress.push(progressItem)
-                  }
-                }
-              }
+            // Opcional: pequeña pausa entre lotes para evitar sobrecarga
+            if (i + COMPLETION_BATCH_SIZE < userStats.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-          }
+        }
+      };
+      console.time('buildStudentsMoodleData::ProcessingStats')
+      // Procesar estadísticas básicas primero
+      for (const stats of userStats) {
+        if (stats?.userData?.userid && statsGroupedByUser[stats.userData.userid.toString()]) {
+            processBasicStats(
+                stats,
+                statsGroupedByUser[stats.userData.userid.toString()],
+                modulesListByInstance
+            );
         }
       }
+
+      // Procesar completion status en lotes
+      await processCompletionStatus(userStats, moodleId, modulesListByInstance, statsGroupedByUser);
+      console.timeEnd('buildStudentsMoodleData::ProcessingStats')
+
       return statsGroupedByUser;
     } catch (err) {
+      console.log('err', err)
       throw err;
     }
   }
+
 
   public generateCertificate = async (params: ICertificateMultipleGenerate) => {
     try {
