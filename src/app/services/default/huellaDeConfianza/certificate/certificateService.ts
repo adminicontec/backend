@@ -943,6 +943,7 @@ class CertificateService {
       // location for logos setup
       let location3 = null;
       let location8 = null;
+      const csjServicesList = customs?.csjServicesList || [];
 
       //#region   >>>> 1. querying data for user to Certificate, param: username
       let respDataUser: any = await userService.findBy({
@@ -1282,6 +1283,7 @@ class CertificateService {
       let fecha_impresion: any = currentDate;
       let dato_16 = '';
       let dato_15 = ''
+      let dato_19 = csjServicesList.includes(respCourse.scheduling.metadata.service_id) ? 'csj' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -1342,6 +1344,7 @@ class CertificateService {
           dato_13: mapping_dato_13,
           dato_15,
           dato_16,
+          dato_19
         }
         console.log("[1]------------------------------------------");
         console.log("Set first Certificate: ");
@@ -1436,7 +1439,8 @@ class CertificateService {
 
             dato_13: mapping_dato_13,
             dato_15,
-            dato_16: dato_16Auditor
+            dato_16: dato_16Auditor,
+            dato_19
           }
           //certificateParams.numero_certificado = mapping_numero_certificado + 'A';
           //certificateParams.certificado = 'Auditor en ' + respCourse.scheduling.program.name;
@@ -1512,7 +1516,8 @@ class CertificateService {
             dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
             dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-            dato_13: mapping_dato_13
+            dato_13: mapping_dato_13,
+            dato_19
           }
           console.log("[3]------------------------------------------");
           console.log("Re-issue first Certificate: ");
@@ -1590,7 +1595,8 @@ class CertificateService {
             dato_11: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryPosition : null,
             dato_12: (signatureDataArray.length != 0 && signatureDataArray[1]) ? signatureDataArray[1].signatoryCompanyName : null,
 
-            dato_13: mapping_dato_13
+            dato_13: mapping_dato_13,
+            dato_19
           }
 
           console.log("[4]------------------------------------------");
