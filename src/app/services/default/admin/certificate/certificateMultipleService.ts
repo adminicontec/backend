@@ -846,6 +846,8 @@ class CertificateMultipleService {
       const formatListModules = certificationMigration ? 'plain' : 'html'
       const dimensionsLogos = {width: 233, height: 70, position: 'center'}
       const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
+      const csjServicesList = customs?.csjServicesList || [];
+      console.log('csjServicesList', csjServicesList)
 
       const driver = attached['driver'];
       const attached_config = attached[driver];
@@ -1000,6 +1002,7 @@ class CertificateMultipleService {
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_15 = ''
+      let dato_19 = csjServicesList.includes(courseScheduling?.metadata.service_id) ? 'csj' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -1053,7 +1056,8 @@ class CertificateMultipleService {
 
         dato_13: mapping_dato_13,
         dato_15,
-        dato_16
+        dato_16,
+        dato_19
       }
       certificateParamsArray.push({
         queueData: params,
