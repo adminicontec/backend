@@ -58,6 +58,7 @@ export interface ICertificate {
   dato_13?: string
   dato_15?: string,
   dato_16?: string,
+  dato_19?: string,
   anexos?: {
     dato_1?: string,
     dato_2?: string,
