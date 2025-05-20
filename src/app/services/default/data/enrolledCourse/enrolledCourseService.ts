@@ -280,7 +280,7 @@ class EnrolledCourseService {
         if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
 
         if (register?.certificate?.hash) {
-          register.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate)
+          register.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate, register?.courseId?.metadata?.service_id)
         }
         if (register?.certificate?.imagePath) {
           register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)

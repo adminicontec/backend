@@ -155,7 +155,7 @@ class CertificateMultipleService {
             certification.certificate.certificateId = certificate._id;
             certification.certificate.certificateHash = certificate?.certificate?.hash;
             if (certificate?.certificate?.hash) {
-              certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate)
+              certification.certificate.certificateUrl = certificateService.certificateUrlV2(certificate?.certificate, courseScheduling.metadata.service_id)
             }
             // if (certificate?.certificate.pdfPath) {
             //   certification.certificate.certificateUrl = certificateService.certificateUrl(certificate?.certificate.pdfPath)

@@ -407,7 +407,7 @@ class CertificateService {
 
             register.certificate = certificate;
             if (register?.certificate?.certificate?.hash) {
-              register.certificate.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate.certificate);
+              register.certificate.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate.certificate, respCourse.scheduling.metadata.service_id);
             }
             // if (register?.certificate?.certificate?.pdfPath) {
             //   register.certificate.certificate.pdfPath = certificateService.certificateUrl(register.certificate.certificate.pdfPath);
@@ -2964,7 +2964,7 @@ class CertificateService {
         process: 'Complete',
       });
 
-      const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue })
+      const certificate = await CertificateQueue.findOne({ _id: params.certificate_queue }).populate({path: 'courseId'});
 
       // Get Certificate Detail
       return responseUtility.buildResponseSuccess('json', null, {
@@ -2975,7 +2975,7 @@ class CertificateService {
             filename: `${certificate?.certificate?.hash}.pdf`, // filename,
             url: certificate?.certificate?.url,
             imagePath: certificate?.certificate?.imagePath ? this.certificateUrl(certificate?.certificate.imagePath) : null,
-            pdfPath: certificate?.certificate?.hash ? this.certificateUrlV2(certificate?.certificate) : null,
+            pdfPath: certificate?.certificate?.hash ? this.certificateUrlV2(certificate?.certificate, certificate?.courseId?.metadata?.service_id) : null,
             date: certificate?.certificate.date
           }
         }
@@ -3236,8 +3236,10 @@ class CertificateService {
       : null
   }
 
-  public certificateUrlV2 = (item) => {
+  public certificateUrlV2 = (item, serviceId: string) => {
     const certificationMigration = true
+    const csjServicesList = customs?.csjServicesList || [];
+    const template = csjServicesList.includes(serviceId) ? 'Educacion02' : 'Educacion01';
     // const certificationMigration = item?.source === 'acredita' ? true : false
     const ext = certificationMigration ? '' : '.pdf'
     let host = customs['certificateBaseUrl']
@@ -3249,7 +3251,7 @@ class CertificateService {
       }
     }
     return item?.hash && item?.hash !== ''
-      ? `${host}/${item.hash}${ext}`
+      ? `${host}/${item.hash}/${template}${ext}`
       : null
   }
 
