@@ -1294,7 +1294,7 @@ class CertificateService {
       let fecha_impresion: any = currentDate;
       let dato_16 = '';
       let dato_15 = ''
-      let dato_19 = isCsj ? 'csj' : '';
+      let dato_19 = isCsj ? 'CSJ' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
