@@ -63,7 +63,8 @@ export interface ICourse {
 }
 
 export interface IStoreCourse {
-  id?: string              // Identificador del curso
+  id?: string
+  serviceId?: string,         // Identificador del curso
   moodleID?: number,
   name: string,             // Nombre del curso
   fullname?: string,             // Nombre Completo del curso

@@ -199,6 +199,20 @@ class CourseService {
           .lean()
         const publishedSchedulingIds = publishedSchedules?.map((scheduling) => scheduling._id.toString())
 
+        // Obtener todos los program IDs para hacer una sola consulta
+        const programIds = registers.map(register => register.program._id);
+
+        // Realizar una sola consulta para obtener todos los cursos relacionados
+        const coursesInfo: any = await Course.find({
+          program: { $in: programIds }
+        });
+
+        // Crear un mapa para acceso rápido
+        const courseInfoMap = {};
+        coursesInfo.forEach(course => {
+          courseInfoMap[course.program.toString()] = course;
+        });
+
         for await (const register of registers) {
           let isActive = false;
           let courseType = ''
@@ -208,10 +222,9 @@ class CourseService {
           let description = ''
           let shortDescription = ''
           let formationType = null
+          const serviceId = register?.metadata?.service_id;
 
-          const schedulingExtraInfo: any = await Course.findOne({
-            program: register.program._id
-          }).lean();
+          const schedulingExtraInfo = courseInfoMap[register.program._id.toString()];
 
           if (schedulingExtraInfo) {
             let extra_info = schedulingExtraInfo;
@@ -275,6 +288,7 @@ class CourseService {
 
           let courseToExport: IStoreCourse = {
             id: register._id,
+            serviceId,
             moodleID: register.moodle_id,
             name: register.program.name,
             fullname: register.program.name,
