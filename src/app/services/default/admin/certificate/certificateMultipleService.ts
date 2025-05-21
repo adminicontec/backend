@@ -841,13 +841,13 @@ class CertificateMultipleService {
       if (courseSchedulingQuery.status === 'error') return responseUtility.buildResponseFailed('json', null, {error_key: 'course_scheduling.not_found'})
       const courseScheduling = courseSchedulingQuery.scheduling
 
+      const csjServicesList = customs?.csjServicesList || [];
+      const isCsj = csjServicesList.includes(courseScheduling?.metadata.service_id) ? true : false;
       const certificationMigration = certificateService.certificateProviderStrategy(courseScheduling.metadata.service_id)
       const formatImage = certificationMigration ? 'public_url' : 'base64'
-      const formatListModules = certificationMigration ? 'plain' : 'html'
+      const formatListModules = isCsj ? 'clean' : (certificationMigration ? 'plain' : 'html')
       const dimensionsLogos = {width: 233, height: 70, position: 'center'}
       const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
-      const csjServicesList = customs?.csjServicesList || [];
-      console.log('csjServicesList', csjServicesList)
 
       const driver = attached['driver'];
       const attached_config = attached[driver];
@@ -1002,7 +1002,7 @@ class CertificateMultipleService {
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_15 = ''
-      let dato_19 = csjServicesList.includes(courseScheduling?.metadata.service_id) ? 'csj' : '';
+      let dato_19 = isCsj ? 'csj' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)

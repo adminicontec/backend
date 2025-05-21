@@ -991,9 +991,10 @@ class CertificateService {
           { error_key: { key: 'program.not_found' } })
       }
 
+      const isCsj = csjServicesList.includes(respCourse.scheduling.metadata.service_id) ? true : false;
       const certificationMigration = this.certificateProviderStrategy(respCourse.scheduling.metadata.service_id)
       const formatImage = certificationMigration ? 'public_url' : 'base64'
-      const formatListModules = certificationMigration ? 'plain' : 'html'
+      const formatListModules = isCsj ? 'clean' : (certificationMigration ? 'plain' : 'html')
       const dimensionsLogos = {width: 233, height: 70, position: 'center'}
       const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
 
@@ -1293,7 +1294,7 @@ class CertificateService {
       let fecha_impresion: any = currentDate;
       let dato_16 = '';
       let dato_15 = ''
-      let dato_19 = csjServicesList.includes(respCourse.scheduling.metadata.service_id) ? 'csj' : '';
+      let dato_19 = isCsj ? 'csj' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -3408,7 +3409,7 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 1
    */
-  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' = 'html', showHeader: boolean = true) => {
+  public formatAcademicModulesList = (academicModules: any, programTypeName: string, format: 'html' | 'plain' | 'clean' = 'html', showHeader: boolean = true) => {
     let mappingAcademicModulesList = '';
     let totalDuration = 0;
     try {
@@ -3425,6 +3426,20 @@ class CertificateService {
         });
         mappingAcademicModulesList += '</ul>'
 
+        return {
+          mappingModules: mappingAcademicModulesList,
+          totalDuration: totalDuration
+        };
+      } else if (format === 'clean') {
+        if (showHeader) mappingAcademicModulesList += 'El contenido comprendió: '
+        if (programTypeName || programTypeName != null)
+          mappingAcademicModulesList = 'El contenido del ' + programTypeName + ' comprendió: ';
+
+        academicModules.forEach(element => {
+          mappingAcademicModulesList += `${element.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}). `
+          if (element.duration)
+            totalDuration += element.duration;
+        });
         return {
           mappingModules: mappingAcademicModulesList,
           totalDuration: totalDuration
@@ -3456,7 +3471,7 @@ class CertificateService {
   /**
    * Format the modules list for Certificate 2
    */
-  private formatAuditorModules = (auditorModules: any, format: 'html' | 'plain' = 'html') => {
+  private formatAuditorModules = (auditorModules: any, format: 'html' | 'plain' | 'clean' = 'html') => {
     let mappingAuditorModulesList = '';
     let totalDuration = 0;
 
@@ -3468,6 +3483,12 @@ class CertificateService {
         mappingAuditorModulesList += `<li>${element.course.name} &#40;${generalUtility.getDurationFormatedForCertificate(element.duration)}&#41; </li>`;
       });
       mappingAuditorModulesList += '</ul>'
+    } else if (format === 'clean') {
+      mappingAuditorModulesList = 'El contenido del programa comprendió: ';
+      auditorModules.forEach(element => {
+        totalDuration += element.duration;
+        mappingAuditorModulesList += `${element.course.name} (${generalUtility.getDurationFormatedForCertificate(element.duration)}). `;
+      });
     } else {
       mappingAuditorModulesList = 'El contenido del programa comprendió:\\n\\n';
       auditorModules.forEach(element => {
