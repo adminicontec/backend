@@ -735,7 +735,7 @@ class CertificateMultipleService {
       }
 
       await CourseScheduling.findByIdAndUpdate(courseScheduling._id, {
-        'multipleCertificate.editingStatus': false,
+        'multipleCertificate.editingStatus': true,
       }, { useFindAndModify: false, new: true })
 
       return responseUtility.buildResponseSuccess('json')
