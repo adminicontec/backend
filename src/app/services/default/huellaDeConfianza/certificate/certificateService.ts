@@ -3181,21 +3181,15 @@ class CertificateService {
     }
   }
 
-  public fetchCertification = async (certificateQueue: any) => {
+  public fetchCertification = async (certificateQueue: any, serviceId: string) => {
     try {
-      const certificationMigration = certificateQueue?.certificate?.source === 'acredita' ? true : false
-
-      let api_link = customs['certificateBaseUrl_acredita']
-      let url = `/${certificateQueue?.certificate?.hash}`
-      if (certificationMigration) {
-        api_link = 'N/A'
-        url = `${certificateQueue?.certificate.url}`
-      }
+      const newURL = this.certificateUrlV2(certificateQueue?.certificate, serviceId)
+      const api_link = 'N/A'
 
       const buffer = await queryUtility.query({
         api_link: api_link,
         method: 'get',
-        url: url,
+        url: newURL,
         responseBuffer: true
       })
 

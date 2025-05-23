@@ -337,7 +337,7 @@ class EnrolledCourseService {
         _id: { $in: params.certification_queue }
       }).populate({path: 'userId', select: 'profile.first_name profile.last_name'})
 
-      const responsePromise: {fileName: string, buffer: Buffer}[] = await Promise.all(certifications.map((c) => certificateService.fetchCertification(c)))
+      const responsePromise: {fileName: string, buffer: Buffer}[] = await Promise.all(certifications.map((c) => certificateService.fetchCertification(c, params.serviceId)))
 
       const time = new Date().getTime()
 
