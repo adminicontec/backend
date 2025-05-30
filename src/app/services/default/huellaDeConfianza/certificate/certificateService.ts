@@ -795,7 +795,12 @@ class CertificateService {
         respCourse.scheduling.auditor_modules,
         false,
         undefined,
-        [filters.userMoodleID]
+        enrollmentRegisters?.reduce((accum, element) => {
+          if (element?.user?.moodle_id) {
+            accum.push(element?.user?.moodle_id.toString())
+          }
+          return accum
+        }, [])
       );
 
       // console.log('→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→→');
