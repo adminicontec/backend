@@ -14,6 +14,12 @@ const LandingSchema = new Schema({
     title: {type: Schema.Types.String},
     content: {type: Schema.Types.Mixed},
   },
+  termsAndConditions: {
+    payment: {
+      title: {type: Schema.Types.String},
+      content: {type: Schema.Types.Mixed},
+    }
+  },
   title_training: {type: Schema.Types.String},
   alliances: [
     {
