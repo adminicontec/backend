@@ -106,7 +106,6 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO Agregando categorías de adjuntos
     await this.addAttachedCategories();
-    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
