@@ -45,6 +45,22 @@ class SurveyEventController {
   }
 
   /**
+   * Metodo que permite verificar si se debe lanzar una encuesta de caracterización
+   * @param req
+   * @param res
+   * @returns
+   */
+  public checkCharacterizationSurveyAvailable = async (req: Request, res: Response) => {
+
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+
+    const response = await surveyEventService.checkCharacterizationSurveyAvailable(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
    * Metodo que permite obtener las encuestas activas de un usuario
    * @param req
    * @param res

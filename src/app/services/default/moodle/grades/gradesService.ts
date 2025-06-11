@@ -15,7 +15,7 @@ import { queryUtility } from '@scnode_core/utilities/queryUtility';
 
 // @import types
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
-import { IMoodleGradesQuery, ISingleGrade } from '@scnode_app/types/default/moodle/grades/gradesTypes'
+import { IMoodleGradeReportOverviewGetCourseGrades, IMoodleGradesQuery, ISingleGrade } from '@scnode_app/types/default/moodle/grades/gradesTypes'
 // @end
 
 class GradesService {
@@ -128,7 +128,6 @@ class GradesService {
    */
   public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
     try {
-
       //var select = ['assign', 'quiz', 'forum'];
       var select = params.filter;
       let userGradesData = [];
@@ -350,6 +349,55 @@ class GradesService {
         });
     }
 
+  }
+
+  public fetchOverviewGetCourseGrades = async (params: IMoodleGradeReportOverviewGetCourseGrades) => {
+    try {
+      const {userid, courseid} = params
+      // const courseid = 1
+
+      const moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.completion.getGeneralProgress,
+        moodlewsrestformat: moodle_setup.restformat,
+        'userid': userid,
+      };
+
+      const respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+
+      if (respMoodleEvents.exception) {
+        console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
+        return responseUtility.buildResponseFailed('json', null,
+          {
+            error_key: 'grades.moodle_exception',
+            additional_parameters: {
+              process: moodleParams.wsfunction,
+              error: respMoodleEvents
+            }
+          });
+      }
+
+      const generalProgress = respMoodleEvents?.grades
+        .filter((g) => g.courseid === Number(courseid))
+        .map((g) => g.rawgrade ?? 0)
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          generalProgress: generalProgress.length > 0 ? Number(generalProgress[0]) : 0
+        }
+      })
+
+    } catch (e) {
+      console.log(e.message);
+      return responseUtility.buildResponseFailed('json', null,
+        {
+          error_key: 'grades.exception',
+          additional_parameters: {
+            process: 'fetchEvents()',
+            error: e.message
+          }
+        });
+    }
   }
 
 }

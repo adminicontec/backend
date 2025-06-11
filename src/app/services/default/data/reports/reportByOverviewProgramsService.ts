@@ -71,6 +71,7 @@ export interface IReportPage {
   auxiliar: string,
   isVirtual: boolean,
   isAuditor: boolean,
+  typeCourse?: string,
   serviceType: string
 }
 
@@ -113,7 +114,7 @@ class ReportByOverviewProgramsService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id withoutTutor quickLearning metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration')
+      .select('id withoutTutor quickLearning metadata schedulingMode modular program client city schedulingType regional account_executive startDate endDate duration typeCourse')
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})
       .populate({path: 'program', select: 'id name code isAuditor'})

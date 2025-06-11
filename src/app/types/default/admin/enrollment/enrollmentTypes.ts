@@ -3,6 +3,17 @@ import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
 // @end
 
 // @add your types
+export enum EnrollmentOrigin {
+  AUTOREGISTRO='autoregistro'
+}
+
+export enum EnrollmentStatus {
+  REGISTERED = 'registered',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  CERTIFIED = 'certified',
+}
+
 export interface IAddCourseSchedulingEnrollment {
   enrollmentIds: string[]
   force?: boolean
@@ -35,6 +46,9 @@ export interface IEnrollment{
   enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
   timezone?: TimeZone
+  created_at?: string
+  updated_at?: string
+  trackingEnrollment?: boolean
 }
 
 export interface IEnrollmentQuery {
@@ -84,5 +98,45 @@ export interface ILogEnrollment {
   status: 'ERROR' | 'OK'
   message?: string
   row: number
+}
+
+export interface IGetCurrentEnrollmentStatusParams {
+  enrollmentId: string
+}
+
+export interface IBuyCoursesByShoppingCart {
+  buyerId: string,
+  itemsToBuy: IShoppingCarItem[],
+  force?: boolean
+}
+
+
+export interface IShoppingCarItem {
+  identifier: string,
+  externalId: string,
+  programCode: string,
+  image: string,
+  description: string,
+  price: string,
+  startDate: string,
+  modality: string,
+  priceWithDiscount?: string | null,
+}
+
+export enum PROCESS_PURCHASE {
+  AVAILABLE = 'available',
+  WARNING = 'warning',
+  RESTRICTED = 'restricted'
+}
+
+export type ObjectsToBuy = Record<string, IObjectToBuy>;
+
+export interface IObjectToBuy {
+  processPurchase: PROCESS_PURCHASE
+  reason: string,
+  programCode: string,
+  programName: string,
+  externalId: string,
+  identifier: string
 }
 //@end

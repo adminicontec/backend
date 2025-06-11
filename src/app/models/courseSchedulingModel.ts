@@ -398,6 +398,29 @@ const CourseSchedulingSchema = new Schema({
       type: Schema.Types.Mixed,
     }]
   },
+  typeCourse: {
+    type: Schema.Types.String,
+    required: false
+  },
+  serviceValidity: { type: Schema.Types.Number, required: false },
+  certificateCriteria: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached',
+    required: false,
+  },
+  specialServiceConditions: {
+    type: Schema.Types.ObjectId,
+    ref: 'Attached',
+    required: false,
+  },
+  certificatePriceCOP: {
+    type: Schema.Types.String,
+    required: false
+  },
+  certificatePriceUSD: {
+    type: Schema.Types.String,
+    required: false
+  },
   withoutTutor: {
     type: Schema.Types.Boolean,
     default: false,
@@ -406,7 +429,6 @@ const CourseSchedulingSchema = new Schema({
     type: Schema.Types.Boolean,
     default: false,
   },
-  serviceValidity: {type: Schema.Types.Number, required: false},
   serviceInformation: {
     type: Schema.Types.String
   },

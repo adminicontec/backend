@@ -11,12 +11,16 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment, User } from '@scnode_app/models'
+import { CertificateCriteriaByModality, CertificateQueue, CourseScheduling, CourseSchedulingDetails, Enrollment, User } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IFetchEnrollementByUser, IFetchCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
 import { IDownloadMasiveCertifications } from '@scnode_app/types/default/data/enrolledCourse/enrolledCourseTypes'
+import { CourseSchedulingTypesKeys, TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
+import { attachedService } from '@scnode_app/services/default/admin/attached/attachedService';
+import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
+import { enrollmentService } from '../../admin/enrollment/enrollmentService';
 // @end
 
 class EnrolledCourseService {
@@ -47,33 +51,60 @@ class EnrolledCourseService {
       steps.push(params.user)
       const enrolled = await Enrollment.find({
         user: params.user
-      }).select('id course_scheduling')
+      }).select('id course_scheduling created_at')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria certificateCriteria specialServiceConditions typeCourse serviceValidity withoutTutor', populate: [
             { path: 'program', select: 'id name code moodle_id' },
             { path: 'schedulingStatus', select: 'id name'},
-            { path: 'schedulingMode', select: 'id name' }
+            { path: 'schedulingMode', select: 'id name' },
+            { path: 'certificateCriteria', select: 'id files' },
+            { path: 'specialServiceConditions', select: 'id files' },
           ]
         })
         .lean()
       steps.push('2')
       steps.push(enrolled)
 
-      enrolled.map((e) => {
+      for (const e of enrolled) {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
+            const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
+            const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
+              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
 
+            const {hasEnded, courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+              e.created_at,
+              {
+                serviceStartDate: e.course_scheduling.startDate,
+                serviceEndDate: e.course_scheduling.endDate
+              },
+              e?.course_scheduling?.serviceValidity ? Number(e.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            let endDate = courseEndDate;
+            let startDate = courseStartDate;
             let item = {
               _id: e.course_scheduling.moodle_id,
+              enrollmentId: e._id,
               name: e.course_scheduling.program.name,
               service_id: e.course_scheduling.metadata.service_id,
-              startDate: e.course_scheduling.startDate,
+              startDate,
+              endDate: endDate,
               courseScheduling: e.course_scheduling._id,
               schedulingMode: e.course_scheduling.schedulingMode,
               approval_criteria: e.course_scheduling?.approval_criteria,
               schedulingStatus: e.course_scheduling?.schedulingStatus,
+              typeCourse: e.course_scheduling?.typeCourse,
+              serviceValidity: e.course_scheduling?.serviceValidity,
+              certificateCriteria:  certificateCriteria?._id,
+              certificateCriteriaUrl: certificateCriteria?.files?.length ?
+                attachedService.getFileUrl(certificateCriteria?.files[0]?.url) : null,
+              specialServiceConditions:  e.course_scheduling?.specialServiceConditions?._id,
+              specialServiceConditionsUrl:  e.course_scheduling?.specialServiceConditions?.files?.length ?
+                attachedService.getFileUrl(e.course_scheduling?.specialServiceConditions?.files[0]?.url) : null,
+              withoutTutor: e?.course_scheduling?.withoutTutor ?? false
             }
-            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name) || hasEnded) {
               history.push(item)
             } else {
               registers.push(item)
@@ -81,37 +112,62 @@ class EnrolledCourseService {
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
         }
-      })
+      }
       steps.push('3')
 
       const courses = await CourseSchedulingDetails.find({
         teacher: params.user
       }).select('id course_scheduling')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus', populate: [
+          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus certificateCriteria specialServiceConditions typeCourse serviceValidity withoutTutor', populate: [
             { path: 'program', select: 'id name code moodle_id' },
-            { path: 'schedulingStatus', select: 'id name'}
+            { path: 'schedulingStatus', select: 'id name'},
+            { path: 'certificateCriteria', select: 'id files' },
+            { path: 'specialServiceConditions', select: 'id files' },
           ]
         })
         .lean()
       steps.push('4')
       steps.push(courses)
 
-      courses.map((e) => {
+      for (const e of courses) {
         if (e.course_scheduling && e.course_scheduling.program && e.course_scheduling.program) {
           if (!added[e.course_scheduling.moodle_id]) {
-
+            const { serviceTypeKey } = courseSchedulingService.getServiceType(e.course_scheduling)
+            const certificateCriteria = e.course_scheduling?.certificateCriteria?.files?.length ?
+              e.course_scheduling?.certificateCriteria : await this.getCertificateCriteriaByModality(e.course_scheduling.schedulingMode?._id, serviceTypeKey)
+            const {hasEnded, courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+              e.created_at,
+              {
+                serviceStartDate: e.course_scheduling.startDate,
+                serviceEndDate: e.course_scheduling.endDate
+              },
+              e?.course_scheduling?.serviceValidity ? Number(e.course_scheduling.serviceValidity) : undefined,
+              0
+            )
+            let endDate = courseEndDate;
+            let startDate = courseStartDate;
             let item = {
               _id: e.course_scheduling.moodle_id,
               name: e.course_scheduling.program.name,
               service_id: e.course_scheduling.metadata.service_id,
-              startDate: e.course_scheduling.startDate,
+              startDate,
+              endDate,
               courseScheduling: e.course_scheduling._id,
               schedulingMode: e.course_scheduling.schedulingMode,
               schedulingStatus: e.course_scheduling?.schedulingStatus,
+              typeCourse: e.course_scheduling?.typeCourse,
+              serviceValidity: e.course_scheduling?.serviceValidity,
+              certificateCriteria:  certificateCriteria?._id,
+              certificateCriteriaUrl: certificateCriteria?.files?.length ?
+                attachedService.getFileUrl(certificateCriteria?.files[0]?.url) : null,
+              specialServiceConditions:  e.course_scheduling?.specialServiceConditions?._id,
+              specialServiceConditionsUrl:  e.course_scheduling?.specialServiceConditions?.files?.length ?
+                attachedService.getFileUrl(e.course_scheduling?.specialServiceConditions?.files[0]?.url) : null,
+              withoutTutor: e?.course_scheduling?.withoutTutor ?? false
             }
 
-            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name)) {
+            if (['Ejecutado', 'Cancelado'].includes(e.course_scheduling?.schedulingStatus?.name) || hasEnded) {
               history.push(item)
             } else {
               registers.push(item)
@@ -120,7 +176,7 @@ class EnrolledCourseService {
             added[e.course_scheduling.moodle_id] = e.course_scheduling.moodle_id
           }
         }
-      })
+      }
       steps.push(5)
 
       registers.sort((a, b) => moment.utc(b.startDate).diff(moment.utc(a.startDate)))
@@ -140,6 +196,17 @@ class EnrolledCourseService {
         steps
       }
     })
+  }
+
+  private getCertificateCriteriaByModality = async (modalityId: string, typeCourse?: CourseSchedulingTypesKeys) => {
+    const certificateCriteria = await CertificateCriteriaByModality.findOne({
+      modality: modalityId,
+      typeCourse: typeCourse ? typeCourse : { $nin: [CourseSchedulingTypesKeys.FREE, CourseSchedulingTypesKeys.MOOC] }
+    }).populate({
+      path: 'certificateCriteria',
+      select: 'id files'
+    })
+    return certificateCriteria?.certificateCriteria
   }
 
   /**

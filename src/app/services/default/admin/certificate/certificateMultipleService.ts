@@ -29,7 +29,10 @@ import { BuildStudentsMoodleDataException } from './buildStudentsError';
 import { courseSchedulingService } from '../course/courseSchedulingService';
 import { QueryValues } from '@scnode_app/types/default/global/queryTypes';
 import { queryUtility } from '@scnode_core/utilities/queryUtility';
-import { certificateQueueService } from '../certificateQueue/certificateQueueService';
+import { certificateQueueService } from '@scnode_app/services/default/admin/certificateQueue/certificateQueueService';
+import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
+import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { TypeCourse } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 // @end
 
 class CertificateMultipleService {
@@ -471,7 +474,7 @@ class CertificateMultipleService {
   public generateCertificate = async (params: ICertificateMultipleGenerate) => {
     try {
       const status = 'New'
-      const { user, courseSchedulingId, students } = params
+      const { user, courseSchedulingId, students, needPayment, retryConfig, synchronousProcedure } = params
 
       const responseValidate: any = await this.validateAccessToCertificateMultiple(courseSchedulingId)
       if (responseValidate.status === 'error') return responseValidate;
@@ -558,6 +561,8 @@ class CertificateMultipleService {
                 certificateConsecutive: enrollmentsGroupByUserId[element?.userId]?.enrollmentCode,
                 status,
                 isPartial,
+                needPayment: needPayment !== undefined ? needPayment : responseValidate?.needPayment,
+                retryConfig: retryConfig ? retryConfig : responseValidate?.retryConfig,
               }
               itemsToCreate.push(item)
             }
@@ -570,7 +575,18 @@ class CertificateMultipleService {
 
       const certificatesSendToProcess = responseInsertMany?.filter((item) => item.status === 'New').map((item) => item._id)
       if (certificatesSendToProcess?.length > 0) {
-        certificateQueueService.sendToProcess(certificatesSendToProcess)
+        if (synchronousProcedure) {
+          await Promise.all(
+            certificatesSendToProcess.map(certificateQueue =>
+              certificateQueueService.processCertificateQueue({
+                certificateQueueId: certificateQueue,
+                output: 'process'
+              })
+            )
+          )
+        } else {
+          certificateQueueService.sendToProcess(certificatesSendToProcess)
+        }
       }
 
       await CourseScheduling.findByIdAndUpdate(courseScheduling._id, {
@@ -592,11 +608,13 @@ class CertificateMultipleService {
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({ path: 'program', select: 'id name moodle_id code' })
-      .select('id moodle_id metadata program')
+      .select('id moodle_id metadata program typeCourse quickLearning')
 
       if (!courseScheduling) return responseUtility.buildResponseFailed('json', null, {
         error_key: 'course_scheduling.not_found'
       })
+
+      const needPayment = [TypeCourse.FREE, TypeCourse.MOOC].includes(courseScheduling?.typeCourse) || courseScheduling.quickLearning === true
 
       // @INFO: Restringir consulta de certificados solo cuando se encuentra en estados permitidos
       if (['Programado', 'Cancelado'].includes(courseScheduling?.schedulingStatus?.name)) {
@@ -605,7 +623,11 @@ class CertificateMultipleService {
       }
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
-          courseScheduling
+          courseScheduling,
+          needPayment,
+          retryConfig: needPayment ? {
+            maxRetries: 3
+          } : undefined,
         }
       })
     } catch (err) {
@@ -685,6 +707,8 @@ class CertificateMultipleService {
       const formatListModules = certificationMigration ? 'plain' : 'html'
       const dimensionsLogos = {width: 233, height: 70, position: 'center'}
       const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
+      const csjServicesList = customs?.csjServicesList || [];
+      console.log('csjServicesList', csjServicesList)
 
       const driver = attached['driver'];
       const attached_config = attached[driver];
@@ -827,7 +851,29 @@ class CertificateMultipleService {
 
       const approvedDate = maxDate ? new Date(maxDate) : courseScheduling.endDate
 
-      const studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
+      let studentFullName = `${student?.profile?.first_name} ${student?.profile?.last_name}`
+      if (certificateQueue?.needPayment) {
+        const wasPaid = await transactionService.certificateWasPaid(certificateQueue._id?.toString())
+        if (wasPaid) {
+          const responseTransaction: any = await transactionService.findBy({
+            query: QueryValues.ONE,
+            where: [{
+              field: 'certificateQueue',
+              value: certificateQueue._id
+            },{
+              field: 'status',
+              value: TransactionStatus.SUCCESS
+            }]
+          })
+          if (responseTransaction?.status === 'error') {
+            return responseTransaction
+          }
+          const transaction: ITransaction = responseTransaction.transaction
+          if (transaction?.certificateInfo?.fullName) {
+            studentFullName = transaction.certificateInfo.fullName
+          }
+        }
+      }
 
       let intensidad: any = generalUtility.getDurationFormatedForCertificate(mapping_intensidad)
       let modulo = mapping_template;
@@ -839,6 +885,7 @@ class CertificateMultipleService {
       let fecha_vencimiento = null;
       let fecha_impresion: any = currentDate;
       let dato_15 = ''
+      let dato_19 = csjServicesList.includes(courseScheduling?.metadata.service_id) ? 'csj' : '';
 
       if (certificationMigration) {
         intensidad = parseInt(intensidad)
@@ -892,7 +939,8 @@ class CertificateMultipleService {
 
         dato_13: mapping_dato_13,
         dato_15,
-        dato_16
+        dato_16,
+        dato_19
       }
       certificateParamsArray.push({
         queueData: params,

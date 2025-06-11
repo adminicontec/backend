@@ -76,6 +76,19 @@ class CertificateQueueController {
     return responseUtility.sendResponseFromObject(res,response);
   }
 
+  public checkPendingCertificationsWithPayment = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    params['user'] = user_id
+    const response = await certificateQueueService.checkPendingCertificationsWithPayment(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  public certificatePayment = async (req: Request, res: Response) => {
+    const response = await certificateQueueService.certificatePayment(req.getParameters.all())
+    return responseUtility.sendResponseFromObject(res,response);
+  }
+
 }
 
 export const certificateQueueController = new CertificateQueueController();

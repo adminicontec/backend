@@ -5,6 +5,7 @@
 export interface LoginFields {
 	username: string // Nombre de usuario que lo identifica dentro del sistema
 	password: string // Contraseña del usuario
+  getToken?: boolean
 }
 
 export interface UserFields {
@@ -16,7 +17,8 @@ export interface UserFields {
   show_profile_interaction?: boolean
   company?: Record<any, string> | null | undefined
   admin_company?: boolean
-  email: string
+  email?: string
+  emailConfirmed?: boolean
   reviewData?: {
     status: 'pending' | 'reviewed',
     lastReview?: Date
@@ -31,8 +33,13 @@ export interface IGenerateTokenFromDestination {
 }
 
 export interface ILoginTokenData {
-  token_type?: 'destination',
-  config?: object
+  token_type?: 'destination' | 'confirm_email' | 'confirm_2fa',
+  config?: object;
+  numbers?: 1 | 0;
+  symbols?: 1 | 0;
+  uppercase?: 1 | 0;
+  lowercase?: 1 | 0;
+  extraData?: Record<string, any>
 }
 
 export interface IChangeRecoveredPassword {
@@ -41,6 +48,10 @@ export interface IChangeRecoveredPassword {
 }
 
 export interface IValidateTokenGenerated {
+  token: string
+}
+
+export interface IConfirm2FA {
   token: string
 }
 //@end

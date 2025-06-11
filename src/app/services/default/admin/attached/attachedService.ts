@@ -41,7 +41,6 @@ class AttachedService {
    * @returns
    */
    public findBy = async (params: IQueryFind) => {
-
     try {
       let where = {}
       if (params.where && Array.isArray(params.where)) {
@@ -66,6 +65,7 @@ class AttachedService {
 
       return responseUtility.buildResponseFailed('json')
     } catch (e) {
+      console.log(`AttachedService -> findBy -> ERROR: ${e}`)
       return responseUtility.buildResponseFailed('json')
     }
   }

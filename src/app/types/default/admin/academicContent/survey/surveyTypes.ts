@@ -25,4 +25,9 @@ export interface ISurveyQuery {
   search?:string,
   $or?:any,
 }
+export const SurveyCourseContentCustoms = {
+  'withoutTutor-survey': {label: 'Cursos autogestionados'},
+  'characterization-survey': {label: 'Caracterización'}
+}
+
 //@end

@@ -89,13 +89,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let scheduling_mode_ids = await this.addCourseSchedulingModes()
 
     // // @INFO: Agregando categorias de recursos academicos
-    // let academic_resource_category_ids = await this.addAcademicResourceCategories()
+    let academic_resource_category_ids = await this.addAcademicResourceCategories()
 
     // // @INFO: Agregando categorias de recursos academicos
-    // let academic_resource_config_category_ids = await this.addAcademicResourceConfigCategories()
+    let academic_resource_config_category_ids = await this.addAcademicResourceConfigCategories()
 
     // // @INFO: Agregando categorias de preguntas
-    // let question_category_ids = await this.addQuestionCategories()
+    let question_category_ids = await this.addQuestionCategories()
 
     // // TODO: Agregar PostCategories
 
@@ -105,6 +105,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     // let forum_location_ids = await this.addForumLocations()
 
     // @INFO Agregando categorías de adjuntos
+    await this.addAttachedCategories();
     await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
@@ -495,6 +496,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       ]},
       {name: 'module:students', description: 'Módulo que permite administrar los estudiantes', permissions: [
         {name: 'permission:students_menu_access', description: 'Menu de estudiantes'},
+      ]},
+      {name: 'module:certificate_criteria', description: 'Módulo que permite administrar los criterios de certificación', permissions: [
+        {name: 'permission:certificate_criteria_menu_access', description: 'Menu de criterios de certificación'},
       ]},
       {name: 'module:company_collaborator', description: 'Módulo que permite administrar los colaboradores de Empresa', permissions: [
         {name: 'permission:company_collaborator_access', description: 'Menu de colaboradores de Empresa'},
@@ -1348,7 +1352,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
     const academic_resource_categories = [
       { name: 'survey', description: 'Encuesta', config: {
         has_order_of_questions: true,
-        has_course_modes: true
+        has_course_modes: true,
+        has_is_characterization_survey: true,
+        has_course_type: true
       }},
     ]
 
@@ -1379,7 +1385,9 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       {
         name: 'survey', description: 'Encuestas', config: {
           has_order_of_questions: true,
-          has_course_modes: true
+          has_course_modes: true,
+          has_is_characterization_survey: true,
+          has_course_type: true,
         }
       },
     ]
@@ -1415,6 +1423,13 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
       { name: 'container', description: 'Pregunta de tipo estimulo', config: {} },
       {
         name: 'multiple-choice-unique-answer', description: 'Pregunta de opción multiple con selección unica', config: {
+          has_order_of_answers: true,
+          has_min_checked: true,
+          has_max_checked: true
+        }
+      },
+      {
+        name: 'multiple-choice-multiple-answer', description: 'Pregunta de opción multiple con selección multiple', config: {
           has_order_of_answers: true,
           has_min_checked: true,
           has_max_checked: true
@@ -1496,6 +1511,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         config: {
           limit_files: 1,
           formats: ['xlsx', 'pdf', 'ppt', 'docx', 'zip'],
+          limit_size_KB: 1000
+        }
+      },
+      {
+        name: "course_scheduling_certificate_criteria",
+        description: "Adjuntos para criterios de certificación",
+        config: {
+          limit_files: 1,
+          formats: ['pdf'],
           limit_size_KB: 1000
         }
       },

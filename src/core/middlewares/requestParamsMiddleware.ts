@@ -20,8 +20,14 @@ class RequestParams {
     if (this.req.method === "GET") {
       fields = this.req.query;
     } else if (this.req.method === "POST" || this.req.method === "PUT") {
-      for (var i in this.req.body) {
-        fields[i] = this.req.body[i];
+      let body = {}
+      try {
+        body = Buffer.isBuffer(this.req.body) ? JSON.parse(this.req.body.toString()) : this.req.body
+      } catch (e) {
+        console.log('ERROR parsing request body: ', e)
+      }
+      for (var i in body) {
+        fields[i] = body[i];
       }
     }
 
@@ -46,8 +52,14 @@ class RequestParams {
         field_res = this.req.query[field];
       }
     } else if (this.req.method === "POST" || this.req.method === "PUT") {
-      if (typeof this.req.body[field] !== "undefined") {
-        field_res = this.req.body[field];
+      let body = {}
+      try {
+        body = Buffer.isBuffer(this.req.body) ? JSON.parse(this.req.body.toString()) : this.req.body
+      } catch (e) {
+        console.log('ERROR parsing request body: ', e)
+      }
+      if (typeof body[field] !== "undefined") {
+        field_res = body[field];
       }
     }
 

@@ -1,0 +1,41 @@
+{{> partials/page/title title='Recordatorio de certificados disponibles'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p><b>Estimado(a) participante {{params.studentName}}</b></p>&nbsp;
+                    <p>Esperamos que te encuentres muy bien.</p>
+                    <p> Nos complace verte avanzar en tu camino de aprendizaje con nosotros y queremos asegurarnos de que recibas el reconocimiento que mereces por tu esfuerzo y dedicación.</p>
+                    <p>Hemos notado que has completado con éxito uno o varios de nuestros cursos gratuitos en los últimos meses, ¡eso es una gran noticia!</p>
+                    <p>Para celebrar tus logros, tienes la oportunidad de obtener certificados de finalización, estos certificados son una excelente manera de demostrar tus habilidades y conocimientos que has adquirido, y puedes añadirlos a tu portafolio profesional, currículum o perfil de LinkedIn.</p>
+
+
+                    <p>Los certificados disponibles para generar son:</p>
+                    <p></p>
+
+                    <ul>
+                      {{#each params.certifications}}
+                        <li>
+                          {{this.certificateName}}
+                        </li>
+                      {{/each}}
+                    </ul>
+                    <p class="mcSpecialText"> Si tienes alguna pregunta, por favor, acceder al <a href="{{params.mailer.campus_virtual}}/login">Campus Digital</a> de ICONTEC y presenta tu solicitud a través de la asistente virtual "Daniela", seleccionando la opción 2 "mesa de ayuda estudiante" y abriendo un ticket (para conocer cómo hacerlo, <a href="{{params.mailer.help_desk}}">haz clic aquí.)</a></p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
