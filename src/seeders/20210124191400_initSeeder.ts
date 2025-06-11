@@ -106,6 +106,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
     // @INFO Agregando categorías de adjuntos
     await this.addAttachedCategories();
+    await this.addAttachedCategories();
 
     // // @INFO: Agregando programaciones
     // // let course_scheduling_ids = await this.addCourseScheduling()
@@ -566,6 +567,7 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
 
         {name: 'permission:course_scheduling_upload_business_report', description: 'Carga de informe empresarial'},
         {name: 'permission:course_scheduling_upload_partial_report', description: 'Carga de informe empresarial parcial'},
+        {name: 'permission:course_scheduling_upload_technical_guideline', description: 'Carga de lineamiento técnico'},
 
         {name: 'permission:course_scheduling_force_change_confirmed_to_programmed', description: 'Forzar cambio desde confirmado a programado'},
 
@@ -1500,6 +1502,15 @@ class InitSeeder extends DefaultPluginsSeederSeederService {
         config: {
           limit_files: 1,
           formats: ['pdf'],
+          limit_size_KB: 1000
+        }
+      },
+      {
+        name: "course_scheduling_technical_guideline",
+        description: "Lineamiento tecnico del servicio",
+        config: {
+          limit_files: 1,
+          formats: ['xlsx', 'pdf', 'ppt', 'docx', 'zip'],
           limit_size_KB: 1000
         }
       },

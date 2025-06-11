@@ -111,7 +111,7 @@ class CourseSchedulingService {
         params.where.map((p) => where[p.field] = p.value)
       }
 
-      let select = 'id serviceValidity withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
+      let select = 'id serviceValidity withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 certificate_icon_3 auditor_certificate attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 auditor_modules contact logistics_supply certificate_address business_report partial_report approval_criteria technical_guideline loadParticipants publish signature_1_name signature_1_position signature_1_company signature_2_name signature_2_position signature_2_company signature_3_name signature_3_position signature_3_company multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
       if (params.query === QueryValues.ALL) {
         const registers: any = await CourseScheduling.find(where)
           .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name' })
@@ -490,6 +490,7 @@ class CourseSchedulingService {
         await User.populate(response, { path: 'metadata.user', select: 'id profile.first_name profile.last_name email profile.timezone' })
         await Company.populate(response, { path: 'client', select: 'id name' })
         await User.populate(response, {path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email'})
+        await Attached.populate(response, {path: 'technical_guideline', select: 'id files'})
         // await Course.populate(response, {path: 'course', select: 'id name'})
         // await User.populate(response, {path: 'teacher', select: 'id profile.first_name profile.last_name'})
 
@@ -1102,6 +1103,14 @@ class CourseSchedulingService {
       }
     }
 
+    const technicalGuidelineUrl = courseScheduling?.technical_guideline?.files?.[0]?.url
+    const urlParts = (technicalGuidelineUrl ? technicalGuidelineUrl : '').split('.')
+    const extension = urlParts?.length ? urlParts[urlParts.length - 1] : ''
+    const attachments = technicalGuidelineUrl ? [{
+      filename: `Lineamiento_técnico.${extension}`,
+      path: attachedService.getFileUrl(technicalGuidelineUrl)
+    }] : undefined
+
 
     for (const key in notificationsByTeacher) {
       if (Object.prototype.hasOwnProperty.call(notificationsByTeacher, key)) {
@@ -1115,9 +1124,11 @@ class CourseSchedulingService {
           service: teacherData.service,
           courses: teacherData.courses,
           has_sessions: teacherData.has_sessions,
+          hasTechnicalGuideline: !!courseScheduling?.technical_guideline ? 'SI' : 'NO',
           type: 'teacher',
           notification_source: `program_confirmed_${teacherData.teacher._id}_${teacherData.program.course_scheduling_id}`,
-          amount_notifications: amount_notifications ? amount_notifications : null
+          amount_notifications: amount_notifications ? amount_notifications : null,
+          attachments,
         })
       }
     }
@@ -1537,7 +1548,8 @@ class CourseSchedulingService {
             path_template: path_template,
             params: { ...paramsTemplate }
           },
-          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null
+          amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null,
+          attachments: paramsTemplate.attachments
         },
         notification_source: paramsTemplate.notification_source
       }
@@ -1677,7 +1689,7 @@ class CourseSchedulingService {
     const pageNumber = filters.pageNumber ? (parseInt(filters.pageNumber)) : 1
     const nPerPage = filters.nPerPage ? (parseInt(filters.nPerPage)) : 10
 
-    let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
+    let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id hasCost priceCOP priceUSD discount startPublicationDate endPublicationDate enrollmentDeadline endDiscountDate account_executive certificate_clients certificate_students certificate english_certificate scope english_scope certificate_icon_1 certificate_icon_2 attachments attachments_student address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 contact logistics_supply certificate_address business_report partial_report approval_criteria technical_guideline schedulingAssociation loadParticipants publish multipleCertificate provisioningMoodle schedule serviceInformation longServiceInformation'
     if (filters.select) {
       select = filters.select
     }
@@ -1965,7 +1977,7 @@ class CourseSchedulingService {
   public generateReport = async (params: ICourseSchedulingReport) => {
 
     try {
-      let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria loadParticipants publish provisioningMoodle typeCourse schedule'
+      let select = 'id withoutTutor quickLearning metadata schedulingMode schedulingModeDetails modular program schedulingType schedulingStatus startDate endDate regional regional_transversal city country amountParticipants observations client duration in_design moodle_id address classroom material_delivery material_address material_contact_name material_contact_phone material_contact_email material_assistant signature_1 signature_2 signature_3 business_report partial_report approval_criteria technical_guideline loadParticipants publish provisioningMoodle typeCourse schedule'
 
       let where = {}
 
