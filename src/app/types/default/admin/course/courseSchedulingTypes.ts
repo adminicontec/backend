@@ -321,6 +321,8 @@ export interface ISendEnrollmentUserParams {
   has_sessions?: unknown
   serviceValidity?: string
   customTemplate?: string
+  hasTechnicalGuideline?: string;
+  attachments?: any;
 }
 
 export enum CourseSchedulingNotificationEvents {
