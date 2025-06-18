@@ -14,7 +14,8 @@ const TransactionSchema = new Schema({
   },
   certificateQueue: {
     type: Schema.Types.ObjectId,
-    ref: 'CertificateQueue'
+    ref: 'CertificateQueue',
+    required: false,
   },
   paymentId: {
     type: Schema.Types.String,
@@ -76,6 +77,43 @@ const TransactionSchema = new Schema({
   },
   erpCode: {
     type: Schema.Types.String
+  },
+  // Add this new field for shopping cart items
+  shoppingCartItems: [{
+    identifier: { type: Schema.Types.String },
+    programCode: { type: Schema.Types.String },
+    externalId: { type: Schema.Types.String },
+    description: { type: Schema.Types.String },
+    price: { type: Schema.Types.Number },
+    numberOfPlaces: { type: Schema.Types.Number },
+    buyAction: { type: Schema.Types.String },
+    buyerId: { type: Schema.Types.String }
+  }],
+  billingInfo: {
+    fullName: {
+      type: Schema.Types.String
+    },
+    docNumber: {
+      type: Schema.Types.String
+    },
+    nature: {
+      type: Schema.Types.String
+    },
+    classification: {
+      type: Schema.Types.String
+    },
+    country: {
+      type: Schema.Types.String
+    },
+    department: {
+      type: Schema.Types.String
+    },
+    city: {
+      type: Schema.Types.String
+    },
+    currency: {
+      type: Schema.Types.String
+    }
   },
   // @end
 }, {

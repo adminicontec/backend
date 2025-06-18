@@ -58,6 +58,27 @@ export interface ITransaction {
     city: string
     authorization_code: string
   }
+  // Add this new field
+  shoppingCartItems?: {
+    identifier: string,
+    programCode: string,
+    externalId: string,
+    description: string,
+    price: number,
+    numberOfPlaces: number,
+    buyAction: string,
+    buyerId: string
+  }[],
+  billingInfo?: {
+    fullName: string
+    docNumber: string
+    nature: string
+    classification: string
+    country: string
+    department: string
+    city: string
+    currency: EfipayCurrency
+  }
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

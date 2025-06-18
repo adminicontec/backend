@@ -128,7 +128,7 @@ class EnrollmentController {
   }
 
   public buyCoursesByShoppingCart = async (req: Request, res: Response) => {
-    const userId = req.user.sub;
+    const userId = req?.user?.sub || null;
     const params = req.getParameters.all();
     if (!params?.buyerId) params.buyerId = userId
     const response = await enrollmentService.buyCoursesByShoppingCart(params)

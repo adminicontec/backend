@@ -18,7 +18,7 @@ import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enr
 // @end
 
 // @import config
-import { customs } from '@scnode_core/config/globals'
+import { customs, efipaySetup, host } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -36,7 +36,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy, BUY_ACTION, IShoppingCarItem, ICreateShoppingCartTransaction, PROCESS_ITEM_PURCHASE } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -51,6 +51,9 @@ import { notificationEventService } from '../../events/notifications/notificatio
 import { mapUtility } from '@scnode_core/utilities/mapUtility';
 import { completionstatusService } from '../completionStatus/completionstatusService';
 import { IEnrollmentData } from '@scnode_app/types/default/admin/enrollment/enrollmentTrackingTypes';
+import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from '@scnode_app/types/default/efipay/efipayTypes';
+import { efipayService } from '../../efipay/efipayService';
 // @end
 
 class EnrollmentService {
@@ -1160,18 +1163,98 @@ class EnrollmentService {
 
 
   public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
-    const enrolledPrograms = []
-    const certifiedPrograms = []
+    const {buyerId, itemsToBuy, force, billingInfo} = request
 
-    const {buyerId, itemsToBuy, force} = request
+    if (!billingInfo) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'La información de facturación es requerida'})
+    }
+
     const buyer = await User.findOne({_id: buyerId})
     if (!buyer) {
       return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
     }
 
-    // @INFO: Validación para que el participante NO pueda matricularse en el mismo servicio
+    // Clean and handle duplicates
     const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
-    const itemsByProgramDuplicated = mapUtility.findDuplicates(itemsToBuyClean ?? [], 'programCode')
+
+    // Separate items by buyAction
+    const itemsForBuyer = itemsToBuyClean.filter(item =>
+      item.buyAction === BUY_ACTION.FOR_MYSELF || item.buyAction === BUY_ACTION.FOR_ME_AND_OTHERS
+    )
+    const itemsForOthers = itemsToBuyClean.filter(item =>
+      item.buyAction === BUY_ACTION.FOR_OTHERS || item.buyAction === BUY_ACTION.FOR_ME_AND_OTHERS
+    )
+
+    // If there are items for the buyer, validate them
+    let objectsToBuy: ObjectsToBuy = {}
+
+    if (itemsForBuyer.length > 0) {
+      // Apply business validations for the buyer
+      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, buyerId, force)
+
+      if (!validationResult.canEnrollment) {
+        return responseUtility.buildResponseSuccess('json', null, {
+          message: 'Verificar compra',
+          additional_parameters: {
+            processPurchase: PROCESS_PURCHASE.VERIFY_PURCHASE,
+            review: validationResult.objectsToBuy
+          }
+        })
+      }
+
+      objectsToBuy = validationResult.objectsToBuy
+    }
+
+    // Add items for others without validation
+    itemsForOthers.forEach(item => {
+      if (!objectsToBuy[item.identifier]) {
+        objectsToBuy[item.identifier] = {
+          processPurchase: PROCESS_ITEM_PURCHASE.AVAILABLE,
+          reason: `${item.description} está listo para la compra.`,
+          programCode: item.programCode,
+          programName: item.description,
+          externalId: item.externalId,
+          identifier: item.identifier,
+        }
+      }
+    })
+
+    // Create transaction with Efipay
+    try {
+      const transactionResult = await this.createShoppingCartTransaction({
+        buyerId,
+        items: itemsToBuyClean,
+        billingInfo
+      })
+
+      if (transactionResult.status === 'error') {
+        return responseUtility.buildResponseFailed('json', null, {
+          message: transactionResult.message || 'Error al crear la transacción'
+        })
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Redirección a pasarela de pagos',
+        additional_parameters: {
+          processPurchase: PROCESS_PURCHASE.REDIRECT,
+          redirectUrl: transactionResult.redirectUrl
+        }
+      })
+    } catch (err) {
+      console.log(`EnrollmentService -> buyCoursesByShoppingCart -> ERROR: ${err}`)
+      return responseUtility.buildResponseFailed('json', null, {
+        message: 'Error al procesar la compra'
+      })
+    }
+
+  }
+
+  // New method to validate items for the buyer
+  private validateItemsForBuyer = async (items: IShoppingCarItem[], buyerId: string, force?: boolean) => {
+    const enrolledPrograms = []
+    const certifiedPrograms = []
+
+    const itemsByProgramDuplicated = mapUtility.findDuplicates(items ?? [], 'programCode')
     const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
       if (!accum[element.programCode]) {
         accum[element.programCode] = []
@@ -1180,11 +1263,11 @@ class EnrollmentService {
       return accum;
     }, {})
 
-    const {serviceIds, programCodes, objectsToBuy} = itemsToBuyClean.reduce((accum, element) => {
+    const {serviceIds, programCodes, objectsToBuy} = items.reduce((accum, element) => {
       accum.serviceIds.push(element.identifier);
       accum.programCodes.push(element.programCode);
       accum.objectsToBuy[element.identifier] = {
-        processPurchase: groupProgramDuplicated[element.programCode] ? PROCESS_PURCHASE.WARNING : PROCESS_PURCHASE.AVAILABLE,
+        processPurchase: groupProgramDuplicated[element.programCode] ? PROCESS_ITEM_PURCHASE.WARNING : PROCESS_ITEM_PURCHASE.AVAILABLE,
         reason: groupProgramDuplicated[element.programCode] ?
           `Ya has seleccionado este programa (${element.description}) en otro servicio. ¿Estás seguro de que deseas inscribirte nuevamente?` :
           `${element.description} está listo para la compra.`,
@@ -1194,35 +1277,27 @@ class EnrollmentService {
         identifier: element.identifier,
       }
       return accum;
-    }, {serviceIds: [],programCodes: [], objectsToBuy: {}})
+    }, {serviceIds: [], programCodes: [], objectsToBuy: {}})
 
-    if (serviceIds.length === 0) {
-      return responseUtility.buildResponseFailed('json', null, {message: 'No hay cursos por comprar'})
-    }
-
-    // @INFO: Consultar todas las matriculas del estudiante
+    // Query enrollments for the buyer
     const enrollments = await Enrollment.aggregate([
       {
-        $match:
-          {
-            user: ObjectID(buyerId),
-            deleted: false,
-            // course_scheduling: {$in: serviceIds.map((s) => ObjectID(s))}
-          }
+        $match: {
+          user: ObjectID(buyerId),
+          deleted: false,
+        }
       },
       {
-        $lookup:
-          {
-            from: "course_schedulings",
-            localField: "course_scheduling",
-            foreignField: "_id",
-            as: "service"
-          }
+        $lookup: {
+          from: "course_schedulings",
+          localField: "course_scheduling",
+          foreignField: "_id",
+          as: "service"
+        }
       },
       {
         $unwind: { path: "$service", "preserveNullAndEmptyArrays": true }
       },
-
       {
         "$lookup": {
           "from": "course_scheduling_statuses",
@@ -1246,26 +1321,25 @@ class EnrollmentService {
         "$unwind": { "path": "$program", "preserveNullAndEmptyArrays": true }
       },
       {
-        $project:
-          {
-            _id: "$_id",
-            courseID: "$courseID",
-            origin: "$origin",
-            created_at: "$created_at",
-            "serviceId": "$service._id",
-            "serviceCode": "$service.metadata.service_id",
-            "serviceStatusName": "$status.name",
-            "serviceProgramName": "$program.name",
-            "serviceProgramCode": "$program.code"
-          }
+        $project: {
+          _id: "$_id",
+          courseID: "$courseID",
+          origin: "$origin",
+          created_at: "$created_at",
+          "serviceId": "$service._id",
+          "serviceCode": "$service.metadata.service_id",
+          "serviceStatusName": "$status.name",
+          "serviceProgramName": "$program.name",
+          "serviceProgramCode": "$program.code"
+        }
       }
     ])
 
     enrollments.forEach(element => {
       enrolledPrograms.push(element.serviceProgramCode)
       if (objectsToBuy[element.serviceId]) {
-        // @INFO: Si el participante ya esta matriculado en el servicio NO puedo dejarlo matricular
-        objectsToBuy[element.serviceId].processPurchase = PROCESS_PURCHASE.RESTRICTED;
+        // If the participant is already enrolled in the service, they cannot enroll again
+        objectsToBuy[element.serviceId].processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED;
         switch (element.serviceStatusName) {
           case 'Ejecutado':
             objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) ya ha finalizado, por lo que no es posible inscribirse nuevamente.`;
@@ -1280,12 +1354,10 @@ class EnrollmentService {
             objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
             break;
         }
-
       }
     })
 
-
-    // @INFO: Consultar los certificados del estudiante
+    // Check certificates for the buyer
     const certificates = await CertificateQueue.find({
       userId: buyerId
     }).populate([
@@ -1299,17 +1371,17 @@ class EnrollmentService {
         certifiedPrograms.push(element?.courseId?.program?.code)
       }
     });
+
     programCodes.forEach(element => {
       let process = false
-      let processPurchase = PROCESS_PURCHASE.RESTRICTED
+      let processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED
       let reason = ``;
       if (certifiedPrograms.includes(element)) {
-        // @INFO: Validación que permite establecer si el participante ya se certifico en el programa
+        // Validation to determine if the participant is already certified in the program
         process = true
         reason = `No puedes comprar :programName porque ya estás certificado.`
-
       } else if (enrolledPrograms.includes(element)) {
-      // @INFO: Validación que permite establecer si el participante ya curso el mismo programa en otro servicio
+        // Validation to determine if the participant has already taken the same program in another service
         process = true
         reason = `No puedes comprar :programName porque ya estás inscrito.`;
       }
@@ -1317,7 +1389,7 @@ class EnrollmentService {
         Object.keys(objectsToBuy)
           .filter((o) => objectsToBuy[o].programCode === element)
           .map((o) => {
-            if (objectsToBuy[o].processPurchase === PROCESS_PURCHASE.AVAILABLE) {
+            if (objectsToBuy[o].processPurchase === PROCESS_ITEM_PURCHASE.AVAILABLE) {
               objectsToBuy[o].processPurchase = processPurchase
               objectsToBuy[o].reason = reason.replace(':programName', objectsToBuy[o].programName);
             }
@@ -1327,25 +1399,149 @@ class EnrollmentService {
 
     if (force) {
       Object.keys(objectsToBuy).map((i) => {
-        if (objectsToBuy[i].processPurchase === PROCESS_PURCHASE.WARNING) {
-          objectsToBuy[i].processPurchase = PROCESS_PURCHASE.AVAILABLE
+        if (objectsToBuy[i].processPurchase === PROCESS_ITEM_PURCHASE.WARNING) {
+          objectsToBuy[i].processPurchase = PROCESS_ITEM_PURCHASE.AVAILABLE
         }
       })
     }
 
-    // TODO: Mientras NO tengamos un servicio de Tienda para inscribir debo realizar el proceso de matricula directo en campus
-    const canEnrollment = Object.keys(objectsToBuy).every((i) => objectsToBuy[i].processPurchase === PROCESS_PURCHASE.AVAILABLE)
-    if (!canEnrollment) {
-      return responseUtility.buildResponseSuccess('json', null, {message: 'Verificar compra', additional_parameters: {
-        processPurchase: 'verify_purchase',
-        review: objectsToBuy
-      }})
-    }
-    await this.completePurchaseAndRegister(objectsToBuy, buyer)
+    const canEnrollment = Object.keys(objectsToBuy).every((i) => objectsToBuy[i].processPurchase === PROCESS_ITEM_PURCHASE.AVAILABLE)
 
-    return responseUtility.buildResponseSuccess('json', null, {message: 'Compra finalizada', additional_parameters: {
-      processPurchase: 'success'
-    }})
+    return {
+      canEnrollment,
+      objectsToBuy
+    }
+  }
+
+  // New method to create a transaction with Efipay
+  private createShoppingCartTransaction = async ({
+    buyerId,
+    items,
+    billingInfo
+  }: ICreateShoppingCartTransaction) => {
+    try {
+      // Create a new transaction record
+      const transactionResponse: any = await transactionService.insertOrUpdate({})
+      if (transactionResponse.status === 'error') {
+        return {
+          status: 'error',
+          message: 'Error al generar la transacción'
+        }
+      }
+
+      const transaction: ITransaction = transactionResponse.transaction
+
+      // Calculate total price
+      const totalBaseAmount = items.reduce((total, item) => {
+        return total + (item.priceWithDiscountNumeric || item.priceNumeric) * item.numberOfPlaces
+      }, 0)
+
+      const iva = totalBaseAmount * 0.19
+      const totalAmount = (iva + totalBaseAmount).toFixed(2)
+
+      // Get first item for description
+      const firstItem = items[0]
+      const description = items.length > 1
+        ? `${firstItem.description} y ${items.length - 1} curso(s) más`
+        : firstItem.description
+
+      // Prepare payment parameters
+      const minutesLimit = efipaySetup.payment_limit_minutes
+      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
+      const campusUrl = customs.campus_virtual
+
+      const paymentParams: IGeneratePaymentParams = {
+        payment: {
+          amount: Number(totalAmount),
+          checkout_type: EfipayCheckoutType.REDIRECT,
+          currency_type: billingInfo.currency,
+          description: description,
+          selected_taxes: [EfipayTaxes.IVA_19]
+        },
+        advanced_options: {
+          has_comments: false,
+          limit_date: limitDate,
+          picture: items[0].image,
+          references: [transaction._id],
+          result_urls: {
+            approved: `${campusUrl}/payment-status/${transaction._id}`,
+            pending: `${campusUrl}/payment-status/${transaction._id}`,
+            rejected: `${campusUrl}/payment-status/${transaction._id}`,
+            webhook: `${host}/api/admin/transaction/on-transaction-success`,
+          }
+        },
+        office: efipaySetup.office_number
+      }
+      console.log('paymentParams', paymentParams)
+
+      // Generate payment with Efipay
+      const paymentResponse = await efipayService.generatePayment(paymentParams)
+
+      if (!paymentResponse?.payment_id) {
+        await transactionService.delete(transaction._id)
+        return {
+          status: 'error',
+          message: 'Error al generar la transacción con la pasarela de pagos'
+        }
+      }
+
+      // const paymentResponse = {
+      //   payment_id: 'demo',
+      //   url: 'https://google.com'
+      // }
+
+      // Update transaction with payment details
+      transaction.id = transaction._id
+      transaction.paymentId = paymentResponse.payment_id
+      transaction.redirectUrl = paymentResponse.url
+      transaction.status = TransactionStatus.IN_PROCESS
+      transaction.billingInfo = {
+        fullName: billingInfo.fullName,
+        docNumber: billingInfo.docNumber,
+        nature: billingInfo.nature,
+        classification: billingInfo.classification,
+        country: billingInfo.country,
+        department: billingInfo.department,
+        city: billingInfo.city,
+        currency: billingInfo.currency
+      }
+      transaction.baseAmount = totalBaseAmount
+      transaction.taxesAmount = iva
+      transaction.totalAmount = parseFloat(totalAmount)
+
+      // Store shopping cart items in transaction
+      transaction.shoppingCartItems = items.map(item => ({
+        identifier: item.identifier,
+        programCode: item.programCode,
+        externalId: item.externalId,
+        description: item.description,
+        price: item.priceWithDiscountNumeric || item.priceNumeric,
+        numberOfPlaces: item.numberOfPlaces,
+        buyAction: item.buyAction,
+        buyerId: buyerId
+      }))
+
+      const updateResponse = await transactionService.insertOrUpdate(transaction)
+      if (updateResponse.status === 'error') {
+        await transactionService.delete(transaction._id)
+        return {
+          status: 'error',
+          message: 'Error al actualizar la transacción'
+        }
+      }
+
+      return {
+        status: 'success',
+        redirectUrl: paymentResponse.url
+      }
+
+    } catch (err) {
+      console.log(`EnrollmentService -> createShoppingCartTransaction -> ERROR: ${err}`)
+      return {
+        status: 'error',
+        message: 'Error al procesar la transacción'
+      }
+    }
   }
 
   private completePurchaseAndRegister = async (objectsToBuy: ObjectsToBuy, buyer: IUser) => {

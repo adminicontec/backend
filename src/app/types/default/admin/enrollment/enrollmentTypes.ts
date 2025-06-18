@@ -1,4 +1,5 @@
 import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { EfipayCurrency } from '../../efipay/efipayTypes';
 // @import types
 // @end
 
@@ -108,31 +109,72 @@ export interface IBuyCoursesByShoppingCart {
   buyerId: string,
   itemsToBuy: IShoppingCarItem[],
   force?: boolean
+  billingInfo?: IBillingInfo
 }
 
+export interface IBillingInfo {
+  fullName: string,
+  docNumber: string,
+  docType: string,
+  nature: string,
+  classification: string,
+  country: string,
+  department: string,
+  city: string,
+  currency: EfipayCurrency,
+  address1?: string,
+  address2?: string,
+  email?: string,
+  phone?: string
+}
+
+
+// Add a new interface for the transaction creation
+export interface ICreateShoppingCartTransaction {
+  buyerId: string,
+  items: IShoppingCarItem[],
+  billingInfo: IBillingInfo;
+}
+
+
+export enum BUY_ACTION {
+  FOR_MYSELF = "for_myself",
+  FOR_OTHERS = "for_others",
+  FOR_ME_AND_OTHERS = 'for_me_and_others'
+};
 
 export interface IShoppingCarItem {
   identifier: string,
-  externalId: string,
   programCode: string,
-  image: string,
+  externalId: string,
   description: string,
+  image: string,
   price: string,
+  priceNumeric: number,
   startDate: string,
   modality: string,
-  priceWithDiscount?: string | null,
+  priceWithDiscount: string,
+  priceWithDiscountNumeric: number,
+  numberOfPlaces: number,
+  dateOfAddition: number,
+  buyAction: BUY_ACTION
+}
+
+export enum PROCESS_ITEM_PURCHASE {
+  WARNING = 'warning',
+  RESTRICTED = 'restricted',
+  AVAILABLE = 'available',
 }
 
 export enum PROCESS_PURCHASE {
-  AVAILABLE = 'available',
-  WARNING = 'warning',
-  RESTRICTED = 'restricted'
+  VERIFY_PURCHASE = 'verify_purchase',
+  REDIRECT = 'redirect'
 }
 
 export type ObjectsToBuy = Record<string, IObjectToBuy>;
 
 export interface IObjectToBuy {
-  processPurchase: PROCESS_PURCHASE
+  processPurchase: PROCESS_ITEM_PURCHASE
   reason: string,
   programCode: string,
   programName: string,
