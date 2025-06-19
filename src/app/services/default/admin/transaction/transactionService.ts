@@ -16,6 +16,7 @@ import { certificateQueueService } from '@scnode_app/services/default/admin/cert
 import { erpService } from '@scnode_app/services/default/erp/erpService';
 import { transactionNotificationsService } from '@scnode_app/services/default/admin/transaction/transactionNotificationsService';
 import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
+import { purchasedPlaceService } from '../purchasedPlace/purchasedPlaceService';
 // @end
 
 // @import models
@@ -100,7 +101,7 @@ class TransactionService {
       }
 
 
-      let select = 'id status certificateQueue certificateInfo baseAmount taxesAmount totalAmount'
+      let select = 'id status certificateQueue certificateInfo baseAmount taxesAmount totalAmount shoppingCartItems billingInfo'
       if (params.query === QueryValues.ALL) {
         const registers = await Transaction.find(where).select(select)
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -311,6 +312,44 @@ class TransactionService {
         })
       }
 
+      // Determinar el tipo de transacción y procesarla según corresponda
+      if (transaction.shoppingCartItems && transaction.shoppingCartItems.length > 0) {
+        // Procesar transacción de carrito de compras
+        await this.processShoppingCartTransaction(transaction, params);
+      } else if (transaction.certificateQueue) {
+        // Procesar transacción de certificado (lógica existente)
+        await this.processCertificateTransaction(transaction, params);
+      } else {
+        // Tipo de transacción desconocido o no especificado
+        customLogService.create({
+          label: 'efps - utt - unknown transaction type',
+          description: "Unknown transaction type",
+          content: {
+            transactionId: transaction._id,
+          },
+        })
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: "Ok",
+        code: 200,
+      })
+
+    } catch (e) {
+      customLogService.create({
+        label: 'efps - otse - on transaction success error',
+        description: "On transaction success error",
+        content: {
+          errorMessage: e.message,
+          params,
+        },
+      })
+    }
+  }
+
+  // Nuevo método para procesar transacciones de certificados (lógica existente extraída)
+  private processCertificateTransaction = async (transaction: ITransaction, params: IOnTransactionSuccessParams) => {
+    try {
       const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
         .populate({ path: 'userId', select: 'profile email username' })
         .populate({ path: 'certificateSetting', select: 'certificateName' })
@@ -358,7 +397,10 @@ class TransactionService {
 
       if (certificateQueue) {
         transactionNotificationsService.sendTransactionStatus({
-          certificateName: certificateQueue?.certificateSetting?.certificateName,
+          paymentType: 'certificate',
+          additionalInfo: {
+            certificateName: certificateQueue?.certificateSetting?.certificateName,
+          },
           status: params.transaction.status as unknown as TransactionStatus,
           transactionId: transaction._id,
           users: [
@@ -391,19 +433,161 @@ class TransactionService {
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
         certificateQueueService.sendToProcess([ transaction.certificateQueue ])
       }
-
-      return responseUtility.buildResponseSuccess('json', null, {
-        message: "Ok",
-        code: 200,
-      })
-
-    } catch (e) {
+    } catch (error) {
       customLogService.create({
-        label: 'efps - otse - on transaction success error',
-        description: "On transaction success error",
+        label: 'efps - pct - process certificate transaction error',
+        description: 'Error al procesar transacción de certificado',
         content: {
-          errorMessage: e.message,
-          params,
+          errorMessage: error.message,
+          transactionId: transaction._id,
+        },
+      })
+      throw error;
+    }
+  }
+
+  private processShoppingCartTransaction = async (transaction: ITransaction, params: IOnTransactionSuccessParams) => {
+    try {
+      // 1. Si la transacción es SUCCESS debo crear una factura en el sistema ERP
+      // 1.1 Si la creación de la factura en el sistema ERP falla debo enviar correo electronico a los administradores del ERP
+      if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
+        // TODO:  Pendiente creación de factura en ERP
+        // Crear factura en ERP
+        // erpService.createInvoiceFromTransaction(transaction._id)
+        //   .then((invoiceResponse: any) => {
+        //     if (invoiceResponse?.status === 'error') {
+        //       customLogService.create({
+        //         label: 'efps - sct - shopping cart invoice error',
+        //         description: 'Error al generar la factura para compra de cursos',
+        //         content: {
+        //           errorMessage: typeof invoiceResponse?.errorContent === 'object' ?
+        //             JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
+        //           transactionId: transaction._id,
+        //         },
+        //       })
+        //     }
+        //   })
+        //   .catch((e: any) => {
+        //     customLogService.create({
+        //       label: 'efps - sct - shopping cart invoice exception',
+        //       description: 'Excepción al crear la factura para compra de cursos',
+        //       content: {
+        //         errorMessage: e.message,
+        //         transactionId: transaction._id,
+        //       },
+        //     })
+        //   })
+
+        // Enviar notificación de compra exitosa
+        // await this.sendShoppingCartSuccessNotification(transaction, params);
+      }
+
+      // 2. Enviar notificación de estado de la transacción al cliente
+      await this.sendShoppingCartStatusNotification(transaction, params);
+
+      // 3. Si la transacción es SUCCESS debo inscribir a los usuarios en los cursos correspondientes, en caso que sea de asignación propia.
+      // 3.1 En caso que alguno de los cursos adquiridos sea para otra persona debo enviar otra notificación con los pasos a seguir.
+      // TODO: Pendiente enviar segundo correo con instrucciones para el usuario cuando debe asignar cupos
+      await this.processShoppingCartEnrollment(transaction, params);
+    } catch (error) {
+      customLogService.create({
+        label: 'efps - sct - process shopping cart transaction error',
+        description: 'Error al procesar transacción de carrito de compras',
+        content: {
+          errorMessage: error.message,
+          transactionId: transaction._id,
+        },
+      })
+      throw error;
+    }
+  }
+
+  private processShoppingCartEnrollment = async (transaction: ITransaction, params: IOnTransactionSuccessParams) => {
+    try {
+      if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
+        // 1. Crear los cupos para la transacción
+        const createPlacesResult: any = await purchasedPlaceService.createFromTransaction({
+          transactionId: transaction._id
+        });
+
+        if (createPlacesResult.status === 'error') {
+          await customLogService.create({
+            label: 'efps - sct - create places error',
+            description: 'Error al crear los cupos para la transacción',
+            content: {
+              errorMessage: createPlacesResult.message,
+              transactionId: transaction._id,
+            },
+          });
+        }
+
+        // 2. Procesar asignaciones automáticas (para el comprador)
+        const autoAssignResult: any = await purchasedPlaceService.processAutoAssignments(transaction._id);
+
+        if (autoAssignResult && autoAssignResult.status === 'error') {
+          await customLogService.create({
+            label: 'efps - sct - auto assign error',
+            description: 'Error al procesar asignaciones automáticas',
+            content: {
+              errorMessage: autoAssignResult.message,
+              transactionId: transaction._id,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      customLogService.create({
+        label: 'efps - sct - process shopping cart transaction error',
+        description: 'Error al procesar transacción de carrito de compras',
+        content: {
+          errorMessage: error.message,
+          transactionId: transaction._id,
+        },
+      })
+      throw error;
+    }
+  }
+
+  // Método para enviar notificación de estado de transacción
+  private sendShoppingCartStatusNotification = async (transaction: ITransaction, params: IOnTransactionSuccessParams) => {
+    try {
+      transactionNotificationsService.sendTransactionStatus({
+        paymentType: 'courses',
+        status: params.transaction.status as unknown as TransactionStatus,
+        transactionId: transaction._id,
+        users: [{
+          name: `${transaction?.paymentInfo?.name}`,
+          email: transaction?.paymentInfo?.email
+        }],
+        additionalInfo: {
+          courseNames: transaction.shoppingCartItems?.map(item => item.description).join(', ')
+        }
+      }).then((response: any) => {
+        customLogService.create({
+          label: 'efps - otse - notification sent',
+          description: 'Notificación de estado de transacción enviada exitosamente',
+          content: {
+            response,
+            transactionId: transaction._id,
+          },
+        })
+      }).catch((e: any) => {
+        customLogService.create({
+          label: 'efps - otse - error sending notification',
+          description: 'Error al enviar el correo de notificación de transacción',
+          content: {
+            errorMessage: e.message,
+            transactionId: transaction._id,
+          },
+        })
+      })
+    } catch (error) {
+      customLogService.create({
+        label: 'efps - scsn - status notification error',
+        description: 'Error al enviar notificación de estado de transacción',
+        content: {
+          errorMessage: error.message,
+          transactionId: transaction._id,
         },
       })
     }

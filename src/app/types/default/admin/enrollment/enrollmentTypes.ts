@@ -114,6 +114,8 @@ export interface IBuyCoursesByShoppingCart {
 
 export interface IBillingInfo {
   fullName: string,
+  firstName: string,
+  lastName: string,
   docNumber: string,
   docType: string,
   nature: string,

@@ -84,6 +84,7 @@ import { postRoute } from "@scnode_app/routes/default/admin/post/postRoute";
 import { postTypeRoute } from "@scnode_app/routes/default/admin/post/postTypeRoute";
 import { postLocationRoute } from "@scnode_app/routes/default/admin/post/postLocationRoute";
 import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCategoryRoute";
+import { purchasedPlaceRoute } from "@scnode_app/routes/default/admin/purchasedPlace/purchasedPlaceRoute";
 // @end
 
 // @export_routes
@@ -174,6 +175,7 @@ export const routes = {
     postTypeRoute,
     postLocationRoute,
     postCategoryRoute,
+    purchasedPlaceRoute,
 	// @end
 }
 // @end

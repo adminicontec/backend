@@ -6,6 +6,11 @@ const { Schema } = mongoose;
 
 const EnrollmentSchema = new Schema({
   // @add_schema Add schema here
+  purchasedPlace: {
+    type: Schema.Types.ObjectId,
+    ref: 'PurchasedPlace',
+    required: false,
+  },
   user: {
     type: Schema.Types.ObjectId,
     required: true,

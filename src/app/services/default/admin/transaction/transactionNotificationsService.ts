@@ -61,10 +61,11 @@ class TransactionNotificationsService {
   }
 
   public sendTransactionStatus = async ({
+    paymentType,
     users,
     transactionId,
-    certificateName,
     status,
+    additionalInfo
   }: ISendTransactionStatusParams) => {
     try {
       const pathTemplate = 'payment/transactionStatus'
@@ -76,6 +77,18 @@ class TransactionNotificationsService {
         [TransactionStatus.REVERSED]: 'Tu pago ha sido reversado. Te sugerimos revisar tu información de pago y volver a intentarlo.',
         [TransactionStatus.SUCCESS]: '¡Gracias! Tu pago ha sido procesado correctamente.',
       }
+      let paymentContext = '';
+      switch (paymentType) {
+        case 'certificate':
+          paymentContext = `el certificado ${additionalInfo?.certificateName ?? ''}`;
+          break;
+        case 'courses':
+          paymentContext = `${additionalInfo?.courseNames}`;
+          break;
+        default:
+          paymentContext = 'el pago';
+          break;
+      }
       for (const user of users) {
         const mail = await mailService.sendMail({
           emails: [user.email],
@@ -86,7 +99,7 @@ class TransactionNotificationsService {
               path_template: pathTemplate,
               params: {
                 studentName: user.name,
-                certificateName,
+                paymentContext,
                 status,
                 statusText: textByStatus[status]
               }

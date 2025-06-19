@@ -78,6 +78,11 @@ const TransactionSchema = new Schema({
   erpCode: {
     type: Schema.Types.String
   },
+  buyer: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   // Add this new field for shopping cart items
   shoppingCartItems: [{
     identifier: { type: Schema.Types.String },
@@ -112,6 +117,9 @@ const TransactionSchema = new Schema({
       type: Schema.Types.String
     },
     currency: {
+      type: Schema.Types.String
+    },
+    email: {
       type: Schema.Types.String
     }
   },

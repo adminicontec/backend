@@ -1165,14 +1165,24 @@ class EnrollmentService {
   public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
     const {buyerId, itemsToBuy, force, billingInfo} = request
 
+    let _buyerId = buyerId;
+    let roles = {}
+
+    const rolesResponse: any = await roleService.list()
+    if (rolesResponse.status === 'success') {
+      for await (const iterator of rolesResponse.roles) {
+        roles[iterator.name] = iterator._id
+      }
+    }
+
     if (!billingInfo) {
       return responseUtility.buildResponseFailed('json', null, {message: 'La información de facturación es requerida'})
     }
 
-    const buyer = await User.findOne({_id: buyerId})
-    if (!buyer) {
-      return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
-    }
+    // const buyer = await User.findOne({_id: buyerId})
+    // if (!buyer) {
+    //   return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
+    // }
 
     // Clean and handle duplicates
     const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
@@ -1190,7 +1200,7 @@ class EnrollmentService {
 
     if (itemsForBuyer.length > 0) {
       // Apply business validations for the buyer
-      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, buyerId, force)
+      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, _buyerId, force)
 
       if (!validationResult.canEnrollment) {
         return responseUtility.buildResponseSuccess('json', null, {
@@ -1219,10 +1229,42 @@ class EnrollmentService {
       }
     })
 
-    // Create transaction with Efipay
     try {
+      if (!_buyerId) {
+        const newUserCreated = await userService.insertOrUpdate({
+          username: billingInfo.docNumber,
+          email: billingInfo.email ?? '',
+          password: billingInfo.docNumber,
+          roles: [roles['student']],
+          profile: {
+            doc_type: billingInfo.docType,
+            doc_number: billingInfo.docNumber,
+            first_name: billingInfo.firstName,
+            last_name: billingInfo.lastName,
+          }
+        })
+        if (newUserCreated.status === 'error') {
+          if (newUserCreated.status_code === "user_insertOrUpdate_already_exists") {
+            return responseUtility.buildResponseFailed('json', null, {
+              message: 'Debes iniciar sesión para continuar.'
+            });
+          }
+          return newUserCreated;
+        }
+        _buyerId = newUserCreated?.user?._id;
+
+      }
+    } catch (err) {
+      console.log(`EnrollmentService -> buyCoursesByShoppingCart --> createUser -> ERROR: ${err}`)
+      return responseUtility.buildResponseFailed('json', null, {
+        message: 'Error al crear el usuario'
+      })
+    }
+
+    try {
+      // Create transaction with Efipay
       const transactionResult = await this.createShoppingCartTransaction({
-        buyerId,
+        buyerId: _buyerId,
         items: itemsToBuyClean,
         billingInfo
       })
@@ -1472,7 +1514,6 @@ class EnrollmentService {
         },
         office: efipaySetup.office_number
       }
-      console.log('paymentParams', paymentParams)
 
       // Generate payment with Efipay
       const paymentResponse = await efipayService.generatePayment(paymentParams)
@@ -1485,13 +1526,9 @@ class EnrollmentService {
         }
       }
 
-      // const paymentResponse = {
-      //   payment_id: 'demo',
-      //   url: 'https://google.com'
-      // }
-
       // Update transaction with payment details
       transaction.id = transaction._id
+      transaction.buyer = buyerId;
       transaction.paymentId = paymentResponse.payment_id
       transaction.redirectUrl = paymentResponse.url
       transaction.status = TransactionStatus.IN_PROCESS
@@ -1503,7 +1540,8 @@ class EnrollmentService {
         country: billingInfo.country,
         department: billingInfo.department,
         city: billingInfo.city,
-        currency: billingInfo.currency
+        currency: billingInfo.currency,
+        email: billingInfo.email,
       }
       transaction.baseAmount = totalBaseAmount
       transaction.taxesAmount = iva
@@ -1541,34 +1579,6 @@ class EnrollmentService {
         status: 'error',
         message: 'Error al procesar la transacción'
       }
-    }
-  }
-
-  private completePurchaseAndRegister = async (objectsToBuy: ObjectsToBuy, buyer: IUser) => {
-    try {
-      const enrollments = []
-      Object.keys(objectsToBuy).forEach((i) => {
-        const item = objectsToBuy[i]
-        const enrollmentObj = {
-          "email": buyer.email,
-          "user": buyer.username,
-          "password": buyer.username,
-          "documentType": buyer.profile?.doc_type,
-          "documentID": buyer.profile?.doc_number ?? buyer.username,
-          "firstname": buyer.profile?.first_name,
-          "lastname": buyer.profile?.last_name,
-          "phoneNumber": buyer.phoneNumber,
-          "courseID": item.externalId,
-          "origin": "ShoppingCart",
-          "trackingEnrollment": true,
-        }
-        enrollments.push(enrollmentObj)
-      })
-      if (enrollments.length > 0) {
-        const response = await Promise.all(enrollments.map((e) => this.insertOrUpdate(e)))
-      }
-    } catch (err) {
-      console.log(`EnrollmentService -> completePurchaseAndRegister -> ERROR: ${err}`)
     }
   }
 

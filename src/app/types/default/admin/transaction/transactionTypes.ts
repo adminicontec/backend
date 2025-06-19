@@ -25,6 +25,7 @@ export const TRANSACTION_STATUSES = [
 export interface ITransaction {
   _id?: string
   id?: string
+  buyer?: string
   status?: TransactionStatus
   certificateQueue?: string
   erpCode?: string
@@ -78,6 +79,7 @@ export interface ITransaction {
     department: string
     city: string
     currency: EfipayCurrency
+    email: string
   }
 }
 
@@ -97,13 +99,20 @@ export interface ISendTransactionCreatedParams {
   courseName: string
 }
 
+export type IPaymentType = 'certificate' | 'courses'
 export interface ISendTransactionStatusParams {
+  paymentType: IPaymentType,
   users: {
     name: string
     email: string
   }[]
   transactionId: string
   status: TransactionStatus
-  certificateName: string
+  additionalInfo?: {
+    courseNames?: string,
+    totalAmount?: number,
+    currency?: string
+    certificateName?: string
+  }
 }
 //@end
