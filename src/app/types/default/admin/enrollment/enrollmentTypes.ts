@@ -105,10 +105,16 @@ export interface IGetCurrentEnrollmentStatusParams {
   enrollmentId: string
 }
 
+export enum PurchaseProcessType {
+  PURCHASE = "purchase",
+  CHECK_CONDITIONS = "check_conditions",
+}
+
 export interface IBuyCoursesByShoppingCart {
   buyerId: string,
   itemsToBuy: IShoppingCarItem[],
-  force?: boolean
+  processType: PurchaseProcessType,
+  buyAction: BUY_ACTION
   billingInfo?: IBillingInfo
 }
 

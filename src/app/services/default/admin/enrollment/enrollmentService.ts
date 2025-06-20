@@ -36,7 +36,7 @@ import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessag
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy, BUY_ACTION, IShoppingCarItem, ICreateShoppingCartTransaction, PROCESS_ITEM_PURCHASE } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy, BUY_ACTION, IShoppingCarItem, ICreateShoppingCartTransaction, PROCESS_ITEM_PURCHASE, PurchaseProcessType } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
@@ -1163,7 +1163,7 @@ class EnrollmentService {
 
 
   public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
-    const {buyerId, itemsToBuy, force, billingInfo} = request
+    const {buyerId, itemsToBuy, processType, billingInfo, buyAction} = request
 
     let _buyerId = buyerId;
     let roles = {}
@@ -1178,11 +1178,6 @@ class EnrollmentService {
     if (!billingInfo) {
       return responseUtility.buildResponseFailed('json', null, {message: 'La información de facturación es requerida'})
     }
-
-    // const buyer = await User.findOne({_id: buyerId})
-    // if (!buyer) {
-    //   return responseUtility.buildResponseFailed('json', null, {message: 'El comprador NO es valido'})
-    // }
 
     // Clean and handle duplicates
     const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
@@ -1200,7 +1195,7 @@ class EnrollmentService {
 
     if (itemsForBuyer.length > 0) {
       // Apply business validations for the buyer
-      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, _buyerId, force)
+      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, _buyerId, processType, buyAction)
 
       if (!validationResult.canEnrollment) {
         return responseUtility.buildResponseSuccess('json', null, {
@@ -1211,7 +1206,6 @@ class EnrollmentService {
           }
         })
       }
-
       objectsToBuy = validationResult.objectsToBuy
     }
 
@@ -1228,6 +1222,16 @@ class EnrollmentService {
         }
       }
     })
+
+    if (processType === PurchaseProcessType.CHECK_CONDITIONS) {
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Compra verificada',
+        additional_parameters: {
+          processPurchase: PROCESS_PURCHASE.VERIFY_PURCHASE,
+          review: objectsToBuy
+        }
+      })
+    }
 
     try {
       if (!_buyerId) {
@@ -1292,9 +1296,11 @@ class EnrollmentService {
   }
 
   // New method to validate items for the buyer
-  private validateItemsForBuyer = async (items: IShoppingCarItem[], buyerId: string, force?: boolean) => {
+  private validateItemsForBuyer = async (items: IShoppingCarItem[], buyerId: string, processType: PurchaseProcessType, buyAction: BUY_ACTION) => {
     const enrolledPrograms = []
     const certifiedPrograms = []
+    // TODO: Modificar <a quien compras> cuando se realice la función
+    const buyObject = buyAction === BUY_ACTION.FOR_MYSELF ? 'para ti mismo' : '<a quien compras>'
 
     const itemsByProgramDuplicated = mapUtility.findDuplicates(items ?? [], 'programCode')
     const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
@@ -1317,6 +1323,7 @@ class EnrollmentService {
         programName: element.description,
         externalId: element.externalId,
         identifier: element.identifier,
+        buyAction: element.buyAction,
       }
       return accum;
     }, {serviceIds: [], programCodes: [], objectsToBuy: {}})
@@ -1382,19 +1389,22 @@ class EnrollmentService {
       if (objectsToBuy[element.serviceId]) {
         // If the participant is already enrolled in the service, they cannot enroll again
         objectsToBuy[element.serviceId].processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED;
-        switch (element.serviceStatusName) {
-          case 'Ejecutado':
-            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) ya ha finalizado, por lo que no es posible inscribirse nuevamente.`;
-            break;
-          case 'Confirmado':
-            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y tu matrícula está en proceso.`;
-            break;
-          case 'Programado':
-            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque ya estás inscrito (${element.serviceCode}) y está próximo a iniciar.`;
-            break;
-          default:
-            objectsToBuy[element.serviceId].reason = `No puedes comprar ${element.serviceProgramName} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
-            break;
+        let reasonMessage = buyAction === BUY_ACTION.FOR_MYSELF ? 'ya estás inscrito' : 'ya está inscrito';
+        if (buyAction === BUY_ACTION.FOR_MYSELF) {
+          switch (element.serviceStatusName) {
+            case 'Ejecutado':
+              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque el servicio (${element.serviceCode}) ya ha finalizado y no es posible inscribirse.`;
+              break;
+            case 'Confirmado':
+              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque ${reasonMessage} (${element.serviceCode}) y la matrícula está en proceso.`;
+              break;
+            case 'Programado':
+              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque ${reasonMessage} (${element.serviceCode}) y está próximo a iniciar.`;
+              break;
+            default:
+              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
+              break;
+          }
         }
       }
     })
@@ -1421,11 +1431,13 @@ class EnrollmentService {
       if (certifiedPrograms.includes(element)) {
         // Validation to determine if the participant is already certified in the program
         process = true
-        reason = `No puedes comprar :programName porque ya estás certificado.`
+        processPurchase = PROCESS_ITEM_PURCHASE.WARNING
+        reason = `Es posible adquirir este cupo ${buyObject}, aunque ya se haya certificado previamente.`
       } else if (enrolledPrograms.includes(element)) {
         // Validation to determine if the participant has already taken the same program in another service
         process = true
-        reason = `No puedes comprar :programName porque ya estás inscrito.`;
+        processPurchase = PROCESS_ITEM_PURCHASE.WARNING
+        reason = `Es posible adquirir este cupo ${buyObject}, aunque ya esté inscrito en otro servicio para este mismo programa.`;
       }
       if (process) {
         Object.keys(objectsToBuy)
@@ -1439,7 +1451,7 @@ class EnrollmentService {
       }
     });
 
-    if (force) {
+    if (processType === PurchaseProcessType.PURCHASE) {
       Object.keys(objectsToBuy).map((i) => {
         if (objectsToBuy[i].processPurchase === PROCESS_ITEM_PURCHASE.WARNING) {
           objectsToBuy[i].processPurchase = PROCESS_ITEM_PURCHASE.AVAILABLE
