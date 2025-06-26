@@ -30,6 +30,19 @@ export interface ICreatePurchasedPlacesFromTransaction {
   userId?: string;
 }
 
+export interface IProcessAssignment {
+  purchasedPlaceId: string;
+  userData: {
+    firstName: string;
+    lastName: string;
+    docNumber: string;
+    docType: string;
+    email: string;
+    forceAssign?: boolean;
+    forMyself?: boolean;
+  },
+}
+
 export interface IAssignPurchasedPlace {
   purchasedPlaceId: string;
   userId: string;

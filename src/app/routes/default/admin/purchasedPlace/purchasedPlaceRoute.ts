@@ -27,8 +27,9 @@ class PurchasedPlaceRoute {
     const _route = `${prefix}${this.router_prefix}`;
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
+    routerUtility.get(app, _route, '/find-user/:username', this.instanceController.findUser, [], ['auth'])
     routerUtility.get(app, _route, '/places', this.instanceController.getPlaces, [], ['auth'])
-    routerUtility.post(app, _route, '/assign', this.instanceController.assignPlace, [], ['auth'])
+    routerUtility.post(app, _route, '/assign/:purchasedPlaceId', this.instanceController.assignPlace, [], ['auth'])
     // @end
   }
 }

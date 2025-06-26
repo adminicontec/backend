@@ -1194,8 +1194,9 @@ class EnrollmentService {
     let objectsToBuy: ObjectsToBuy = {}
 
     if (itemsForBuyer.length > 0) {
+      const user = await User.findOne({ _id: _buyerId })
       // Apply business validations for the buyer
-      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, _buyerId, processType, buyAction)
+      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, user, processType, buyAction)
 
       if (!validationResult.canEnrollment) {
         return responseUtility.buildResponseSuccess('json', null, {
@@ -1296,11 +1297,10 @@ class EnrollmentService {
   }
 
   // New method to validate items for the buyer
-  private validateItemsForBuyer = async (items: IShoppingCarItem[], buyerId: string, processType: PurchaseProcessType, buyAction: BUY_ACTION) => {
+  public validateItemsForBuyer = async (items: IShoppingCarItem[], buyer: IUser, processType: PurchaseProcessType, buyAction: BUY_ACTION) => {
     const enrolledPrograms = []
     const certifiedPrograms = []
-    // TODO: Modificar <a quien compras> cuando se realice la función
-    const buyObject = buyAction === BUY_ACTION.FOR_MYSELF ? 'para ti mismo' : '<a quien compras>'
+    const buyObject = buyAction === BUY_ACTION.FOR_MYSELF ? 'para ti mismo' : `${buyer.profile.first_name} ${buyer.profile.last_name}`
 
     const itemsByProgramDuplicated = mapUtility.findDuplicates(items ?? [], 'programCode')
     const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
@@ -1332,7 +1332,7 @@ class EnrollmentService {
     const enrollments = await Enrollment.aggregate([
       {
         $match: {
-          user: ObjectID(buyerId),
+          user: ObjectID(buyer._id),
           deleted: false,
         }
       },
@@ -1390,28 +1390,26 @@ class EnrollmentService {
         // If the participant is already enrolled in the service, they cannot enroll again
         objectsToBuy[element.serviceId].processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED;
         let reasonMessage = buyAction === BUY_ACTION.FOR_MYSELF ? 'ya estás inscrito' : 'ya está inscrito';
-        if (buyAction === BUY_ACTION.FOR_MYSELF) {
-          switch (element.serviceStatusName) {
-            case 'Ejecutado':
-              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque el servicio (${element.serviceCode}) ya ha finalizado y no es posible inscribirse.`;
-              break;
-            case 'Confirmado':
-              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque ${reasonMessage} (${element.serviceCode}) y la matrícula está en proceso.`;
-              break;
-            case 'Programado':
-              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque ${reasonMessage} (${element.serviceCode}) y está próximo a iniciar.`;
-              break;
-            default:
-              objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject} porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
-              break;
-          }
+        switch (element.serviceStatusName) {
+          case 'Ejecutado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque el servicio (${element.serviceCode}) ya ha finalizado y no es posible inscribirse.`;
+            break;
+          case 'Confirmado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque ${reasonMessage} (${element.serviceCode}) y la matrícula está en proceso.`;
+            break;
+          case 'Programado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque ${reasonMessage} (${element.serviceCode}) y está próximo a iniciar.`;
+            break;
+          default:
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
+            break;
         }
       }
     })
 
     // Check certificates for the buyer
     const certificates = await CertificateQueue.find({
-      userId: buyerId
+      userId: buyer._id
     }).populate([
       {path: 'courseId', select: 'program', populate: [
         {path: 'program', select: 'code'}

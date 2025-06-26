@@ -11,19 +11,44 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { PurchasedPlace, Transaction, User, CourseScheduling } from '@scnode_app/models';
+import { PurchasedPlace, Transaction, User, CourseScheduling, Course } from '@scnode_app/models';
 // @end
 
 // @import types
-import { IPurchasedPlace, ICreatePurchasedPlacesFromTransaction, IAssignPurchasedPlace, IGetPurchasedPlaces, PurchasedPlaceStatus } from '@scnode_app/types/default/admin/purchasedPlace/purchasedPlaceTypes';
-import { BUY_ACTION, IEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
+import { IPurchasedPlace, ICreatePurchasedPlacesFromTransaction, IAssignPurchasedPlace, IGetPurchasedPlaces, PurchasedPlaceStatus, IProcessAssignment } from '@scnode_app/types/default/admin/purchasedPlace/purchasedPlaceTypes';
+import { BUY_ACTION, IEnrollment, IShoppingCarItem, PROCESS_PURCHASE, PurchaseProcessType } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes';
 import { TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 import { IUser } from '@scnode_app/types/default/admin/user/userTypes';
 import { ICourseScheduling } from '@scnode_app/types/default/admin/enrollment/enrollmentTrackingTypes';
+import { courseService } from '../course/courseService';
+import { userService } from '../user/userService';
+import { roleService } from '../secure/roleService';
 // @end
 
 class PurchasedPlaceService {
   constructor() {}
+
+  public findUser = async (params: {username: string}) => {
+    const { username } = params;
+    const userExists: any = await User.findOne({
+      username,
+    })
+    if (!userExists) {
+      return responseUtility.buildResponseFailed('json', null, { message: 'User not found' });
+    }
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        userData: {
+          firstName: userExists?.profile?.first_name ?? '',
+          lastName: userExists?.profile?.last_name ?? '',
+          docNumber: userExists?.username ?? '',
+          docType: userExists?.profile?.docType ?? '',
+          email: userExists?.email ?? '',
+        }
+      }
+    });
+  }
+
 
   public insertOrUpdate = async (params: IPurchasedPlace) => {
     try {
@@ -171,7 +196,7 @@ class PurchasedPlaceService {
     }
   }
 
-  public assignPlace = async ({ purchasedPlaceId, userId, enrollmentId }: IAssignPurchasedPlace) => {
+  private assignPlace = async ({ purchasedPlaceId, userId, enrollmentId }: IAssignPurchasedPlace) => {
     try {
       const place = await PurchasedPlace.findOne({ _id: purchasedPlaceId });
       if (!place) {
@@ -186,7 +211,6 @@ class PurchasedPlaceService {
         });
       }
 
-      // Corregido: Usar el método findByIdAndUpdate directamente en lugar de insertOrUpdate
       const updateResult = await PurchasedPlace.findByIdAndUpdate(
         purchasedPlaceId,
         {
@@ -245,7 +269,7 @@ class PurchasedPlaceService {
         query.programCode = params.programCode;
       }
 
-      const places = await PurchasedPlace.find(query)
+      let places = await PurchasedPlace.find(query)
         .populate('buyer', 'email profile.first_name profile.last_name')
         .populate('assignedTo', 'email profile.first_name profile.last_name')
         .populate('courseScheduling', 'metadata.service_id program')
@@ -257,8 +281,37 @@ class PurchasedPlaceService {
           }
         })
         .populate('enrollment')
-        .sort({ created_at: -1 });
+        .sort({ created_at: -1 })
+        .lean();
 
+      const program_ids = places.reduce((accum, element) => {
+        if (element?.courseScheduling?.program?._id) {
+          accum.push(element?.courseScheduling?.program?._id.toString());
+        }
+        return accum;
+      }, [])
+
+      if (program_ids.length > 0) {
+        const schedulingExtraInfo: any = await Course.find({
+          program: { $in: program_ids }
+        })
+        .lean()
+
+        const extra_info_by_program = schedulingExtraInfo.reduce((accum, element) => {
+          if (!accum[element.program]) {
+            element.coverUrl = courseService.coverUrl(element)
+            accum[element.program.toString()] = element
+          }
+          return accum
+        }, {})
+        for await (let register of places) {
+          if (register?.courseScheduling?.program?._id) {
+            if (extra_info_by_program[register?.courseScheduling?.program?._id.toString()]) {
+              register['extra_info'] = extra_info_by_program[register?.courseScheduling?.program?._id.toString()]
+            }
+          }
+        }
+      }
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
           purchasedPlaces: places
@@ -267,6 +320,85 @@ class PurchasedPlaceService {
     } catch (e) {
       console.log(`PurchasedPlaceService -> getPlaces -> ERROR: `, e);
       return responseUtility.buildResponseFailed('json');
+    }
+  }
+
+  public processAssignments = async ({purchasedPlaceId, userData}: IProcessAssignment) => {
+    try {
+      let roles = {};
+      const rolesResponse: any = await roleService.list()
+      if (rolesResponse.status === 'success') {
+        for await (const iterator of rolesResponse.roles) {
+          roles[iterator.name] = iterator._id
+        }
+      }
+      const place = await PurchasedPlace.findOne({ _id: purchasedPlaceId });
+      if (!place) {
+        return responseUtility.buildResponseFailed('json', null, {
+          message: 'Cupo no encontrado'
+        });
+      }
+
+      if (place.status !== PurchasedPlaceStatus.AVAILABLE) {
+        return responseUtility.buildResponseFailed('json', null, {
+          message: 'El cupo no está disponible para asignación'
+        });
+      }
+      let user: IUser;
+      const userExists = await User.findOne({
+        username: userData.docNumber,
+      })
+      if (userExists) {
+        const items: IShoppingCarItem[] = [{...place.metadata.originalItem}]
+        const processType = userData?.forceAssign ? PurchaseProcessType.PURCHASE : PurchaseProcessType.CHECK_CONDITIONS;
+        const buyAction = userData?.forMyself ? BUY_ACTION.FOR_MYSELF : BUY_ACTION.FOR_OTHERS;
+        const validationResult = await enrollmentService.validateItemsForBuyer(items, userExists, processType, buyAction)
+        if (!validationResult.canEnrollment) {
+          return responseUtility.buildResponseSuccess('json', null, {
+            message: 'Verificar compra',
+            additional_parameters: {
+              processPurchase: PROCESS_PURCHASE.VERIFY_PURCHASE,
+              review: validationResult.objectsToBuy
+            }
+          })
+        }
+        user = userExists;
+      } else {
+        const newUserCreated = await userService.insertOrUpdate({
+          username: userData.docNumber,
+          email: userData.email ?? '',
+          password: userData.docNumber,
+          roles: [roles['student']],
+          profile: {
+            doc_type: userData.docType,
+            doc_number: userData.docNumber,
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+          }
+        })
+        if (newUserCreated.status === 'error') {
+          return responseUtility.buildResponseFailed('json', null, {
+            message: 'No pudimos crear el usuario.'
+          });
+        }
+        user = newUserCreated?.user;
+      }
+      await this.enrollAndAssignPlace({buyer: user._id, courseScheduling: place.courseScheduling, _id: place._id});
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Success'
+      })
+    } catch (e) {
+      console.log(`PurchasedPlaceService -> processAssignments -> ERROR: `, e);
+      await customLogService.create({
+        label: 'pps - paa - error',
+        description: 'Error al procesar asignaciones',
+        content: {
+          errorMessage: e.message,
+          purchasedPlaceId
+        }
+      });
+      return responseUtility.buildResponseFailed('json', null, { message: 'Error al procesar la asignación' });
     }
   }
 
@@ -372,7 +504,7 @@ class PurchasedPlaceService {
           placeId: place._id
         }
       });
-      return false;
+      throw error;
     }
   }
 }

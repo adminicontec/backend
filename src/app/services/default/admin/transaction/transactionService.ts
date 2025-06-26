@@ -273,7 +273,7 @@ class TransactionService {
         })
       }
 
-      const result = await transactionService.insertOrUpdate({
+      const result: any = await transactionService.insertOrUpdate({
         id: transaction._id,
         status: params.transaction.status as unknown as TransactionStatus,
         ...(params?.transaction?.transaction_details ? {
@@ -315,10 +315,10 @@ class TransactionService {
       // Determinar el tipo de transacción y procesarla según corresponda
       if (transaction.shoppingCartItems && transaction.shoppingCartItems.length > 0) {
         // Procesar transacción de carrito de compras
-        await this.processShoppingCartTransaction(transaction, params);
+        await this.processShoppingCartTransaction(result.transaction, params);
       } else if (transaction.certificateQueue) {
         // Procesar transacción de certificado (lógica existente)
-        await this.processCertificateTransaction(transaction, params);
+        await this.processCertificateTransaction(result.transaction, params);
       } else {
         // Tipo de transacción desconocido o no especificado
         customLogService.create({

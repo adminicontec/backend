@@ -1549,13 +1549,16 @@ class CourseSchedulingService {
             params: { ...paramsTemplate }
           },
           amount_notifications: (paramsTemplate.amount_notifications) ? paramsTemplate.amount_notifications : null,
-          attachments: paramsTemplate.attachments
+          // attachments: paramsTemplate?.attachments ?? []
         },
         notification_source: paramsTemplate.notification_source
       }
       if (messageAttacheds) {
         if (Array.isArray(messageAttacheds) && messageAttacheds.length > 0) {
           console.log("Add attachments to email")
+          if (!!mailOptions.mailOptions['attachments']) {
+            mailOptions.mailOptions['attachments'] = []
+          }
           mailOptions.mailOptions['attachments'] = messageAttacheds
         }
       }
