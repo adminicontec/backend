@@ -160,7 +160,7 @@ class CourseSchedulingInformationService {
     const moduleType: string[] = ['attendance'];
     const [details, rules ,moduleList, enrollments] = await Promise.all([
       CourseSchedulingDetails.find({course_scheduling: scheduling._id}).populate({path: 'course', select: 'id moodle_id'}).lean() as Promise<ICourseSchedulingDetail[]>,
-      certificateService.rulesForCompletion({ courseID: scheduling.moodle_id, course_scheduling: scheduling._id, without_certification: true }),
+      certificateService.rulesForCompletion({ courseID: scheduling.moodle_id, course_scheduling: scheduling._id, without_certification: false }),
       courseContentService.moduleList({ courseID: scheduling.moodle_id, moduleType: moduleType }),
       Enrollment.find({course_scheduling: scheduling._id}).select('id user').populate({path: 'user', select: 'id moodle_id'}).lean() as Promise<IEnrollment[]>
     ]);

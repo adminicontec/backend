@@ -126,132 +126,303 @@ class GradesService {
    * @param params
    * @returns
    */
+  // public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
+  //   try {
+
+  //     //var select = ['assign', 'quiz', 'forum'];
+  //     var select = params.filter;
+  //     let userGradesData = [];
+
+  //     let courseID;
+  //     let userID
+
+  //     // take any of params as Moodle query filter
+  //     if (params.courseID && params.userID) {
+  //       courseID = params.courseID;
+  //       userID = params.userID;
+  //     }
+  //     else {
+  //       return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
+  //     }
+
+  //     let moodleParams = {
+  //       wstoken: moodle_setup.wstoken,
+  //       wsfunction: moodle_setup.services.completion.gradeReport,
+  //       moodlewsrestformat: moodle_setup.restformat,
+  //       'courseid': courseID,
+  //       'userid': userID,
+  //     };
+
+  //     let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
+
+  //     if (respMoodleEvents.exception) {
+  //       console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
+  //       return responseUtility.buildResponseFailed('json', null,
+  //         {
+  //           error_key: 'grades.moodle_exception',
+  //           additional_parameters: {
+  //             process: moodleParams.wsfunction,
+  //             error: respMoodleEvents
+  //           }
+  //         });
+  //     }
+
+  //     for (const usergrade of respMoodleEvents.usergrades) {
+  //       let itemType = {};
+  //       select.forEach(f => {
+  //         itemType[f] = [];
+  //       })
+
+  //       let userData = {
+  //         userid: usergrade.userid,
+  //         userfullname: usergrade.userfullname
+  //       }
+  //       let singleGrade: ISingleGrade; /* = {
+  //         id: 0,
+  //         idnumber: null, // here contents the "auditor" condition for quiz
+  //         name: '',
+  //         itemtype: '',
+  //         itemmodule: '',
+  //         iteminstance: 0,
+  //         cmid: 0,
+  //         graderaw: 0,
+  //         grademin: 0,
+  //         grademax: 0,
+  //       }*/
+  //       // console.log('+++++++++++++++++++++++++++++++++');
+  //       // console.log(usergrade);
+
+  //       usergrade.gradeitems.forEach(element => {
+  //         const gradeSearch = select.find(field => field == element.itemmodule);
+  //         if (gradeSearch) {
+  //           singleGrade = {
+  //             id: element.id,
+  //             name: element.itemname,
+  //             idnumber: element.idnumber,
+  //             itemtype: element.itemtype,
+  //             itemmodule: element.itemmodule,
+  //             iteminstance: element.iteminstance,
+  //             cmid: element.cmid ? element.cmid : 0,
+  //             graderaw: element.graderaw ? element.graderaw : 0,
+  //             grademin: element.grademin,
+  //             grademax: element.grademax
+  //           };
+  //           // console.log("usergrade ----------------");
+  //           // console.log(singleGrade);
+  //           itemType[element.itemmodule].push(singleGrade);
+  //         }
+  //         // it applies only for finalGrade on Course
+  //         const gradeSearchInType = select.find(field => field == element.itemtype);
+  //         if (gradeSearchInType) {
+  //           singleGrade = {
+  //             id: element.id,
+  //             name: element.itemname,
+  //             idnumber: element.idnumber,
+  //             itemtype: element.itemtype,
+  //             itemmodule: element.itemtype,
+  //             iteminstance: element.iteminstance,
+  //             cmid: element.cmid ? element.cmid : 0,
+  //             graderaw: element.graderaw ? element.graderaw : 0,
+  //             grademin: element.grademin,
+  //             grademax: element.grademax
+  //           };
+  //           // console.log("usergrade ----------------");
+  //           // console.log(singleGrade);
+  //           itemType[element.itemtype].push(singleGrade);
+  //         }
+  //       });
+  //       userGradesData.push(
+  //         { userData, itemType }
+  //       );
+  //     }
+
+  //     return responseUtility.buildResponseSuccess('json', null, {
+  //       additional_parameters: {
+  //         grades: userGradesData
+  //       }
+  //     })
+
+  //   } catch (e) {
+  //     console.log(e.message);
+  //     return responseUtility.buildResponseFailed('json', null,
+  //       {
+  //         error_key: 'grades.exception',
+  //         additional_parameters: {
+  //           process: 'fetchEvents()',
+  //           error: e.message
+  //         }
+  //       });
+  //   }
+  // }
+
   public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
     try {
-      //var select = ['assign', 'quiz', 'forum'];
-      var select = params.filter;
-      let userGradesData = [];
+        console.time('GradesService::fetchGradesByFilter');
 
-      let courseID;
-      let userID
+        const { courseID, userID, userIDs, filter: select } = params;
+        const selectSet = new Set(select);
+        let allUserGradesData = [];
 
-      // take any of params as Moodle query filter
-      if (params.courseID && params.userID) {
-        courseID = params.courseID;
-        userID = params.userID;
-      }
-      else {
-        return responseUtility.buildResponseFailed('json', null, { error_key: { key: 'grades.exception', params: { name: "courseID o userID" } } });
-      }
+        // Si se proporciona un único userID, realizar una sola petición
+        if (userID) {
+          const moodleParams = {
+              wstoken: moodle_setup.wstoken,
+              wsfunction: moodle_setup.services.completion.gradeReport,
+              moodlewsrestformat: moodle_setup.restformat,
+              courseid: courseID,
+              userid: userID,
+          };
 
-      let moodleParams = {
-        wstoken: moodle_setup.wstoken,
-        wsfunction: moodle_setup.services.completion.gradeReport,
-        moodlewsrestformat: moodle_setup.restformat,
-        'courseid': courseID,
-        'userid': userID,
-      };
-
-      let respMoodleEvents = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: moodleParams });
-
-      if (respMoodleEvents.exception) {
-        console.log("Moodle: ERROR." + JSON.stringify(respMoodleEvents));
-        return responseUtility.buildResponseFailed('json', null,
-          {
-            error_key: 'grades.moodle_exception',
-            additional_parameters: {
-              process: moodleParams.wsfunction,
-              error: respMoodleEvents
-            }
+          const respMoodleEvents = await queryUtility.query({
+              method: 'get',
+              url: '',
+              api: 'moodle',
+              params: moodleParams
           });
-      }
 
-      for (const usergrade of respMoodleEvents.usergrades) {
-        let itemType = {};
-        select.forEach(f => {
-          itemType[f] = [];
-        })
+          if (respMoodleEvents.exception) {
+              console.error(`Error for user ${userID}:`, JSON.stringify(respMoodleEvents));
+              return responseUtility.buildResponseFailed('json', null, {
+                  error_key: 'grades.moodle_exception',
+                  additional_parameters: {
+                      process: moodleParams.wsfunction,
+                      error: respMoodleEvents
+                  }
+              });
+          }
 
-        let userData = {
-          userid: usergrade.userid,
-          userfullname: usergrade.userfullname
+          // Manejar el caso cuando userID es '0' o cuando hay múltiples usuarios
+          if (userID === '0' || respMoodleEvents.usergrades.length > 1) {
+            // Procesar todos los usuarios en el resultado
+            allUserGradesData = respMoodleEvents.usergrades
+                .map(usergrade => this.processUserGrades(usergrade, select, selectSet))
+                .filter(result => result !== null);
+          } else {
+              // Procesar un único usuario
+              const processedGrades = this.processUserGrades(respMoodleEvents.usergrades[0], select, selectSet);
+              allUserGradesData = processedGrades ? [processedGrades] : [];
+          }
         }
-        let singleGrade: ISingleGrade; /* = {
-          id: 0,
-          idnumber: null, // here contents the "auditor" condition for quiz
-          name: '',
-          itemtype: '',
-          itemmodule: '',
-          iteminstance: 0,
-          cmid: 0,
-          graderaw: 0,
-          grademin: 0,
-          grademax: 0,
-        }*/
-        // console.log('+++++++++++++++++++++++++++++++++');
-        // console.log(usergrade);
+        // Procesar múltiples usuarios en lotes
+        else if (userIDs && userIDs.length > 0) {
+          const BATCH_SIZE = 20; // Tamaño óptimo del lote
 
-        usergrade.gradeitems.forEach(element => {
-          const gradeSearch = select.find(field => field == element.itemmodule);
-          if (gradeSearch) {
-            singleGrade = {
-              id: element.id,
-              name: element.itemname,
-              idnumber: element.idnumber,
-              itemtype: element.itemtype,
-              itemmodule: element.itemmodule,
-              iteminstance: element.iteminstance,
-              cmid: element.cmid ? element.cmid : 0,
-              graderaw: element.graderaw ? element.graderaw : 0,
-              grademin: element.grademin,
-              grademax: element.grademax
-            };
-            // console.log("usergrade ----------------");
-            // console.log(singleGrade);
-            itemType[element.itemmodule].push(singleGrade);
+          for (let i = 0; i < userIDs.length; i += BATCH_SIZE) {
+              console.time(`Batch ${i/BATCH_SIZE + 1}`);
+              const userBatch = userIDs.slice(i, i + BATCH_SIZE);
+
+              // Procesar lote actual en paralelo
+              const batchPromises = userBatch.map(async (userID) => {
+                  const moodleParams = {
+                      wstoken: moodle_setup.wstoken,
+                      wsfunction: moodle_setup.services.completion.gradeReport,
+                      moodlewsrestformat: moodle_setup.restformat,
+                      courseid: courseID,
+                      userid: userID,
+                  };
+
+                  try {
+                      const respMoodleEvents = await queryUtility.query({
+                          method: 'get',
+                          url: '',
+                          api: 'moodle',
+                          params: moodleParams
+                      });
+
+                      if (respMoodleEvents.exception) {
+                          console.error(`Error for user ${userID}:`, JSON.stringify(respMoodleEvents));
+                          return null;
+                      }
+
+                      return this.processUserGrades(respMoodleEvents.usergrades[0], select, selectSet);
+                  } catch (error) {
+                      console.error(`Error processing user ${userID}:`, error);
+                      return null;
+                  }
+              });
+
+              // Esperar a que se complete el lote actual
+              const batchResults = await Promise.all(batchPromises);
+
+              // Filtrar resultados nulos y agregar al resultado final
+              allUserGradesData = allUserGradesData.concat(batchResults.filter(result => result !== null));
+
+              console.timeEnd(`Batch ${i/BATCH_SIZE + 1}`);
+
+              // Pequeña pausa entre lotes para evitar sobrecarga
+              if (i + BATCH_SIZE < userIDs.length) {
+                  await new Promise(resolve => setTimeout(resolve, 500));
+              }
           }
-          // it applies only for finalGrade on Course
-          const gradeSearchInType = select.find(field => field == element.itemtype);
-          if (gradeSearchInType) {
-            singleGrade = {
-              id: element.id,
-              name: element.itemname,
-              idnumber: element.idnumber,
-              itemtype: element.itemtype,
-              itemmodule: element.itemtype,
-              iteminstance: element.iteminstance,
-              cmid: element.cmid ? element.cmid : 0,
-              graderaw: element.graderaw ? element.graderaw : 0,
-              grademin: element.grademin,
-              grademax: element.grademax
-            };
-            // console.log("usergrade ----------------");
-            // console.log(singleGrade);
-            itemType[element.itemtype].push(singleGrade);
-          }
+        } else {
+          return responseUtility.buildResponseFailed('json', null, {
+              error_key: {
+                  key: 'grades.exception',
+                  params: { name: "Se requiere userID o userIDs" }
+              }
+          });
+        }
+
+        console.timeEnd('GradesService::fetchGradesByFilter');
+        return responseUtility.buildResponseSuccess('json', null, {
+            additional_parameters: {
+                grades: allUserGradesData
+            }
         });
-        userGradesData.push(
-          { userData, itemType }
-        );
-      }
 
-      return responseUtility.buildResponseSuccess('json', null, {
-        additional_parameters: {
-          grades: userGradesData
-        }
-      })
-
-    } catch (e) {
-      console.log(e.message);
-      return responseUtility.buildResponseFailed('json', null,
-        {
-          error_key: 'grades.exception',
-          additional_parameters: {
-            process: 'fetchEvents()',
-            error: e.message
-          }
+    } catch (error) {
+        console.error('Error in fetchGradesByFilter:', error);
+        return responseUtility.buildResponseFailed('json', null, {
+            error_key: 'grades.exception',
+            additional_parameters: {
+                process: 'fetchGradesByFilter()',
+                error: error.message
+            }
         });
     }
+  }
+
+  // Método auxiliar para procesar las calificaciones de un usuario
+  private processUserGrades(usergrade: any, select: string[], selectSet: Set<string>) {
+    if (!usergrade) return null;
+
+    // Inicializar estructura de itemType
+    const itemType = Object.fromEntries(select.map(f => [f, []]));
+
+    // Procesar items de calificación
+    for (const element of usergrade.gradeitems) {
+        const { itemmodule, itemtype } = element;
+
+        if (selectSet.has(itemmodule)) {
+            itemType[itemmodule].push(this.createGradeObject(element));
+        } else if (selectSet.has(itemtype)) {
+            itemType[itemtype].push(this.createGradeObject(element, true));
+        }
+    }
+
+    return {
+        userData: {
+            userid: usergrade.userid,
+            userfullname: usergrade.userfullname
+        },
+        itemType
+    };
+  }
+
+  // Método auxiliar para crear objeto de calificación
+  private createGradeObject(element: any, useItemType: boolean = false): ISingleGrade {
+      return {
+          id: element.id,
+          name: element.itemname,
+          idnumber: element.idnumber,
+          itemtype: element.itemtype,
+          itemmodule: useItemType ? element.itemtype : element.itemmodule,
+          iteminstance: element.iteminstance,
+          cmid: element.cmid || 0,
+          graderaw: element.graderaw || 0,
+          grademin: element.grademin,
+          grademax: element.grademax
+      };
   }
 
   public fetchFinalGrades = async (params: IMoodleGradesQuery) => {

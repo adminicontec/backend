@@ -424,6 +424,90 @@ class CompletionstatusService {
     return label;
   }
 
+
+/**
+ * Método que obtiene el estado de completado de actividades para múltiples usuarios en un solo curso
+ * Optimiza el rendimiento al hacer una sola llamada en lugar de múltiples llamadas individuales
+ * @param params Objeto con courseID y array de userIDs
+ * @returns Estado de completado para todos los usuarios solicitados
+ */
+public activitiesCompletionBatch = async (params: { courseID: string, userIDs: string[] }) => {
+  try {
+    // Validar que haya IDs de usuario para procesar
+    if (!params.userIDs || params.userIDs.length === 0) {
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          completions: []
+        }
+      });
+    }
+
+    // Preparar array para almacenar todos los resultados
+    const completionResults = [];
+
+    // Procesar en lotes de 50 usuarios para evitar sobrecarga
+    const batchSize = 50;
+    const batches = [];
+
+    // Dividir los userIDs en lotes
+    for (let i = 0; i < params.userIDs.length; i += batchSize) {
+      batches.push(params.userIDs.slice(i, i + batchSize));
+    }
+
+    // Procesar cada lote
+    for (const batch of batches) {
+      const batchPromises = batch.map(async (userID) => {
+        const moodleParamsActivitiesCompletion = {
+          wstoken: moodle_setup.wstoken,
+          wsfunction: moodle_setup.services.completion.getActivitiesStatus,
+          moodlewsrestformat: moodle_setup.restformat,
+          'courseid': params.courseID,
+          'userid': userID
+        };
+
+        const respActivitiesCompletion = await queryUtility.query({
+          method: 'get',
+          url: '',
+          api: 'moodle',
+          params: moodleParamsActivitiesCompletion
+        });
+
+        if (respActivitiesCompletion.exception) {
+          console.log(`Error fetching completion for user ${userID}: ${JSON.stringify(respActivitiesCompletion)}`);
+          return {
+            userId: userID,
+            activities: []
+          };
+        }
+
+        return {
+          userId: userID,
+          activities: respActivitiesCompletion.statuses || []
+        };
+      });
+
+      // Esperar a que todas las promesas del lote se resuelvan
+      const batchResults = await Promise.all(batchPromises);
+      completionResults.push(...batchResults);
+    }
+
+    return responseUtility.buildResponseSuccess('json', null, {
+      additional_parameters: {
+        completions: completionResults
+      }
+    });
+  } catch (e) {
+    console.log(e.message);
+    return responseUtility.buildResponseFailed('json', null, {
+      error_key: 'completion.exception',
+      additional_parameters: {
+        process: 'activitiesCompletionBatch()',
+        error: e.message
+      }
+    });
+  }
+}
+
 }
 
 export const completionstatusService = new CompletionstatusService();

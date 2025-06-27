@@ -68,7 +68,7 @@ class UserDataService {
         ]
       })
       .select('id userId courseId certificate status needPayment')
-      .populate({path: 'courseId', select: 'id program certificate_students certificatePriceCOP', populate: [{
+      .populate({path: 'courseId', select: 'id program metadata certificate_students certificatePriceCOP', populate: [{
         path: 'program', select: 'id name'
       }]})
       .populate({ path: 'certificateSetting', select: '_id certificateName certificationType' });
@@ -93,10 +93,10 @@ class UserDataService {
             url: element?.certificate?.url,
             status: element?.status,
             imagePath: element?.certificate?.imagePath ? certificateService.certificateUrl(element?.certificate.imagePath) : null,
-            pdfPath: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate) : null,
+            pdfPath: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate, element?.courseId?.metadata?.service_id) : null,
             certificateSetting: element?.certificateSetting,
             certificate: element?.certificate,
-            urlDownload: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate) : null,
+            urlDownload: element?.certificate?.hash ? certificateService.certificateUrlV2(element?.certificate, element?.courseId?.metadata?.service_id) : null,
             urlCredencial: element?.certificate?.urlCredencial || null,
             needPayment: element?.needPayment,
             ...(certificatePrice ? {

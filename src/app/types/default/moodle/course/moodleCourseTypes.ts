@@ -62,13 +62,13 @@ export interface IMoodleForumDiscussion{
 
 export interface IMoodleCheckCourseHasAuditorExam {
   programMoodleId: string; // MoodleID de el CourseScheduling
-  sectionMoodleId?: string; // MoodleId de el CourseSchedulingDetails::course -> CourseSchedulingSection
+  sectionMoodleIds?: string[]; // MoodleId de el CourseSchedulingDetails::course -> CourseSchedulingSection
 }
 
 export interface IMoodleCheckCourseHasAuditorExamResponse {
-  hasExam: boolean,
-  exam?: {
-    sectionId: number;
-  }
+  sections: Array<{
+    sectionId: string;
+    hasExam: boolean;
+  }>;
 }
 //@end

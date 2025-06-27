@@ -347,7 +347,7 @@ class EnrolledCourseService {
         if (register.created_at) register.date = moment.utc(register.created_at).format('YYYY-MM-DD')
 
         if (register?.certificate?.hash) {
-          register.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate)
+          register.certificate.pdfPath = certificateService.certificateUrlV2(register.certificate, register?.courseId?.metadata?.service_id)
         }
         if (register?.certificate?.imagePath) {
           register.certificate.imagePath = certificateService.certificateUrl(register.certificate.imagePath)
@@ -404,7 +404,7 @@ class EnrolledCourseService {
         _id: { $in: params.certification_queue }
       }).populate({path: 'userId', select: 'profile.first_name profile.last_name'})
 
-      const responsePromise: {fileName: string, buffer: Buffer}[] = await Promise.all(certifications.map((c) => certificateService.fetchCertification(c)))
+      const responsePromise: {fileName: string, buffer: Buffer}[] = await Promise.all(certifications.map((c) => certificateService.fetchCertification(c, params.serviceId)))
 
       const time = new Date().getTime()
 

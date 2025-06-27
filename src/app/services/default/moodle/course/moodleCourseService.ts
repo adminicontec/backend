@@ -282,38 +282,75 @@ class MoodleCourseService {
 
   public checkCourseHasAuditorExam = async (params: IMoodleCheckCourseHasAuditorExam) => {
     try {
-      const { sectionMoodleId, programMoodleId } = params
+      const { sectionMoodleIds, programMoodleId } = params
       const moduleType: string[] = ['quiz'];
-      const exams: any = await courseContentService.moduleList({ courseID: programMoodleId, moduleType  });
+      const exams: any = await courseContentService.moduleList({ courseID: programMoodleId, moduleType });
       const response: IMoodleCheckCourseHasAuditorExamResponse = {
-        hasExam: false
+        sections: [] // Array para almacenar el estado de cada sección
       }
-      if (exams && exams.courseModules && exams.courseModules.length) {
-        const auditorQuizModules = exams.courseModules.filter(field => field.isauditorquiz)
-        if (auditorQuizModules?.length) {
-          if (sectionMoodleId) {
-            const matchModule = auditorQuizModules.find(module => module?.sectionid?.toString() === sectionMoodleId.toString())
-            if (!!matchModule) {
-              response.hasExam = true;
-              response.exam = {
-                sectionId: matchModule?.sectionid
-              }
-            }
-          } else {
-            response.hasExam = true;
-            response.exam = {
-              sectionId: auditorQuizModules[0]?.sectionid
-            }
-          }
+
+      if (exams?.courseModules?.length) {
+        const auditorQuizModules = exams.courseModules.filter(field => field.isauditorquiz);
+
+        if (sectionMoodleIds?.length) {
+          // Procesar cada sectionId proporcionado
+          response.sections = sectionMoodleIds.map(sectionId => {
+            const hasExam = auditorQuizModules.some(
+              module => module.sectionid.toString() === sectionId.toString()
+            );
+
+            return {
+              sectionId,
+              hasExam
+            };
+          });
         }
       }
-      return responseUtility.buildResponseSuccess('json', null, { additional_parameters: {
-        ...response
-      }})
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          ...response
+        }
+      });
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
   }
+
+  // public checkCourseHasAuditorExam = async (params: IMoodleCheckCourseHasAuditorExam) => {
+  //   try {
+  //     const { sectionMoodleId, programMoodleId } = params
+  //     const moduleType: string[] = ['quiz'];
+  //     const exams: any = await courseContentService.moduleList({ courseID: programMoodleId, moduleType  });
+  //     const response: IMoodleCheckCourseHasAuditorExamResponse = {
+  //       hasExam: false
+  //     }
+  //     if (exams && exams.courseModules && exams.courseModules.length) {
+  //       const auditorQuizModules = exams.courseModules.filter(field => field.isauditorquiz)
+  //       if (auditorQuizModules?.length) {
+  //         if (sectionMoodleId) {
+  //           const matchModule = auditorQuizModules.find(module => module?.sectionid?.toString() === sectionMoodleId.toString())
+  //           if (!!matchModule) {
+  //             response.hasExam = true;
+  //             response.exam = {
+  //               sectionId: matchModule?.sectionid
+  //             }
+  //           }
+  //         } else {
+  //           response.hasExam = true;
+  //           response.exam = {
+  //             sectionId: auditorQuizModules[0]?.sectionid
+  //           }
+  //         }
+  //       }
+  //     }
+  //     return responseUtility.buildResponseSuccess('json', null, { additional_parameters: {
+  //       ...response
+  //     }})
+  //   } catch (err) {
+  //     return responseUtility.buildResponseFailed('json')
+  //   }
+  // }
 
 }
 

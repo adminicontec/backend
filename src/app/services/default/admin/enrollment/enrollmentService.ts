@@ -148,7 +148,7 @@ class EnrollmentService {
 
             for (let itemCertificate of certificates) {
               if (itemCertificate.certificate.hash) {
-                itemCertificate.certificate.pdfPath = certificateService.certificateUrlV2(itemCertificate.certificate)
+                itemCertificate.certificate.pdfPath = certificateService.certificateUrlV2(itemCertificate.certificate, register?.course_scheduling?.metadata?.service_id)
               }
               // if (itemCertificate.certificate.pdfPath) {
               //   itemCertificate.certificate.pdfPath = certificateService.certificateUrl(itemCertificate.certificate.pdfPath)
