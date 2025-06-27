@@ -19,6 +19,7 @@ export interface IQuestionAnswer {
   value?: number, // Valor de la opción de respuesta. Utilizado al momento de calificar
   is_correct?: boolean // Representación de la respuesta con respecto a la pregunta
   config?: any // Objeto con la configuración segun cada tipo de pregunta/respuesta
+  _id?: string
 }
 
 export interface IQuestion {

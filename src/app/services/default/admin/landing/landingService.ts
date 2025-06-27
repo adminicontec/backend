@@ -41,7 +41,9 @@ import {
   IAllianceBrochure,
   IAllianceBrochureCreate,
   ILandingTutorial,
-  ILandingTutorialDelete
+  ILandingTutorialDelete,
+  ILandingTermsAndConditions,
+  ILandingTermsAndConditionsItem
 } from '@scnode_app/types/default/admin/landing/landingTypes'
 // @end
 
@@ -242,6 +244,25 @@ class LandingService {
           // ...article,
           ...params
         }
+      })
+    } catch (e) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  /**
+   * Metodo que permite insertar/actualizar un articulo dentro de un landing
+   * @param params
+   * @returns
+   */
+  public insertOrUpdateTermsAndConditions = async (params: ILandingTermsAndConditions) => {
+    try {
+      if (typeof params.termsAndConditions === 'string') {
+        params.termsAndConditions = JSON.parse(params.termsAndConditions)
+      }
+      return await this.insertOrUpdate({
+        slug: params.slug,
+        termsAndConditions: params.termsAndConditions as ILandingTermsAndConditionsItem,
       })
     } catch (e) {
       return responseUtility.buildResponseFailed('json')

@@ -1,7 +1,17 @@
 // @import types
 // @end
 
+import { EfipayCurrency } from "@scnode_app/types/default/efipay/efipayTypes";
+
 // @add your types
+export enum CertificateQueueStatus {
+  NEW = 'New',
+  IN_PROCESS = 'In-process',
+  REQUESTED = 'Requested',
+  COMPLETE = 'Complete',
+  ERROR = 'Error',
+  RE_ISSUE = 'Re-issue'
+}
 
 export interface IQueryCertificate {
   name: string, // Nombre de la categoria
@@ -157,6 +167,8 @@ export interface ICertificateReGenerate {
   status?: string
   auxiliar?: string;
   isMultiple?: boolean;
+  currentAttempt?: number
+  shouldAwait?: boolean
 }
 
 export interface IGenerateCertificatePdf {
@@ -212,5 +224,41 @@ export interface IProcessCertificateQueue {
   status?: string,
   output?: 'process' | 'query'
   force?: boolean
+}
+
+export interface ICertificatePaymentParams {
+  certificateQueueId: string
+  currencyType: EfipayCurrency
+  certificateInfo: {
+    fullName: string
+    docNumber: string
+    nature: string
+    classification: string
+    country: string
+    department: string
+    city: string
+  }
+  paymentInfo: {
+    email: string
+    phoneNumber: string
+  }
+}
+
+export interface ISendAdminErrorCertificateParams {
+  errorMessage: string
+  queryErrorMessage: string
+  certificateQueueId: string
+  courseName: string
+  studentName: string
+  docNumber: string
+}
+
+export interface ISendErrorCertificateParams {
+  users: {
+    name: string
+    email: string
+  }[]
+  certificateQueueId: string
+  courseName: string
 }
 //@end

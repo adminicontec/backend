@@ -2,7 +2,7 @@
 // @end
 
 // @add your types
-export type TypeFormatsAttachedCategory = 'xlsx' | 'png' | 'jpg' | 'gif' | 'pdf' | 'ppt' | 'docx';
+export type TypeFormatsAttachedCategory = 'xlsx' | 'png' | 'jpg' | 'gif' | 'pdf' | 'ppt' | 'docx' | 'zip';
 
 export interface IAttachedCategory{
   _id?: string;

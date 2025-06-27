@@ -1,4 +1,6 @@
 // @import_models
+import { TransactionModel } from "@scnode_app/models/transactionModel";
+import { CertificateCriteriaByModalityModel } from "@scnode_app/models/certificateCriteriaByModalityModel";
 import { EnrollmentTrackingModel } from "@scnode_app/models/enrollmentTrackingModel";
 import { CustomLogModel } from "@scnode_app/models/customLogModel";
 import { CertificateSettingsModel } from "@scnode_app/models/certificateSettingsModel";
@@ -61,9 +63,12 @@ import { PostTypeModel } from "@scnode_app/models/postTypeModel";
 import { PostModel } from "@scnode_app/models/postModel";
 import { CountryModel } from "@scnode_app/models/countryModel";
 import { UserModel } from "@scnode_app/models/userModel";
+import { PurchasedPlaceModel } from "@scnode_app/models/purchasedPlaceModel";
 // @end
 
 // @export_models
+export const Transaction = TransactionModel
+export const CertificateCriteriaByModality = CertificateCriteriaByModalityModel
 export const EnrollmentTracking = EnrollmentTrackingModel
 export const CustomLog = CustomLogModel
 export const CertificateSettings = CertificateSettingsModel
@@ -126,6 +131,7 @@ export const PostType = PostTypeModel
 export const Post = PostModel
 export const Country = CountryModel
 export const User = UserModel
+export const PurchasedPlace = PurchasedPlaceModel
 // @end
 
 export const model_example = "ModelExample";

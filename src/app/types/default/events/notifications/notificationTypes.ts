@@ -29,6 +29,29 @@ export interface ISendNotificationAssistantCertificateGeneration {
   certifications: IParticipantData[]
 }
 
+export interface ISendNotification2FA {
+  user: {
+    _id: string;
+    firstName: string;
+    email: string;
+  },
+  duration: number,
+  token: string;
+}
+
+
+export interface ISendNotificationConfirmEmail {
+  user: {
+    _id: string;
+    firstName: string;
+    email: string;
+    username: string;
+  },
+  duration: number,
+  token: string;
+  redirect?: string
+}
+
 export interface ISendNotificationEnrollmentTrackingEmailData {
   studentName: string;
   error: string;
@@ -40,6 +63,7 @@ export interface ISendNotificationEnrollmentTrackingEmailData {
   origin: string;
   mailer?: any
 }
+
 export interface ISendNotificationEnrollmentTracking {
   recipients: string[],
   recipientsCC?: string[],

@@ -55,6 +55,8 @@ export const campus_setup: any = (env.hasOwnProperty('campus_setup')) ? env['cam
 export const google_services = (env.hasOwnProperty('google_services')) ? env['google_services'] : {};
 export const certificate_setup: any = (env.hasOwnProperty('certificate_setup')) ? env['certificate_setup'] : {};
 export const system_user: any = (env.hasOwnProperty('system_user')) ? env['system_user'] : {};
+export const efipaySetup: { token?: string, office_number?: number, commerce_id?: number, webhook_token?: string, payment_limit_minutes?: number } = (env.hasOwnProperty('efipay_setup')) ? env['efipay_setup'] : {};
+export const erpSetup: { username?: string, password?: string } = (env.hasOwnProperty('erp_setup')) ? env['erp_setup'] : {};
 
 // @end
 

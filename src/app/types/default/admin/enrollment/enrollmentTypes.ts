@@ -1,8 +1,20 @@
 import { TimeZone } from '@scnode_app/types/default/admin/user/userTypes';
+import { EfipayCurrency } from '../../efipay/efipayTypes';
 // @import types
 // @end
 
 // @add your types
+export enum EnrollmentOrigin {
+  AUTOREGISTRO='autoregistro'
+}
+
+export enum EnrollmentStatus {
+  REGISTERED = 'registered',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  CERTIFIED = 'certified',
+}
+
 export interface IAddCourseSchedulingEnrollment {
   enrollmentIds: string[]
   force?: boolean
@@ -35,6 +47,9 @@ export interface IEnrollment{
   enrollmentCode?: number,
   id?: string             // Identificador del Enrollment
   timezone?: TimeZone
+  created_at?: string
+  updated_at?: string
+  trackingEnrollment?: boolean
 }
 
 export interface IEnrollmentQuery {
@@ -84,5 +99,94 @@ export interface ILogEnrollment {
   status: 'ERROR' | 'OK'
   message?: string
   row: number
+}
+
+export interface IGetCurrentEnrollmentStatusParams {
+  enrollmentId: string
+}
+
+export enum PurchaseProcessType {
+  PURCHASE = "purchase",
+  CHECK_CONDITIONS = "check_conditions",
+}
+
+export interface IBuyCoursesByShoppingCart {
+  buyerId: string,
+  itemsToBuy: IShoppingCarItem[],
+  processType: PurchaseProcessType,
+  buyAction: BUY_ACTION
+  billingInfo?: IBillingInfo
+}
+
+export interface IBillingInfo {
+  fullName: string,
+  firstName: string,
+  lastName: string,
+  docNumber: string,
+  docType: string,
+  nature: string,
+  classification: string,
+  country: string,
+  department: string,
+  city: string,
+  currency: EfipayCurrency,
+  address1?: string,
+  address2?: string,
+  email?: string,
+  phone?: string
+}
+
+
+// Add a new interface for the transaction creation
+export interface ICreateShoppingCartTransaction {
+  buyerId: string,
+  items: IShoppingCarItem[],
+  billingInfo: IBillingInfo;
+}
+
+
+export enum BUY_ACTION {
+  FOR_MYSELF = "for_myself",
+  FOR_OTHERS = "for_others",
+  FOR_ME_AND_OTHERS = 'for_me_and_others'
+};
+
+export interface IShoppingCarItem {
+  identifier: string,
+  programCode: string,
+  externalId: string,
+  description: string,
+  image: string,
+  price: string,
+  priceNumeric: number,
+  startDate: string,
+  modality: string,
+  priceWithDiscount: string,
+  priceWithDiscountNumeric: number,
+  numberOfPlaces: number,
+  dateOfAddition: number,
+  buyAction: BUY_ACTION
+}
+
+export enum PROCESS_ITEM_PURCHASE {
+  WARNING = 'warning',
+  RESTRICTED = 'restricted',
+  AVAILABLE = 'available',
+}
+
+export enum PROCESS_PURCHASE {
+  VERIFY_PURCHASE = 'verify_purchase',
+  REDIRECT = 'redirect'
+}
+
+export type ObjectsToBuy = Record<string, IObjectToBuy>;
+
+export interface IObjectToBuy {
+  processPurchase: PROCESS_ITEM_PURCHASE
+  reason: string,
+  programCode: string,
+  programName: string,
+  externalId: string,
+  identifier: string
 }
 //@end

@@ -24,8 +24,14 @@ enum Notification {
   ENROLLMENT_USER = 'user/enrollmentUser',
   ENROLLMENT_USER_QUICK_LEARNING = 'user/enrollmentUserQuickLearning',
   WELCOME_PLATFORM = 'user/welcomeUser',
-  EXAM_TO_PARTICIPANT = 'course/schedulingExamToParticipant'
+  EXAM_TO_PARTICIPANT = 'course/schedulingExamToParticipant',
+  TRANSACTION_CREATED = 'payment/transactionCreated',
+  TRANSACTION_STATUS = 'payment/transactionStatus',
+  CERTIFICATE_ERROR = 'certificate/errorGeneration',
+  ADMIN_CERTIFICATE_ERROR = 'certificate/adminErrorGeneration',
 }
+
+//campus_virtual_icontec --program task --task test-notifications
 
 const SUBJECTS = {
   [Notification.WELCOME_PLATFORM]: '¡Bienvenid@ al Campus Digital Icontec!',
@@ -49,12 +55,14 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
     // @task_logic Add task logic
     // @end
     await this.executeNotification({
-      template: Notification.ENROLLMENT_USER,
+      template: Notification.ADMIN_CERTIFICATE_ERROR,
       withRealSubject: true
     })
 
     return true; // Always return true | false
   }
+
+
 
   private executeNotification = async ({
     template,
@@ -81,6 +89,7 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
     return {
       mailer: customs['mailer'],
       studentName: 'Demo Test',
+      adminName: 'Demo Test',
       courseName: 'Course name test',
       first_name: 'Demo',
       last_name: 'Test',
@@ -98,6 +107,8 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
       goToCertifications: 'https://campus.icontecvirtual.edu.co',
       serviceValidity:'20 días',
       footerText: 'pilla',
+      paymentUrl: 'https://google.com',
+      certificateName: 'Certificate test 1',
       certifications: [
         {
           certificateName: 'Certificate test 1'
@@ -111,8 +122,12 @@ class TestNotificationsProgram extends DefaultPluginsTaskTaskService {
         moduleName: 'Módulo prueba',
         endDate: 'YYYY-MM-DD 23:59:59',
         serviceId: '5TR202404164587',
-
-      }
+      },
+      status: 'Aceptada',
+      statusText: '¡Gracias! Tu pago ha sido procesado correctamente.',
+      errorMessage: 'Ha ocurrido un error.',
+      queryErrorMessage: 'Esta es una prueba de error',
+      docNumber: '123456789',
     }
   }
 

@@ -16,7 +16,9 @@ const AcademicResourceConfigCategorySchema = new Schema({
   },
   config: {
     has_order_of_questions: { type: Schema.Types.Boolean },
-    has_course_modes: {type: Schema.Types.Boolean}
+    has_course_modes: {type: Schema.Types.Boolean},
+    has_is_characterization_survey: {type: Schema.Types.Boolean},
+    has_course_type: {type: Schema.Types.Boolean},
   }
   // @end
 }, {

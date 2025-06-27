@@ -58,6 +58,7 @@ export interface IReportPage {
   city: string,
   schedulingType: string,
   regional: string,
+  typeCourse?: string,
 }
 
 export interface IReportCourseTeacher {
@@ -106,7 +107,7 @@ class ReportByProvisionOfProfessionalsService {
       }
 
       const courseSchedulings = await CourseScheduling.find(where)
-      .select('id metadata schedulingStatus schedulingType schedulingMode modular program client city regional account_executive startDate endDate duration')
+      .select('id metadata schedulingStatus schedulingType schedulingMode modular program client city regional account_executive startDate endDate duration typeCourse')
       .populate({path: 'schedulingStatus', select: 'id name'})
       .populate({path: 'schedulingMode', select: 'id name'})
       .populate({path: 'modular', select: 'id name'})

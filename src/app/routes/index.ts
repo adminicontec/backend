@@ -1,4 +1,7 @@
 // @import_routes
+import { erpRoute } from "@scnode_app/routes/default/erp/erpRoute";
+import { transactionRoute } from "@scnode_app/routes/default/admin/transaction/transactionRoute";
+import { certificateCriteriaByModalityRoute } from "@scnode_app/routes/default/admin/certificate/certificateCriteriaByModalityRoute";
 import { contactRoute } from "@scnode_app/routes/default/data/contact/contactRoute";
 import { customLogRoute } from "@scnode_app/routes/default/admin/customLog/customLogRoute";
 import { certificateMultipleRoute } from "@scnode_app/routes/default/admin/certificate/certificateMultipleRoute";
@@ -81,11 +84,15 @@ import { postRoute } from "@scnode_app/routes/default/admin/post/postRoute";
 import { postTypeRoute } from "@scnode_app/routes/default/admin/post/postTypeRoute";
 import { postLocationRoute } from "@scnode_app/routes/default/admin/post/postLocationRoute";
 import { postCategoryRoute } from "@scnode_app/routes/default/admin/post/postCategoryRoute";
+import { purchasedPlaceRoute } from "@scnode_app/routes/default/admin/purchasedPlace/purchasedPlaceRoute";
 // @end
 
 // @export_routes
 export const routes = {
   // @add_routes_object
+    erpRoute,
+    transactionRoute,
+    certificateCriteriaByModalityRoute,
     contactRoute,
     customLogRoute,
     certificateMultipleRoute,
@@ -168,6 +175,7 @@ export const routes = {
     postTypeRoute,
     postLocationRoute,
     postCategoryRoute,
+    purchasedPlaceRoute,
 	// @end
 }
 // @end

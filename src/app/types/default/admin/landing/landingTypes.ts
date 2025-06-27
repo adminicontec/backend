@@ -13,6 +13,18 @@ export interface ILandingArticle {
   content: any
 }
 
+export interface ILandingTermsAndConditions {
+  slug?: string
+  termsAndConditions: ILandingTermsAndConditionsItem | string
+}
+
+export interface ILandingTermsAndConditionsItem {
+  payment: {
+    title: string,
+    content: any
+  }
+}
+
 export type TypeAgreement = 'alliance' | 'agreement'
 export interface IAllianceBrochure {
   unique: string,
@@ -146,6 +158,7 @@ export interface ILanding {
   id?: string // Identificador de la categoria
   forums?: ILandingForum
   tutorials?: Array<ILandingTutorial>
+  termsAndConditions?: ILandingTermsAndConditionsItem
 }
 
 export interface ILandingDelete {

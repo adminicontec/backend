@@ -1,0 +1,62 @@
+{{> partials/page/title title='Inicio del curso/programa/diplomado'}}
+{{> partials/page/image image=params.mailer.mailer_image}}
+<tr>
+  <td valign="top" class="container">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="min-width:100%;">
+      <tbody>
+        <tr>
+          <td valign="top" style="padding-top:9px;">
+            <table align="left" border="0" cellpadding="0" cellspacing="0" style="max-width:100%; min-width:100%;" width="100%" class="mcnTextContentContainer">
+
+              <tbody>
+                <tr>
+                  <td valign="top" class="mcnTextContent" style="padding-top:10px; padding-right:18px; padding-bottom:9px; padding-left:18px;">
+                    <p>¡Hola! {{params.first_name}}</p>
+                    <p>Nos complace darte la bienvenida al {{params.course_name}}.</p>
+                    <p>Estamos muy contentos de que formes parte de este grupo de estudiantes que se embarcan en este viaje de aprendizaje y crecimiento personal.</p>
+                    <p>La identificación (ID) del grupo al que haces parte es {{params.service_id}}.</p>
+
+                    <p><strong>¿Estás listo para empezar?</strong></p>
+                    <p>El curso comenzará el {{params.course_start}} y terminará el {{params.course_end}}. Te invitamos a que revises el calendario académico y la información adicional que encontrarás en tu cuenta del <a href="{{params.mailer.campus_virtual}}/login">Campus Digital</a> de ICONTEC.</p>
+                    <p><strong>Estos son los pasos para acceder a tu cuenta de estudiante al curso:</strong></p>
+                    <ol>
+                      <li>Accede al campus virtual haciendo clic <a href="{{params.mailer.campus_virtual}}">aquí.</a></li>
+                      <li>Inicia sesión haciendo clic en el botón ubicado en la parte superior derecha e introduce tu usuario y contraseña. Puedes encontrar esta información en el correo de bienvenida al Campus que recibiste.</li>
+                      <li>Una vez dentro de tu cuenta de estudiante, busca el curso en la lista de cursos activos.</li>
+                    </ol>
+                    <p><strong>¿Cómo puedes acceder a las normas ICONTEC, asociados a tu curso?</strong></p>
+                    <p>¡Es muy sencillo!</p>
+                    <p>Una vez que ingreses al aula virtual, podrás obtenerlas en formato digital E-book. De esta forma, podrás consultarlas incluso sin tener acceso a internet.</p>
+                    <p><strong>¿Cómo puedes obtener las normas? </strong></p>
+                    <p>Sigue estos sencillos pasos:</p>
+                    <ol>
+                      <li>Ingresa al aula virtual.</li>
+                      <li>Haz clic en el curso que tiene asociada la norma.</li>
+                      <li>Busca la sección "Biblioteca".</li>
+                      <li>Haz clic en el botón "Descargar".</li>
+                      <li>Instala el software IPC Reader.</li>
+                      <li>Descarga el archivo *.ipef.</li>
+                      <li>Abre el archivo *.ipef y automáticamente quedará en tu biblioteca del IPC Reader.</li>
+                    </ol>
+                    <p>¡Y listo! Ahora podrás acceder a las normas de ICONTEC.</p>
+                    <p style="text-align: center;"><strong>¿Necesitas ayuda?</strong></p>
+                    <p>Si tienes cualquier problema para ingresar al curso o descargar las normas, contáctate con nuestra mesa de ayuda.</p>
+                    <p><strong>¿Cómo contactarnos? Tienes dos opciones:</strong></p>
+                    <ol>
+                      <li><strong>Registrando un nuevo ticket en la mesa de ayuda.</strong>
+                        <br>Para registrar un ticket, haz clic en el siguiente enlace: <a href="{{params.mailer.help_desk}}">{{params.mailer.help_desk}}.</a>
+                      </li>
+                      <li><strong>A través del asistente virtual del Campus Digital, "Daniela" en el chat, "No puedes ingresa al curso". </strong></li>
+                    </ol>
+                    <p>¡No dudes en contactarnos!</p>
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>

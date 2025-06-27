@@ -1,5 +1,6 @@
 // @import_dependencies_node Import libraries
 import moment from 'moment';
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -17,7 +18,7 @@ import { moodleEnrollmentService } from '@scnode_app/services/default/moodle/enr
 // @end
 
 // @import config
-import { customs } from '@scnode_core/config/globals'
+import { customs, efipaySetup, host } from '@scnode_core/config/globals'
 // @end
 
 // @import utilities
@@ -30,20 +31,29 @@ import { eventEmitterUtility } from "@scnode_core/utilities/eventEmitterUtility"
 // @end
 
 // @import models
-import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue, Program } from '@scnode_app/models'
+import { Enrollment, CourseSchedulingDetails, User, CourseScheduling, MailMessageLog, CertificateQueue, Program, CertificateSettings } from '@scnode_app/models'
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
+import { IEnrollment, IEnrollmentQuery, IMassiveEnrollment, IEnrollmentDelete, IEnrollmentFindStudents, IAddCourseSchedulingEnrollment, IGetCurrentEnrollmentStatusParams, EnrollmentStatus, IBuyCoursesByShoppingCart, PROCESS_PURCHASE, ObjectsToBuy, BUY_ACTION, IShoppingCarItem, ICreateShoppingCartTransaction, PROCESS_ITEM_PURCHASE, PurchaseProcessType } from '@scnode_app/types/default/admin/enrollment/enrollmentTypes'
 import { IUser, TIME_ZONES } from '@scnode_app/types/default/admin/user/userTypes'
 import { IMoodleUser } from '@scnode_app/types/default/moodle/user/moodleUserTypes'
 import { generalUtility } from '@scnode_core/utilities/generalUtility';
 import { IFileProcessResult } from '@scnode_app/types/default/admin/fileProcessResult/fileProcessResultTypes'
+import { gradesService } from '@scnode_app/services/default/moodle/grades/gradesService';
+import { CertificateQueueStatus } from '@scnode_app/types/default/admin/certificate/certificateTypes';
+import { transactionService } from '@scnode_app/services/default/admin/transaction/transactionService';
 import { CourseSchedulingNotificationEvents, CourseSchedulingTypesKeys } from '@scnode_app/types/default/admin/course/courseSchedulingTypes';
 import { courseSchedulingNotificationsService } from '../course/courseSchedulingNotificationsService';
 import { enrollmentTrackingService } from './enrollmentTrackingService';
 import { notificationEventService } from '../../events/notifications/notificationEventService';
+import { mapUtility } from '@scnode_core/utilities/mapUtility';
+import { completionstatusService } from '../completionStatus/completionstatusService';
+import { IEnrollmentData } from '@scnode_app/types/default/admin/enrollment/enrollmentTrackingTypes';
+import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
+import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from '@scnode_app/types/default/efipay/efipayTypes';
+import { efipayService } from '../../efipay/efipayService';
 // @end
 
 class EnrollmentService {
@@ -409,6 +419,7 @@ class EnrollmentService {
             cvUserParams['reviewData'] = {
               status: 'pending'
             }
+            if (cvUserParams.password) delete cvUserParams.password
 
             try {
               if (teachers.includes(respCampusDataUser.user._id.toString())) {
@@ -490,15 +501,22 @@ class EnrollmentService {
             const respMoodle3: any = await moodleEnrollmentService.insert(enrollment);
             if (respMoodle3?.status === 'error') {
               if (
-                respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
+                // respMoodle3?.message.includes('La extensión (plugin) para la matriculación manual no existe o está deshabilitada para el curso') &&
                 params.origin === 'Tienda Virtual'
               ) {
                 try {
-                  await enrollmentTrackingService.insertOrUpdate({
-                    requestData: params,
-                    errorLog: respMoodle3,
-                    origin: params.origin
-                  })
+                  await enrollmentTrackingService.trackEnrollmentError(
+                    respMoodle3,
+                    {
+                      email: params.email,
+                      documentId: params.documentID,
+                      courseId: params.courseID,
+                      course_scheduling: params.courseScheduling,
+                      origin: params.origin,
+                    },
+                    enrollmentTrackingService.getTrackingSource(params.origin),
+                    {...params}
+                  );
 
                   const recipients = []
                   const recipientsCC = []
@@ -526,7 +544,7 @@ class EnrollmentService {
                       recipientsCC,
                       emailData: {
                         studentName: params.firstname,
-                        error: `Funcionalidad de matriculación manual deshabilitada para el servicio: ${courseScheduling?.metadata?.service_id}`,
+                        error: `Error de matriculación en el servicio: ${courseScheduling?.metadata?.service_id}`,
                         studentFullName: `${params.firstname} ${params.lastname}`,
                         studentEmail: params.email,
                         studentDocumentId: params.documentID,
@@ -547,8 +565,36 @@ class EnrollmentService {
                 errorMessage: respMoodle3.message || 'Se ha presentado un error al matricular en moodle'
               }}})
             }
+
+            try {
+              if (params?.trackingEnrollment) {
+                // Caso de éxito en la matrícula
+                const enrollmentData: IEnrollmentData = {
+                  userId: params.user,
+                  email: params.email,
+                  documentId: params.documentID,
+                  courseId: params.courseID,
+                  course_scheduling: params.courseScheduling,
+                  enrollmentId: _id,
+                  enrollmentCode: enrollmentCode,
+                  status: EnrollmentStatus.REGISTERED,
+                  origin: params.origin,
+                };
+                await enrollmentTrackingService.trackEnrollmentSuccess(
+                  enrollmentData,
+                  enrollmentTrackingService.getTrackingSource(params.origin),
+                  {...params}
+                );
+              }
+            } catch (err) {}
+
+
             const {serviceTypeKey} = courseSchedulingService.getServiceType(courseScheduling)
-            if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
+            const withoutTutor = courseScheduling?.withoutTutor ?? false
+            if (
+              (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) ||
+              withoutTutor
+            ) {
               params.sendEmail = 'true'
             }
             // @INFO: Se envia email de bienvenida
@@ -558,14 +604,23 @@ class EnrollmentService {
                 let customTemplate = undefined
                 let course_start = moment.utc(courseScheduling.startDate).format('YYYY-MM-DD')
                 let course_end = moment.utc(courseScheduling.endDate).format('YYYY-MM-DD')
-                let serviceValidity = courseScheduling.serviceValidity || undefined
+                let serviceValidity = courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined
 
                 if (serviceTypeKey && serviceTypeKey === CourseSchedulingTypesKeys.QUICK_LEARNING) {
                   customTemplate = 'user/enrollmentUserQuickLearning'
-                  course_start = moment.utc().format('YYYY-MM-DD')
-                  course_end = moment.utc().add(courseScheduling.serviceValidity, 'seconds').format('YYYY-MM-DD')
-                  serviceValidity = generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true)
                 }
+                const {courseEndDate, courseStartDate} = enrollmentService.getCourseEndStatus(
+                  moment.utc().format('YYYY-MM-DD'),
+                  {
+                    serviceStartDate: courseScheduling.startDate,
+                    serviceEndDate: courseScheduling.endDate
+                  },
+                  courseScheduling?.serviceValidity ? Number(courseScheduling?.serviceValidity) : undefined,
+                  0
+                )
+                course_start = courseStartDate
+                course_end = courseEndDate
+
                 await courseSchedulingService.sendEnrollmentUserEmail([params.email], {
                   mailer: customs['mailer'],
                   first_name: userEnrollment.profile.first_name,
@@ -1015,6 +1070,585 @@ class EnrollmentService {
     return lastEnrollmentcode;
   }
 
+  /**
+   * Este método solo funciona para servicios con certificación multiple
+   * @param param0
+   * @returns
+   */
+  public getCurrentEnrollmentStatus = async ({
+    enrollmentId,
+  }: IGetCurrentEnrollmentStatusParams) => {
+    try {
+      if (!enrollmentId) return responseUtility.buildResponseFailed('json')
+
+      const enrollment = await Enrollment
+        .findOne({ _id: enrollmentId })
+        .select('_id user course_scheduling')
+        .populate([
+          {
+            path: 'user',
+            select: '_id moodle_id'
+          },
+          {
+            path: 'course_scheduling',
+            select: '_id moodle_id'
+          }
+        ])
+      if (!enrollment) return responseUtility.buildResponseFailed('json')
+
+      const userMoodleId = enrollment.user.moodle_id
+      const courseSchedulingMoodleId = enrollment.course_scheduling.moodle_id
+      if (!userMoodleId || !courseSchedulingMoodleId) return responseUtility.buildResponseFailed('json')
+
+      const moodleItemsToSearch = ['attendance', 'assign', 'quiz', 'course', 'forum']
+
+      const [certificateSettings, userCertificates, moodleActivities, moodleCompletion] = await Promise.all([
+        CertificateSettings
+          .find({ courseScheduling: enrollment.course_scheduling._id })
+          .select('_id'),
+        CertificateQueue
+          .find({ userId: enrollment.user._id, courseId: enrollment.course_scheduling._id, status: { $ne: CertificateQueueStatus.ERROR } })
+          .select('_id certificateSetting'),
+        gradesService.fetchGradesByFilter({
+            courseID: courseSchedulingMoodleId,
+            userID: userMoodleId,
+            filter: moodleItemsToSearch
+          }),
+        completionstatusService.activitiesCompletion({
+          courseID: courseSchedulingMoodleId, //register.courseID,
+          userID: userMoodleId, //register.user.moodle_id
+        })
+      ])
+
+      const grades = (moodleActivities as any).grades
+      const completion = (moodleCompletion as any)?.completion ?? []
+      const doesExistProgress = grades?.some((grade) => {
+        const itemTypes = grade?.itemType ? grade?.itemType : {}
+        return Object.values(itemTypes).some((itemsProgress: Array<any>) =>
+          itemsProgress?.some((itemProgress) => itemProgress?.graderaw > 0)
+        )
+      })
+
+      const totalActivities = completion.length
+      const activitiesCompleted = completion.filter((c) => c.state === 1).length
+      let generalProgress = 0;
+      if (totalActivities > 0) {
+        generalProgress = Math.trunc((activitiesCompleted / totalActivities) * 100);
+      }
+
+      const allCertificatesGenerated = !!userCertificates?.length && !certificateSettings?.some((setting) =>
+        !userCertificates?.some((userCertificate) => userCertificate?.certificateSetting?.toString() === setting._id?.toString())
+      )
+
+      const allCertifiedWerePaid = await transactionService.certificateWasPaid(userCertificates?.map(({ _id }) => _id?.toString()))
+
+      const currentStatus = !doesExistProgress ? EnrollmentStatus.REGISTERED :
+        doesExistProgress && !allCertificatesGenerated ? EnrollmentStatus.IN_PROGRESS :
+        doesExistProgress && allCertificatesGenerated && !allCertifiedWerePaid ? EnrollmentStatus.COMPLETED :
+        doesExistProgress && allCertificatesGenerated && allCertifiedWerePaid ? EnrollmentStatus.CERTIFIED :
+        null
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          currentStatus,
+          generalProgress
+        }
+      })
+
+    } catch (e) {
+      console.log('EnrollmentService -> getCurrentEnrollmentStatus -> ERROR: ', e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+
+  public buyCoursesByShoppingCart = async (request: IBuyCoursesByShoppingCart) => {
+    const {buyerId, itemsToBuy, processType, billingInfo, buyAction} = request
+
+    let _buyerId = buyerId;
+    let roles = {}
+
+    const rolesResponse: any = await roleService.list()
+    if (rolesResponse.status === 'success') {
+      for await (const iterator of rolesResponse.roles) {
+        roles[iterator.name] = iterator._id
+      }
+    }
+
+    if (!billingInfo) {
+      return responseUtility.buildResponseFailed('json', null, {message: 'La información de facturación es requerida'})
+    }
+
+    // Clean and handle duplicates
+    const itemsToBuyClean = mapUtility.handleDuplicates(itemsToBuy ?? [], 'identifier', 'remove')
+
+    // Separate items by buyAction
+    const itemsForBuyer = itemsToBuyClean.filter(item =>
+      item.buyAction === BUY_ACTION.FOR_MYSELF || item.buyAction === BUY_ACTION.FOR_ME_AND_OTHERS
+    )
+    const itemsForOthers = itemsToBuyClean.filter(item =>
+      item.buyAction === BUY_ACTION.FOR_OTHERS || item.buyAction === BUY_ACTION.FOR_ME_AND_OTHERS
+    )
+
+    // If there are items for the buyer, validate them
+    let objectsToBuy: ObjectsToBuy = {}
+
+    if (itemsForBuyer.length > 0) {
+      const user = await User.findOne({ _id: _buyerId })
+      // Apply business validations for the buyer
+      const validationResult = await this.validateItemsForBuyer(itemsForBuyer, user, processType, buyAction)
+
+      if (!validationResult.canEnrollment) {
+        return responseUtility.buildResponseSuccess('json', null, {
+          message: 'Verificar compra',
+          additional_parameters: {
+            processPurchase: PROCESS_PURCHASE.VERIFY_PURCHASE,
+            review: validationResult.objectsToBuy
+          }
+        })
+      }
+      objectsToBuy = validationResult.objectsToBuy
+    }
+
+    // Add items for others without validation
+    itemsForOthers.forEach(item => {
+      if (!objectsToBuy[item.identifier]) {
+        objectsToBuy[item.identifier] = {
+          processPurchase: PROCESS_ITEM_PURCHASE.AVAILABLE,
+          reason: `${item.description} está listo para la compra.`,
+          programCode: item.programCode,
+          programName: item.description,
+          externalId: item.externalId,
+          identifier: item.identifier,
+        }
+      }
+    })
+
+    if (processType === PurchaseProcessType.CHECK_CONDITIONS) {
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Compra verificada',
+        additional_parameters: {
+          processPurchase: PROCESS_PURCHASE.VERIFY_PURCHASE,
+          review: objectsToBuy
+        }
+      })
+    }
+
+    try {
+      if (!_buyerId) {
+        const newUserCreated = await userService.insertOrUpdate({
+          username: billingInfo.docNumber,
+          email: billingInfo.email ?? '',
+          password: billingInfo.docNumber,
+          roles: [roles['student']],
+          profile: {
+            doc_type: billingInfo.docType,
+            doc_number: billingInfo.docNumber,
+            first_name: billingInfo.firstName,
+            last_name: billingInfo.lastName,
+          }
+        })
+        if (newUserCreated.status === 'error') {
+          if (newUserCreated.status_code === "user_insertOrUpdate_already_exists") {
+            return responseUtility.buildResponseFailed('json', null, {
+              message: 'Debes iniciar sesión para continuar.'
+            });
+          }
+          return newUserCreated;
+        }
+        _buyerId = newUserCreated?.user?._id;
+
+      }
+    } catch (err) {
+      console.log(`EnrollmentService -> buyCoursesByShoppingCart --> createUser -> ERROR: ${err}`)
+      return responseUtility.buildResponseFailed('json', null, {
+        message: 'Error al crear el usuario'
+      })
+    }
+
+    try {
+      // Create transaction with Efipay
+      const transactionResult = await this.createShoppingCartTransaction({
+        buyerId: _buyerId,
+        items: itemsToBuyClean,
+        billingInfo
+      })
+
+      if (transactionResult.status === 'error') {
+        return responseUtility.buildResponseFailed('json', null, {
+          message: transactionResult.message || 'Error al crear la transacción'
+        })
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Redirección a pasarela de pagos',
+        additional_parameters: {
+          processPurchase: PROCESS_PURCHASE.REDIRECT,
+          redirectUrl: transactionResult.redirectUrl
+        }
+      })
+    } catch (err) {
+      console.log(`EnrollmentService -> buyCoursesByShoppingCart -> ERROR: ${err}`)
+      return responseUtility.buildResponseFailed('json', null, {
+        message: 'Error al procesar la compra'
+      })
+    }
+
+  }
+
+  // New method to validate items for the buyer
+  public validateItemsForBuyer = async (items: IShoppingCarItem[], buyer: IUser, processType: PurchaseProcessType, buyAction: BUY_ACTION) => {
+    const enrolledPrograms = []
+    const certifiedPrograms = []
+    const buyObject = buyAction === BUY_ACTION.FOR_MYSELF ? 'para ti mismo' : `${buyer.profile.first_name} ${buyer.profile.last_name}`
+
+    const itemsByProgramDuplicated = mapUtility.findDuplicates(items ?? [], 'programCode')
+    const groupProgramDuplicated = itemsByProgramDuplicated.reduce((accum, element) => {
+      if (!accum[element.programCode]) {
+        accum[element.programCode] = []
+      }
+      accum[element.programCode].push(element)
+      return accum;
+    }, {})
+
+    const {serviceIds, programCodes, objectsToBuy} = items.reduce((accum, element) => {
+      accum.serviceIds.push(element.identifier);
+      accum.programCodes.push(element.programCode);
+      accum.objectsToBuy[element.identifier] = {
+        processPurchase: groupProgramDuplicated[element.programCode] ? PROCESS_ITEM_PURCHASE.WARNING : PROCESS_ITEM_PURCHASE.AVAILABLE,
+        reason: groupProgramDuplicated[element.programCode] ?
+          `Ya has seleccionado este programa (${element.description}) en otro servicio. ¿Estás seguro de que deseas inscribirte nuevamente?` :
+          `${element.description} está listo para la compra.`,
+        programCode: element.programCode,
+        programName: element.description,
+        externalId: element.externalId,
+        identifier: element.identifier,
+        buyAction: element.buyAction,
+      }
+      return accum;
+    }, {serviceIds: [], programCodes: [], objectsToBuy: {}})
+
+    // Query enrollments for the buyer
+    const enrollments = await Enrollment.aggregate([
+      {
+        $match: {
+          user: ObjectID(buyer._id),
+          deleted: false,
+        }
+      },
+      {
+        $lookup: {
+          from: "course_schedulings",
+          localField: "course_scheduling",
+          foreignField: "_id",
+          as: "service"
+        }
+      },
+      {
+        $unwind: { path: "$service", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        "$lookup": {
+          "from": "course_scheduling_statuses",
+          "localField": "service.schedulingStatus",
+          "foreignField": "_id",
+          "as": "status"
+        }
+      },
+      {
+        "$unwind": { "path": "$status", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        "$lookup": {
+          "from": "programs",
+          "localField": "service.program",
+          "foreignField": "_id",
+          "as": "program"
+        }
+      },
+      {
+        "$unwind": { "path": "$program", "preserveNullAndEmptyArrays": true }
+      },
+      {
+        $project: {
+          _id: "$_id",
+          courseID: "$courseID",
+          origin: "$origin",
+          created_at: "$created_at",
+          "serviceId": "$service._id",
+          "serviceCode": "$service.metadata.service_id",
+          "serviceStatusName": "$status.name",
+          "serviceProgramName": "$program.name",
+          "serviceProgramCode": "$program.code"
+        }
+      }
+    ])
+
+    enrollments.forEach(element => {
+      enrolledPrograms.push(element.serviceProgramCode)
+      if (objectsToBuy[element.serviceId]) {
+        // If the participant is already enrolled in the service, they cannot enroll again
+        objectsToBuy[element.serviceId].processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED;
+        let reasonMessage = buyAction === BUY_ACTION.FOR_MYSELF ? 'ya estás inscrito' : 'ya está inscrito';
+        switch (element.serviceStatusName) {
+          case 'Ejecutado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque el servicio (${element.serviceCode}) ya ha finalizado y no es posible inscribirse.`;
+            break;
+          case 'Confirmado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque ${reasonMessage} (${element.serviceCode}) y la matrícula está en proceso.`;
+            break;
+          case 'Programado':
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque ${reasonMessage} (${element.serviceCode}) y está próximo a iniciar.`;
+            break;
+          default:
+            objectsToBuy[element.serviceId].reason = `No puedes adquirir este cupo ${buyObject}, porque este servicio (${element.serviceCode}) no está disponible para matrícula en este momento.`;
+            break;
+        }
+      }
+    })
+
+    // Check certificates for the buyer
+    const certificates = await CertificateQueue.find({
+      userId: buyer._id
+    }).populate([
+      {path: 'courseId', select: 'program', populate: [
+        {path: 'program', select: 'code'}
+      ]}
+    ]).select('courseId status')
+
+    certificates.forEach(element => {
+      if (element?.courseId?.program?.code) {
+        certifiedPrograms.push(element?.courseId?.program?.code)
+      }
+    });
+
+    programCodes.forEach(element => {
+      let process = false
+      let processPurchase = PROCESS_ITEM_PURCHASE.RESTRICTED
+      let reason = ``;
+      if (certifiedPrograms.includes(element)) {
+        // Validation to determine if the participant is already certified in the program
+        process = true
+        processPurchase = PROCESS_ITEM_PURCHASE.WARNING
+        reason = `Es posible adquirir este cupo ${buyObject}, aunque ya se haya certificado previamente.`
+      } else if (enrolledPrograms.includes(element)) {
+        // Validation to determine if the participant has already taken the same program in another service
+        process = true
+        processPurchase = PROCESS_ITEM_PURCHASE.WARNING
+        reason = `Es posible adquirir este cupo ${buyObject}, aunque ya esté inscrito en otro servicio para este mismo programa.`;
+      }
+      if (process) {
+        Object.keys(objectsToBuy)
+          .filter((o) => objectsToBuy[o].programCode === element)
+          .map((o) => {
+            if (objectsToBuy[o].processPurchase === PROCESS_ITEM_PURCHASE.AVAILABLE) {
+              objectsToBuy[o].processPurchase = processPurchase
+              objectsToBuy[o].reason = reason.replace(':programName', objectsToBuy[o].programName);
+            }
+          })
+      }
+    });
+
+    if (processType === PurchaseProcessType.PURCHASE) {
+      Object.keys(objectsToBuy).map((i) => {
+        if (objectsToBuy[i].processPurchase === PROCESS_ITEM_PURCHASE.WARNING) {
+          objectsToBuy[i].processPurchase = PROCESS_ITEM_PURCHASE.AVAILABLE
+        }
+      })
+    }
+
+    const canEnrollment = Object.keys(objectsToBuy).every((i) => objectsToBuy[i].processPurchase === PROCESS_ITEM_PURCHASE.AVAILABLE)
+
+    return {
+      canEnrollment,
+      objectsToBuy
+    }
+  }
+
+  // New method to create a transaction with Efipay
+  private createShoppingCartTransaction = async ({
+    buyerId,
+    items,
+    billingInfo
+  }: ICreateShoppingCartTransaction) => {
+    try {
+      // Create a new transaction record
+      const transactionResponse: any = await transactionService.insertOrUpdate({})
+      if (transactionResponse.status === 'error') {
+        return {
+          status: 'error',
+          message: 'Error al generar la transacción'
+        }
+      }
+
+      const transaction: ITransaction = transactionResponse.transaction
+
+      // Calculate total price
+      const totalBaseAmount = items.reduce((total, item) => {
+        return total + (item.priceWithDiscountNumeric || item.priceNumeric) * item.numberOfPlaces
+      }, 0)
+
+      const iva = totalBaseAmount * 0.19
+      const totalAmount = (iva + totalBaseAmount).toFixed(2)
+
+      // Get first item for description
+      const firstItem = items[0]
+      const description = items.length > 1
+        ? `${firstItem.description} y ${items.length - 1} curso(s) más`
+        : firstItem.description
+
+      // Prepare payment parameters
+      const minutesLimit = efipaySetup.payment_limit_minutes
+      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
+      const campusUrl = customs.campus_virtual
+
+      const paymentParams: IGeneratePaymentParams = {
+        payment: {
+          amount: Number(totalAmount),
+          checkout_type: EfipayCheckoutType.REDIRECT,
+          currency_type: billingInfo.currency,
+          description: description,
+          selected_taxes: [EfipayTaxes.IVA_19]
+        },
+        advanced_options: {
+          has_comments: false,
+          limit_date: limitDate,
+          picture: items[0].image,
+          references: [transaction._id],
+          result_urls: {
+            approved: `${campusUrl}/payment-status/${transaction._id}`,
+            pending: `${campusUrl}/payment-status/${transaction._id}`,
+            rejected: `${campusUrl}/payment-status/${transaction._id}`,
+            webhook: `${host}/api/admin/transaction/on-transaction-success`,
+          }
+        },
+        office: efipaySetup.office_number
+      }
+
+      // Generate payment with Efipay
+      const paymentResponse = await efipayService.generatePayment(paymentParams)
+
+      if (!paymentResponse?.payment_id) {
+        await transactionService.delete(transaction._id)
+        return {
+          status: 'error',
+          message: 'Error al generar la transacción con la pasarela de pagos'
+        }
+      }
+
+      // Update transaction with payment details
+      transaction.id = transaction._id
+      transaction.buyer = buyerId;
+      transaction.paymentId = paymentResponse.payment_id
+      transaction.redirectUrl = paymentResponse.url
+      transaction.status = TransactionStatus.IN_PROCESS
+      transaction.billingInfo = {
+        fullName: billingInfo.fullName,
+        docNumber: billingInfo.docNumber,
+        nature: billingInfo.nature,
+        classification: billingInfo.classification,
+        country: billingInfo.country,
+        department: billingInfo.department,
+        city: billingInfo.city,
+        currency: billingInfo.currency,
+        email: billingInfo.email,
+      }
+      transaction.baseAmount = totalBaseAmount
+      transaction.taxesAmount = iva
+      transaction.totalAmount = parseFloat(totalAmount)
+
+      // Store shopping cart items in transaction
+      transaction.shoppingCartItems = items.map(item => ({
+        identifier: item.identifier,
+        programCode: item.programCode,
+        externalId: item.externalId,
+        description: item.description,
+        price: item.priceWithDiscountNumeric || item.priceNumeric,
+        numberOfPlaces: item.numberOfPlaces,
+        buyAction: item.buyAction,
+        buyerId: buyerId
+      }))
+
+      const updateResponse = await transactionService.insertOrUpdate(transaction)
+      if (updateResponse.status === 'error') {
+        await transactionService.delete(transaction._id)
+        return {
+          status: 'error',
+          message: 'Error al actualizar la transacción'
+        }
+      }
+
+      return {
+        status: 'success',
+        redirectUrl: paymentResponse.url
+      }
+
+    } catch (err) {
+      console.log(`EnrollmentService -> createShoppingCartTransaction -> ERROR: ${err}`)
+      return {
+        status: 'error',
+        message: 'Error al procesar la transacción'
+      }
+    }
+  }
+
+  public getEndingServiceWithDateValidity = (enrollmentDate: string, validityTime: number) => {
+    try {
+      const startDate = moment(enrollmentDate) //enrollment.created_at
+      const days = this.getDays(validityTime)
+      return startDate.add(days, 'days').format('YYYY-MM-DDT23:59:59')
+    } catch (e) {
+      return false
+    }
+  }
+
+  private getDays(seconds) {
+    return Math.floor(seconds / (24 * 60 * 60));
+  }
+
+  public getCourseEndStatus(
+    enrollmentDate: string,
+    serviceData: {serviceEndDate: string, serviceStartDate: string},
+    durationSeconds: number,
+    daysBeforeEnd: number
+  ): {hasEnded: boolean;isEndingSoon: boolean;daysToEnding: number; daysSinceEnd: number; courseEndDate: string, courseStartDate: string} {
+    const today = moment()
+    const calculateByUserEnrollmentDate = durationSeconds ? true : false
+    // Convert enrollmentDate to a moment object
+    const startDate = calculateByUserEnrollmentDate ? moment(enrollmentDate).set('hours', 0).set('minutes', 0) : moment(serviceData.serviceStartDate).set('hours', 0).set('minutes', 0);
+
+    if (!startDate.isValid()) {
+      throw new Error('Invalid enrollment date');
+    }
+
+    // Calculate the course end date
+    const courseEndDate = calculateByUserEnrollmentDate ? startDate.clone().add(durationSeconds, 'seconds').set('hours', 23).set('minutes', 59) : moment(serviceData.serviceEndDate).set('hours', 23).set('minutes', 59);
+
+    // Calculate the trigger date (courseEndDate - daysBeforeEnd)
+    const triggerDate = courseEndDate.clone().subtract(daysBeforeEnd, 'days');
+
+    // Determine if the course has ended
+    const hasEnded = today.startOf('day').isSameOrAfter(courseEndDate.startOf('day'));
+
+    // Determine if the course is ending soon
+    const isEndingSoon = today.startOf('day').isSameOrAfter(triggerDate.startOf('day')) && !hasEnded;
+
+    // Calculate days since the course ended (0 if not ended)
+    const daysSinceEnd = hasEnded
+      ? today.diff(courseEndDate, 'days')
+      : 0;
+
+    const daysToEnding = courseEndDate.diff(today, 'days')
+
+    return {
+      hasEnded,
+      isEndingSoon,
+      daysToEnding,
+      daysSinceEnd,
+      courseEndDate: courseEndDate.format('YYYY-MM-DD'),
+      courseStartDate: startDate.format('YYYY-MM-DD')
+    };
+  }
 }
 
 export const enrollmentService = new EnrollmentService();

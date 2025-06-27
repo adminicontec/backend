@@ -35,6 +35,7 @@ class LandingRoute {
     routerUtility.get(app, _route, '/', this.instanceController.list, [], ['auth'])
     routerUtility.get(app, _route, '/:id', this.instanceController.get, [], ['auth'])
 
+    routerUtility.post(app, _route, '/insert-or-update-terms-and-conditions', this.instanceController.insertOrUpdateTermsAndConditions, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     routerUtility.post(app, _route, '/insert-or-update-article', this.instanceController.insertOrUpdateArticle, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     routerUtility.post(app, _route, '/insert-or-update-training', this.instanceController.insertOrUpdateTraining, [{ middleware: 'landing', method: 'create', dir: 'admin/landing' }], ['auth'])
     routerUtility.delete(app, _route, '/delete-training/:slug/:unique', this.instanceController.deleteTraining, [], ['auth'])

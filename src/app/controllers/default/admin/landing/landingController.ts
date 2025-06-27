@@ -126,6 +126,23 @@ class LandingController {
 	 * @param res Objeto de clase Express
 	 * @returns
 	 */
+	public insertOrUpdateTermsAndConditions = async (req: Request, res: Response) => {
+    const user_id = req.user.sub
+    let params = req.getParameters.all()
+    let files = req.files
+
+    params['user'] = user_id
+
+		const response = await landingService.insertOrUpdateTermsAndConditions(params)
+		return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+	 * Metodo que permite editar un registro
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
 	public insertOrUpdateAlliance = async (req: Request, res: Response) => {
     const user_id = req.user.sub
     let params = req.getParameters.all()

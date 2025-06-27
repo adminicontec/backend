@@ -21,4 +21,9 @@ export interface ISingleGrade {
   grademin: number,
   grademax: number
 }
+
+export interface IMoodleGradeReportOverviewGetCourseGrades {
+  userid: string,       // ID de estudiante en Moodle
+  courseid: string,
+}
 //@end

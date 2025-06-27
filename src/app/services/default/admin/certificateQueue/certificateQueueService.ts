@@ -1,4 +1,5 @@
 // @import_dependencies_node Import libraries
+const ObjectID = require('mongodb').ObjectID
 // @end
 
 // @import services
@@ -10,14 +11,23 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { Enrollment, CertificateQueue } from '@scnode_app/models';
+import { Enrollment, CertificateQueue, Course, CertificateLogs } from '@scnode_app/models';
 // @end
 
 // @import types
 import { IQueryFind, QueryValues } from '@scnode_app/types/default/global/queryTypes'
-import { ICertificate, ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview } from '@scnode_app/types/default/admin/certificate/certificateTypes'
+import { ICertificateQueue, ICertificateQueueQuery, ICertificateQueueDelete, IProcessCertificateQueue, ICertificatePreview, CertificateQueueStatus, ICertificatePaymentParams } from '@scnode_app/types/default/admin/certificate/certificateTypes'
 import moment from 'moment';
-import { customs } from '@scnode_core/config/globals';
+import { customs, efipaySetup, host } from '@scnode_core/config/globals';
+import { transactionService } from "@scnode_app/services/default/admin/transaction/transactionService";
+import { efipayService } from "@scnode_app/services/default/efipay/efipayService";
+import { erpService } from "@scnode_app/services/default/erp/erpService";
+import { ICourse } from "@scnode_app/types/default/admin/course/courseTypes";
+import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from "@scnode_app/types/default/efipay/efipayTypes";
+import { courseService } from "@scnode_app/services/default/admin/course/courseService";
+import { ITransaction, TransactionStatus } from "@scnode_app/types/default/admin/transaction/transactionTypes";
+import { transactionNotificationsService } from "@scnode_app/services/default/admin/transaction/transactionNotificationsService";
+import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
 // @end
 
 interface ParamsCertificateGeneratedByMonth {
@@ -103,8 +113,12 @@ class CertificateQueueService {
           console.log('update dowload date >>>' + register.downloadDate);
         }
 
+        const lastStatus = register?.status
+
         const response: any = await CertificateQueue.findByIdAndUpdate(params.id, params, { useFindAndModify: false, new: true })
         console.log("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\r");
+
+        await this.checkRetryCertificate({ certificateQueueId: params.id, lastStatus, shouldNotify: true })
 
         return responseUtility.buildResponseSuccess('json', null, {
           additional_parameters: {
@@ -389,10 +403,11 @@ class CertificateQueueService {
 
   public processCertificateQueue = async (params: IProcessCertificateQueue) => {
     try {
-      const output = params.output || 'process'
+      const output = params.output || 'process'
       const force = params.force || false
 
       const where = {}
+      console.log({ params })
       if (params?.certificateQueueId) {
         where['_id'] = params.certificateQueueId
       } else if (params?.certificateQueueIds) {
@@ -413,7 +428,17 @@ class CertificateQueueService {
 
       if (Object.keys(where).length === 0) return responseUtility.buildResponseFailed('json', null, {message: `Se deben proporcionar filtros para la busqueda`, code: 400})
 
-      const certificateQueues = await CertificateQueue.find(where).select()
+      const certificateQueuesResponse = await CertificateQueue.find(where)
+
+      // Filtrar los certificados que no han sido pagados
+      const certificateQueues = []
+      for (const certificate of certificateQueuesResponse) {
+        if (certificate?.needPayment) {
+          const certificateWasPaid = await transactionService.certificateWasPaid(certificate?._id?.toString())
+          if (!certificateWasPaid) continue;
+        }
+        certificateQueues.push(certificate)
+      }
 
       if (output === 'query') {
         return responseUtility.buildResponseSuccess('json', null, {additional_parameters: {
@@ -546,6 +571,222 @@ class CertificateQueueService {
       })
     } catch (err) {
       return responseUtility.buildResponseFailed('json', null, {additional_parameters: {error: err?.message}})
+    }
+  }
+
+  public checkPendingCertificationsWithPayment = async ({
+    user
+  }) => {
+    try {
+      const certificate = await CertificateQueue.findOne({
+        needPayment: true,
+        userNotified: false,
+        status: CertificateQueueStatus.NEW,
+        userId: user,
+        certificateSetting: { $exists: true }
+      })
+      .select('courseId status certificateSetting certificate')
+      .populate([
+        { path: 'courseId', select: 'metadata program', populate: [
+          { path: 'program', select: 'name code moodle_id' }
+        ]},
+        {
+          path: 'certificateSetting', select: 'certificateName'
+        }
+      ])
+
+      if (!certificate) return responseUtility.buildResponseFailed('json')
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          certificate
+        }
+      })
+    } catch (e) {
+      console.log(`CertificateService -> checkPendingCertificationsWithPayment -> ERROR: `, e)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public certificatePayment = async ({ certificateQueueId, currencyType, certificateInfo }: ICertificatePaymentParams) => {
+    const transactionResponse: any = await transactionService.insertOrUpdate({})
+    if (transactionResponse.status === 'error') return responseUtility.buildResponseFailed('json', null, {
+      code: 500,
+      message: 'Error al generar la transacción'
+    })
+    const transaction: ITransaction = transactionResponse.transaction
+    try {
+      const erpResponse: any = await erpService.getCertificatePriceFromCertificateQueue({ certificateQueueId }, true)
+      if (erpResponse?.status === 'error') {
+        await transactionService.delete(transaction._id)
+        return erpResponse
+      }
+      const { price, course, program, erpCode } = erpResponse
+      const minutesLimit = efipaySetup.payment_limit_minutes
+      const limitDate = moment().add(minutesLimit, 'minutes').format('YYYY-MM-DD')
+      const pictureUrl = courseService.coverUrl(course as any)
+      const campusUrl = customs.campus_virtual
+
+      const iva = price[currencyType] * 0.19
+      const totalPrice = (iva + price[currencyType]).toFixed(2)
+
+      const paymentParams: IGeneratePaymentParams = {
+        payment: {
+          amount: totalPrice,
+          checkout_type: EfipayCheckoutType.REDIRECT,
+          currency_type: currencyType,
+          description: program.name,
+          selected_taxes: [EfipayTaxes.IVA_19]
+        },
+        advanced_options: {
+          has_comments: false,
+          limit_date: limitDate,
+          picture: pictureUrl,
+          references: [certificateQueueId],
+          result_urls: {
+            approved: `${campusUrl}/payment-status/${transaction._id}`,
+            pending: `${campusUrl}/payment-status/${transaction._id}`,
+            rejected: `${campusUrl}/payment-status/${transaction._id}`,
+            webhook: `${host}/api/admin/transaction/on-transaction-success`,
+          }
+        },
+        office: efipaySetup.office_number
+      }
+
+      const paymentResponse = await efipayService.generatePayment(paymentParams)
+
+      if (!paymentResponse?.payment_id) {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Error al generar la transacción'
+        })
+      }
+
+      transaction.id = transaction._id
+      transaction.certificateQueue = certificateQueueId
+      transaction.paymentId = paymentResponse.payment_id
+      transaction.redirectUrl = paymentResponse.url
+      transaction.status = TransactionStatus.IN_PROCESS
+      transaction.certificateInfo = {
+        ...certificateInfo,
+        currency: currencyType,
+      }
+      transaction.baseAmount = price[currencyType]
+      transaction.taxesAmount = iva
+      transaction.totalAmount = totalPrice
+      transaction.erpCode = erpCode
+      const updateResponse = await transactionService.insertOrUpdate(transaction)
+      if (updateResponse.status === 'error') {
+        await transactionService.delete(transaction._id)
+        return responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Error al crear la transacción'
+        })
+      }
+
+      // Send transaction created email to user
+      const certificateQueue = await CertificateQueue.findOne({ _id: certificateQueueId })
+        .populate({ path: 'userId', select: 'profile email' })
+        .populate({ path: 'certificateSetting', select: 'certificateName' })
+      if (certificateQueue) {
+        await transactionNotificationsService.sendTransactionCreated({
+          paymentUrl: paymentResponse.url,
+          transactionId: transaction._id,
+          users: [
+            {
+              name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+              email: certificateQueue?.userId?.email
+            }
+          ],
+          courseName: program.name,
+          certificateName: certificateQueue?.certificateSetting?.certificateName
+        })
+      }
+
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          redirectUrl: paymentResponse.url
+        }
+      })
+
+    } catch (e) {
+      console.log(`CertificateQueueService -> certificatePayment -> ERROR: ${e}`)
+      await transactionService.delete(transaction._id)
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  private checkRetryCertificate = async ({ certificateQueueId, lastStatus, shouldNotify = false }) => {
+    const certificateQueue = await CertificateQueue.findOne({ _id: certificateQueueId })
+      .populate({ path: 'userId', select: 'profile email username' })
+      .populate({ path: 'certificateSetting', select: 'certificateName' })
+      .populate({ path: 'courseId', populate: {
+        path: 'program'
+      } })
+    const maxRetries = certificateQueue?.retryConfig?.maxRetries
+    const currentAttempt = certificateQueue?.retryConfig?.currentAttempt ? certificateQueue?.retryConfig?.currentAttempt : 0
+    const hasChangedToError = lastStatus !== 'Error' && certificateQueue?.status === 'Error'
+    console.log('Retry function ======', {
+      certificateQueueId,
+      lastStatus,
+      shouldNotify,
+      maxRetries,
+      currentAttempt,
+      hasChangedToError,
+      currentStatus: certificateQueue?.status
+    })
+
+    if (shouldNotify && hasChangedToError && maxRetries && maxRetries === currentAttempt) {
+      console.log('Enter to notify')
+      const logs = await CertificateLogs.find({ idCertificateQueue: certificateQueue._id })
+        .sort({ created_at: -1 })
+      const logWithError = logs?.find(
+        (log) => log?.responseService?.status === 'error' || log?.serviceResponse === 'error'
+      )
+      const errorMessage = logWithError?.responseService?.message ? logWithError?.responseService?.message : 'Error desconocido'
+      const queryErrorMessage = logWithError?.responseService?.queryErrors ? logWithError?.responseService?.queryErrors : 'Query error desconocido'
+      const program = certificateQueue?.courseId?.program
+      await certificateNotifiactionsService.sendAdminErrorCertificate({
+        errorMessage,
+        queryErrorMessage,
+        certificateQueueId: certificateQueue?._id?.toString(),
+        courseName: program?.name,
+        docNumber: certificateQueue?.userId?.username,
+        studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+      })
+      await certificateNotifiactionsService.sendErrorCertificate({
+        certificateQueueId: certificateQueue?._id?.toString(),
+        users: [
+          {
+            name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
+            email: certificateQueue?.userId?.email
+          }
+        ],
+        courseName: program?.name
+      })
+    }
+    if (hasChangedToError && maxRetries && maxRetries > currentAttempt) {
+      const baseToRetry = 4
+      const newAttempt = currentAttempt + 1
+      const timeToWait = (baseToRetry ** newAttempt) * 1000
+      console.log('Enter to regenerate: ', { timeToWait, newAttempt })
+      await (new Promise((resolve) => {
+        setTimeout(async () => {
+          console.log('Dentro del timeout')
+          const responseRegenerate = await certificateService.reGenerateCertification({
+            certificateQueueId,
+            courseId: certificateQueue?.courseId,
+            userId: certificateQueue?.userId,
+            isMultiple: certificateQueue?.certificateSetting ? true : false,
+            currentAttempt: newAttempt,
+            shouldAwait: true
+          })
+          console.log({ responseRegenerate })
+          resolve(true)
+        }, timeToWait)
+      }))
     }
   }
 

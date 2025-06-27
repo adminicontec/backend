@@ -73,9 +73,16 @@ export interface ICertificateMultipleGenerate {
   courseSchedulingId: string;
   students: ICertificateMultipleGenerateStudent[];
   user: string;
+  needPayment?: boolean;
+  retryConfig?: {
+    maxRetries: number,
+    currentAttempt?: number
+  },
+  synchronousProcedure?: boolean
 }
 
 export interface ICertificateQueueMultiple {
+  _id?: string;
   userId: string;
   courseId: string;
   certificateSetting: string;
@@ -84,6 +91,12 @@ export interface ICertificateQueueMultiple {
   certificateConsecutive: string;
   status: string;
   isPartial: boolean
+  needPayment?: boolean
+  userNotified?: boolean
+  retryConfig?: {
+    currentAttempt?: number
+    maxRetries: number
+  }
 }
 
 export interface ICertificateMultipleCreate extends ICertificateMultipleBuildData {}
