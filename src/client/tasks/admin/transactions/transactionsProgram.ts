@@ -111,7 +111,10 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
 
           if (certificateQueue) {
             await transactionNotificationsService.sendTransactionStatus({
-              certificateName: certificateQueue?.certificateSetting?.certificateName,
+              paymentType: 'certificate',
+              additionalInfo: {
+                certificateName: certificateQueue?.certificateSetting?.certificateName,
+              },
               status: efipayStatus.data.status as unknown as TransactionStatus,
               transactionId: transaction._id,
               users: [
