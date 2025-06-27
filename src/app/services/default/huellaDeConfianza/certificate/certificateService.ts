@@ -958,7 +958,6 @@ class CertificateService {
       let location3 = null;
       let location8 = null;
       const csjServicesList = customs?.csjServicesList || [];
-      const csjServicesList = customs?.csjServicesList || [];
 
       //#region   >>>> 1. querying data for user to Certificate, param: username
       let respDataUser: any = await userService.findBy({

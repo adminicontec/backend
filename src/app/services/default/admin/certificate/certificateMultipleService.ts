@@ -870,7 +870,6 @@ class CertificateMultipleService {
       const formatListModules = isCsj ? 'clean' : (certificationMigration ? 'plain' : 'html')
       const dimensionsLogos = {width: 233, height: 70, position: 'center'}
       const dimensionsSignatures = {width: 180, height: 70, position: 'center'}
-      const csjServicesList = customs?.csjServicesList || [];
       console.log('csjServicesList', csjServicesList)
 
       const driver = attached['driver'];
