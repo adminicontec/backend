@@ -116,7 +116,6 @@ class SurveyEventService {
 
             let anySessionExpiredToday = false
             detailScheduling.map((course) => {
-              console.log('course',course._id)
               if (!anySessionExpiredToday) {
                 if (course.sessions && course.sessions.length > 0) {
                   let sessions = course.sessions.reduce((accum, element) => {
@@ -127,13 +126,10 @@ class SurveyEventService {
                     return accum
                   }, [])
                   sessions.sort((a, b) => moment(a.startDate).diff(moment(b.startDate)))
-                  console.log('sessions', sessions)
                   if (sessions.length > 0)  {
                     const lastSession = sessions[sessions.length-1]
-                    console.log('lastSession', lastSession)
                     // if (today.format('YYYY-MM-DD ') >= endDate.format('YYYY-MM-DD')) {
                       if (today.isAfter(lastSession.endDate.subtract(90, 'minutes'))) {
-                        console.log('session selected', lastSession)
                         anySessionExpiredToday = true
                         surveyAvailable = true
                         surveyRelated = course._id
