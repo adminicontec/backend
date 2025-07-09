@@ -53,7 +53,7 @@ class EnrolledCourseService {
         user: params.user
       }).select('id course_scheduling created_at')
         .populate({
-          path: 'course_scheduling', select: 'id program startDate moodle_id metadata schedulingStatus approval_criteria certificateCriteria specialServiceConditions typeCourse serviceValidity withoutTutor', populate: [
+          path: 'course_scheduling', select: 'id program startDate endDate moodle_id metadata schedulingStatus approval_criteria certificateCriteria specialServiceConditions typeCourse serviceValidity withoutTutor', populate: [
             { path: 'program', select: 'id name code moodle_id' },
             { path: 'schedulingStatus', select: 'id name'},
             { path: 'schedulingMode', select: 'id name' },
