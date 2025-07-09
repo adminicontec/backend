@@ -314,6 +314,9 @@ class MailerUtility {
     if (!mail_options_default.hasOwnProperty('attachments')) {
       return responseUtility.buildResponseSuccess('json',null);
     }
+    if (mail_options_default["attachments"] === undefined) {
+      return responseUtility.buildResponseSuccess('json',null);
+    }
 
     if (!Array.isArray(mail_options_default["attachments"])) {
       return responseUtility.buildResponseFailed('json',null,{error_key: "mailer.mail_attachments_invalid"});
