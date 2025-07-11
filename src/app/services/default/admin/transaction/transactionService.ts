@@ -17,6 +17,7 @@ import { erpService } from '@scnode_app/services/default/erp/erpService';
 import { transactionNotificationsService } from '@scnode_app/services/default/admin/transaction/transactionNotificationsService';
 import { certificateNotifiactionsService } from '@scnode_app/services/default/admin/certificate/certificateNotifiactionsService';
 import { purchasedPlaceService } from '../purchasedPlace/purchasedPlaceService';
+import { notificationEventService } from '../../events/notifications/notificationEventService';
 // @end
 
 // @import models
@@ -451,35 +452,29 @@ class TransactionService {
       // 1. Si la transacción es SUCCESS debo crear una factura en el sistema ERP
       // 1.1 Si la creación de la factura en el sistema ERP falla debo enviar correo electronico a los administradores del ERP
       if (params.transaction.status === EfipayTransactionStatus.SUCCESS) {
-        // TODO:  Pendiente creación de factura en ERP
-        // Crear factura en ERP
-        // erpService.createInvoiceFromTransaction(transaction._id)
-        //   .then((invoiceResponse: any) => {
-        //     if (invoiceResponse?.status === 'error') {
-        //       customLogService.create({
-        //         label: 'efps - sct - shopping cart invoice error',
-        //         description: 'Error al generar la factura para compra de cursos',
-        //         content: {
-        //           errorMessage: typeof invoiceResponse?.errorContent === 'object' ?
-        //             JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
-        //           transactionId: transaction._id,
-        //         },
-        //       })
-        //     }
-        //   })
-        //   .catch((e: any) => {
-        //     customLogService.create({
-        //       label: 'efps - sct - shopping cart invoice exception',
-        //       description: 'Excepción al crear la factura para compra de cursos',
-        //       content: {
-        //         errorMessage: e.message,
-        //         transactionId: transaction._id,
-        //       },
-        //     })
-        //   })
-
-        // Enviar notificación de compra exitosa
-        // await this.sendShoppingCartSuccessNotification(transaction, params);
+        erpService.createInvoiceFromTransaction(transaction._id)
+          .then((invoiceResponse: any) => {
+            if (invoiceResponse?.status === 'error') {
+              notificationEventService.sendNotificationErp({
+                errorMessage: 'Error al generar la factura',
+                queryErrorMessage: invoiceResponse?.errorContent ?
+                  typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent :
+                  invoiceResponse.message,
+                transactionId: transaction.paymentId,
+              })
+              return invoiceResponse
+            }
+          })
+          .catch((e: any) => {
+            customLogService.create({
+              label: 'efps - sct - shopping cart invoice exception',
+              description: 'Excepción al crear la factura para compra de cursos',
+              content: {
+                errorMessage: e.message,
+                transactionId: transaction._id,
+              },
+            })
+          })
       }
 
       // 2. Enviar notificación de estado de la transacción al cliente

@@ -92,7 +92,8 @@ const TransactionSchema = new Schema({
     price: { type: Schema.Types.Number },
     numberOfPlaces: { type: Schema.Types.Number },
     buyAction: { type: Schema.Types.String },
-    buyerId: { type: Schema.Types.String }
+    buyerId: { type: Schema.Types.String },
+    erpCode: { type: Schema.Types.String }
   }],
   billingInfo: {
     fullName: {

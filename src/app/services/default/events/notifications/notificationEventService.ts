@@ -24,6 +24,7 @@ import {
   ISendNotification2FA,
   ISendNotificationEnrollmentTracking,
   ISendNotificationEnrollmentTrackingEmailData,
+  ISendNotificationErp,
 } from "@scnode_app/types/default/events/notifications/notificationTypes";
 // @end
 
@@ -240,6 +241,38 @@ class NotificationEventService {
       })
 
       return responseUtility.buildResponseSuccess('json')
+    } catch (error) {
+      return responseUtility.buildResponseFailed('json')
+    }
+  }
+
+  public sendNotificationErp = async (params: ISendNotificationErp) => {
+    try {
+      const pathTemplate = 'erp/transactionInErp'
+      const {errorMessage, queryErrorMessage, transactionId} = params;
+      const emailsToSend = customs?.mailer?.emails_error_erp_transaction || []
+      if (!emailsToSend?.length) {
+        return
+      }
+      for (const user of emailsToSend) {
+        const mail = await mailService.sendMail({
+          emails: [user.email],
+          mailOptions: {
+            subject: 'Error al generar factura en ERP',
+            html_template: {
+              path_layout: 'icontec',
+              path_template: pathTemplate,
+              params: {
+                errorMessage,
+                queryErrorMessage,
+                adminName: user.name,
+                transactionId,
+              }
+            },
+          },
+          notification_source: `erp_create_invoice_${transactionId}`
+        })
+      }
     } catch (error) {
       return responseUtility.buildResponseFailed('json')
     }

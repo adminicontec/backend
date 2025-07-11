@@ -6,7 +6,7 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { ICreateInvoiceERP, ICreateInvoiceERPResponse, IGetCertificatePriceParams, IGetCertificatePriceResponse } from '@scnode_app/types/default/erp/erpTypes';
+import { ICreateInvoiceERP, ICreateInvoiceERPResponse, IGetErpArticleDataParams, IGetErpArticleDataResponse } from '@scnode_app/types/default/erp/erpTypes';
 import { CertificateQueue, Course, Transaction } from '@scnode_app/models';
 import { ICourse } from '@scnode_app/types/default/admin/course/courseTypes';
 import { erpSetup } from '@scnode_core/config/globals';
@@ -147,14 +147,14 @@ class ErpService {
   }
 
   private buildErpUrl(programCode: string, currency: string, userDocNumber: string): string {
-    return `/ic/api/integration/v1/flows/rest/ICO_CO_ITEM_INVENT_TV/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=${currency}&NUMERO_IDENTIFICACION=${userDocNumber}`;
+    return `/ic/api/integration/v1/flows/rest/${erpSetup.endpoint.getItemInventory}/1.0/get_item_inventory?COD_ITEM_ECCOMERCE=${programCode}&CURRENCY=${currency}&NUMERO_IDENTIFICACION=${userDocNumber}`;
   }
 
 
-  public getCertificatePrice = async ({
+  public getErpArticleData = async ({
     programCode,
     userDocNumber,
-  }: IGetCertificatePriceParams): Promise<IGetCertificatePriceResponse> => {
+  }: IGetErpArticleDataParams): Promise<IGetErpArticleDataResponse> => {
     try {
       const headers = this.getAuthHeaders();
 
@@ -175,7 +175,7 @@ class ErpService {
       const [usdResponse, copResponse] = await Promise.all([
         USDRequest.catch((err) => {
           customLogService.create({
-            label: "erpService - getCertificatePrice",
+            label: "erpService - getErpArticleData",
             description: "Error fetching USD price",
             content: { error: err.message },
           });
@@ -183,7 +183,7 @@ class ErpService {
         }),
         COPRequest.catch((err) => {
           customLogService.create({
-            label: "erpService - getCertificatePrice",
+            label: "erpService - getErpArticleData",
             description: "Error fetching COP price",
             content: { error: err.message },
           });
@@ -199,6 +199,7 @@ class ErpService {
       const erpCode = copItem.ItemCode ?? null;
 
       return {
+        programCode,
         price: { COP: priceCOP, USD: priceUSD },
         erpCode,
       };
@@ -210,6 +211,7 @@ class ErpService {
       });
 
       return {
+        programCode,
         error: true,
         price: { COP: 0, USD: 0 },
       };
@@ -223,7 +225,7 @@ class ErpService {
 
       const response = await queryUtility.query({
         method: 'post',
-        url: `/ic/api/integration/v1/flows/rest/ICO_CO_CREAT_UPDAT_CUSTO_TV/1.0/create-update/customer`,
+        url: `/ic/api/integration/v1/flows/rest/${erpSetup.endpoint.createUpdate}/1.0/create-update/customer`,
         api: 'erp',
         headers,
         sendBy: 'body',
@@ -258,7 +260,8 @@ class ErpService {
       })
       console.log(`erpService -> createInvoice -> ERROR: ${e}`)
       return {
-        error: true
+        error: true,
+        errorContent: e.message
       }
     }
   }
@@ -279,18 +282,7 @@ class ErpService {
           message: 'Transacción no encontrada'
         })
       }
-      const certificateQueue = await CertificateQueue
-        .findOne({ _id: transaction.certificateQueue })
-        .populate({ path: 'courseId', populate: {
-          path: 'program'
-        } })
-      const program = certificateQueue?.courseId?.program
-      if (!program) {
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 404,
-          message: 'Programa no encontrado'
-        })
-      }
+
       if (transaction?.invoiceCreated) {
         await customLogService.create({
           label: 'erps - ciftac - invoice already created',
@@ -317,7 +309,25 @@ class ErpService {
         });
       }
 
-      const invoiceParams = this.buildInvoiceParams(transaction, program.code);
+      let programCode: string;
+      if (transaction.certificateQueue) {
+        // Transacción de certificado - obtener código del programa
+        const certificateQueue = await CertificateQueue
+          .findOne({ _id: transaction.certificateQueue })
+          .populate({ path: 'courseId', populate: {
+            path: 'program'
+          } })
+        const program = certificateQueue?.courseId?.program
+        if (!program) {
+          return responseUtility.buildResponseFailed('json', null, {
+            code: 404,
+            message: 'Programa no encontrado'
+          })
+        }
+        programCode = program.code;
+      }
+
+      const invoiceParams = this.buildInvoiceParams(transaction, programCode);
 
       const response = await this.createInvoice(invoiceParams)
 
@@ -327,6 +337,7 @@ class ErpService {
           description: "Error creating invoice",
           content: {
             transaction: transaction._id,
+            data: invoiceParams
           },
         })
         return responseUtility.buildResponseFailed('json', null, {
@@ -360,7 +371,10 @@ class ErpService {
     }
   }
 
-  private buildInvoiceParams = (transaction: ITransaction, programCode: string): ICreateInvoiceERP => {
+  private buildInvoiceParams = (transaction: ITransaction, programCode?: string): ICreateInvoiceERP => {
+
+    const billingData = transaction.certificateQueue ? transaction.certificateInfo : transaction.billingInfo;
+
     const {
       identification_number,
       address1,
@@ -381,30 +395,57 @@ class ErpService {
       countryValidated =  'CO'
      }
 
+    let articulos;
+    if (transaction.shoppingCartItems && transaction.shoppingCartItems.length > 0) {
+      // Para transacciones de carrito, crear un artículo por cada item
+      articulos = transaction.shoppingCartItems.map((item, index) => ({
+        ATRIBUTO_1: item.description,
+        PrecioArticulo: String(item.price),
+        CodigoArticuloEcommerce: item.erpCode,
+      }));
+    } else {
+      articulos = [
+        {
+          ATRIBUTO_1: '1', // Descripcion
+          PrecioArticulo: String(transaction.baseAmount),
+          CodigoArticuloEcommerce: programCode, //
+        }
+      ];
+    }
+
     return {
       ...PLACEHOLDER_CREATE_INVOICE_PARAMS,
       AccountNumber: identification_number,
       AddressLine1: `${address1 || ''} ${address2 || ''}`.trim(),
       City: city,
-      Classifications: transaction.certificateInfo?.classification,
+      Classifications: billingData?.classification,
       CorreoElectrónico: email,
       Country: countryValidated,
       CustomerName: name,
       Department: state,
-      Naturaleza: transaction.certificateInfo?.nature,
+      Naturaleza: billingData?.nature,
       Telefono: phone,
       TipoDeDocumento: identification_type,
-      Articulos: [
-        {
-          ATRIBUTO_1: '1',
-          PrecioArticulo: String(transaction.baseAmount),
-          CodigoArticuloEcommerce: programCode,
-        }
-      ],
-      ATRIBUTO_2: transaction?.certificateInfo?.currency,
+      Articulos: articulos,
+      ATRIBUTO_2: billingData?.currency,
       ATRIBUTO_3: String(authorization_code || '')
     };
   };
+
+  public fetchErpDataForItems = async (items: IGetErpArticleDataParams[]): Promise<Map<string, IGetErpArticleDataResponse>> => {
+    try {
+      const batchPromises = items.map(item => this.getErpArticleData(item))
+      const batchResults = await Promise.all(batchPromises)
+      const data: Map<string, IGetErpArticleDataResponse> = new Map();
+      batchResults.forEach(result => {
+        data.set(result.programCode, result)
+      });
+      return data;
+    } catch (err) {
+      console.log(`erpService -> fetchErpDataForItems -> ERROR: ${err}`)
+      throw err;
+    }
+  }
 
 
   public getCertificatePriceFromCertificateQueue = async ({ certificateQueueId }, exposeCollections?: boolean) => {
@@ -451,7 +492,7 @@ class ErpService {
         })
       }
 
-      const { price, erpCode, error: erpError } = await this.getCertificatePrice({
+      const { price, erpCode, error: erpError } = await this.getErpArticleData({
         programName: program.name,
         programCode: program.code,
         duration: course.duration,

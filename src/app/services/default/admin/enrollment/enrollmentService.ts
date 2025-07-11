@@ -54,6 +54,7 @@ import { IEnrollmentData } from '@scnode_app/types/default/admin/enrollment/enro
 import { ITransaction, TransactionStatus } from '@scnode_app/types/default/admin/transaction/transactionTypes';
 import { EfipayCheckoutType, EfipayTaxes, IGeneratePaymentParams } from '@scnode_app/types/default/efipay/efipayTypes';
 import { efipayService } from '../../efipay/efipayService';
+import { erpService } from '../../erp/erpService';
 // @end
 
 class EnrollmentService {
@@ -1472,6 +1473,14 @@ class EnrollmentService {
     billingInfo
   }: ICreateShoppingCartTransaction) => {
     try {
+      const buyer: any = await User.findOne({ _id: buyerId }).select('id email profile.doc_number')
+      const erpItemsToSearch = items.map(item => {
+        return {
+          programCode: item.programCode, userDocNumber: buyer?.profile?.doc_number
+        }
+      })
+      const erpArticleData = await erpService.fetchErpDataForItems(erpItemsToSearch)
+
       // Create a new transaction record
       const transactionResponse: any = await transactionService.insertOrUpdate({})
       if (transactionResponse.status === 'error') {
@@ -1566,7 +1575,8 @@ class EnrollmentService {
         price: item.priceWithDiscountNumeric || item.priceNumeric,
         numberOfPlaces: item.numberOfPlaces,
         buyAction: item.buyAction,
-        buyerId: buyerId
+        buyerId: buyerId,
+        erpCode: erpArticleData.get(item.programCode)?.erpCode ?? '-'
       }))
 
       const updateResponse = await transactionService.insertOrUpdate(transaction)

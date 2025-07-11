@@ -206,7 +206,7 @@ class HttpClientUtility {
       }
     }
 
-    return responseUtility.buildResponseFailed('json', null);
+    return responseUtility.buildResponseFailed('json', null, {message: err?.message ?? 'Se ha presentado un error en la solicitud'});
   }
 }
 

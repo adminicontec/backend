@@ -4,14 +4,15 @@
 import { EfipayCurrency } from "@scnode_app/types/default/efipay/efipayTypes"
 
 // @add your types
-export interface IGetCertificatePriceParams {
-  programName: string
+export interface IGetErpArticleDataParams {
+  programName?: string
   programCode: string
-  duration: number
+  duration?: number
   userDocNumber: string
 }
 
-export interface IGetCertificatePriceResponse {
+export interface IGetErpArticleDataResponse {
+  programCode: string,
   price: Record<EfipayCurrency, number>
   erpCode?: string
   error?: boolean

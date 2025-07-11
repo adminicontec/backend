@@ -68,7 +68,8 @@ export interface ITransaction {
     price: number,
     numberOfPlaces: number,
     buyAction: string,
-    buyerId: string
+    buyerId: string,
+    erpCode?: string,
   }[],
   billingInfo?: {
     fullName: string

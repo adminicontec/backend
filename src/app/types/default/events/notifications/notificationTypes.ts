@@ -69,3 +69,9 @@ export interface ISendNotificationEnrollmentTracking {
   recipientsCC?: string[],
   emailData: ISendNotificationEnrollmentTrackingEmailData
 }
+
+export interface ISendNotificationErp {
+  transactionId: string;
+  errorMessage: string
+  queryErrorMessage: string
+}
