@@ -399,10 +399,22 @@ class ErpService {
     if (transaction.shoppingCartItems && transaction.shoppingCartItems.length > 0) {
       // Para transacciones de carrito, crear un artículo por cada item
       articulos = transaction.shoppingCartItems.map((item, index) => ({
-        ATRIBUTO_1: item.description,
-        PrecioArticulo: String(item.price),
-        CodigoArticuloEcommerce: item.erpCode,
+        ATRIBUTO_1: String(`${item.numberOfPlaces}`), // CANTIDAD DE ELEMENTOS
+        PrecioArticulo: String(item.price), // PRECIO UNITARIO
+        CodigoArticuloEcommerce: item.programCode, // CODIGO DEL PROGRAMA
+        // ATRIBUTO_2: 'CODIGO', // TODO: Pendiente validar si se puede enviar el ID del servicio
       }));
+      // articulos = transaction.shoppingCartItems.reduce((accum: any[], element) => {
+      //   for (let index = 0; index < element.numberOfPlaces; index++) {
+      //     accum.push({
+      //       ATRIBUTO_1: `${element.description} - ${index + 1}`, // CANTIDAD
+      //       PrecioArticulo: String(element.price), // PRECIO UNITARIO
+      //       CodigoArticuloEcommerce: element.programCode, // CODIGO DEL PROGRAMA
+      //       ATRIBUTO_2: 'CODIGO',
+      //     })
+      //   }
+      //   return accum;
+      // }, [])
     } else {
       articulos = [
         {
