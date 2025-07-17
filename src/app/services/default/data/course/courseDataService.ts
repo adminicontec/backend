@@ -17,7 +17,7 @@ import { htmlPdfUtility } from '@scnode_core/utilities/pdf/htmlPdfUtility'
 // @end
 
 // @import models
-import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingType, Program, Term } from '@scnode_app/models';
+import { Course, CourseScheduling, CourseSchedulingMode, CourseSchedulingStatus, CourseSchedulingType, Program, Term } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -344,6 +344,12 @@ class CourseDataService {
       const pageNumber = params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage = params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
+      const schedulingStatus = await CourseSchedulingStatus.find({name: {$in: ['Programado', 'Confirmado']}})
+      const schedulingStatusIds = schedulingStatus?.reduce((accum, element) => {
+        accum.push(element._id.toString())
+        return accum
+      }, [])
+
       const schedulingTypes = await CourseSchedulingType.find({ name: { $in: ['Abierto'] } })
       if (schedulingTypes.length === 0) {
         return responseUtility.buildResponseSuccess('json', null, {
@@ -367,7 +373,8 @@ class CourseDataService {
       }
 
       let where: any = {
-        schedulingType: { $in: schedulingTypesIds }
+        schedulingType: { $in: schedulingTypesIds },
+        schedulingStatus: { $in: schedulingStatusIds }
       }
 
       const allowedCourses = await Course.find<ICourse>({ slug: { $exists: true } }).select('program')
