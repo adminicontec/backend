@@ -1539,6 +1539,10 @@ class CourseSchedulingService {
         }
       }
 
+      if (paramsTemplate?.attachments && Array.isArray(paramsTemplate.attachments)) {
+        messageAttacheds.push(...paramsTemplate.attachments)
+      }
+
       const mailOptions: IMailMessageData = {
         emails,
         mailOptions: {
