@@ -434,6 +434,29 @@ const CourseSchedulingSchema = new Schema({
   },
   longServiceInformation: {
     type: Schema.Types.String
+  },
+  erpPriceSync: {
+    lastUpdated: {
+      type: Schema.Types.Date,
+      required: false
+    },
+    lastAttempt: {
+      type: Schema.Types.Date,
+      required: false
+    },
+    attempts: {
+      type: Schema.Types.Number,
+      default: 0
+    },
+    status: {
+      type: Schema.Types.String,
+      enum: ['pending', 'success', 'error', 'skipped'],
+      default: 'pending'
+    },
+    errorMessage: {
+      type: Schema.Types.String,
+      required: false
+    }
   }
   // @end
 }, {

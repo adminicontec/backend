@@ -192,7 +192,7 @@ class HttpClientUtility {
    * @returns  [json] Objeto en formato JSON
    */
   private processErrorResponse = (err) => {
-    console.log('HTTP:ERROR', err)
+    // console.log('HTTP:ERROR', err)
     if (err.error) {
       if (typeof err.error === 'object') {
         const error = err.error;

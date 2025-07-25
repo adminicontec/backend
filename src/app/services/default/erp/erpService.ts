@@ -6,8 +6,8 @@
 
 // @import utilities
 import { responseUtility } from '@scnode_core/utilities/responseUtility';
-import { ICreateInvoiceERP, ICreateInvoiceERPResponse, IGetErpArticleDataParams, IGetErpArticleDataResponse } from '@scnode_app/types/default/erp/erpTypes';
-import { CertificateQueue, Course, Transaction } from '@scnode_app/models';
+import { ICreateInvoiceERP, ICreateInvoiceERPResponse, IGetErpArticleDataParams, IGetErpArticleDataResponse, IGetPricesByProgram, IUpdateErpPricesParams, IUpdateErpPricesResult } from '@scnode_app/types/default/erp/erpTypes';
+import { CertificateQueue, Course, CourseScheduling, CourseSchedulingStatus, Transaction } from '@scnode_app/models';
 import { ICourse } from '@scnode_app/types/default/admin/course/courseTypes';
 import { erpSetup } from '@scnode_core/config/globals';
 import { btoa } from 'js-base64';
@@ -130,7 +130,23 @@ enum Currency {
   COP = "COP",
 }
 
+const DEFAULT_BATCH_SIZE = 50;
+const DEFAULT_UPDATE_INTERVAL_HOURS = 24;
+const DEFAULT_MAX_RETRIES = 3;
+const BATCH_DELAY_MS = 1000; // 2 segundos entre lotes
+const CONCURRENT_REQUESTS = 5; // Número de requests concurrentes por micro-lote
+const MICRO_BATCH_DELAY_MS = 500; // Delay entre micro-lotes
+const PROGRAM_CACHE_TTL_MS = 300000;
+
+interface IProgramCacheEntry {
+  data: IGetErpArticleDataResponse;
+  timestamp: number;
+  batchId: string;
+}
+
 class ErpService {
+
+  private programCache = new Map<string, IProgramCacheEntry>();
 
   /*===============================================
   =            Estructura de un metodo            =
@@ -531,6 +547,514 @@ class ErpService {
     }
   }
 
+  public getPricesByProgram = async (params: IGetPricesByProgram): Promise<any> => {
+    try {
+      const { programCode, documentNumber } = params;
+      const erpItemsToSearch = [
+        {
+          programCode,
+          userDocNumber: documentNumber
+        }
+      ]
+      const erpArticleData = await erpService.fetchErpDataForItems(erpItemsToSearch)
+      return responseUtility.buildResponseSuccess('json', null, {
+        additional_parameters: {
+          prices: erpArticleData.get(programCode)
+        }
+      })
+    } catch (e) {
+      console.log(`erpService -> getPricesByProgram -> ERROR: ${e}`);
+      return responseUtility.buildResponseFailed('json', null, {message: e?.message})
+    }
+  }
+
+  public updateErpPrices = async (params: IUpdateErpPricesParams): Promise<IUpdateErpPricesResult> => {
+    const {
+      programsIds,
+      serviceIds,
+      batchSize = DEFAULT_BATCH_SIZE,
+      maxRetries = DEFAULT_MAX_RETRIES,
+      updateIntervalHours = DEFAULT_UPDATE_INTERVAL_HOURS,
+      forceUpdate = false,
+      concurrentRequests = CONCURRENT_REQUESTS,
+      microBatchDelay = MICRO_BATCH_DELAY_MS,
+      batchDelay = BATCH_DELAY_MS
+    } = params;
+
+    const result: IUpdateErpPricesResult = {
+      totalProcessed: 0,
+      successful: 0,
+      failed: 0,
+      skipped: 0,
+      errors: []
+    };
+
+    try {
+      this.clearProgramCache();
+      const batchId = Date.now().toString();
+
+      // Construir filtros
+      const where = await this.buildUpdateFilters({
+        programsIds,
+        serviceIds,
+        updateIntervalHours,
+        maxRetries,
+        forceUpdate
+      });
+
+      // Obtener total de registros
+      const totalCount = await CourseScheduling.countDocuments(where);
+      console.log(`Total de servicios a procesar: ${totalCount}`);
+
+      if (totalCount === 0) {
+        return result;
+      }
+
+      // Procesar en lotes
+      const totalBatches = Math.ceil(totalCount / batchSize);
+      console.log('totalBatches', totalBatches)
+
+      for (let batchIndex = 0; batchIndex < totalBatches; batchIndex++) {
+        const skip = batchIndex * batchSize;
+
+        console.log(`Procesando lote ${batchIndex + 1}/${totalBatches} (${skip + 1}-${Math.min(skip + batchSize, totalCount)})`);
+
+        // Obtener lote actual
+        const schedulings = await CourseScheduling
+          .find(where)
+          .populate('program')
+          .skip(skip)
+          .limit(batchSize)
+          .lean();
+
+        // Procesar lote
+        const batchResult = await this.processBatch(schedulings, maxRetries, batchId, {
+          concurrentRequests,
+          microBatchDelay
+        });
+
+        // Acumular resultados
+        result.totalProcessed += batchResult.totalProcessed;
+        result.successful += batchResult.successful;
+        result.failed += batchResult.failed;
+        result.skipped += batchResult.skipped;
+        result.errors.push(...batchResult.errors);
+
+        // Log de progreso
+        const cacheStats = this.getCacheStats();
+        await customLogService.create({
+          label: 'erp-price-update-progress',
+          description: `Lote ${batchIndex + 1}/${totalBatches} completado`,
+          content: {
+            batchResult,
+            totalProgress: result
+          }
+        });
+
+        // Pausa entre lotes para no sobrecargar el servicio externo
+        if (batchIndex < totalBatches - 1) {
+          await this.delay(batchDelay);
+        }
+      }
+
+      // Log final
+      const finalCacheStats = this.getCacheStats();
+      await customLogService.create({
+        label: 'erp-price-update-completed',
+        description: 'Actualización de precios completada',
+        content: {
+          ...result,
+          cacheStats: finalCacheStats,
+          optimizationSavings: {
+            totalServices: result.totalProcessed,
+            uniquePrograms: finalCacheStats.totalEntries,
+            savedRequests: result.totalProcessed - finalCacheStats.totalEntries,
+            efficiencyGain: `${((result.totalProcessed - finalCacheStats.totalEntries) / result.totalProcessed * 100).toFixed(1)}%`
+          }
+        }
+      });
+
+      this.clearProgramCache();
+
+      return result;
+
+    } catch (error) {
+      await customLogService.create({
+        label: 'erp-price-update-error',
+        description: 'Error en actualización masiva de precios',
+        content: { error: error.message, params }
+      });
+
+      throw error;
+    }
+  }
+
+  private buildUpdateFilters = async (params: {
+    programsIds?: string[]
+    serviceIds?: string[]
+    updateIntervalHours: number,
+    maxRetries: number,
+    forceUpdate: boolean
+  }) => {
+    const { programsIds, serviceIds, updateIntervalHours, forceUpdate, maxRetries } = params;
+
+    // Estados válidos
+    const courseSchedulingStatus = await CourseSchedulingStatus.find({
+      name: { $in: ['Programado', 'Confirmado'] }
+    });
+    const courseSchedulingStatusIds = courseSchedulingStatus.map(status => status._id);
+
+    const where: any = {
+      schedulingStatus: { $in: courseSchedulingStatusIds },
+      hasCost: true
+    };
+
+    // Filtros opcionales
+    if (programsIds && programsIds.length > 0) {
+      where.program = { $in: programsIds };
+    }
+
+    if (serviceIds && serviceIds.length > 0) {
+      where._id = { $in: serviceIds };
+    }
+
+    // Control de frecuencia de actualización
+    if (!forceUpdate) {
+      const cutoffDate = new Date();
+      cutoffDate.setHours(cutoffDate.getHours() - updateIntervalHours);
+
+      console.log('cutoffDate', cutoffDate);
+      console.log('maxRetries', maxRetries);
+
+      where.$or = [
+        { 'erpPriceSync.lastAttempt': { $exists: false } },
+        { 'erpPriceSync.lastAttempt': null },
+        // Registros que han pasado el tiempo de actualización Y fueron exitosos
+        {
+          'erpPriceSync.lastAttempt': { $lt: cutoffDate },
+          'erpPriceSync.status': { $in: ['success', 'pending'] }
+        },
+        {
+          'erpPriceSync.status': 'error',
+          // 'erpPriceSync.attempts': { $lt: maxRetries },
+          // Opcional: también considerar el tiempo para reintentos
+          'erpPriceSync.lastAttempt': { $lt: cutoffDate }
+        }
+      ];
+    }
+
+    return where;
+  };
+
+
+  private processBatch = async (
+    schedulings: any[],
+    maxRetries: number,
+    batchId: string,
+    optimizationParams?: {
+      concurrentRequests?: number
+      microBatchDelay?: number
+    }
+  ): Promise<IUpdateErpPricesResult> => {
+    const batchResult: IUpdateErpPricesResult = {
+      totalProcessed: 0,
+      successful: 0,
+      failed: 0,
+      skipped: 0,
+      errors: []
+    };
+
+    // Agrupar servicios por programa para optimizar consultas ERP
+    const programGroups = new Map<string, any[]>();
+    const uniquePrograms = new Set<string>();
+
+    for (const scheduling of schedulings) {
+      if (!scheduling.program?.code) {
+        batchResult.skipped++;
+        continue;
+      }
+
+      const programCode = scheduling.program.code;
+      uniquePrograms.add(programCode);
+
+      if (!programGroups.has(programCode)) {
+        programGroups.set(programCode, []);
+      }
+      programGroups.get(programCode)!.push(scheduling);
+    }
+
+    if (uniquePrograms.size === 0) {
+      console.log('No hay programas válidos para procesar en este lote');
+      return batchResult;
+    }
+
+    console.log(`Lote contiene ${schedulings.length} servicios agrupados en ${uniquePrograms.size} programas únicos`);
+
+    // Identificar programas que necesitan consulta ERP (no están en cache)
+    const programsToQuery: string[] = [];
+    const cachedPrograms: string[] = [];
+
+    for (const programCode of uniquePrograms) {
+      if (this.isProgramCached(programCode, batchId)) {
+        cachedPrograms.push(programCode);
+      } else {
+        programsToQuery.push(programCode);
+      }
+    }
+
+    console.log(`Cache hit: ${cachedPrograms.length} programas, Cache miss: ${programsToQuery.length} programas`);
+
+    // Consultar solo programas no cacheados
+    if (programsToQuery.length > 0) {
+      const erpItems: IGetErpArticleDataParams[] = programsToQuery.map(programCode => ({
+        programCode,
+        userDocNumber: ''
+      }));
+
+      console.log(`Consultando ERP para ${erpItems.length} programas únicos...`);
+
+      try {
+        const startTime = Date.now();
+        const erpData = await this.fetchErpDataForItemsWithDelay(
+          erpItems,
+          optimizationParams?.concurrentRequests || CONCURRENT_REQUESTS,
+          optimizationParams?.microBatchDelay || MICRO_BATCH_DELAY_MS
+        );
+        const queryTime = Date.now() - startTime;
+
+        console.log(`Consulta ERP completada en ${queryTime}ms para ${erpItems.length} programas`);
+
+        // Almacenar resultados en cache
+        for (const [programCode, erpResponse] of erpData.entries()) {
+          this.setProgramCache(programCode, erpResponse, batchId);
+        }
+
+      } catch (error) {
+        console.error('Error consultando ERP para programas:', error.message);
+
+        // Marcar programas con error en cache
+        for (const programCode of programsToQuery) {
+          this.setProgramCache(programCode, {
+            programCode,
+            price: { COP: 0, USD: 0 },
+            error: true,
+            erpCode: null
+          }, batchId);
+        }
+      }
+    }
+
+    // Actualizar todos los servicios usando datos de cache
+    console.log(`Actualizando ${schedulings.length} servicios usando datos de programas...`);
+    const updateStartTime = Date.now();
+
+    for (const [programCode, schedulingsForProgram] of programGroups.entries()) {
+      const erpResponse = this.getProgramFromCache(programCode);
+
+      if (!erpResponse) {
+        // Esto no debería pasar, pero por seguridad
+        console.error(`Programa ${programCode} no encontrado en cache`);
+        continue;
+      }
+
+      // Actualizar todos los servicios de este programa
+      for (const scheduling of schedulingsForProgram) {
+        batchResult.totalProcessed++;
+
+        try {
+          // Validaciones existentes
+          if (erpResponse.error) {
+            throw new Error('Error en consulta ERP');
+          }
+
+          if (!erpResponse.erpCode || erpResponse.erpCode.trim() === '') {
+            throw new Error('ERP Code no válido o vacío - no se puede actualizar precio');
+          }
+
+          if (!erpResponse.price || (erpResponse.price.COP === 0 && erpResponse.price.USD === 0)) {
+            throw new Error('Precios no válidos recibidos del ERP');
+          }
+
+          // Actualizar servicio
+          await CourseScheduling.findByIdAndUpdate(
+            scheduling._id,
+            {
+              priceCOP: erpResponse.price.COP,
+              priceUSD: erpResponse.price.USD,
+              'erpPriceSync.lastUpdated': new Date(),
+              'erpPriceSync.lastAttempt': new Date(),
+              'erpPriceSync.status': 'success',
+              'erpPriceSync.attempts': 0,
+              'erpPriceSync.errorMessage': null
+            },
+            { new: true }
+          );
+
+          batchResult.successful++;
+
+        } catch (error) {
+          batchResult.failed++;
+          const errorMessage = error.message;
+
+          batchResult.errors.push({
+            schedulingId: scheduling._id.toString(),
+            error: `${programCode}: ${errorMessage}`
+          });
+
+          // Actualizar estado de error
+          const currentAttempts = scheduling.erpPriceSync?.attempts || 0;
+          await CourseScheduling.findByIdAndUpdate(
+            scheduling._id,
+            {
+              'erpPriceSync.lastAttempt': new Date(),
+              'erpPriceSync.status': 'error',
+              'erpPriceSync.attempts': currentAttempts + 1,
+              'erpPriceSync.errorMessage': `${programCode}: ${errorMessage} - erpCode: ${erpResponse?.erpCode || 'N/A'}`
+            }
+          );
+        }
+      }
+    }
+
+    const updateTime = Date.now() - updateStartTime;
+    console.log(`Actualización BD completada en ${updateTime}ms para ${schedulings.length} servicios`);
+
+    return batchResult;
+  };
+
+  // Métodos de gestión de cache
+  private isProgramCached = (programCode: string, batchId: string): boolean => {
+    const entry = this.programCache.get(programCode);
+    if (!entry) return false;
+
+    const now = Date.now();
+    const isExpired = (now - entry.timestamp) > PROGRAM_CACHE_TTL_MS;
+
+    if (isExpired) {
+      this.programCache.delete(programCode);
+      return false;
+    }
+
+    return true;
+  };
+
+  private setProgramCache = (programCode: string, data: IGetErpArticleDataResponse, batchId: string): void => {
+    this.programCache.set(programCode, {
+      data,
+      timestamp: Date.now(),
+      batchId
+    });
+  };
+
+  private getProgramFromCache = (programCode: string): IGetErpArticleDataResponse | null => {
+    const entry = this.programCache.get(programCode);
+    return entry ? entry.data : null;
+  };
+
+  private clearProgramCache = (): void => {
+    this.programCache.clear();
+  };
+
+  private getCacheStats = () => {
+    return {
+      totalEntries: this.programCache.size,
+      entries: Array.from(this.programCache.keys())
+    };
+  };
+
+  private fetchErpDataForItemsWithDelay = async (
+    items: IGetErpArticleDataParams[],
+    concurrentRequests: number = CONCURRENT_REQUESTS,
+    microBatchDelay: number = MICRO_BATCH_DELAY_MS
+  ): Promise<Map<string, IGetErpArticleDataResponse>> => {
+    const results = new Map<string, IGetErpArticleDataResponse>();
+
+    // Dividir items en micro-lotes para procesamiento concurrente controlado
+    const microBatches = this.chunkArray(items, concurrentRequests);
+
+    console.log(`Procesando ${items.length} items en ${microBatches.length} micro-lotes de ${concurrentRequests} requests concurrentes`);
+
+    for (let i = 0; i < microBatches.length; i++) {
+      const microBatch = microBatches[i];
+
+      console.log(`Procesando micro-lote ${i + 1}/${microBatches.length} con ${microBatch.length} items`);
+
+      try {
+        // Procesar micro-lote de forma concurrente
+        const microBatchPromises = microBatch.map(async (item) => {
+          try {
+            const result = await this.getErpArticleData(item);
+
+            // Log detallado del resultado
+            if (result.error) {
+              console.warn(`⚠ Error en consulta ERP para ${item.programCode}`);
+            } else if (!result.erpCode || result.erpCode.trim() === '') {
+              console.warn(`⚠ ERP Code vacío para ${item.programCode}`);
+            } else {
+              console.log(`✓ Datos ERP obtenidos para ${item.programCode} - Code: ${result.erpCode}`);
+            }
+
+            return { programCode: item.programCode, result };
+          } catch (error) {
+            console.error(`✗ Error procesando item ${item.programCode}:`, error.message);
+            return {
+              programCode: item.programCode,
+              result: {
+                programCode: item.programCode,
+                price: { COP: 0, USD: 0 },
+                error: true,
+                erpCode: null
+              }
+            };
+          }
+        });
+
+        // Esperar a que termine el micro-lote
+        const microBatchResults = await Promise.all(microBatchPromises);
+
+        // Agregar resultados al mapa
+        microBatchResults.forEach(({ programCode, result }) => {
+          results.set(programCode, result);
+        });
+
+        // Log de progreso del micro-lote
+        const validResults = microBatchResults.filter(r => !r.result.error && r.result.erpCode).length;
+        console.log(`Micro-lote ${i + 1}/${microBatches.length} completado. Válidos: ${validResults}/${microBatch.length}. Total procesado: ${results.size}/${items.length}`);
+
+        // Delay entre micro-lotes para no sobrecargar el servicio externo
+        if (i < microBatches.length - 1) {
+          await this.delay(microBatchDelay);
+        }
+
+      } catch (error) {
+        console.error(`✗ Error en micro-lote ${i + 1}:`, error.message);
+
+        // En caso de error del micro-lote completo, marcar todos los items como error
+        microBatch.forEach(item => {
+          results.set(item.programCode, {
+            programCode: item.programCode,
+            price: { COP: 0, USD: 0 },
+            error: true,
+            erpCode: null
+          });
+        });
+      }
+    }
+
+    return results;
+  };
+
+  private chunkArray = <T>(array: T[], chunkSize: number): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
+
+  private delay = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  };
 }
 
 export const erpService = new ErpService();

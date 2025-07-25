@@ -50,81 +50,22 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
       for (const transaction of pendingTransactions) {
         const efipayStatus = await efipayService.getTransactionStatus({ paymentId: transaction.paymentId })
         if (efipayStatus && efipayStatus?.data?.status !== EfipayTransactionStatus.IN_PROCESS) {
-          const updateResponse = await transactionService.insertOrUpdate({
-            id: transaction._id,
-            status: efipayStatus.data.status as unknown as TransactionStatus,
-            ...(efipayStatus.data?.transaction_details ? {
-              paymentInfo: {
-                name: efipayStatus.data.transaction_details.name,
-                identification_number: efipayStatus.data.transaction_details.identification_number,
-                identification_type: efipayStatus.data.transaction_details.identification_type,
-                email: efipayStatus.data.transaction_details.email,
-                phone: efipayStatus.data.transaction_details.phone,
-                address1: efipayStatus.data.customer_payer.address_1,
-                address2: efipayStatus.data.customer_payer.address_2,
-                city: efipayStatus.data.customer_payer.city,
-                country: efipayStatus.data.customer_payer.country,
-                state: efipayStatus.data.customer_payer.state,
-                zipCode: efipayStatus.data.customer_payer.zip_code,
-                authorization_code: efipayStatus.data.authorization_code,
-              }
-            } : {})
-          })
 
-          const certificateQueue = await CertificateQueue.findOne({ _id: transaction?.certificateQueue })
-            .populate({ path: 'userId', select: 'profile email' })
-            .populate({ path: 'certificateSetting', select: 'certificateName' })
-            .populate({ path: 'courseId', populate: {
-              path: 'program'
-            } })
-          const program = certificateQueue?.courseId?.program
-
-          if (updateResponse.status === 'success' && efipayStatus.data.status === EfipayTransactionStatus.SUCCESS) {
-            const response = await certificateQueueService.processCertificateQueue({
-              certificateQueueId: transaction.certificateQueue,
-              output: 'process'
-            })
-            const invoiceResponse: any = await erpService.createInvoiceFromTransaction(transaction._id)
-            if (invoiceResponse?.status === 'error') {
-              // TODO: Transactions - send error email
-              await certificateNotifiactionsService.sendAdminErrorCertificate({
-                errorMessage: 'Error al generar la factura',
-                queryErrorMessage: typeof invoiceResponse?.errorContent === 'object' ? JSON.stringify(invoiceResponse?.errorContent) : invoiceResponse?.errorContent,
-                certificateQueueId: certificateQueue?._id?.toString(),
-                courseName: program?.name,
-                docNumber: certificateQueue?.userId?.username,
-                studentName: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
-              })
-              await certificateNotifiactionsService.sendErrorCertificate({
-                certificateQueueId: certificateQueue?._id?.toString(),
-                users: [
-                  {
-                    name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
-                    email: certificateQueue?.userId?.email
-                  }
-                ],
-                courseName: program?.name
-              })
-              continue
-            }
-          }
-
-          if (certificateQueue) {
-            await transactionNotificationsService.sendTransactionStatus({
-              paymentType: 'certificate',
-              additionalInfo: {
-                certificateName: certificateQueue?.certificateSetting?.certificateName,
-              },
-              status: efipayStatus.data.status as unknown as TransactionStatus,
-              transactionId: transaction._id,
-              users: [
-                {
-                  name: `${certificateQueue?.userId?.profile?.first_name} ${certificateQueue?.userId?.profile?.last_name}`,
-                  email: certificateQueue?.userId?.email
+          await transactionService.onTransactionSuccess(
+            {
+              checkout: {
+                payment_gateway_id: transaction.paymentId,
+                paid_at: '',
+                payment_gateway: {
+                  created_at: ''
                 }
-              ]
-            })
-          }
+              },
+              transaction: efipayStatus.data,
+            },
+            undefined,
+            undefined,
+            'local'
+          )
         }
       }
     } catch (e) {
@@ -154,6 +95,15 @@ class TransactionsProgram extends DefaultPluginsTaskTaskService {
             await transactionService.insertOrUpdate({
               id: transaction._id,
               status: TransactionStatus.CANCELLED
+            })
+            customLogService.create({
+              label: 'tp - ctpe - clean transaction pending',
+              description: 'Clean pending transaction successfully',
+              content: {
+                transaction: transaction._id,
+                createdAt: transaction?.created_at,
+                comparisonDate: oneDayBefore,
+              }
             })
           }
         }

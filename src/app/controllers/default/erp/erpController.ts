@@ -33,6 +33,31 @@ class ErpController {
 		return responseUtility.sendResponseFromObject(res, response)
 	}
 
+  public getPricesByProgram = async (req: Request, res: Response) => {
+		const response = await erpService.getPricesByProgram(req.getParameters.all())
+		return responseUtility.sendResponseFromObject(res, response)
+	}
+
+  public updateErpPrices = async (req: Request, res: Response) => {
+    try {
+      const params = req.getParameters.all();
+      const result = await erpService.updateErpPrices(params);
+      return responseUtility.sendResponseFromObject(res, 
+        responseUtility.buildResponseSuccess('json', null, {
+          additional_parameters: result
+        })
+      );
+    } catch (error) {
+      return responseUtility.sendResponseFromObject(res,
+        responseUtility.buildResponseFailed('json', null, {
+          code: 500,
+          message: 'Error actualizando precios ERP',
+          additional_parameters: { error: error.message }
+        })
+      );
+    }
+  };
+
 }
 
 export const erpController = new ErpController();

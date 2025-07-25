@@ -216,8 +216,10 @@ class TransactionService {
     return false
   }
 
-  public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature: string, bodyBuffer: Buffer) => {
+  public onTransactionSuccess = async (params: IOnTransactionSuccessParams, signature?: string, bodyBuffer?: Buffer, origin?: 'local' | 'external') => {
     try {
+      let defaultOrigin = origin ?? 'external'
+
       await customLogService.create({
         label: 'efps - ots - on transaction success',
         description: "On transaction success Efipay",
@@ -226,19 +228,7 @@ class TransactionService {
           signature,
         },
       })
-      if (!signature) {
-        customLogService.create({
-          label: 'efps - nsf - no signature found',
-          description: "No signature found",
-          content: {
-            params,
-          },
-        })
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 400,
-          message: 'No signature found'
-        })
-      }
+
       const transaction: ITransaction = await Transaction.findOne({ paymentId: params.checkout.payment_gateway_id })
       if (!transaction) {
         customLogService.create({
@@ -254,24 +244,40 @@ class TransactionService {
         })
       }
 
-      const signatureIsValid = efipayService.validateSignature(signature, bodyBuffer)
-      if (!signatureIsValid) {
-        customLogService.create({
-          label: 'efps - esnv - error signature is not valid',
-          description: "Error signature is not valid",
-          content: {
-            params,
-            transaction: {
-              id: transaction._id,
-              status: params.transaction.status
+      if (defaultOrigin === 'external') {
+        if (!signature) {
+          customLogService.create({
+            label: 'efps - nsf - no signature found',
+            description: "No signature found",
+            content: {
+              params,
             },
-            signature,
-          },
-        })
-        return responseUtility.buildResponseFailed('json', null, {
-          code: 400,
-          message: 'The signature is not valid'
-        })
+          })
+          return responseUtility.buildResponseFailed('json', null, {
+            code: 400,
+            message: 'No signature found'
+          })
+        }
+
+        const signatureIsValid = efipayService.validateSignature(signature, bodyBuffer)
+        if (!signatureIsValid) {
+          customLogService.create({
+            label: 'efps - esnv - error signature is not valid',
+            description: "Error signature is not valid",
+            content: {
+              params,
+              transaction: {
+                id: transaction._id,
+                status: params.transaction.status
+              },
+              signature,
+            },
+          })
+          return responseUtility.buildResponseFailed('json', null, {
+            code: 400,
+            message: 'The signature is not valid'
+          })
+        }
       }
 
       const result: any = await transactionService.insertOrUpdate({

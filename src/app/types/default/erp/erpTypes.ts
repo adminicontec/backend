@@ -8,7 +8,7 @@ export interface IGetErpArticleDataParams {
   programName?: string
   programCode: string
   duration?: number
-  userDocNumber: string
+  userDocNumber?: string
 }
 
 export interface IGetErpArticleDataResponse {
@@ -141,5 +141,42 @@ export interface ICreateInvoiceERP extends Partial<IAttributesERP> {
 export interface ICreateInvoiceERPResponse {
   error?: boolean
   errorContent?: any
+}
+
+export interface IGetPricesByProgram {
+  programCode: string
+  documentNumber: string
+}
+
+export interface IUpdateErpPricesParams {
+  programsIds?: string[]
+  serviceIds?: string[]
+  batchSize?: number
+  maxRetries?: number
+  updateIntervalHours?: number
+  forceUpdate?: boolean
+  concurrentRequests?: number
+  microBatchDelay?: number
+  batchDelay?: number
+}
+
+export interface IUpdateErpPricesResult {
+  totalProcessed: number
+  successful: number
+  failed: number
+  skipped: number
+  errors: Array<{
+    schedulingId: string
+    error: string
+  }>
+}
+
+export interface IBatchUpdateProgress {
+  currentBatch: number
+  totalBatches: number
+  processed: number
+  total: number
+  startTime: Date
+  estimatedTimeRemaining?: number
 }
 //@end

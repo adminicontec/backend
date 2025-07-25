@@ -81,7 +81,8 @@ export interface ITransaction {
     city: string
     currency: EfipayCurrency
     email: string
-  }
+  },
+  created_at?: string
 }
 
 export interface IUpdateTransactionWithNewCertificateQueueIdParams {

@@ -30,6 +30,8 @@ class ErpRoute {
 
     // @add_routes Add routes: Ej: routerUtility.get(app,_route,'/url-for-request',this.instanceController.method,[{middleware: 'middleware-name', method: 'method-name'}...],[...]);
     routerUtility.post(app, _route, '/get-certificate-price-from-certificate-queue', this.instanceController.getCertificatePriceFromCertificateQueue, [], [])
+    routerUtility.post(app, _route, '/get-prices-by-program', this.instanceController.getPricesByProgram, [], ['auth'])
+    routerUtility.post(app, _route, '/update-erp-prices', this.instanceController.updateErpPrices, [], ['auth'])
     // @end
   }
 }
