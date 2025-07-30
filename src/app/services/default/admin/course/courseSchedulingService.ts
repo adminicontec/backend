@@ -1432,10 +1432,16 @@ class CourseSchedulingService {
         .lean()
       const { serviceTypeKey, serviceTypeLabel } = this.getServiceType(courseScheduling)
       const isFreeOrMooc = [CourseSchedulingTypesKeys.FREE, CourseSchedulingTypesKeys.MOOC].includes(serviceTypeKey)
+      const withoutTutor = courseScheduling?.withoutTutor ?? false
       paramsTemplate.courseType = serviceTypeLabel
       paramsTemplate.serviceValidity = courseScheduling?.serviceValidity ? durationService.getDurationFormated(courseScheduling?.serviceValidity, "large") : null
       if (isFreeOrMooc && paramsTemplate?.type === 'student') {
         path_template = 'user/selfRegistrationEnrollment'
+        const startDate = moment.utc(enrollment?.created_at)
+        const endDate = moment.utc(enrollment?.created_at).add(courseScheduling?.serviceValidity, 'second')
+        paramsTemplate.course_start = startDate.format('YYYY-MM-DD')
+        paramsTemplate.course_end = endDate.format('YYYY-MM-DD')
+      } else if (withoutTutor && courseScheduling?.serviceValidity) {
         const startDate = moment.utc(enrollment?.created_at)
         const endDate = moment.utc(enrollment?.created_at).add(courseScheduling?.serviceValidity, 'second')
         paramsTemplate.course_start = startDate.format('YYYY-MM-DD')
