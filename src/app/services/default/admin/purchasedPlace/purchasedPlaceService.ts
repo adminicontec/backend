@@ -374,7 +374,8 @@ class PurchasedPlaceService {
             doc_number: userData.docNumber,
             first_name: userData.firstName,
             last_name: userData.lastName,
-          }
+          },
+          sendEmail: true
         })
         if (newUserCreated.status === 'error') {
           return responseUtility.buildResponseFailed('json', null, {
