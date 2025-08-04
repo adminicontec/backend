@@ -42,7 +42,7 @@ class EnrollmentValidityService {
         $or: [
           { typeCourse: { $in: [TypeCourse.FREE, TypeCourse.MOOC] } },
           { quickLearning: true },
-          { withoutTutor: true}
+          // { withoutTutor: true}
         ],
       }).select('_id metadata serviceValidity withoutTutor quickLearning program typeCourse')
       .populate({path: 'program', select: 'id name'})
