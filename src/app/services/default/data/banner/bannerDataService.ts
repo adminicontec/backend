@@ -40,7 +40,6 @@ class BannerDataService {
     try {
 
       const paging = (params.pageNumber && params.nPerPage) ? true : false
-
       const pageNumber= params.pageNumber ? (parseInt(params.pageNumber)) : 1
       const nPerPage= params.nPerPage ? (parseInt(params.nPerPage)) : 10
 
@@ -70,14 +69,59 @@ class BannerDataService {
         }
       }
 
-      // if (params.location) {
-      //   where['location'] = params.location
-      // } else {
-      //   where['location'] = {$in: [undefined, null]}
-      // }
-
       if (typeof params.isActive === 'undefined' || params.isActive === true) {
         where['isActive'] = true
+      }
+
+      if (params.filterByDate) {
+        const now = new Date()
+        // Crear un nuevo array para las condiciones de fecha sin duplicar propiedades
+        const dateConditions = [
+          // Banners con start_date y end_date: fecha actual debe estar entre ambas
+          {
+            $and: [
+              { start_date: { $exists: true, $ne: null, $lte: now } },
+              { end_date: { $exists: true, $ne: null, $gte: now } }
+            ]
+          },
+          // Banners solo con start_date: fecha actual debe ser posterior
+          {
+            $and: [
+              { start_date: { $exists: true, $ne: null, $lte: now } },
+              { $or: [{ end_date: { $exists: false } }, { end_date: null }] }
+            ]
+          },
+          // Banners solo con end_date: fecha actual debe ser anterior
+          {
+            $and: [
+              { $or: [{ start_date: { $exists: false } }, { start_date: null }] },
+              { end_date: { $exists: true, $ne: null, $gte: now } }
+            ]
+          },
+          // Banners sin fechas: siempre válidos
+          {
+            $and: [
+              { $or: [{ start_date: { $exists: false } }, { start_date: null }] },
+              { $or: [{ end_date: { $exists: false } }, { end_date: null }] }
+            ]
+          }
+        ]
+
+        // Si ya existe un $or en where, necesitamos combinarlo
+        if (where['$or']) {
+          where = {
+            $and: [
+              { $or: where['$or'] }, // Condiciones de búsqueda existentes
+              { $or: dateConditions } // Condiciones de fecha
+            ],
+            ...Object.fromEntries(Object.entries(where).filter(([key]) => key !== '$or'))
+          }
+        } else {
+          where = {
+            ...where,
+            $or: dateConditions
+          }
+        }
       }
 
       let sort = null
@@ -100,10 +144,6 @@ class BannerDataService {
           }
         }
       } catch (e) {}
-
-      if (params.filterByDate) {
-        registers = this.getValidBanners(registers)
-      }
 
       return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {
