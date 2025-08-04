@@ -602,8 +602,6 @@ class CourseDataService {
           .sort(!params.moreViewed ? sort : null)
           .lean()
 
-          console.log({ schedulings: registers.length, where })
-
         if (params.random && params.random.size) {
           registers = mapUtility.shuffle(registers).slice(0, params.random.size)
         }
