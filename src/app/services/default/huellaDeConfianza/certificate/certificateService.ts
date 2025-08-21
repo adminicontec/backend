@@ -14,6 +14,7 @@ import { customs, system_user } from '@scnode_core/config/globals'
 // @end
 
 // @import services
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 import { userService } from '@scnode_app/services/default/admin/user/userService';
 import { courseSchedulingService } from '@scnode_app/services/default/admin/course/courseSchedulingService';
 import { courseSchedulingDetailsService } from '@scnode_app/services/default/admin/course/courseSchedulingDetailsService';
@@ -2734,17 +2735,13 @@ class CertificateService {
           responseIssuer.status = 'error'
         }
       } else {
-        const username = 'LegadoCampus'
-        const password = 'quAngEraMuSTerGerEDE'
-        const basicAuthHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
-
         // !Info: Si necesito probar solo pongo la respuesta como constante
         const respIssuer: any = await queryUtility.query({
           method: 'post',
           url: certificate_setup.endpoint.create_certificate_acredita,
           api: 'acredita',
           headers: {
-            Authorization: basicAuthHeader
+            Authorization: this.getAcreditaAuth()
           },
           params: certificateReq.paramsHuella,
           sendBy: 'body'
@@ -2819,6 +2816,12 @@ class CertificateService {
 
     }
     return responseCertQueueArray;
+  }
+
+  private getAcreditaAuth = (): string => {
+    const username = 'LegadoCampus';
+    const password = 'quAngEraMuSTerGerEDE';
+    return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
   }
 
   /**
@@ -3077,6 +3080,26 @@ class CertificateService {
         if (!params.certificateQueueId) return responseUtility.buildResponseFailed('json', null, { error_key: "certificate.re_generate.params_invalid" })
         const certificate = await CertificateQueue.findOne({_id: params.certificateQueueId})
 
+        // Procesar revocación antes de eliminar
+        if (certificate?.certificate?.hash) {
+          console.log(`[CertificateService] [reGenerateCertification] Processing revocation for single certificate: ${certificate.certificate.hash}`);
+          
+          const revocationResult = await this.revokeCredential(certificate.certificate.hash);
+          console.log(`[CertificateService] [reGenerateCertification] Revocation result:`, revocationResult);
+          
+          // Log del resultado de revocación
+          await customLogService.create({
+            label: 'CERTIFICATE_REGENERATION_REVOCATION',
+            description: `Revocation attempted before regeneration for certificate ${certificate.certificate.hash}`,
+            content: {
+              certificateQueueId: params.certificateQueueId,
+              certificateHash: certificate.certificate.hash,
+              revocationResult,
+              process: 'Certificate regeneration - revocation step'
+            }
+          });
+        }
+
         // Usar una transaccion para evitar perdida de datos
         const mongooseSession = await mongoose.startSession()
         mongooseSession.startTransaction()
@@ -3160,6 +3183,58 @@ class CertificateService {
           query['_id'] = params.certificateQueueId
         }
 
+        // Obtener los certificados que tienen hash para revocar antes de eliminar
+        const certificatesToRevoke = await CertificateQueue.find(query)
+        .select('_id certificate.hash certificateConsecutive')
+        .lean();
+
+        // Procesar revocaciones
+        const certificatesWithHash = certificatesToRevoke.filter(cert => cert?.certificate?.hash);
+        
+        if (certificatesWithHash.length > 0) {
+          console.log(`[CertificateService] [reGenerateCertification] Processing revocation for ${certificatesWithHash.length} certificates`);
+          
+          if (certificatesWithHash.length === 1) {
+            // Procesamiento síncrono para un solo certificado
+            const cert = certificatesWithHash[0];
+            const revocationResult = await this.revokeCredential(cert.certificate.hash);
+            console.log(`[CertificateService] [reGenerateCertification] Revocation result for ${cert.certificate.hash}:`, revocationResult);
+            
+            // Log del resultado
+            await customLogService.create({
+              label: 'CERTIFICATE_REGENERATION_REVOCATION',
+              description: `Revocation attempted before regeneration for certificate ${cert.certificate.hash}`,
+              content: {
+                certificateQueueId: cert._id,
+                certificateHash: cert.certificate.hash,
+                certificateConsecutive: cert.certificateConsecutive,
+                revocationResult,
+                process: 'Certificate regeneration - single revocation step'
+              }
+            });
+          } else {
+            // Procesamiento asíncrono para múltiples certificados
+            console.log(`[CertificateService] [reGenerateCertification] Processing ${certificatesWithHash.length} revocations asynchronously`);
+            
+            // Procesar revocaciones de forma asíncrona sin bloquear
+            this.processMultipleRevocations(certificatesWithHash)
+              .catch(error => {
+                console.error(`[CertificateService] [reGenerateCertification] Error in async revocation processing:`, error);
+              });
+
+            // Log general del proceso asíncrono
+            await customLogService.create({
+              label: 'CERTIFICATE_REGENERATION_REVOCATION_BATCH',
+              description: `Batch revocation started for ${certificatesWithHash.length} certificates before regeneration`,
+              content: {
+                certificateCount: certificatesWithHash.length,
+                certificateHashes: certificatesWithHash.map(cert => cert.certificate.hash),
+                process: 'Certificate regeneration - batch revocation step'
+              }
+            });
+          }
+        }
+
         await CertificateQueue.delete(query)
 
         const responseQueue: any = await certificateQueueService.insertOrUpdate({
@@ -3182,6 +3257,79 @@ class CertificateService {
     } catch (err) {
       return responseUtility.buildResponseFailed('json')
     }
+  }
+
+  /**
+   * Procesa múltiples revocaciones de forma asíncrona con control de concurrencia
+   * @param certificates Array de certificados con hash para revocar
+   */
+  private processMultipleRevocations = async (certificates: any[]): Promise<void> => {
+    const BATCH_SIZE = 5; // Procesar de 5 en 5 para no sobrecargar el API
+    const batches = [];
+    
+    // Dividir en lotes
+    for (let i = 0; i < certificates.length; i += BATCH_SIZE) {
+      batches.push(certificates.slice(i, i + BATCH_SIZE));
+    }
+
+    console.log(`[CertificateService] [processMultipleRevocations] Processing ${certificates.length} certificates in ${batches.length} batches`);
+
+    // Procesar cada lote
+    for (const [batchIndex, batch] of batches.entries()) {
+      console.log(`[CertificateService] [processMultipleRevocations] Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} certificates`);
+      
+      // Procesar certificados del lote en paralelo
+      const revocationPromises = batch.map(async (cert) => {
+        try {
+          const revocationResult = await this.revokeCredential(cert.certificate.hash);
+          console.log(`[CertificateService] [processMultipleRevocations] Revocation result for ${cert.certificate.hash}:`, revocationResult);
+          
+          // Log individual del resultado
+          await customLogService.create({
+            label: 'CERTIFICATE_REGENERATION_REVOCATION_ASYNC',
+            description: `Async revocation completed for certificate ${cert.certificate.hash}`,
+            content: {
+              certificateQueueId: cert._id,
+              certificateHash: cert.certificate.hash,
+              certificateConsecutive: cert.certificateConsecutive,
+              revocationResult,
+              batchIndex: batchIndex + 1,
+              process: 'Certificate regeneration - async revocation step'
+            }
+          });
+
+          return { success: true, hash: cert.certificate.hash, result: revocationResult };
+        } catch (error) {
+          console.error(`[CertificateService] [processMultipleRevocations] Error revoking ${cert.certificate.hash}:`, error);
+          
+          // Log del error
+          await customLogService.create({
+            label: 'CERTIFICATE_REGENERATION_REVOCATION_ERROR',
+            description: `Async revocation failed for certificate ${cert.certificate.hash}`,
+            content: {
+              certificateQueueId: cert._id,
+              certificateHash: cert.certificate.hash,
+              certificateConsecutive: cert.certificateConsecutive,
+              error: error?.message || 'Unknown error',
+              batchIndex: batchIndex + 1,
+              process: 'Certificate regeneration - async revocation error'
+            }
+          });
+
+          return { success: false, hash: cert.certificate.hash, error: error?.message };
+        }
+      });
+
+      // Esperar a que termine el lote actual antes de continuar con el siguiente
+      await Promise.all(revocationPromises);
+      
+      // Pequeña pausa entre lotes para no sobrecargar el API
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo de pausa
+      }
+    }
+
+    console.log(`[CertificateService] [processMultipleRevocations] Completed processing all ${certificates.length} certificate revocations`);
   }
 
   public generateZipCertifications = async (params: IGenerateZipCertifications) => {
@@ -3548,6 +3696,195 @@ class CertificateService {
       mappingModules: mappingAuditorModulesList,
       totalDuration: totalDuration
     };
+  }
+
+  /**
+   * Método que revoca una credencial en el sistema Acredita
+   * @param certificateId ID de la credencial a revocar
+   * @returns Promise<{status: 'success' | 'error', revoked: boolean, message?: string}> - Resultado de la revocación
+   */
+  public revokeCredential = async (certificateId: string): Promise<{status: 'success' | 'error', revoked: boolean, message?: string}> => {
+    try {
+      // Validar que se proporcione el ID del certificado
+      if (!certificateId || certificateId.trim() === '') {
+        return {
+          status: 'error',
+          revoked: false,
+          message: 'El ID del certificado es requerido'
+        };
+      }
+
+      // Realizar la petición al API de Acredita
+      const response: any = await queryUtility.query({
+        method: 'get',
+        url: `${certificate_setup.endpoint.certificate_revocation_acredita}/${certificateId.trim()}`,
+        api: 'acredita',
+        headers: {
+          Authorization: this.getAcreditaAuth()
+        }
+      });
+
+      // Log de la respuesta para debugging
+      console.log(`[CertificateService] [revokeCredential] Response for certificate ${certificateId}:`, response);
+
+      // Procesar la respuesta según los diferentes casos posibles
+      if (response) {
+        let responseObject = null;
+
+        // Intentar parsear si es string que parece JSON
+        if (typeof response === 'string') {
+          try {
+            // Verificar si el string parece un JSON
+            if (response.trim().startsWith('{') && response.trim().endsWith('}')) {
+              responseObject = JSON.parse(response);
+            }
+          } catch (parseError) {
+            console.log('err', parseError)
+            // Si falla el parse, no es un JSON válido, continuar con el flujo normal
+            responseObject = null;
+          }
+        } else if (typeof response === 'object') {
+          responseObject = response;
+        }
+
+        // Intentar parsear si es string que parece JSON
+        if (typeof response === 'string') {
+          try {
+            // Verificar si el string parece un JSON
+            if (response.trim().startsWith('{') && response.trim().endsWith('}')) {
+              responseObject = JSON.parse(response);
+            }
+          } catch (parseError) {
+            // Si falla el parse, no es un JSON válido, continuar con el flujo normal
+            responseObject = null;
+          }
+        } else if (typeof response === 'object') {
+          responseObject = response;
+        }
+
+        // Caso 1: Verificar si tenemos un objeto con status "revoked"
+        if (responseObject && responseObject.status === 'revoked') {
+          await customLogService.create({
+            label: 'CERTIFICATE_REVOCATION',
+            description: 'Credential revoked successfully',
+            content: {
+              certificateId,
+              process: 'Revoke credential',
+              serviceResponse: 'Credential revoked successfully',
+              requestData: { certificateId },
+              responseService: responseObject
+            }
+          });
+
+          return {
+            status: 'success',
+            revoked: true,
+            message: 'Credencial revocada exitosamente'
+          };
+        }
+
+        // Caso 2: Respuesta simple "Ok"
+        if (typeof response === 'string' && response.toLowerCase().trim() === 'ok') {
+          await customLogService.create({
+            label: 'CERTIFICATE_REVOCATION',
+            description: 'Certificate revoked successfully with OK response',
+            content: {
+              certificateId,
+              process: 'Revoke credential',
+              serviceResponse: 'OK',
+              requestData: { certificateId },
+              responseService: response
+            }
+          });
+
+          return {
+            status: 'success',
+            revoked: true,
+            message: 'Credencial revocada exitosamente'
+          };
+        }
+
+        // Caso 3: Error - no se encontró el certificado o error en el procesamiento
+        if (typeof response === 'string' && response.includes('No se encontró certificado para revocar')) {
+          await customLogService.create({
+            label: 'CERTIFICATE_REVOCATION_ERROR',
+            description: 'Certificate not found for revocation',
+            content: {
+              certificateId,
+              process: 'Revoke credential',
+              serviceResponse: 'Certificate not found',
+              requestData: { certificateId },
+              responseService: response
+            }
+          });
+
+          return {
+            status: 'error',
+            revoked: false,
+            message: 'No se encontró el certificado para revocar'
+          };
+        }
+
+        // Caso 4: Cualquier otra respuesta inesperada
+        await customLogService.create({
+          label: 'CERTIFICATE_REVOCATION_ERROR',
+          description: 'Unexpected response from revocation service',
+          content: {
+            certificateId,
+            process: 'Revoke credential',
+            serviceResponse: 'Unexpected response',
+            requestData: { certificateId },
+            responseService: response
+          }
+        });
+
+        return {
+          status: 'error',
+          revoked: false,
+          message: 'Respuesta inesperada del servicio de revocación'
+        };
+      }
+
+      // Sin respuesta del servicio
+      return {
+        status: 'error',
+        revoked: false,
+        message: 'No se recibió respuesta del servicio de revocación'
+      };
+
+    } catch (error) {
+      // Log del error
+      console.error(`[CertificateService] [revokeCredential] Error revoking certificate ${certificateId}:`, error);
+      
+      await customLogService.create({
+        label: 'CERTIFICATE_REVOCATION_EXCEPTION',
+        description: `Error revoking certificate ${certificateId}`,
+        content: {
+          certificateId,
+          process: 'Revoke credential',
+          serviceResponse: 'Error',
+          requestData: { certificateId },
+          responseService: { error: error?.message || 'Unknown error' },
+          stackTrace: error?.stack || 'No stack trace available'
+        }
+      });
+
+      return {
+        status: 'error',
+        revoked: false,
+        message: `Error al revocar la credencial: ${error?.message || 'Error desconocido'}`
+      };
+    }
+  }
+
+  /**
+   * Método helper que revoca una credencial y retorna solo un boolean (para compatibilidad)
+   * @param certificateId ID de la credencial a revocar  
+   * @returns Promise<boolean> - true si se logró revocar, false en caso contrario
+   */
+  public revokeCredentialSimple = async (certificateId: string): Promise<boolean> => {
+    const result = await this.revokeCredential(certificateId);
+    return result.revoked;
   }
 
   //#endregion Private Methods
