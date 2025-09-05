@@ -1536,8 +1536,7 @@ class EnrollmentService {
 
       // Generate payment with Efipay
       const paymentResponse = await efipayService.generatePayment(paymentParams)
-
-      if (!paymentResponse?.payment_id) {
+      if (paymentResponse?.status === 'error' || !paymentResponse?.payment_id) {
         await transactionService.delete(transaction._id)
         return {
           status: 'error',

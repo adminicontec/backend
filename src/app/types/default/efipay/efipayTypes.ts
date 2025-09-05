@@ -50,9 +50,13 @@ export interface IGeneratePaymentParams {
 }
 
 export interface IGeneratePaymentResponse {
-  saved: boolean
-  payment_id: string
-  url: string
+  status: string, 
+  status_code?: string;
+  message?: string;
+  queryErrors?: string;
+  saved?: boolean
+  payment_id?: string
+  url?: string
 }
 
 export interface IGetTransactionStatusParams {

@@ -38,21 +38,10 @@ class EfipayService {
           params,
         },
       })
-      console.log('GeneratePayment::1', params)
       const headers = {
         'Authorization': `Bearer ${efipaySetup.token}`
       }
-      console.log('GeneratePayment::2', headers)
       params.payment.description = params.payment.description.slice(0, 190)
-      console.log('GeneratePayment::3', params)
-      console.log('GeneratePayment::4', {
-        method: 'post',
-        url: '/api/v1/payment/generate-payment',
-        api: 'efipay',
-        params,
-        headers,
-        sendBy: 'body'
-      })
       const response: IGeneratePaymentResponse = await queryUtility.query({
         method: 'post',
         url: '/api/v1/payment/generate-payment',
@@ -61,7 +50,6 @@ class EfipayService {
         headers,
         sendBy: 'body'
       });
-      console.log('GeneratePayment::5', response)
       await customLogService.create({
         label: 'efps - gp - response generate new payment',
         description: "Response new payment for Efipay",
@@ -70,6 +58,11 @@ class EfipayService {
           response,
         },
       })
+      if (response?.status === 'error') {
+        const queryErrors =  this.formatValidationErrors(JSON.parse(response.queryErrors || '{}'));
+        throw new Error(queryErrors);
+      }
+      
       return response
     } catch (e) {
       customLogService.create({
@@ -80,7 +73,44 @@ class EfipayService {
           params,
         },
       })
+      return {
+        status: 'error',
+        message: e.message,
+      }
     }
+  }
+
+  private formatValidationErrors(queryErrors) {
+    if (!queryErrors || typeof queryErrors !== 'object') {
+      return '';
+    }
+  
+    const errorMessages = [];
+    
+    for (const [field, messages] of Object.entries(queryErrors)) {
+      if (Array.isArray(messages)) {
+        messages.forEach(message => {
+          // Eliminar los dos puntos que causan problemas en el sistema
+          const sanitizedMessage = String(message)
+            .replace(/:/g, '') // Remover todos los dos puntos
+            .trim();
+          
+          if (sanitizedMessage) {
+            errorMessages.push(sanitizedMessage);
+          }
+        });
+      } else if (typeof messages === 'string') {
+        const sanitizedMessage = String(messages)
+          .replace(/:/g, '')
+          .trim();
+          
+        if (sanitizedMessage) {
+          errorMessages.push(sanitizedMessage);
+        }
+      }
+    }
+    
+    return errorMessages.join('; ');
   }
 
   public getTransactionStatus = async ({ paymentId }: IGetTransactionStatusParams): Promise<IGetTransactionStatusResponse> => {
