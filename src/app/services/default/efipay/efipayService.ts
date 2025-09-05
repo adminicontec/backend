@@ -50,6 +50,14 @@ class EfipayService {
         headers,
         sendBy: 'body'
       });
+      await customLogService.create({
+        label: 'efps - gp - response generate new payment',
+        description: "Response new payment for Efipay",
+        content: {
+          body: params,
+          response,
+        },
+      })
       return response
     } catch (e) {
       customLogService.create({
