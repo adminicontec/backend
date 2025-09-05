@@ -38,10 +38,21 @@ class EfipayService {
           params,
         },
       })
+      console.log('GeneratePayment::1', params)
       const headers = {
         'Authorization': `Bearer ${efipaySetup.token}`
       }
+      console.log('GeneratePayment::2', headers)
       params.payment.description = params.payment.description.slice(0, 190)
+      console.log('GeneratePayment::3', params)
+      console.log('GeneratePayment::4', {
+        method: 'post',
+        url: '/api/v1/payment/generate-payment',
+        api: 'efipay',
+        params,
+        headers,
+        sendBy: 'body'
+      })
       const response: IGeneratePaymentResponse = await queryUtility.query({
         method: 'post',
         url: '/api/v1/payment/generate-payment',
@@ -50,6 +61,7 @@ class EfipayService {
         headers,
         sendBy: 'body'
       });
+      console.log('GeneratePayment::5', response)
       await customLogService.create({
         label: 'efps - gp - response generate new payment',
         description: "Response new payment for Efipay",
