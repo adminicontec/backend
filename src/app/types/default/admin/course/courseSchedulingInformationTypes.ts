@@ -55,7 +55,8 @@ export interface ICourseSchedulingInformation{
     firstCertificateIsAuditorContent: {
       auditorExamScore: number
     },
-  }
+  },
+  lastProcessedAt?: Date;                  // Fecha de la ultima vez que se proceso la informacion
 }
 
 export interface IParamsCourseSchedulingInformationList extends IQueryFind{

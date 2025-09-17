@@ -257,8 +257,6 @@ class GradesService {
 
   public fetchGradesByFilter = async (params: IMoodleGradesQuery) => {
     try {
-        console.time('GradesService::fetchGradesByFilter');
-
         const { courseID, userID, userIDs, filter: select } = params;
         const selectSet = new Set(select);
         let allUserGradesData = [];
@@ -308,7 +306,6 @@ class GradesService {
           const BATCH_SIZE = 20; // Tamaño óptimo del lote
 
           for (let i = 0; i < userIDs.length; i += BATCH_SIZE) {
-              console.time(`Batch ${i/BATCH_SIZE + 1}`);
               const userBatch = userIDs.slice(i, i + BATCH_SIZE);
 
               // Procesar lote actual en paralelo
@@ -347,7 +344,6 @@ class GradesService {
               // Filtrar resultados nulos y agregar al resultado final
               allUserGradesData = allUserGradesData.concat(batchResults.filter(result => result !== null));
 
-              console.timeEnd(`Batch ${i/BATCH_SIZE + 1}`);
 
               // Pequeña pausa entre lotes para evitar sobrecarga
               if (i + BATCH_SIZE < userIDs.length) {
@@ -363,7 +359,6 @@ class GradesService {
           });
         }
 
-        console.timeEnd('GradesService::fetchGradesByFilter');
         return responseUtility.buildResponseSuccess('json', null, {
             additional_parameters: {
                 grades: allUserGradesData

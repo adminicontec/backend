@@ -183,7 +183,6 @@ class CourseContentService {
   // }
 
   public moduleList = async (params: IMoodleCourseModuleQuery = {}, searchAuditorData: boolean = true) => {
-    console.time('CourseContentService::moduleList:time')
     // Estructura base de respuesta
     const responseCourseModules = [];
 
@@ -282,8 +281,6 @@ class CourseContentService {
             }
         });
     }
-
-    console.timeEnd('CourseContentService::moduleList:time')
 
     return responseUtility.buildResponseSuccess('json', null, {
         additional_parameters: {

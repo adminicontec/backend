@@ -4,6 +4,7 @@
 // @import services
 import { courseContentService } from '@scnode_app/services/default/moodle/course/courseContentService';
 import { certificateService } from '@scnode_app/services/default/huellaDeConfianza/certificate/certificateService';
+import { customLogService } from '@scnode_app/services/default/admin/customLog/customLogService';
 // @end
 
 // @import utilities
@@ -100,59 +101,193 @@ class CourseSchedulingInformationService {
     })
   }
 
-  public processInformation = async (params: ICourseSchedulingInformationProcess) => {
+  public processInformation = async (params: ICourseSchedulingInformationProcess & { batchSize?: number, maxServicesPerRun?: number, schedulingBatchSize?: number }) => {
+    const BATCH_SIZE = params.batchSize ?? 30;
+    const MAX_SERVICES_PER_RUN = params.maxServicesPerRun ?? 100;
+    const SCHEDULING_BATCH_SIZE = params.schedulingBatchSize ?? 10;
+
+    // console.time('processInformation::total');
     try {
-      // Consultar los servicios confirmados y ejecutados
-      const schedulings = await this.getCourseSchedulingList({courseSchedulings: params.courseSchedulings});
+      // Usar getCourseSchedulingList con prioridad a courseSchedulings
+      const schedulings = await this.getCourseSchedulingList({
+        ...params,
+        lastProcessedAt: null,
+        limit: MAX_SERVICES_PER_RUN
+      });
 
-      for await (let scheduling of schedulings) {
-        // Obtener todos los datos necesarios para procesar
-        const [details, rules ,moduleList, enrollments] = await this.getSchedulingInformation(scheduling);
+      console.log(`[processInformation] Schedulings sin procesar encontrados: ${schedulings.length}`);
 
-        if (enrollments && enrollments.length) {
-          for await (let enrollment of enrollments) {
-            let params: ICourseSchedulingInformation = {
-              user: enrollment.user?._id,
-              courseScheduling: scheduling._id
-            };
+      // Calcular fechas solo si NO se pasa courseSchedulings
+      let today: Date, eightDaysAgo: Date;
+      today = new Date();
+      today.setHours(0,0,0,0);
+      eightDaysAgo = new Date(today);
+      eightDaysAgo.setDate(today.getDate() - 8);
 
-            params = await this.getGeneralSchedulingStats(params, rules, enrollment,scheduling);
+      for (let i = 0; i < schedulings.length; i += SCHEDULING_BATCH_SIZE) {
+        const schedulingBatch = schedulings.slice(i, i + SCHEDULING_BATCH_SIZE);
 
-            params = await this.getCertificateSchedulingStats(params);
+        await Promise.all(schedulingBatch.map(async (scheduling) => {
+          // console.time(`processInformation::scheduling::${scheduling._id}`);
+          const [details, rules, moduleList, enrollments] = await this.getSchedulingInformation(scheduling);
+          console.log(`[processInformation] Scheduling ${scheduling._id} - Enrollments: ${enrollments?.length || 0}`);
 
-            params = await this.getSchedulingDetailsStats(params, details, moduleList, rules, enrollment);
+          if (enrollments && enrollments.length) {
+            const userIds = enrollments.map(e => e.user?._id).filter(Boolean);
+            const csiDocs = await CourseSchedulingInformation.find({
+              courseScheduling: scheduling._id,
+              user: { $in: userIds }
+            }).select('user lastProcessedAt').lean();
 
-            params = this.setCertificateStats(params);
+            const csiByUserId = csiDocs.reduce((acc, doc) => {
+              acc[String(doc.user)] = doc;
+              return acc;
+            }, {});
 
-            await this.insertOrUpdate(params);
+            // Lógica de filtrado flexible para enrollments
+            const enrollmentsToProcess = enrollments.filter(enrollment => {
+              const csi = csiByUserId[String(enrollment.user?._id)];
+              // Si se pasa courseSchedulings, procesar todos los enrollments (sin filtro de fecha)
+              if (params.courseSchedulings) {
+                return true;
+              }
+              // Si nunca ha sido procesado
+              if (!csi || !csi.lastProcessedAt) return true;
+              // Si fue procesado hace más de 8 días
+              if (csi.lastProcessedAt < eightDaysAgo) return true;
+              // Si fue procesado entre hoy y 8 días atrás, permitir reprocesar si no fue procesado hoy
+              if (csi.lastProcessedAt >= eightDaysAgo && csi.lastProcessedAt < today) return true;
+              // Si fue procesado hoy, no procesar
+              return false;
+            });
+
+            for (let j = 0; j < enrollmentsToProcess.length; j += BATCH_SIZE) {
+              const batch = enrollmentsToProcess.slice(j, j + BATCH_SIZE);
+              // console.time(`processInformation::scheduling::${scheduling._id}::batch_${j/BATCH_SIZE}`);
+
+              await Promise.all(batch.map(async (enrollment) => {
+                try {
+                  let infoParams: ICourseSchedulingInformation = {
+                    user: enrollment.user?._id,
+                    courseScheduling: scheduling._id
+                  };
+
+                  infoParams = await this.getGeneralSchedulingStats(infoParams, rules, enrollment, scheduling);
+                  infoParams = await this.getCertificateSchedulingStats(infoParams);
+                  infoParams = await this.getSchedulingDetailsStats(infoParams, details, moduleList, rules, enrollment);
+                  infoParams = this.setCertificateStats(infoParams);
+
+                  infoParams.lastProcessedAt = new Date();
+
+                  await this.insertOrUpdate(infoParams);
+                } catch (err) {
+                  await customLogService.create({
+                    label: 'csiPi - Course scheduling information failed',
+                    description: `Error processing enrollment ${enrollment?.user?._id} in scheduling ${scheduling?._id}`,
+                    content: {
+                      schedulingId: scheduling?._id,
+                      userId: enrollment?.user?._id,
+                      error: err?.message || err,
+                      stack: err?.stack
+                    }
+                  });
+                }
+              }));
+              // console.timeEnd(`processInformation::scheduling::${scheduling._id}::batch_${j/BATCH_SIZE}`);
+            }
+
+            const totalCSI = await CourseSchedulingInformation.countDocuments({
+              courseScheduling: scheduling._id,
+              user: { $in: userIds }
+            });
+            const processedCSI = await CourseSchedulingInformation.countDocuments({
+              courseScheduling: scheduling._id,
+              user: { $in: userIds },
+              lastProcessedAt: { $ne: null }
+            });
+
+            if (totalCSI > 0 && totalCSI === processedCSI) {
+              await CourseScheduling.findByIdAndUpdate(scheduling._id, { lastProcessedAt: new Date() });
+              console.log(`[processInformation] Servicio ${scheduling._id} marcado como procesado.`);
+            } else {
+              console.log(`[processInformation] Servicio ${scheduling._id} aún tiene registros CourseSchedulingInformation sin procesar (${totalCSI - processedCSI}).`);
+            }
+          } else {
+            await CourseScheduling.findByIdAndUpdate(scheduling._id, { lastProcessedAt: new Date() });
+            console.log(`[processInformation] Servicio ${scheduling._id} sin enrollments, marcado como procesado.`);
           }
-        }
+          // console.timeEnd(`processInformation::scheduling::${scheduling._id}`);
+        }));
       }
-      return responseUtility.buildResponseSuccess('json')
+
+      // console.timeEnd('processInformation::total');
+      return responseUtility.buildResponseSuccess('json');
     } catch (error) {
+      // console.timeEnd('processInformation::total');
       console.log('Error CourseSchedulingInformationService => processInformation: ', error);
-      return responseUtility.buildResponseFailed('json', null, {additional_parameters: {err: error?.message}});
+      return responseUtility.buildResponseFailed('json', null, { additional_parameters: { err: error?.message } });
     }
   }
 
-  private getCourseSchedulingList = async (params: IGetCourseSchedulingList): Promise<ICourseScheduling[]> => {
+  private getCourseSchedulingList = async (params: IGetCourseSchedulingList & { lastProcessedAt?: any, limit?: number }): Promise<ICourseScheduling[]> => {
     const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
-    const date = new Date();
-    // TODO: Revisar si solo se deben escoger hasta los servicios que hayan finalizado los últimos 3 meses
-    date.setMonth(date.getMonth() - 3);
-    // const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, endDate: {$gt: date}}).select('id moodle_id duration').lean();
-    const query = {
-      schedulingStatus: {$in: status.map(s => s._id)},
-    }
+    const now = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+
+    // Calcular rango de fechas para servicios vencidos entre hoy y 8 días atrás
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const eightDaysAgo = new Date(today);
+    eightDaysAgo.setDate(today.getDate() - 8);
+
+    let query: any;
+
+    // Si se proporciona courseSchedulings, priorizar y omitir los demás filtros
     if (params.courseSchedulings) {
       if (typeof params.courseSchedulings === 'string') {
-        query['_id'] = {$in: params.courseSchedulings.split(',')}
+        query = { _id: { $in: params.courseSchedulings.split(',') } };
       } else if (Array.isArray(params.courseSchedulings)) {
-        query['_id'] = {$in: params.courseSchedulings}
+        query = { _id: { $in: params.courseSchedulings } };
+      } else {
+        query = {};
       }
+    } else {
+      query = {
+        schedulingStatus: { $in: status.map(s => s._id) },
+        endDate: {
+          $gte: threeMonthsAgo,
+          $lte: now
+        }
+      };
+
+      // Regla flexible para lastProcessedAt:
+      // 1. Si lastProcessedAt es null => incluir siempre (no procesado nunca)
+      // 2. Si endDate está entre hoy y 8 días atrás:
+      //    - incluir si lastProcessedAt es null o lastProcessedAt < hoy
+      // 3. Si endDate < eightDaysAgo:
+      //    - incluir solo si lastProcessedAt es null
+
+      query['$or'] = [
+        // Nunca procesados
+        { lastProcessedAt: null },
+        // Vencidos entre hoy y 8 días atrás, permitir reprocesar si no fue procesado hoy
+        {
+          endDate: { $gte: eightDaysAgo, $lte: today },
+          $or: [
+            { lastProcessedAt: null },
+            { lastProcessedAt: { $lt: today } }
+          ]
+        }
+      ];
     }
-    const schedulings = await CourseScheduling.find(query).select('id moodle_id duration').lean();
-    // const schedulings = await CourseScheduling.find({schedulingStatus: {$in: status.map(s => s._id)}, moodle_id: '421'}).select('id moodle_id duration').lean();
+    console.log(`[getCourseSchedulingList] Query construida: ${JSON.stringify(query, null, 2)}`);
+
+    let schedulingsQuery = CourseScheduling.find(query).select('id moodle_id duration endDate lastProcessedAt');
+    if (params.limit) {
+      schedulingsQuery = schedulingsQuery.limit(params.limit);
+    }
+    const schedulings = await schedulingsQuery.lean();
     return schedulings && schedulings.length ? schedulings : [];
   }
 
