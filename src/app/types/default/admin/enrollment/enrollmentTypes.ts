@@ -21,6 +21,7 @@ export interface IAddCourseSchedulingEnrollment {
   courseSchedulingId: string;
 }
 export interface IEnrollment{
+  _id?: string;
   courseScheduling?: string    // Identificador de la programación
   user?: string | any // Identificador del usuario en campus
   email: string,          // email de estudiante

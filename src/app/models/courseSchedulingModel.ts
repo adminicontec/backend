@@ -434,8 +434,12 @@ const CourseSchedulingSchema = new Schema({
   },
   longServiceInformation: {
     type: Schema.Types.String
-  }
+  },
   // @end
+  lastProcessedAt: {
+    type: Schema.Types.Date,
+    default: null
+  }
 }, {
   collection: 'course_schedulings', timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

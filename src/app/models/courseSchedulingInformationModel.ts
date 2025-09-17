@@ -155,6 +155,10 @@ const CourseSchedulingInformationSchema = new Schema({
         type: Schema.Types.Number
       },
     },
+  },
+  lastProcessedAt: {
+    type: Schema.Types.Date,
+    default: null
   }
   // @end
 }, {

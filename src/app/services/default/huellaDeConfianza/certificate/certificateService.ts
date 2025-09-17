@@ -721,7 +721,7 @@ class CertificateService {
 
       // Estatus de Programa: se permite crear la cola de certificados si está confirmado o ejecutado.
       schedulingMode = respCourse.scheduling.schedulingMode.name;
-      console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
+      // console.log("Program Status --> " + respCourse.scheduling.schedulingStatus.name);
       if (respCourse.scheduling.schedulingStatus.name == 'Programado' || respCourse.scheduling.schedulingStatus.name == 'Cancelado') {
         return responseUtility.buildResponseFailed('json', null,
           { error_key: { key: 'certificate.requirements.program_status', params: { error: respCourse.scheduling.schedulingStatus.name } } });
@@ -3083,10 +3083,10 @@ class CertificateService {
         // Procesar revocación antes de eliminar
         if (certificate?.certificate?.hash) {
           console.log(`[CertificateService] [reGenerateCertification] Processing revocation for single certificate: ${certificate.certificate.hash}`);
-          
+
           const revocationResult = await this.revokeCredential(certificate.certificate.hash);
           console.log(`[CertificateService] [reGenerateCertification] Revocation result:`, revocationResult);
-          
+
           // Log del resultado de revocación
           await customLogService.create({
             label: 'CERTIFICATE_REGENERATION_REVOCATION',
@@ -3190,16 +3190,16 @@ class CertificateService {
 
         // Procesar revocaciones
         const certificatesWithHash = certificatesToRevoke.filter(cert => cert?.certificate?.hash);
-        
+
         if (certificatesWithHash.length > 0) {
           console.log(`[CertificateService] [reGenerateCertification] Processing revocation for ${certificatesWithHash.length} certificates`);
-          
+
           if (certificatesWithHash.length === 1) {
             // Procesamiento síncrono para un solo certificado
             const cert = certificatesWithHash[0];
             const revocationResult = await this.revokeCredential(cert.certificate.hash);
             console.log(`[CertificateService] [reGenerateCertification] Revocation result for ${cert.certificate.hash}:`, revocationResult);
-            
+
             // Log del resultado
             await customLogService.create({
               label: 'CERTIFICATE_REGENERATION_REVOCATION',
@@ -3215,7 +3215,7 @@ class CertificateService {
           } else {
             // Procesamiento asíncrono para múltiples certificados
             console.log(`[CertificateService] [reGenerateCertification] Processing ${certificatesWithHash.length} revocations asynchronously`);
-            
+
             // Procesar revocaciones de forma asíncrona sin bloquear
             this.processMultipleRevocations(certificatesWithHash)
               .catch(error => {
@@ -3266,7 +3266,7 @@ class CertificateService {
   private processMultipleRevocations = async (certificates: any[]): Promise<void> => {
     const BATCH_SIZE = 5; // Procesar de 5 en 5 para no sobrecargar el API
     const batches = [];
-    
+
     // Dividir en lotes
     for (let i = 0; i < certificates.length; i += BATCH_SIZE) {
       batches.push(certificates.slice(i, i + BATCH_SIZE));
@@ -3277,13 +3277,13 @@ class CertificateService {
     // Procesar cada lote
     for (const [batchIndex, batch] of batches.entries()) {
       console.log(`[CertificateService] [processMultipleRevocations] Processing batch ${batchIndex + 1}/${batches.length} with ${batch.length} certificates`);
-      
+
       // Procesar certificados del lote en paralelo
       const revocationPromises = batch.map(async (cert) => {
         try {
           const revocationResult = await this.revokeCredential(cert.certificate.hash);
           console.log(`[CertificateService] [processMultipleRevocations] Revocation result for ${cert.certificate.hash}:`, revocationResult);
-          
+
           // Log individual del resultado
           await customLogService.create({
             label: 'CERTIFICATE_REGENERATION_REVOCATION_ASYNC',
@@ -3301,7 +3301,7 @@ class CertificateService {
           return { success: true, hash: cert.certificate.hash, result: revocationResult };
         } catch (error) {
           console.error(`[CertificateService] [processMultipleRevocations] Error revoking ${cert.certificate.hash}:`, error);
-          
+
           // Log del error
           await customLogService.create({
             label: 'CERTIFICATE_REGENERATION_REVOCATION_ERROR',
@@ -3322,7 +3322,7 @@ class CertificateService {
 
       // Esperar a que termine el lote actual antes de continuar con el siguiente
       await Promise.all(revocationPromises);
-      
+
       // Pequeña pausa entre lotes para no sobrecargar el API
       if (batchIndex < batches.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // 1 segundo de pausa
@@ -3855,7 +3855,7 @@ class CertificateService {
     } catch (error) {
       // Log del error
       console.error(`[CertificateService] [revokeCredential] Error revoking certificate ${certificateId}:`, error);
-      
+
       await customLogService.create({
         label: 'CERTIFICATE_REVOCATION_EXCEPTION',
         description: `Error revoking certificate ${certificateId}`,
@@ -3879,7 +3879,7 @@ class CertificateService {
 
   /**
    * Método helper que revoca una credencial y retorna solo un boolean (para compatibilidad)
-   * @param certificateId ID de la credencial a revocar  
+   * @param certificateId ID de la credencial a revocar
    * @returns Promise<boolean> - true si se logró revocar, false en caso contrario
    */
   public revokeCredentialSimple = async (certificateId: string): Promise<boolean> => {
