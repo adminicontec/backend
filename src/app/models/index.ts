@@ -64,6 +64,7 @@ import { PostModel } from "@scnode_app/models/postModel";
 import { CountryModel } from "@scnode_app/models/countryModel";
 import { UserModel } from "@scnode_app/models/userModel";
 import { PurchasedPlaceModel } from "@scnode_app/models/purchasedPlaceModel";
+import { AppConfigModel } from "@scnode_app/models/appConfigModel";
 // @end
 
 // @export_models
@@ -132,6 +133,7 @@ export const Post = PostModel
 export const Country = CountryModel
 export const User = UserModel
 export const PurchasedPlace = PurchasedPlaceModel
+export const AppConfig = AppConfigModel
 // @end
 
 export const model_example = "ModelExample";
