@@ -12,7 +12,7 @@ import { responseUtility } from '@scnode_core/utilities/responseUtility';
 // @end
 
 // @import models
-import { CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, CourseSchedulingInformation } from '@scnode_app/models';
+import { AppConfig, CourseSchedulingStatus, CourseScheduling, CourseSchedulingDetails, Enrollment, CertificateQueue, CourseSchedulingInformation } from '@scnode_app/models';
 // @end
 
 // @import types
@@ -101,10 +101,28 @@ class CourseSchedulingInformationService {
     })
   }
 
+  private getAppConfigValue = async (key: string, defaultValue: any) => {
+    try {
+      const config = await AppConfig.findOne({ key }).lean();
+      if (config && config.value !== undefined && config.value !== null) {
+        return config.value;
+      }
+    } catch (e) {
+      // log error if needed
+    }
+    return defaultValue;
+  }
+
   public processInformation = async (params: ICourseSchedulingInformationProcess & { batchSize?: number, maxServicesPerRun?: number, schedulingBatchSize?: number }) => {
-    const BATCH_SIZE = params.batchSize ?? 30;
-    const MAX_SERVICES_PER_RUN = params.maxServicesPerRun ?? 100;
-    const SCHEDULING_BATCH_SIZE = params.schedulingBatchSize ?? 10;
+    // Obtener valores de configuración desde BD si no vienen en params
+    const BATCH_SIZE = params.batchSize ?? await this.getAppConfigValue('csi_batchSize', 30);
+    const MAX_SERVICES_PER_RUN = params.maxServicesPerRun ?? await this.getAppConfigValue('csi_maxServicesPerRun', 100);
+    const SCHEDULING_BATCH_SIZE = params.schedulingBatchSize ?? await this.getAppConfigValue('csi_schedulingBatchSize', 10);
+
+    // Obtener días de reproceso desde configuración
+    const DAYS_TO_REPROCESS = await this.getAppConfigValue('csi_daysToReprocess', 8);
+
+    console.log(`[processInformation] Parámetros de ejecución - BATCH_SIZE: ${BATCH_SIZE}, MAX_SERVICES_PER_RUN: ${MAX_SERVICES_PER_RUN}, SCHEDULING_BATCH_SIZE: ${SCHEDULING_BATCH_SIZE}, courseSchedulings: ${params.courseSchedulings || 'N/A'}, DAYS_TO_REPROCESS: ${DAYS_TO_REPROCESS}`);
 
     // console.time('processInformation::total');
     try {
@@ -118,11 +136,11 @@ class CourseSchedulingInformationService {
       console.log(`[processInformation] Schedulings sin procesar encontrados: ${schedulings.length}`);
 
       // Calcular fechas solo si NO se pasa courseSchedulings
-      let today: Date, eightDaysAgo: Date;
+      let today: Date, daysAgoForStudent: Date;
       today = new Date();
       today.setHours(0,0,0,0);
-      eightDaysAgo = new Date(today);
-      eightDaysAgo.setDate(today.getDate() - 8);
+      daysAgoForStudent = new Date(today);
+      daysAgoForStudent.setDate(today.getDate() - DAYS_TO_REPROCESS);
 
       for (let i = 0; i < schedulings.length; i += SCHEDULING_BATCH_SIZE) {
         const schedulingBatch = schedulings.slice(i, i + SCHEDULING_BATCH_SIZE);
@@ -153,10 +171,10 @@ class CourseSchedulingInformationService {
               }
               // Si nunca ha sido procesado
               if (!csi || !csi.lastProcessedAt) return true;
-              // Si fue procesado hace más de 8 días
-              if (csi.lastProcessedAt < eightDaysAgo) return true;
-              // Si fue procesado entre hoy y 8 días atrás, permitir reprocesar si no fue procesado hoy
-              if (csi.lastProcessedAt >= eightDaysAgo && csi.lastProcessedAt < today) return true;
+              // Si fue procesado hace más de N días (variable)
+              if (csi.lastProcessedAt < daysAgoForStudent) return true;
+              // Si fue procesado entre hoy y N días atrás, permitir reprocesar si no fue procesado hoy
+              if (csi.lastProcessedAt >= daysAgoForStudent && csi.lastProcessedAt < today) return true;
               // Si fue procesado hoy, no procesar
               return false;
             });
@@ -229,17 +247,20 @@ class CourseSchedulingInformationService {
     }
   }
 
-  private getCourseSchedulingList = async (params: IGetCourseSchedulingList & { lastProcessedAt?: any, limit?: number }): Promise<ICourseScheduling[]> => {
+  private getCourseSchedulingList = async (params: IGetCourseSchedulingList & { lastProcessedAt?: any, limit?: number, daysToReprocess?: number }): Promise<ICourseScheduling[]> => {
     const status = await CourseSchedulingStatus.find({name: {$in: ['Confirmado', 'Ejecutado']}});
     const now = new Date();
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(now.getMonth() - 3);
 
-    // Calcular rango de fechas para servicios vencidos entre hoy y 8 días atrás
+    // NUEVO: Obtener días de reproceso desde configuración
+    const DAYS_TO_REPROCESS = params.daysToReprocess ?? 8;
+
+    // Calcular rango de fechas para servicios vencidos entre hoy y N días atrás
     const today = new Date();
     today.setHours(0,0,0,0);
-    const eightDaysAgo = new Date(today);
-    eightDaysAgo.setDate(today.getDate() - 8);
+    const daysAgoForService = new Date(today);
+    daysAgoForService.setDate(today.getDate() - DAYS_TO_REPROCESS);
 
     let query: any;
 
@@ -263,17 +284,17 @@ class CourseSchedulingInformationService {
 
       // Regla flexible para lastProcessedAt:
       // 1. Si lastProcessedAt es null => incluir siempre (no procesado nunca)
-      // 2. Si endDate está entre hoy y 8 días atrás:
+      // 2. Si endDate está entre hoy y N días atrás:
       //    - incluir si lastProcessedAt es null o lastProcessedAt < hoy
-      // 3. Si endDate < eightDaysAgo:
+      // 3. Si endDate < N días atrás:
       //    - incluir solo si lastProcessedAt es null
 
       query['$or'] = [
         // Nunca procesados
         { lastProcessedAt: null },
-        // Vencidos entre hoy y 8 días atrás, permitir reprocesar si no fue procesado hoy
+        // Vencidos entre hoy y N días atrás, permitir reprocesar si no fue procesado hoy
         {
-          endDate: { $gte: eightDaysAgo, $lte: today },
+          endDate: { $gte: daysAgoForService, $lte: today },
           $or: [
             { lastProcessedAt: null },
             { lastProcessedAt: { $lt: today } }
@@ -281,7 +302,6 @@ class CourseSchedulingInformationService {
         }
       ];
     }
-    console.log(`[getCourseSchedulingList] Query construida: ${JSON.stringify(query, null, 2)}`);
 
     let schedulingsQuery = CourseScheduling.find(query).select('id moodle_id duration endDate lastProcessedAt');
     if (params.limit) {
