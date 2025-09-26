@@ -31,7 +31,7 @@
     "express": "^4.17.1",
     "express-ejs-layouts": "^2.5.0",
     "express-fileupload": "^1.1.5",
-    "figlet": "^1.5.0",
+    "figlet": "1.5.0",
     "google-spreadsheet": "^3.1.15",
     "he": "^1.2.0",
     "html-entities": "^2.3.2",
