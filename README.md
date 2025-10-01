@@ -334,10 +334,6 @@ npm config set prefix ~/.npm-global
 export PATH=~/.npm-global/bin:$PATH
 ```
 
-### Error al clonar el repositorio
-- Verificar credenciales de Azure DevOps
-- Asegurar acceso al repositorio: https://fdevias@dev.azure.com/fdevias/Campusvirtual_icontec/_git/cliente
-
 ---
 
 ## Configuración Avanzada
