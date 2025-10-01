@@ -37,13 +37,30 @@ tsc --version
 ts-node --version
 ```
 
+#### 5. Dependencias para Generación de PDFs
+Para que el sistema funcione correctamente con la generación de PDFs, instalar las siguientes dependencias globales:
+
+```bash
+# Instalar PhantomJS (requerido para generación de PDFs)
+npm install -g phantomjs-prebuilt --unsafe-perm
+
+# Instalar html-pdf globalmente
+npm install html-pdf -g --unsafe-perm
+
+# Crear enlaces simbólicos para las dependencias
+npm link html-pdf
+npm link phantomjs-prebuilt
+```
+
+**Nota**: Los flags `--unsafe-perm` son necesarios para la correcta instalación de PhantomJS en algunos sistemas.
+
 ## Instalación y Configuración del Proyecto
 
 ### Paso 1: Clonar el Repositorio
 
 ```bash
 # Clonar desde Azure DevOps
-git clone https://fdevias@dev.azure.com/fdevias/Campusvirtual_icontec/_git/backend
+git clone [REPOSITORIO]
 
 # Navegar al directorio del proyecto
 cd backend
@@ -89,13 +106,13 @@ Abrir el archivo `./src/config/env.json` y agregar la configuración básica:
 
 ### Paso 5: Instalar y Configurar el Cliente CLI
 
-```bash
-# Instalar el cliente desde el repositorio de Azure DevOps
-git clone https://fdevias@dev.azure.com/fdevias/Campusvirtual_icontec/_git/cliente scnode-cli
-cd scnode-cli
-npm install
-npm link
-```
+Para la instalación del cliente SCNode CLI, consultar la **documentación completa** en su repositorio:
+
+El cliente SCNode CLI contiene todas las herramientas de compilación, generación de código y automatización necesarias para trabajar con este backend. Su README incluye:
+- Instalación detallada paso a paso
+- Configuración completa
+- Uso interactivo y por comandos
+- Solución de problemas
 
 ### Paso 6: Deploy Inicial
 
@@ -122,6 +139,131 @@ scnode_cli --deploy dev
    - URL: http://127.0.0.1:3015 (o el puerto configurado en env.json)
 
 **Nota importante**: Siempre que se actualice un archivo de internacionalización o vista será necesario reiniciar los servicios.
+
+---
+
+## Ejecución de Tareas desde CLI
+
+### ¿Qué son las Tareas CLI?
+
+El backend incluye un **sistema de tareas automatizadas** que puede ejecutarse desde la línea de comandos. Estas tareas permiten ejecutar procesos automáticos, scripts de mantenimiento, procesos de sincronización, y otras operaciones sin necesidad de iniciar el servidor completo.
+
+### Instalación Global del Backend
+
+Para ejecutar tareas desde cualquier ubicación en el sistema, primero es necesario instalar el backend globalmente:
+
+```bash
+# En el directorio del backend, ejecutar:
+npm run init
+```
+
+Este comando:
+1. **Instala el backend globalmente** (`npm i -g`)
+2. **Registra el comando CLI** usando el nombre del proyecto en `package.json`
+3. **Habilita la ejecución de tareas** desde cualquier ubicación del sistema
+
+### Uso del CLI de Tareas
+
+#### Sintaxis General
+```bash
+campus_virtual_icontec --program [TIPO_PROGRAMA] --[PARAMETROS]
+```
+
+#### Programas Disponibles
+
+##### 1. Ejecutar Seeders
+```bash
+# Ejecutar un seeder específico
+campus_virtual_icontec --program seeder --seeder [NOMBRE_SEEDER]
+
+# Ejecutar todos los seeders
+campus_virtual_icontec --program seeder --all
+```
+
+##### 2. Ejecutar Tareas Automatizadas
+```bash
+# Ejecutar una tarea específica
+campus_virtual_icontec --program task --task [NOMBRE_TAREA]
+
+# Ejemplo: Ejecutar tarea de información de programación
+campus_virtual_icontec --program task --task scheduling-information
+```
+
+### Ejemplos Prácticos
+
+#### Ejecutar Tarea de Programación
+```bash
+# Ejecutar la tarea de información de programación
+campus_virtual_icontec --program task --task scheduling-information
+```
+
+#### Ejecutar Seeders de Base de Datos
+```bash
+# Ejecutar seeder de usuarios
+campus_virtual_icontec --program seeder --seeder users
+
+# Ejecutar todos los seeders disponibles
+campus_virtual_icontec --program seeder --all
+```
+
+### Verificación de la Instalación Global
+
+Para verificar que el backend se instaló correctamente de forma global:
+
+```bash
+# Verificar que el comando está disponible
+campus_virtual_icontec --help
+
+# Verificar desde cualquier directorio
+campus_virtual_icontec --program task --task scheduling-information
+```
+
+### Estructura de Tareas
+
+Las tareas automatizadas se encuentran en:
+- **Ubicación**: `./src/client/client.ts`
+- **Servicios de tareas**: `./src/core/services/default/plugins/tasks/`
+- **Servicios de seeders**: `./src/core/services/default/plugins/seeder/`
+
+### Agregar Nuevas Tareas
+
+Para agregar nuevas tareas al sistema:
+
+1. **Crear el servicio de tarea** en `./src/core/services/default/plugins/tasks/`
+2. **Registrar la tarea** en el sistema de ruteo de tareas
+3. **Reinstalar globalmente** el backend:
+   ```bash
+   npm run init
+   ```
+
+### Beneficios de las Tareas CLI
+
+- ⚙️ **Automatización**: Ejecutar procesos automatizados sin interfaz gráfica
+- 📅 **Cron Jobs**: Ideal para programar tareas con cron
+- 🚀 **Performance**: Ejecución rápida sin cargar el servidor completo
+- 🔧 **Mantenimiento**: Scripts de mantenimiento y limpieza
+- 📊 **Sincronización**: Procesos de sincronización de datos
+
+### Solución de Problemas
+
+#### Error: "campus_virtual_icontec: command not found"
+```bash
+# Reinstalar globalmente
+cd /ruta/al/backend
+npm run init
+
+# Verificar variables de entorno
+echo $PATH
+```
+
+#### Error en ejecución de tareas
+```bash
+# Verificar que el archivo env.json existe
+ls -la ./src/config/env.json
+
+# Verificar permisos de ejecución
+chmod +x ./src/client/client.ts
+```
 
 ### Modo Producción
 
@@ -295,58 +437,6 @@ La configuración completa del archivo `env.json` admite los siguientes parámet
 
 ## Información del Repositorio
 
-- **Repositorio Principal**: https://fdevias@dev.azure.com/fdevias/Campusvirtual_icontec/_git/cliente
 - **Versión de Node.js Requerida**: 12.22.12
 - **Plataforma**: Azure DevOps
 - **Framework**: Scaffolding Node.js con TypeScript
-
-### Parametros de configuración del archivo ``env.json``
-
-```
-{
-  "environment": "dev|prod",
-  "host": "string", // EJ: http://127.0.0.1:3015
-  "use_ssl": boolean, // Servidor con SSL. (true | false)
-  "default_language": "string", // Idioma por defecto del sistema (es | en)
-  "server_port": integer, // EJ: 3015
-  "jwt_secret": {
-    "local": "string" // Llave secreta para encriptar los tokens JWT
-  },
-  "jwt_exp": {
-    "amount": integer // Tiempo de duración del token JWT
-    "unity": "days|hours" // Tiempo de duración del token JWT
-  },
-  "attached": {
-    "driver": "server",
-    "server": {
-      "base_path": "string" // EJ: uploads
-    }
-  },
-  "external_api": { // Endpoints externos
-    "example_key": { // Configuración de endpoint externo
-      "url": "string" // URL del endpoint (Ej: http://example.api.com)
-    }
-  },
-  "main_external_api": "string", // Endpoint por defecto (Ej: example_key) 
-  "customs": {}, // Listado de parametros customizados que estaran disponibles de forma global
-  "socket": boolean, // Habilita/deshabilita la conexión socket
-  "i18n_config": { // Configuración de la internacionalización
-    "debug": boolean // Habilita/deshabilita el modo de depuración
-  },
-  "router_prefix": "string", // Prefijo de acceso a los endpoint (Ej. api)
-  "database": { // Configuración de la base de datos
-    "driver": "mysql|mongodb", // Tipo de servicio de BD
-    "mongodb": { // Configuración de MongoDb
-      "host": "string", // Cadena de conexión a mongo (Ej: localhost:27017)
-      "dbname": "string" // Nombre de la base de datos
-    },
-    "mysql": { // Configuración de MySql
-      "database": "string", // Nombre de la base de datos
-      "host": "string",
-      "username": "string",
-      "password": string|null,
-      "dialect": "mysql"
-    }
-  },
-}
-```
