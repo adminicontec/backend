@@ -251,7 +251,7 @@ class CourseSchedulingNotificationsService {
           service_id: courseScheduling.metadata.service_id,
           modality: courseScheduling.schedulingMode.name,
           modules: modules,
-          duration: this.formatSecondsToHours(courseScheduling.duration),
+          duration: this.getDurationFormated(courseScheduling.duration, 'short'),
           startDate: moment.utc(courseScheduling.startDate).format(DATE_FORMAT),
           endDate: moment.utc(courseScheduling.endDate).format(DATE_FORMAT),
           serviceValidity: courseScheduling?.serviceValidity ? generalUtility.getDurationFormated(courseScheduling.serviceValidity, 'large', true) : undefined,
@@ -400,7 +400,7 @@ class CourseSchedulingNotificationsService {
         program_code: courseScheduling.program.code,
         service_id: courseScheduling.metadata.service_id,
         modality: courseScheduling.schedulingMode.name,
-        duration: this.formatSecondsToHours(courseScheduling.duration),
+        duration: this.getDurationFormated(courseScheduling.duration, 'short'),
         startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
         observations: courseScheduling.observations,
@@ -485,7 +485,7 @@ class CourseSchedulingNotificationsService {
         program_code: courseScheduling.program.code,
         service_id: courseScheduling.metadata.service_id,
         modality: courseScheduling.schedulingMode.name,
-        duration: this.formatSecondsToHours(courseScheduling.duration),
+        duration: this.getDurationFormated(courseScheduling.duration, 'short'),
         startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
         observations: courseScheduling.observations,
@@ -532,7 +532,7 @@ class CourseSchedulingNotificationsService {
         program_code: courseScheduling.program.code,
         service_id: courseScheduling.metadata.service_id,
         modality: courseScheduling.schedulingMode.name,
-        duration: this.formatSecondsToHours(courseScheduling.duration),
+        duration: this.getDurationFormated(courseScheduling.duration, 'short'),
         startDate: moment.utc(courseScheduling.startDate).format('YYYY-MM-DD'),
         endDate: moment.utc(courseScheduling.endDate).format('YYYY-MM-DD'),
         observations: courseScheduling.observations,
@@ -862,6 +862,56 @@ class CourseSchedulingNotificationsService {
       _seconds = Number(_seconds);
     }
     return `${Math.trunc((_seconds / 60) / 60)}h`
+  }
+
+  /**
+   * @INFO Obtener duración con el formato
+   * @param seconds
+   * @param format 'short' | 'large'
+   * @param onlyHours Si se desea retornar solo la cantidad de horas (entero)
+   */
+  private getDurationFormated = (
+    seconds: number,
+    format: 'short' | 'large' = 'short',
+    onlyHours: boolean = true,
+  ) => {
+    if (onlyHours) {
+      const totalHours = Math.trunc(seconds / 3600)
+      const remainingMinutes = Math.trunc((seconds % 3600) / 60)
+
+      if (remainingMinutes > 0) {
+        return format === 'short'
+          ? `${totalHours}h ${remainingMinutes}m`
+          : `${totalHours} Horas ${remainingMinutes} Minutos`
+      } else {
+        return format === 'short'
+          ? `${totalHours}h`
+          : `${totalHours} Horas`
+      }
+    }
+
+    const days = Math.trunc(seconds / (3600 * 24))
+    const hours = Math.trunc((seconds - days * 3600 * 24) / 3600)
+    const minutes = Math.trunc((seconds - days * 3600 * 24 - hours * 3600) / 60)
+    const seconds2 = Math.trunc(
+      seconds - days * 3600 * 24 - hours * 3600 - minutes * 60,
+    )
+
+    let response: string = ''
+    if (days) {
+      response += ` ${days}${format === 'short' ? 'd' : ' Días'}`
+    }
+    if (hours) {
+      response += ` ${hours}${format === 'short' ? 'h' : ' Horas'}`
+    }
+    if (minutes) {
+      response += ` ${minutes}${format === 'short' ? 'm' : ' Minutos'}`
+    }
+    if (seconds2) {
+      response += ` ${seconds2}${format === 'short' ? 's' : ' Segundos'}`
+    }
+
+    return response.trim()
   }
 
   /**
