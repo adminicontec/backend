@@ -1,6 +1,6 @@
 {
   "name": "campus_virtual_icontec",
-  "version": "1.0.0",
+  "version": "1.56.2",
   "main": "./src/app/server.js",
   "bin": "./src/client/client.ts",
   "scripts": {
