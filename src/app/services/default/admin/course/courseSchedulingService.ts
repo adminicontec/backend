@@ -2868,7 +2868,293 @@ class CourseSchedulingService {
     return {serviceTypeLabel, serviceTypeStatus, serviceTypeKey}
   }
 
+  /**
+   * Re-emite el evento PROVISIONING_MOODLE_COURSES para un servicio existente.
+   * Útil para reintentar el aprovisionamiento en Moodle manualmente.
+   */
+  public reprovisionMoodle = async ({ courseSchedulingId }: { courseSchedulingId: string }) => {
+    try {
+      if (!courseSchedulingId) {
+        return responseUtility.buildResponseFailed('json', null, { message: 'El ID del course scheduling es obligatorio' })
+      }
 
+      const response: any = await CourseScheduling.findOne({ _id: courseSchedulingId })
+        .populate({ path: 'schedulingMode', select: 'id name moodle_id' })
+        .populate({ path: 'modular', select: 'id name' })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'schedulingType', select: 'id name' })
+        .populate({ path: 'schedulingStatus', select: 'id name' })
+        .populate({ path: 'regional', select: 'id name moodle_id' })
+        .populate({ path: 'account_executive', select: 'id profile.first_name profile.last_name email profile.timezone' })
+        .populate({ path: 'material_assistant', select: 'id profile.first_name profile.last_name email profile.timezone' })
+        .populate({ path: 'city', select: 'id name' })
+        .populate({ path: 'country', select: 'id name' })
+        .populate({ path: 'metadata.user', select: 'id profile.first_name profile.last_name email profile.timezone' })
+        .populate({ path: 'client', select: 'id name' })
+        .populate({ path: 'contact', select: 'id profile.first_name profile.last_name phoneNumber email' })
+        .lean()
+
+      if (!response) {
+        return responseUtility.buildResponseFailed('json', null, { message: 'El servicio no existe' })
+      }
+
+      const prevSchedulingStatus = (response && response.schedulingStatus && response.schedulingStatus.name) ? response.schedulingStatus.name : null
+
+      let regional = null
+      if (response.regional && response.regional.moodle_id) {
+        regional = response.regional.moodle_id
+      } else if (response.regional_transversal) {
+        regional = response.regional_transversal
+      }
+
+      let moodleCity = ''
+      if (response.city) {
+        moodleCity = response.city.name
+      }
+
+      const service_id = response?.metadata?.service_id
+      const paramsMoodle = {
+        shortName: `${response.program.code}_${service_id}`,
+        fullName: `${response.program.name}`,
+        masterId: `${response.program.moodle_id}`,
+        categoryId: `${regional}`,
+        startDate: `${response.startDate}`,
+        endDate: `${response.endDate}`,
+        customClassHours: `${generalUtility.getDurationFormatedForCertificate(response.duration)}`,
+        city: `${moodleCity}`,
+        country: `${response.country.name}`
+      }
+
+      // Actualizar estado a IN_PROCESS antes de emitir
+      await CourseScheduling.findByIdAndUpdate(courseSchedulingId, {
+        provisioningMoodle: {
+          status: CourseSchedulingProvisioningMoodleStatus.IN_PROCESS,
+          logs: ['Reprovision manual iniciado'],
+        }
+      }, {
+        useFindAndModify: false,
+        new: true,
+        lean: true,
+      })
+
+      const steps: any[] = ['reprovisionMoodle']
+      const eventParams: IProvisioningMoodleCoursesParams = {
+        steps,
+        paramsMoodle,
+        params: {}, // No se requieren params originales para reprovision
+        response,
+        _id: courseSchedulingId,
+        prevSchedulingStatus,
+        originalScheduling: undefined,
+        shouldDuplicateSessions: false,
+        itemsToDuplicate: undefined,
+      }
+
+      eventEmitterUtility.emit(CourseSchedulingEventType.PROVISIONING_MOODLE_COURSES, eventParams)
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Evento de aprovisionamiento re-emitido correctamente',
+        additional_parameters: {
+          courseSchedulingId,
+          paramsMoodle
+        }
+      })
+    } catch (e) {
+      console.log('courseSchedulingService -> reprovisionMoodle -> ERROR: ', e)
+      return responseUtility.buildResponseFailed('json', null, { message: 'Error al re-emitir el evento de aprovisionamiento' })
+    }
+  }
+
+  public checkMoodleProvisioning = async ({ courseSchedulingId }: { courseSchedulingId: string }) => {
+    try {
+      // Fetch full data like reprovisionMoodle does
+      const scheduling: any = await CourseScheduling.findOne({ _id: courseSchedulingId })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'regional', select: 'id name moodle_id' })
+        .lean();
+
+      if (!scheduling) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio no existe' });
+
+      // Extract key parameters
+      const programCode = scheduling.program?.code;
+      const serviceId = scheduling.metadata?.service_id;
+      const masterId = scheduling.program?.moodle_id;
+      const shortName = programCode && serviceId ? `${programCode}_${serviceId}` : null;
+
+      // Category ID comes from regional or regional_transversal
+      let categoryId = null;
+      if (scheduling.regional?.moodle_id) {
+        categoryId = scheduling.regional.moodle_id;
+      } else if (scheduling.regional_transversal) {
+        categoryId = scheduling.regional_transversal;
+      }
+
+      const diagnosticResults: any = {
+        // Basic info
+        shortName: shortName || 'No se pudo calcular',
+        masterId: masterId || 'NO DEFINIDO',
+        categoryId: categoryId || 'NO DEFINIDO',
+
+        // Local status
+        localMoodleId: scheduling.moodle_id || null,
+        provisioningStatus: scheduling.provisioningMoodle?.status || 'sin estado',
+        provisioningLogs: scheduling.provisioningMoodle?.logs || [],
+
+        // Verification results
+        masterExists: null,
+        masterDetails: null,
+        categoryExists: null,
+        categoryDetails: null,
+        targetExists: null,
+        targetDetails: null,
+
+        // Raw data
+        rawData: {
+          programCode,
+          serviceId,
+          programName: scheduling.program?.name,
+          regionalName: scheduling.regional?.name,
+          regionalMoodleId: scheduling.regional?.moodle_id,
+          regionalTransversal: scheduling.regional_transversal,
+        }
+      };
+
+      // 1. CHECK MASTER COURSE
+      if (masterId) {
+        const masterParams = {
+          wstoken: moodle_setup.wstoken,
+          wsfunction: moodle_setup.services.courses.getByField,
+          moodlewsrestformat: moodle_setup.restformat,
+          'field': 'id',
+          'value': masterId
+        };
+        const masterResponse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: masterParams });
+        diagnosticResults.masterExists = masterResponse?.courses?.length > 0;
+        diagnosticResults.masterDetails = masterResponse?.courses?.[0] || masterResponse;
+      }
+
+      // 2. CHECK CATEGORY
+      if (categoryId) {
+        const categoryParams = {
+          wstoken: moodle_setup.wstoken,
+          wsfunction: moodle_setup.services.courses.getCategory,
+          moodlewsrestformat: moodle_setup.restformat,
+          'criteria[0][key]': 'id',
+          'criteria[0][value]': categoryId
+        };
+        const categoryResponse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: categoryParams });
+        diagnosticResults.categoryExists = Array.isArray(categoryResponse) && categoryResponse.length > 0;
+        diagnosticResults.categoryDetails = categoryResponse?.[0] || categoryResponse;
+      }
+
+      // 3. CHECK TARGET COURSE (the one that should be created)
+      if (shortName) {
+        const targetParams = {
+          wstoken: moodle_setup.wstoken,
+          wsfunction: moodle_setup.services.courses.getByField,
+          moodlewsrestformat: moodle_setup.restformat,
+          'field': 'shortname',
+          'value': shortName
+        };
+        const targetResponse = await queryUtility.query({ method: 'get', url: '', api: 'moodle', params: targetParams });
+        diagnosticResults.targetExists = targetResponse?.courses?.length > 0;
+        diagnosticResults.targetDetails = targetResponse?.courses?.[0] || null;
+      }
+
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Diagnostico Moodle Completo',
+        additional_parameters: diagnosticResults
+      });
+
+    } catch (e) {
+      console.log('courseSchedulingService -> checkMoodleProvisioning -> ERROR: ', e);
+      return responseUtility.buildResponseFailed('json', null, { message: `Error en diagnóstico: ${e}` });
+    }
+  }
+
+  /**
+   * Intenta realizar la duplicación en Moodle con opciones optimizadas para debug.
+   * NO guarda cambios en la base de datos local, solo prueba la API de Moodle.
+   */
+  public debugMoodleDuplication = async ({ courseSchedulingId }: { courseSchedulingId: string }) => {
+    try {
+      // 1. Fetch Data
+      const scheduling: any = await CourseScheduling.findOne({ _id: courseSchedulingId })
+        .populate({ path: 'program', select: 'id name moodle_id code' })
+        .populate({ path: 'regional', select: 'id name moodle_id' })
+        .lean();
+
+      if (!scheduling) return responseUtility.buildResponseFailed('json', null, { message: 'El servicio no existe' });
+
+      // 2. Prepare Parameters
+      const programCode = scheduling.program?.code;
+      const serviceId = scheduling.metadata?.service_id;
+      const masterId = scheduling.program?.moodle_id;
+      const shortName = programCode && serviceId ? `${programCode}_${serviceId}` : null;
+      const fullName = scheduling.program?.name || 'Test Course';
+
+      let categoryId = null;
+      if (scheduling.regional?.moodle_id) {
+        categoryId = scheduling.regional.moodle_id;
+      } else if (scheduling.regional_transversal) {
+        categoryId = scheduling.regional_transversal;
+      }
+
+      if (!masterId || !categoryId || !shortName) {
+        return responseUtility.buildResponseFailed('json', null, {
+          message: 'Faltan datos requeridos para la duplicación',
+          additional_parameters: { debugInfo: { masterId, categoryId, shortName } }
+        });
+      }
+
+      // 3. Construct Optimized Moodle Params
+      const moodleParams = {
+        wstoken: moodle_setup.wstoken,
+        wsfunction: moodle_setup.services.courses.duplicate,
+        moodlewsrestformat: moodle_setup.restformat,
+        'courseid': masterId,
+        'categoryid': categoryId,
+        'shortname': shortName,
+        'fullname': fullName,
+        'visible': 0,
+        // Optimized options: Exclude everything non-essential
+        'options[0][name]': 'users', 'options[0][value]': 0,
+        'options[1][name]': 'logs', 'options[1][value]': 0,
+        'options[2][name]': 'comments', 'options[2][value]': 0,
+        'options[3][name]': 'grade_histories', 'options[3][value]': 0,
+        'options[4][name]': 'role_assignments', 'options[4][value]': 0,
+      };
+
+      // 4. Execution
+      const startTime = Date.now();
+      let moodleResponse: any = null;
+      let error: any = null;
+
+      try {
+        moodleResponse = await queryUtility.query({ method: 'post', url: '', api: 'moodle', params: moodleParams });
+      } catch (e) {
+        error = e;
+      }
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // 5. Build Result
+      return responseUtility.buildResponseSuccess('json', null, {
+        message: 'Debug Duplication Executed',
+        additional_parameters: {
+          executionTimeMs: duration,
+          success: !error && !moodleResponse?.exception,
+          moodleParams,
+          moodleResponse,
+          error: error || (moodleResponse?.exception ? moodleResponse : null)
+        }
+      });
+
+    } catch (e) {
+      console.log('courseSchedulingService -> debugMoodleDuplication -> ERROR: ', e);
+      return responseUtility.buildResponseFailed('json', null, { message: `Error en debug: ${e}` });
+    }
+  }
 }
 
 export const courseSchedulingService = new CourseSchedulingService();

@@ -47,6 +47,9 @@ class CourseSchedulingRoute {
     routerUtility.post(app, _route, '/change-scheduling-element', this.instanceController.changeSchedulingElement, [], ['auth'])
 
     routerUtility.post(app, _route, '/sincronice-service-moodle', this.instanceController.sincroniceServiceMoodle, [], ['auth'])
+    routerUtility.post(app, _route, '/:id/reprovision-moodle', this.instanceController.reprovisionMoodle, [], ['auth'])
+    routerUtility.post(app, _route, '/:id/check-moodle-provisioning', this.instanceController.checkMoodleProvisioning, [], ['auth'])
+    routerUtility.post(app, _route, '/:id/debug-moodle-duplication', this.instanceController.debugMoodleDuplication, [], ['auth'])
     // @end
   }
 }

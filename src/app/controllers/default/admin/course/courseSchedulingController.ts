@@ -223,6 +223,42 @@ class CourseSchedulingController {
   }
 
   /**
+	 * Metodo que permite re-emitir el evento de aprovisionamiento en Moodle
+	 * @param req Objeto de clase Express
+	 * @param res Objeto de clase Express
+	 * @returns
+	 */
+	public reprovisionMoodle = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseSchedulingService.reprovisionMoodle(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+   * Metodo que permite verificar el estado de aprovisionamiento en Moodle
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+  public checkMoodleProvisioning = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseSchedulingService.checkMoodleProvisioning(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
+   * Metodo que permite ejecutar duplicación de debug
+   * @param req Objeto de clase Express
+   * @param res Objeto de clase Express
+   * @returns
+   */
+  public debugMoodleDuplication = async (req: Request, res: Response) => {
+    let params = req.getParameters.all()
+    const response = await courseSchedulingService.debugMoodleDuplication(params)
+    return responseUtility.sendResponseFromObject(res, response)
+  }
+
+  /**
 	 * Metodo que permite crear un registro
 	 * @param req Objeto de clase Express
 	 * @param res Objeto de clase Express
